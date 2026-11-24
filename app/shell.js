@@ -90,7 +90,9 @@ function buildChrome() {
   const reset = h('button.btn.btn-icon', { 'aria-label': 'Restart the mission from the beginning', title: 'Restart the mission', onclick: () => ctx.sim.reset() }, icon('reset'));
   $('topbar').append(
     h('a.brand', { href: '../', 'aria-label': 'HOUND home' }, h('i'), 'HOUND'),
-    h('div.tb-mission', null, h('b', { id: 'tb-phase' }, 'Loading'), h('span.dim', { id: 'tb-hint' }, '')),
+    h('div.tb-mission', null, h('b', { id: 'tb-phase' }, 'Loading'),
+      h('div.tb-track', { id: 'tb-track', role: 'img', 'aria-label': 'Mission progress' }, ...Object.keys(PHASE_INFO).map((p) => h('i', { 'data-phase': p, title: PHASE_INFO[p].label }))),
+      h('span.dim', { id: 'tb-hint' }, '')),
     h('div.grow'),
     h('div.tb-group', { title: 'Simulated time. The mission runs faster than real life; the speed is shown.' }, play, reset, speed, h('span.num.tb-clock', { id: 'tb-clock' }, '00:00')),
     h('span.tag.tag-sim', { title: 'The building, people and most sensor readings are simulated. Items marked Live run for real.' }, 'Simulation'),
@@ -98,13 +100,17 @@ function buildChrome() {
     h('button.btn.tb-search', { 'aria-label': 'Search or run a command', onclick: () => bus.emit('palette:open') }, icon('search'), h('span', null, 'Search or command'), h('kbd', null, '⌘K')),
     h('button.btn.btn-danger', { id: 'tb-stop', onclick: () => { const S = ctx.sim.state; ctx.sim.command(S.hold ? 'resume' : 'allStop'); } }, icon('stop'), h('span', { id: 'tb-stop-label' }, 'All stop')),
   );
-  $('statusbar').append(h('span', { id: 'sb-event' }, ''), h('div.grow'), h('span.dim', null, 'Training exercise. The people, damage and readings are simulated.'), h('a', { href: '#/status' }, 'What is real?'));
+  $('statusbar').append(h('span', { id: 'sb-event' }, ''), h('div.grow'), h('span.dim', null, 'Training exercise. The people, damage and readings are simulated.'), h('a', { href: '#/status' }, 'What is real?'), h('a', { href: 'ui/reference.html', target: '_blank', rel: 'noopener' }, 'Design reference'));
 }
 
 function refreshChrome() {
   const S = ctx.sim.state, info = PHASE_INFO[S.phase];
   $('tb-phase').textContent = S.hold ? 'All stop' : info.label;
   $('tb-hint').textContent = S.hold ? 'Every unit is holding. Press Resume to continue.' : info.hint;
+  const phases = Object.keys(PHASE_INFO), now = phases.indexOf(S.phase);
+  [...$('tb-track').children].forEach((el, i) => { el.classList.toggle('done', i < now); el.classList.toggle('now', i === now); });
+  $('tb-track').setAttribute('aria-label', `Mission progress: step ${now + 1} of ${phases.length}, ${info.label}`);
+  document.documentElement.dataset.hold = String(!!S.hold);
   $('tb-clock').textContent = fmt.clock(S.t);
   const play = $('tb-play'); play.replaceChildren(icon(S.running ? 'pause' : 'play')); play.setAttribute('aria-pressed', String(S.running));
   if (+$('tb-speed').value !== S.speed) $('tb-speed').value = String(S.speed);

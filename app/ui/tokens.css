@@ -1,57 +1,113 @@
-/* HOUND design tokens. Every colour, size and radius in the console comes from here. Do not hard-code colours. */
+/* HOUND design tokens. Every colour, size and radius in the console comes from here. Do not hard-code colours.
+   Living reference with every token and component: app/ui/reference.html
+   Type: Instrument Serif (display), Instrument Sans (interface), Geist Mono (changing numbers). All three are
+   SIL Open Font License, self-hosted in assets/brand/fonts so the console works offline. */
+@font-face { font-family: "Instrument Sans"; src: url("../../assets/brand/fonts/instrument-sans-latin-wdth-normal.woff2") format("woff2"); font-weight: 400 700; font-stretch: 75% 100%; font-style: normal; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("../../assets/brand/fonts/instrument-sans-latin-wdth-italic.woff2") format("woff2"); font-weight: 400 700; font-stretch: 75% 100%; font-style: italic; font-display: swap; }
+@font-face { font-family: "Instrument Serif"; src: url("../../assets/brand/fonts/instrument-serif-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Instrument Serif"; src: url("../../assets/brand/fonts/instrument-serif-latin-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("../../assets/brand/fonts/geist-mono-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; }
+
 :root {
   color-scheme: dark;
-  /* surfaces, darkest first */
-  --bg-0: #07090c;      /* page, 3-D viewport backdrop */
-  --bg-1: #0d1014;      /* app chrome */
-  --bg-2: #13171d;      /* panels */
-  --bg-3: #1a1f27;      /* raised: cards, inputs */
-  --bg-4: #232a34;      /* hover */
-  --line: #232a33;
-  --line-2: #323b47;
+  /* surfaces: graphite, darkest first. Each step up is one level closer to the operator. */
+  --bg-0: #06080a;      /* page, 3-D viewport backdrop, recessed wells */
+  --bg-1: #0b0d10;      /* app chrome, input wells */
+  --bg-2: #101317;      /* panels */
+  --bg-3: #171b20;      /* raised: cards, buttons */
+  --bg-4: #20252c;      /* hover */
+  --bg-5: #2a3039;      /* pressed, selected control */
+  --line: #1e242b;      /* hairline dividers */
+  --line-2: #2e3640;    /* control borders */
+  --line-3: #465160;    /* hovered control borders, strong rules */
+  --hi: rgba(255, 255, 255, 0.055);   /* 1 px inner highlight on the top edge of raised things */
+  --hi-2: rgba(255, 255, 255, 0.10);
   /* text */
-  --text: #e9edf2;
-  --text-2: #a8b2bf;
-  --text-3: #74808e;    /* 4.6:1 on --bg-2; never smaller than 12px */
+  --text: #eceef1;
+  --text-2: #aab3be;
+  --text-3: #808b99;    /* 5.3:1 on --bg-2, 4.9:1 on --bg-3; secondary labels only */
   /* meaning. Colour is never the only signal: pair with an icon or a word. */
   --accent: #5aa9ff;    /* interactive, routes, focus */
+  --accent-2: #86c0ff;  /* accent, hovered */
   --accent-ink: #06131f;
+  --accent-soft: rgba(90, 169, 255, 0.14);
+  --accent-line: rgba(90, 169, 255, 0.42);
   --person: #ff6a45;    /* a person, the most important thing on screen */
   --person-soft: rgba(255, 106, 69, 0.16);
+  --person-line: rgba(255, 106, 69, 0.45);
   --warn: #ffb224;      /* possible, needs attention */
   --warn-soft: rgba(255, 178, 36, 0.14);
+  --warn-line: rgba(255, 178, 36, 0.40);
   --ok: #41d6a0;        /* clear, done, healthy */
   --ok-soft: rgba(65, 214, 160, 0.13);
+  --ok-line: rgba(65, 214, 160, 0.38);
   --danger: #ff4d5e;    /* hazard, stop */
   --danger-soft: rgba(255, 77, 94, 0.15);
+  --danger-line: rgba(255, 77, 94, 0.45);
   --sim: #b79cff;       /* "this is simulated / concept" labels */
   --sim-soft: rgba(183, 156, 255, 0.14);
-  --accent-soft: rgba(90, 169, 255, 0.14);
+  --sim-line: rgba(183, 156, 255, 0.40);
+  --focus: #8cc4ff;     /* focus ring */
   /* data ramps */
   --heat-0: #10151c; --heat-1: #2b3f6b; --heat-2: #7a3f8f; --heat-3: #d8504d; --heat-4: #ffb24a; --heat-5: #fff3c4;
-  /* type */
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
-  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
-  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace; /* numbers and code only */
-  --fs-11: 11px; --fs-12: 12px; --fs-13: 13px; --fs-14: 14px; --fs-16: 16px; --fs-20: 20px; --fs-28: 28px; --fs-40: 40px;
+  /* patterns: simulated or concept content may sit on --hatch so it never passes for a real reading */
+  --hatch: repeating-linear-gradient(135deg, transparent 0 5px, rgba(183, 156, 255, 0.09) 5px 6px);
+  --hatch-danger: repeating-linear-gradient(135deg, transparent 0 5px, rgba(255, 77, 94, 0.22) 5px 7px);
+  --dots: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.055) 1px, transparent 1.5px);
+
+  /* type: three voices.
+     --font-display  Instrument Serif. Headlines, workspace titles, big static numbers. Always weight 400.
+     --font          Instrument Sans.  Everything you read or press. 400 text, 500 controls, 600 titles.
+     --mono          Geist Mono.       Numbers that change, coordinates, clocks, code. Never headings. */
+  --font: "Instrument Sans", "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --fs-11: 11px; --fs-12: 12px; --fs-13: 13px; --fs-14: 14px; --fs-16: 16px; --fs-18: 18px; --fs-20: 20px; --fs-24: 24px;
+  --fs-28: 28px; --fs-32: 32px; --fs-40: 40px; --fs-56: 56px; --fs-72: 72px;
+  /* type roles, ready for the font shorthand:  font: var(--type-title); */
+  --type-hero: 400 var(--fs-72)/0.96 var(--font-display);       /* landing and report covers */
+  --type-display: 400 var(--fs-40)/1.02 var(--font-display);    /* one per workspace at most */
+  --type-title: 400 var(--fs-28)/1.08 var(--font-display);      /* workspace title */
+  --type-heading: 400 var(--fs-20)/1.15 var(--font-display);    /* section, dialog */
+  --type-panel: 600 var(--fs-13)/1.3 var(--font);               /* panel title */
+  --type-body: 400 var(--fs-13)/1.45 var(--font);
+  --type-label: 500 var(--fs-12)/1.3 var(--font);
+  --type-caption: 400 var(--fs-11)/1.35 var(--font);
+  --type-data: 500 var(--fs-12)/1.3 var(--mono);
+  --type-figure: 400 var(--fs-32)/1 var(--font-display);        /* a big number */
+
   /* space: 4-point grid */
-  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px;
-  --r-1: 4px; --r-2: 6px; --r-3: 10px; --r-4: 14px;
-  --shadow-1: 0 1px 0 rgba(255,255,255,0.03) inset, 0 8px 24px rgba(0,0,0,0.35);
-  --shadow-2: 0 1px 0 rgba(255,255,255,0.04) inset, 0 18px 48px rgba(0,0,0,0.55);
-  --glass: rgba(16, 20, 26, 0.72);
-  --blur: saturate(160%) blur(18px);
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px; --s-16: 64px;
+  /* corners: engineered, not bubbly */
+  --r-1: 2px; --r-2: 4px; --r-3: 6px; --r-4: 10px;
+  /* depth */
+  --shadow-0: inset 0 1px 0 var(--hi), 0 1px 0 rgba(0, 0, 0, 0.45);
+  --shadow-1: inset 0 1px 0 var(--hi), 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 28px rgba(0, 0, 0, 0.38);
+  --shadow-2: inset 0 1px 0 var(--hi-2), 0 2px 4px rgba(0, 0, 0, 0.5), 0 24px 64px rgba(0, 0, 0, 0.6);
+  --well: inset 0 1px 2px rgba(0, 0, 0, 0.55);                  /* recessed inputs and tracks */
+  --glass: rgba(13, 16, 20, 0.74);
+  --glass-line: rgba(255, 255, 255, 0.085);
+  --blur: saturate(150%) blur(20px);
   /* motion */
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --t-fast: 120ms; --t-med: 220ms;
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --t-fast: 120ms; --t-med: 220ms; --t-slow: 420ms;
+  /* layers */
+  --z-float: 10; --z-sticky: 20; --z-pop: 60; --z-toast: 80; --z-modal: 90; --z-tip: 100;
   /* layout */
-  --topbar-h: 48px; --rail-w: 212px; --status-h: 26px;
+  --topbar-h: 52px; --rail-w: 216px; --status-h: 26px;
 }
 :root[data-contrast="high"] {
-  --bg-2: #0a0c0f; --bg-3: #11151a; --line: #5b6877; --line-2: #8695a6; --text-2: #d6dde6; --text-3: #b3bdc9;
+  --bg-2: #0a0c0f; --bg-3: #11151a; --bg-4: #1b2129; --line: #5b6877; --line-2: #8695a6; --line-3: #b4c0cd;
+  --text: #ffffff; --text-2: #d9e0e8; --text-3: #b7c1cd; --hi: rgba(255, 255, 255, 0.12); --glass: rgba(6, 8, 10, 0.92); --glass-line: rgba(255, 255, 255, 0.34);
+  --accent-line: var(--accent); --person-line: var(--person); --warn-line: var(--warn); --ok-line: var(--ok); --danger-line: var(--danger); --sim-line: var(--sim);
 }
 :root[data-palette="cb"] { /* colour-blind safe: blue / orange / yellow, no red-green pair */
-  --person: #ff8a1f; --person-soft: rgba(255,138,31,0.18); --ok: #4cc3ff; --ok-soft: rgba(76,195,255,0.14); --danger: #ff5fa2; --danger-soft: rgba(255,95,162,0.16);
+  --person: #ff8a1f; --person-soft: rgba(255, 138, 31, 0.18); --person-line: rgba(255, 138, 31, 0.5);
+  --ok: #4cc3ff; --ok-soft: rgba(76, 195, 255, 0.14); --ok-line: rgba(76, 195, 255, 0.42);
+  --danger: #ff5fa2; --danger-soft: rgba(255, 95, 162, 0.16); --danger-line: rgba(255, 95, 162, 0.48);
+  --accent: #9fb4ff; --accent-2: #c0cdff; --accent-soft: rgba(159, 180, 255, 0.15); --accent-line: rgba(159, 180, 255, 0.45);
+  --hatch-danger: repeating-linear-gradient(135deg, transparent 0 5px, rgba(255, 95, 162, 0.24) 5px 7px);
 }
-@media (prefers-reduced-motion: reduce) { :root { --t-fast: 0ms; --t-med: 0ms; } }
-:root[data-motion="reduce"] { --t-fast: 0ms; --t-med: 0ms; }
+@media (prefers-reduced-motion: reduce) { :root { --t-fast: 0ms; --t-med: 0ms; --t-slow: 0ms; } }
+:root[data-motion="reduce"] { --t-fast: 0ms; --t-med: 0ms; --t-slow: 0ms; }

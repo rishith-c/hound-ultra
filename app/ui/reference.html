@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design reference · HOUND</title>
+<meta name="description" content="HOUND Command design system: every token and component in every state.">
+<link rel="icon" href="../../assets/img/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="base.css">
+<style>
+/* Styles for this page only. Everything prefixed ref-. The components shown come from base.css untouched. */
+html, body { height: auto; } body { overflow: auto; background: var(--bg-0); }
+.ref { display: grid; grid-template-columns: 216px minmax(0, 1fr); min-height: 100vh; }
+.ref-nav { position: sticky; top: 0; align-self: start; height: 100vh; display: flex; flex-direction: column; gap: 2px; padding: 18px 10px 14px; border-right: 1px solid var(--line); background: var(--bg-1); overflow: auto; }
+.ref-nav .ref-brand { display: flex; align-items: center; gap: 9px; padding: 0 8px 16px; margin-bottom: 8px; border-bottom: 1px solid var(--line); text-decoration: none; }
+.ref-nav .ref-brand span { font: italic 400 18px/1 var(--font-display); color: var(--text-2); padding-left: 9px; border-left: 1px solid var(--line-2); }
+.ref-nav a.list-item { min-height: 28px; font-weight: 500; color: var(--text-2); }
+.ref-nav a.list-item[aria-current="true"] { color: var(--text); }
+.ref-nav .ref-prefs { margin-top: auto; padding: 12px 8px 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; }
+.ref-main { min-width: 0; padding: 0 48px 96px; max-width: 1480px; }
+.ref-hero { position: relative; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr); gap: 48px; align-items: end; padding: 64px 0 40px; border-bottom: 1px solid var(--line); }
+.ref-hero h1 { font: var(--type-hero); letter-spacing: -0.012em; }
+.ref-hero .lede { margin-top: 20px; }
+.ref-hero-mark { justify-self: end; display: grid; place-items: center; width: 280px; aspect-ratio: 1; background: var(--dots) 0 0 / 20px 20px, var(--bg-1); border: 1px solid var(--line); border-radius: var(--r-3); }
+.ref-sec { padding: 56px 0 8px; scroll-margin-top: 0; }
+.ref-sec > header { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin-bottom: 24px; max-width: 78ch; }
+.ref-sec > header h2 { font: var(--type-display); }
+.ref-sec > header p { color: var(--text-2); font-size: var(--fs-14); line-height: 1.55; }
+.ref-sub { font: var(--type-heading); margin: 36px 0 14px; display: flex; align-items: baseline; gap: 12px; }
+.ref-sub code { font: 400 var(--fs-12) var(--mono); color: var(--text-3); }
+.ref-grid { display: grid; gap: 16px; } .ref-g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ref-g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } .ref-g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ref-demo { border: 1px solid var(--line); border-radius: var(--r-3); background: var(--bg-2); min-width: 0; display: flex; flex-direction: column; }
+.ref-demo > .ref-stage, .ref-demo > .ref-voice { flex: 1; }
+.ref-demo > .ref-stage { padding: 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; min-width: 0; }
+.ref-demo > .ref-stage.col { flex-direction: column; align-items: stretch; flex-wrap: nowrap; }
+.ref-demo > footer { display: flex; gap: 10px; align-items: baseline; padding: 8px 12px; border-top: 1px solid var(--line); color: var(--text-3); font-size: var(--fs-12); background: var(--bg-1); border-radius: 0 0 var(--r-3) var(--r-3); }
+.ref-demo > footer code, .ref-code { font: 400 11.5px/1.5 var(--mono); color: var(--text-2); }
+.ref-demo > footer span { margin-left: auto; text-align: right; }
+.ref-state { display: grid; grid-template-columns: 88px repeat(5, minmax(0, 1fr)); gap: 12px 12px; align-items: center; width: 100%; }
+.ref-state > .caption { white-space: nowrap; }
+.ref-state > .ref-h { font: var(--type-caption); color: var(--text-3); }
+/* colour */
+.ref-surf { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 1px solid var(--line-2); border-radius: var(--r-3); overflow: hidden; }
+.ref-surf > div { padding: 56px 12px 12px; display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--line); min-width: 0; } .ref-surf > div:first-child { border-left: 0; }
+.ref-surf b { font: 500 var(--fs-12) var(--mono); } .ref-surf span { font-size: var(--fs-12); color: var(--text-3); }
+.ref-mean { display: grid; grid-template-columns: 4px 132px 92px minmax(0, 1fr) 150px 64px; gap: 0 16px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.ref-mean:last-child { border-bottom: 0; }
+.ref-mean > i { align-self: stretch; background: var(--c); border-radius: 1px; }
+.ref-mean b { font: 500 var(--fs-12) var(--mono); } .ref-mean .ref-word { font-weight: 600; color: var(--c); }
+.ref-ramp { height: 28px; border-radius: var(--r-1); background: linear-gradient(to right, var(--heat-0), var(--heat-1), var(--heat-2), var(--heat-3), var(--heat-4), var(--heat-5)); }
+.ref-lines { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; } .ref-lines > div { padding-top: 10px; font-size: var(--fs-12); color: var(--text-3); }
+/* type */
+.ref-voice { padding: 24px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.ref-voice .ref-spec { font-size: 64px; line-height: 1; white-space: nowrap; overflow: hidden; }
+.ref-scale { display: grid; grid-template-columns: 124px 150px minmax(0, 1fr); align-items: baseline; gap: 0 20px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.ref-scale:last-child { border-bottom: 0; } .ref-scale > :last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* space, radius, depth */
+.ref-space { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; } .ref-space > div { display: flex; flex-direction: column; align-items: center; gap: 8px; } .ref-space i { display: block; background: var(--accent); opacity: 0.85; height: 28px; border-radius: 1px; }
+.ref-box { height: 84px; display: grid; place-items: center; font: var(--type-data); color: var(--text-2); }
+.ref-over { position: relative; height: 300px; border-radius: var(--r-3); overflow: hidden; background: #0b0d10 url("../../assets/img/nepal-flood.webp") center / cover; border: 1px solid var(--line); }
+.ref-over > .glass { position: absolute; }
+.ref-icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r-3); overflow: hidden; }
+.ref-icons button { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px 6px 10px; background: var(--bg-2); border: 0; color: var(--text); cursor: pointer; font: 400 11px var(--mono); transition: background-color var(--t-fast) var(--ease); }
+.ref-icons button span { color: var(--text-3); } .ref-icons button:hover { background: var(--bg-4); } .ref-icons button:hover span { color: var(--text); } .ref-icons button:focus-visible { outline-offset: -2px; }
+.ref-motion { height: 34px; position: relative; background: var(--bg-0); border: 1px solid var(--line); border-radius: var(--r-2); overflow: hidden; }
+.ref-motion i { position: absolute; top: 6px; left: 6px; width: 20px; height: 20px; background: var(--accent); border-radius: var(--r-1); transition: transform var(--d) var(--ease); }
+.ref-motion.go i { transform: translateX(var(--run, 200px)); }
+.ref-chart { width: 100%; height: auto; display: block; overflow: visible; }
+.ref-toast-demo .toast { animation: none; position: relative; display: flex; gap: 10px; padding: 10px 14px; overflow: hidden; border-radius: var(--r-3); }
+.ref-do { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; } .ref-do h4 { margin-bottom: 10px; display: flex; gap: 6px; align-items: center; }
+@media (max-width: 1100px) { .ref-g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ref-g3 { grid-template-columns: 1fr 1fr; } .ref-hero { grid-template-columns: 1fr; } .ref-hero-mark { display: none; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#ref-main">Skip to the reference</a>
+<div class="ref">
+<nav class="ref-nav" aria-label="Sections">
+  <a class="ref-brand" href="../" aria-label="Open HOUND Command"><img src="../../assets/brand/hound-mark-small.svg" width="24" height="24" alt=""><img src="../../assets/brand/hound-wordmark.svg" height="11" alt="HOUND"><span>Design</span></a>
+  <div id="ref-toc" class="list" style="padding:0"></div>
+  <div class="ref-prefs" role="group" aria-label="Try the accessibility variants">
+    <span class="caption" style="padding:0 0 6px">Try the variants. They apply to the whole console.</span>
+    <label class="check switch"><input type="checkbox" id="pref-contrast"> High contrast</label>
+    <label class="check switch"><input type="checkbox" id="pref-palette"> Colour-blind palette</label>
+    <label class="check switch"><input type="checkbox" id="pref-motion"> Reduced motion</label>
+  </div>
+</nav>
+<main class="ref-main" id="ref-main">
+
+<section class="ref-hero">
+  <div>
+    <h1>One product,<br><em>one look.</em></h1>
+    <p class="lede">HOUND Command is a dark, dense operations console. The 3-D world is the hero; panels are quiet instruments around it. Nothing shouts except a person being found. This page shows every token and every shared component in every state. Build from these and the console stays one product.</p>
+    <div class="row wrap" style="margin-top:24px"><span class="kbd-hint"><kbd>Tab</kbd> walk the focus rings</span><span class="kbd-hint">Hover and press everything: the states are live</span></div>
+  </div>
+  <div class="ref-hero-mark crop"><img src="../../assets/brand/hound-mark.svg" width="168" height="168" alt="The HOUND mark: two walls and a person between them"></div>
+</section>
+
+<section class="ref-sec" id="brand" data-title="Brand">
+  <header><h2>Brand</h2><p>The mark is an H made of two walls and one warm dot between them: a person, found. The rings are the signal passing through the walls. Seen another way it is a hound facing you, two ears and a nose. The dot is always the person colour and it is the only colour in the mark.</p></header>
+  <div class="ref-grid ref-g3">
+    <div class="ref-demo"><div class="ref-stage" style="justify-content:center;min-height:150px"><img src="../../assets/brand/hound-lockup.svg" height="52" alt="HOUND lockup"></div><footer><code>assets/brand/hound-lockup.svg</code></footer></div>
+    <div class="ref-demo"><div class="ref-stage" style="justify-content:center;min-height:150px;background:#eceef1;border-radius:var(--r-3) var(--r-3) 0 0"><img src="../../assets/brand/hound-lockup-ink.svg" height="52" alt="HOUND lockup on light"></div><footer><code>hound-lockup-ink.svg</code><span>print, light backgrounds</span></footer></div>
+    <div class="ref-demo"><div class="ref-stage" style="justify-content:center;gap:28px;align-items:flex-end;min-height:150px"><img src="../../assets/brand/hound-mark.svg" width="72" height="72" alt=""><img src="../../assets/brand/hound-mark.svg" width="40" height="40" alt=""><img src="../../assets/brand/hound-mark-small.svg" width="24" height="24" alt=""><img src="../../assets/brand/hound-mark-small.svg" width="16" height="16" alt=""><img src="../../assets/brand/hound-app-icon.svg" width="56" height="56" alt=""></div><footer><code>hound-mark.svg</code><span>below 28 px use hound-mark-small.svg</span></footer></div>
+  </div>
+</section>
+
+<section class="ref-sec" id="colour" data-title="Colour">
+  <header><h2>Colour means something</h2><p>Graphite surfaces carry the work. Six hues carry meaning, and each one always travels with a word or an icon so nothing depends on colour alone. No other colours, and no hex codes outside this file's tokens.</p></header>
+  <div class="ref-surf" id="ref-surf"></div>
+  <div class="ref-lines"><div><hr class="divider" style="background:var(--line);margin:14px 0 8px"><code class="ref-code">--line</code> hairline between rows</div><div><hr class="divider" style="background:var(--line-2);margin:14px 0 8px"><code class="ref-code">--line-2</code> edge of a control</div><div><hr class="divider" style="background:var(--line-3);margin:14px 0 8px"><code class="ref-code">--line-3</code> hovered edge, strong rule</div></div>
+  <h3 class="ref-sub">Meaning</h3>
+  <div class="ref-demo"><div class="ref-stage col" style="gap:0;padding:6px 20px" id="ref-mean"></div><footer>Contrast is measured live against <code>--bg-2</code>. Text needs 4.5 : 1.</footer></div>
+  <h3 class="ref-sub">Heat ramp <code>--heat-0 … --heat-5</code></h3>
+  <div class="ref-ramp"></div>
+  <div class="row between caption num" style="margin-top:6px"><span>cold, nothing</span><span>warm</span><span>body heat</span></div>
+</section>
+
+<section class="ref-sec" id="type" data-title="Type">
+  <header><h2>Three voices</h2><p>A serif that speaks in headlines, a sans that does the work, a monospace for numbers that move. Sentence case everywhere. No all-caps labels, no letter-spaced kickers, no monospace headings. Smallest text is 11 px.</p></header>
+  <div class="ref-grid ref-g3">
+    <div class="ref-demo"><div class="ref-voice"><div class="ref-spec" style="font-family:var(--font-display)">Found, <em style="font-style:italic">94 %</em></div><div><h3>Instrument Serif</h3><p class="muted" style="margin-top:4px">Display. Workspace titles, headlines, big static numbers. Always weight 400; use the italic for one word of emphasis.</p></div></div><footer><code>--font-display</code></footer></div>
+    <div class="ref-demo"><div class="ref-voice"><div class="ref-spec" style="font-family:var(--font);font-weight:500;letter-spacing:-0.02em">Approve route</div><div><h3>Instrument Sans</h3><p class="muted" style="margin-top:4px">Interface. Everything you read or press. 400 for text, 500 for controls, 600 for panel titles.</p></div></div><footer><code>--font</code></footer></div>
+    <div class="ref-demo"><div class="ref-voice"><div class="ref-spec num" style="font-weight:500">07:42 0.53</div><div><h3>Geist Mono</h3><p class="muted" style="margin-top:4px">Numbers that change, clocks, coordinates, code. Tabular, so nothing jitters. Never for headings.</p></div></div><footer><code>--mono</code> <code>.num</code></footer></div>
+  </div>
+  <h3 class="ref-sub">Roles</h3>
+  <div class="ref-demo"><div class="ref-stage col" style="gap:0;padding:4px 20px" id="ref-scale"></div><footer>Use a role with the font shorthand: <code>font: var(--type-title);</code></footer></div>
+</section>
+
+<section class="ref-sec" id="space" data-title="Space and depth">
+  <header><h2>Space, corners, depth, motion</h2><p>A 4-point grid. Corners are tight: this is equipment, not a consumer app. Depth comes from a 1 px highlight on the top edge and a short shadow, never from glow.</p></header>
+  <div class="ref-grid ref-g2">
+    <div class="ref-demo"><div class="ref-stage"><div class="ref-space" id="ref-space"></div></div><footer><code>--s-1 … --s-16</code></footer></div>
+    <div class="ref-demo"><div class="ref-stage" id="ref-radius"></div><footer><code>--r-1 … --r-4</code><span>2 tags · 4 controls · 6 panels · 10 dialogs</span></footer></div>
+  </div>
+  <div class="ref-grid ref-g4" style="margin-top:16px">
+    <div class="ref-box" style="background:var(--bg-0);border:1px solid var(--line-2);border-radius:var(--r-2);box-shadow:var(--well)">--well</div>
+    <div class="ref-box" style="background:var(--bg-3);border:1px solid var(--line-2);border-radius:var(--r-3);box-shadow:var(--shadow-0)">--shadow-0</div>
+    <div class="ref-box" style="background:var(--bg-3);border:1px solid var(--line-2);border-radius:var(--r-3);box-shadow:var(--shadow-1)">--shadow-1</div>
+    <div class="ref-box" style="background:var(--bg-3);border:1px solid var(--line-2);border-radius:var(--r-4);box-shadow:var(--shadow-2)">--shadow-2</div>
+  </div>
+  <h3 class="ref-sub">Motion <code>--ease</code></h3>
+  <div class="ref-demo"><div class="ref-stage col" id="ref-motion"></div><footer>Fast and physical. Things enter from where they came from. All three durations become 0 ms under reduced motion.<span><button class="btn btn-sm" id="ref-motion-go">Play</button></span></footer></div>
+</section>
+
+<section class="ref-sec" id="buttons" data-title="Buttons">
+  <header><h2>Buttons</h2><p>One primary action per view: the thing the operator should do next. Everything else is a plain or ghost button. Stopping and destructive actions are red and confirm first.</p></header>
+  <div class="ref-demo"><div class="ref-stage"><div class="ref-state" id="ref-btn-states"></div></div><footer><code>.btn</code> <code>.btn-primary</code> <code>.btn-danger</code> <code>.btn-ghost</code><span>pressed: <code>:active</code> or <code>.is-pressed</code> · on: <code>aria-pressed="true"</code></span></footer></div>
+  <div class="ref-grid ref-g3" style="margin-top:16px">
+    <div class="ref-demo"><div class="ref-stage" id="ref-btn-sizes"></div><footer><code>.btn-sm</code> <code>.btn</code> <code>.btn-lg</code> <code>.btn-icon</code></footer></div>
+    <div class="ref-demo"><div class="ref-stage" id="ref-btn-group"></div><footer><code>.btn-group</code><span>joined keys</span></footer></div>
+    <div class="ref-demo"><div class="ref-stage" id="ref-btn-toggle"></div><footer>Toggles carry <code>aria-pressed</code></footer></div>
+  </div>
+</section>
+
+<section class="ref-sec" id="labels" data-title="Labels">
+  <header><h2>Labels</h2><p>Tags read like the engraved labels on an instrument. A solid square means real or live. A hollow square on a dashed, hatched ground means simulated or concept, so a simulation can never pass for a reading.</p></header>
+  <div class="ref-grid ref-g2">
+    <div class="ref-demo"><div class="ref-stage" id="ref-reality"></div><footer><code>ctx.kit.realityTag(kind)</code><span>required on every workspace header</span></footer></div>
+    <div class="ref-demo"><div class="ref-stage"><span class="tag">Neutral</span><span class="tag tag-person">Person</span><span class="tag tag-warn">Possible</span><span class="tag tag-ok">Clear</span><span class="tag tag-danger">Hazard</span><span class="tag tag-accent">Route</span><span class="tag tag-sim">Simulated</span><span class="tag plain">No marker</span><span class="tag tag-person tag-lg">Larger</span></div><footer><code>.tag</code> <code>.tag-person</code> <code>.tag-warn</code> <code>.tag-ok</code> <code>.tag-danger</code> <code>.tag-accent</code> <code>.tag-sim</code></footer></div>
+    <div class="ref-demo"><div class="ref-stage" style="gap:18px"><span class="status ok">Link good</span><span class="status warn">Weak link</span><span class="status danger">Link lost</span><span class="status person">Person</span><span class="status accent live">Listening</span><span class="status off">Not fitted</span></div><footer><code>.status</code> <code>.ok .warn .danger .person .accent .off .live</code></footer></div>
+    <div class="ref-demo"><div class="ref-stage" style="gap:18px"><span class="row tight"><h3>Findings</h3><span class="badge-count">3</span></span><span class="row tight">Confirmed <span class="badge-count person">2</span></span><span class="row tight">Possible <span class="badge-count warn">1</span></span><span class="row tight">Routes <span class="badge-count accent">12</span></span><span class="row tight">Faults <span class="badge-count danger">1</span></span></div><footer><code>.badge-count</code></footer></div>
+  </div>
+</section>
+
+<section class="ref-sec" id="inputs" data-title="Inputs">
+  <header><h2>Inputs and choices</h2><p>Inputs are wells cut into the surface. Choices are raised keys. Segments pick one, chips filter many, a switch turns one thing on.</p></header>
+  <div class="ref-grid ref-g3">
+    <div class="ref-demo"><div class="ref-stage col">
+      <div class="field"><label for="ref-in1">Operator name</label><input class="input" id="ref-in1" placeholder="Who is at the console"></div>
+      <div class="field"><label for="ref-in2">Room</label><input class="input" id="ref-in2" value="Room 999" aria-invalid="true"><span class="hint error">There is no room 999 in building B.</span></div>
+      <div class="field"><label for="ref-sel">Camera</label><select class="select" id="ref-sel"><option>Follow the rover</option><option>Top down</option><option>Orbit</option><option>Cinematic</option></select></div>
+      <div class="field"><label for="ref-in3">Disabled</label><input class="input" id="ref-in3" value="HOUND-01" disabled></div>
+    </div><footer><code>.field</code> <code>.input</code> <code>.select</code></footer></div>
+    <div class="ref-demo"><div class="ref-stage col">
+      <label class="check"><input type="checkbox" checked> See-through walls</label>
+      <label class="check"><input type="checkbox"> Heat behind walls</label>
+      <label class="check"><input type="checkbox" id="ref-indet"> Some layers on</label>
+      <label class="check"><input type="checkbox" disabled> Not available</label>
+      <hr class="divider" style="margin:4px 0">
+      <label class="check"><input type="radio" name="ref-r" checked> Walk in</label>
+      <label class="check"><input type="radio" name="ref-r"> Break through</label>
+      <hr class="divider" style="margin:4px 0">
+      <label class="check switch"><input type="checkbox" checked> Autoplay the mission</label>
+      <label class="check switch"><input type="checkbox"> Spoken alerts</label>
+    </div><footer><code>.check</code> <code>.check.switch</code></footer></div>
+    <div class="ref-demo"><div class="ref-stage col" style="gap:16px">
+      <div class="field"><label for="ref-sl">Person threshold</label><div class="slider-row"><span class="caption num">0</span><input type="range" class="slider" id="ref-sl" min="0" max="1" step="0.01" value="0.53"><output id="ref-sl-out" class="num">0.53</output></div><span class="hint">0.53 was set on validation so at most 10 % of empty rooms raise an alarm (simulated people).</span></div>
+      <div class="field"><label for="ref-sl2">Disabled</label><input type="range" class="slider" id="ref-sl2" disabled value="30" style="--p:30%"></div>
+      <div class="field"><label for="ref-ta">Note for the team</label><textarea class="input" id="ref-ta" placeholder="What the next shift needs to know"></textarea></div>
+    </div><footer><code>.slider</code> <code>--p</code> <code>.slider-row</code> <code>textarea.input</code></footer></div>
+  </div>
+  <div class="ref-grid ref-g3" style="margin-top:16px">
+    <div class="ref-demo"><div class="ref-stage col" style="align-items:flex-start"><div class="seg" role="group" aria-label="Camera" id="ref-seg"></div><div class="seg" role="group" aria-label="Speed" id="ref-seg2"></div></div><footer><code>.seg</code><span>pick one</span></footer></div>
+    <div class="ref-demo"><div class="ref-stage" id="ref-chips"></div><footer><code>.chip</code><span>filter many · <code>aria-pressed</code></span></footer></div>
+    <div class="ref-demo"><div class="ref-stage col" style="padding:0"><div class="tabs" role="tablist" id="ref-tabs"></div><p class="muted" style="padding:14px 16px 18px" id="ref-tab-body"></p></div><footer><code>.tabs</code><span><code>aria-selected</code></span></footer></div>
+  </div>
+</section>
+
+<section class="ref-sec" id="data" data-title="Data">
+  <header><h2>Data</h2><p>Numbers align on the right in tabular figures. Labels are quiet, values are bright. Every number below is real: it comes from the Wi-Fi network's test on 955 windows of simulated people.</p></header>
+  <div class="ref-grid ref-g2">
+    <section class="panel"><header class="panel-head"><h3>Wi-Fi network on the test set</h3><span class="tag tag-sim" title="Trained and tested only on simulated people">Simulated people</span></header><div class="panel-body flush">
+      <table class="table" id="ref-table"><thead><tr><th>What was in the room</th><th>Right answer</th><th class="num">Right</th><th style="width:120px">Share</th></tr></thead><tbody></tbody></table>
+    </div><footer class="panel-foot">955 held-out windows, split by person.<span class="grow"></span><span class="kbd-hint"><kbd>↑</kbd><kbd>↓</kbd> move</span></footer></section>
+    <div class="col loose">
+      <div class="ref-demo"><div class="ref-stage"><div class="stat-row" style="width:100%"><div class="stat"><b>86.9<small>%</small></b><span>a moving person behind the wall is found</span></div><div class="stat"><b>21.4<small>%</small></b><span>a still person is found. This is the hard case.</span></div><div class="stat"><b>23,372</b><span>parameters, written from scratch in NumPy</span></div><div class="stat live"><b id="ref-live">1.1<small>ms</small></b><span>one reading on a laptop</span></div></div></div><footer><code>.stat</code> <code>.stat-row</code><span><code>.stat.live</code> for a number that ticks</span></footer></div>
+      <div class="ref-demo"><div class="ref-stage col"><dl class="kv"><dt>Network</dt><dd>1-D CNN, three convolutions</dd><dt>Input</dt><dd class="num">52 × 200</dd><dt>Threshold</dt><dd class="num">0.53</dd><dt>False alarm, empty room</dt><dd class="num">11.1 %</dd><dt>Tested on real people</dt><dd><span class="tag tag-warn">Not yet</span></dd></dl></div><footer><code>dl.kv</code><span><code>dd.num</code> for monospace · <code>.kv.plain</code> drops the lines</span></footer></div>
+    </div>
+  </div>
+  <div class="ref-grid ref-g3" style="margin-top:16px">
+    <div class="ref-demo"><div class="ref-stage col" style="padding:0"><ul class="list" id="ref-list" role="listbox" aria-label="Findings"></ul></div><footer><code>.list</code> <code>.list-item</code><span><code>aria-selected</code> · <code>.meta</code> · <code>.sub</code></span></footer></div>
+    <div class="ref-demo"><div class="ref-stage col" style="gap:14px" id="ref-meters"></div><footer><code>.meter</code> <code>--v</code><span><code>.meter-wrap</code> <code>--mark</code> draws a threshold</span></footer></div>
+    <div class="ref-demo"><div class="ref-stage col" style="gap:16px"><div class="col tight"><div class="row between caption"><span>Drone survey</span><span class="num">64 %</span></div><div class="bar"><i style="width:64%"></i></div></div><div class="col tight"><div class="row between caption"><span>Battery</span><span class="num">18 %</span></div><div class="bar warn lg"><i style="width:18%"></i></div></div><div class="col tight"><div class="row between caption"><span>Loading the neural network</span><span class="num">5 MB</span></div><div class="bar indeterminate"><i></i></div></div><div class="col tight"><span class="skeleton text" style="width:70%"></span><span class="skeleton text" style="width:92%"></span><span class="skeleton text" style="width:48%"></span></div><div class="row"><div class="spinner"></div><div class="spinner sm"></div><span class="muted">Opening the 3-D scan…</span></div></div><footer><code>.bar</code> <code>.skeleton</code> <code>.spinner</code></footer></div>
+  </div>
+</section>
+
+<section class="ref-sec" id="charts" data-title="Charts">
+  <header><h2>Charts</h2><p>A chart makes one point and its title says what the point is. Axes carry units. Label the series directly where you can; use a legend when you cannot. One hue per meaning, hairline grid, monospace ticks.</p></header>
+  <div class="ref-grid ref-g2">
+    <section class="panel"><header class="panel-head"><h3>The network finds movement, not stillness</h3><span class="tag tag-sim">Simulated people</span></header><div class="panel-body"><svg class="ref-chart chart" id="ref-chart" viewBox="0 0 640 280" role="img" aria-label="Share of windows where a person was found, by case. Moving 86.9 percent, standing still 25.5 percent, lying still 12.4 percent."></svg></div><footer class="panel-foot">Share of test windows where the network said PERSON, by what was really in the room.</footer></section>
+    <div class="col loose">
+      <div class="ref-demo"><div class="ref-stage col" style="align-items:flex-start;gap:14px"><div class="legend"><span><i style="--c:var(--person)"></i>Person</span><span><i style="--c:var(--warn)"></i>Possible</span><span><i class="line" style="--c:var(--accent)"></i>Route</span><span><i class="dash" style="--c:var(--text-2)"></i>Threshold</span><span><i class="dot" style="--c:var(--ok)"></i>Clear</span><span><i class="hollow" style="--c:var(--sim)"></i>Simulated</span></div><div class="legend"><span class="num">20 °C</span><span class="ramp"></span><span class="num">37 °C</span></div></div><footer><code>.legend</code><span><code>i.line .dash .dot .hollow</code> · <code>.ramp</code></span></footer></div>
+      <div class="ref-demo"><div class="ref-stage col" style="align-items:flex-start;gap:10px"><div class="row" style="gap:28px;align-items:flex-start"><div style="position:relative;height:42px;width:150px"><div class="tooltip show" style="position:static"><b>Stop 3</b> · <span class="num">06:12</span><br><span class="dim">Wi-Fi says PERSON, score </span><span class="num">0.81</span></div></div><button class="btn" data-tip="Shown on hover and on keyboard focus">Hover or focus me</button><button class="btn btn-icon" data-tip="Fit the view" data-tip-pos="right" aria-label="Fit the view" id="ref-tip-btn"></button></div></div><footer><code>.tooltip.show</code><span><code>data-tip="…"</code> needs no script</span></footer></div>
+      <div class="ref-demo"><div class="ref-stage col" style="gap:8px"><div class="note" id="ref-note-sim">The building, the people and every reading in this exercise are simulated.</div><div class="note warn" id="ref-note-warn"><span><b>Breathing rate is an experiment.</b> It is within 3 breaths a minute for only 41 % of the still people found.</span></div><div class="note danger" id="ref-note-danger">Link lost. HOUND-01 stopped by itself and is holding.</div><div class="note ok" id="ref-note-ok">Self-test passed: the browser network matches Python on all 30 windows.</div><div class="note info" id="ref-note-info">Press Space to play or pause the mission.</div><div class="note quiet" id="ref-note-quiet">Triage order is a planning aid, not a medical assessment.</div></div><footer><code>.note</code><span><code>.warn .danger .ok .info .quiet</code></span></footer></div>
+    </div>
+  </div>
+</section>
+
+<section class="ref-sec" id="surfaces" data-title="Surfaces">
+  <header><h2>Panels, cards, glass</h2><p>A panel groups related things under a short title. A card is one raised thing inside it. Glass is only for panels that float over the 3-D view, so the world stays visible behind them.</p></header>
+  <div class="ref-grid ref-g2">
+    <div class="ref-over crop" aria-label="Glass panels over an image">
+      <section class="panel glass" style="left:16px;top:16px;width:270px"><header class="panel-head"><h3>HOUND-01</h3><span class="tag tag-ok">Listening</span></header><div class="panel-body"><dl class="kv"><dt>Stop</dt><dd class="num">3 of 4</dd><dt>Battery</dt><dd class="num">71 %</dd><dt>Link</dt><dd class="num">88 %</dd></dl></div></section>
+      <div class="glass toolbar" style="right:16px;top:16px" id="ref-toolbar"></div>
+      <div class="glass" style="left:16px;bottom:16px;padding:8px 12px"><span class="caption">Photo: the valley after the flood. Readings on this page are simulated.</span></div>
+    </div>
+    <div class="col loose">
+      <section class="panel"><header class="panel-head"><h3>Rescue route</h3><span class="tag tag-accent">Planned</span><button class="btn btn-ghost btn-sm btn-icon" aria-label="More" id="ref-more"></button></header><div class="panel-body"><div class="ref-grid ref-g2" style="gap:8px"><button class="card" aria-pressed="true"><h3>Walk in</h3><p class="muted" style="margin-top:4px">Through the east door. <span class="num">41.5 m</span>, avoids the gas leak.</p></button><button class="card"><h3>Break through</h3><p class="muted" style="margin-top:4px">North wall of room 104. <span class="num">18.0 m</span>.</p></button></div></div><footer class="panel-foot"><span>A human approves every route.</span><span class="grow"></span><button class="btn btn-sm">Plan again</button><button class="btn btn-primary btn-sm">Approve route</button></footer></section>
+      <div class="ref-grid ref-g2">
+        <div class="card hatch"><h3>Concept</h3><p class="muted" style="margin-top:4px">Simulated or concept content may sit on the hatch.</p><code class="ref-code">.hatch</code></div>
+        <div class="card crop" style="min-height:92px;display:grid;place-items:center"><code class="ref-code">.crop</code></div>
+      </div>
+    </div>
+  </div>
+  <h3 class="ref-sub">States a panel must have</h3>
+  <div class="ref-grid ref-g3">
+    <section class="panel" style="height:200px"><header class="panel-head"><h3>Loading</h3></header><div class="panel-body"><div class="empty"><div class="spinner"></div><p>Loading the drone photos…</p></div></div></section>
+    <section class="panel" style="height:200px"><header class="panel-head"><h3>Empty</h3></header><div class="panel-body"><div class="empty" id="ref-empty"><p>No findings yet. Start the mission and HOUND-01 will listen at its first stop.</p><button class="btn btn-primary">Start mission</button></div></div></section>
+    <section class="panel" style="height:200px"><header class="panel-head"><h3>Error</h3></header><div class="panel-body"><div class="empty" id="ref-error"><p>The earthquake feed did not answer. Check the connection and try again.</p><button class="btn">Try again</button></div></div></section>
+  </div>
+  <h3 class="ref-sub">Workspace header <code>.ws-head</code></h3>
+  <div class="ref-demo" style="overflow:hidden"><header class="ws-head"><div><h1>Fusion</h1><p>How several weak sensors add up to one confident answer.</p></div><div class="row" id="ref-wshead"></div></header><footer>Title in the display face, one sentence saying what the workspace is for, the reality label on the right.</footer></div>
+  <h3 class="ref-sub">Alerts and dialogs</h3>
+  <div class="ref-grid ref-g2">
+    <div class="ref-demo ref-toast-demo"><div class="ref-stage col" id="ref-toasts"></div><footer><code>ctx.shell.toast(text, { level })</code><span><button class="btn btn-sm" id="ref-toast-go">Explain</button></span></footer></div>
+    <div class="ref-demo"><div class="ref-stage" style="justify-content:center"><div class="glass" style="width:100%;max-width:440px;padding:22px;border-radius:var(--r-4);box-shadow:var(--shadow-2);display:flex;flex-direction:column;gap:10px"><h2 style="font:var(--type-title)">Stop every unit?</h2><p class="muted" style="font-size:var(--fs-14)">HOUND-01 and the drone will hold where they are. Nothing is lost; press Resume to carry on.</p><div class="row end" style="margin-top:12px;padding-top:14px;border-top:1px solid var(--line)"><button class="btn btn-lg">Cancel</button><button class="btn btn-lg btn-danger">All stop</button></div></div></div><footer><code>ctx.shell.confirm({ title, body, danger })</code></footer></div>
+  </div>
+</section>
+
+<section class="ref-sec" id="icons" data-title="Icons">
+  <header><h2>Icons</h2><p>One stroke set on a 24 px grid: <code class="ref-code">ctx.kit.icon(name, size)</code>. Click one to copy its name. Add to the set in <code class="ref-code">kit.js</code> rather than pasting SVG elsewhere.</p></header>
+  <div class="ref-icons" id="ref-icons"></div>
+</section>
+
+<section class="ref-sec" id="rules" data-title="Do and do not">
+  <header><h2>Do, and do not</h2><p>The short version of <code class="ref-code">docs/STYLE.md</code>.</p></header>
+  <div class="ref-do">
+    <div class="card"><h4 class="c-ok" id="ref-do-h">Do</h4><ul class="muted" style="margin:0;padding-left:18px;line-height:1.7"><li>Say what a rescuer would say: "Person confirmed, room 104", "Approve route".</li><li>Put the reality label where the eye lands first.</li><li>Right-align numbers, give them units, mark assumed values "assumed".</li><li>One primary button per view.</li><li>Show loading, empty and error. Never a blank panel.</li></ul></div>
+    <div class="card"><h4 class="c-danger" id="ref-dont-h">Do not</h4><ul class="muted" style="margin:0;padding-left:18px;line-height:1.7"><li>All-caps labels, letter-spaced kickers, monospace headings.</li><li>A new colour, a gradient for decoration, a glow that means nothing.</li><li>The person colour on anything that is not a person.</li><li>Bold serif. The display face has one weight.</li><li>A number without its source: say "in simulation".</li></ul></div>
+  </div>
+</section>
+
+</main>
+</div>
+<script type="module">
+import { h, icon, iconNames, realityTag, REALITY, cssVar } from './kit.js';
+const $ = (id) => document.getElementById(id);
+const root = document.documentElement;
+
+// ---- preferences: the same switches the console uses (hound.prefs) ----
+const prefs = (() => { try { return { contrast: 'normal', palette: 'default', motion: 'auto', ...JSON.parse(localStorage.getItem('hound.prefs') || '{}') }; } catch { return { contrast: 'normal', palette: 'default', motion: 'auto' }; } })();
+function applyPrefs() {
+  root.dataset.contrast = prefs.contrast === 'high' ? 'high' : 'normal'; root.dataset.palette = prefs.palette === 'cb' ? 'cb' : 'default';
+  if (prefs.motion === 'reduce') root.dataset.motion = 'reduce'; else delete root.dataset.motion;
+  $('pref-contrast').checked = prefs.contrast === 'high'; $('pref-palette').checked = prefs.palette === 'cb'; $('pref-motion').checked = prefs.motion === 'reduce';
+  drawColour(); drawChart();
+}
+const setPref = (k, v) => { prefs[k] = v; try { localStorage.setItem('hound.prefs', JSON.stringify({ ...JSON.parse(localStorage.getItem('hound.prefs') || '{}'), [k]: v })); } catch { /* private mode */ } applyPrefs(); };
+$('pref-contrast').onchange = (e) => setPref('contrast', e.target.checked ? 'high' : 'normal');
+$('pref-palette').onchange = (e) => setPref('palette', e.target.checked ? 'cb' : 'default');
+$('pref-motion').onchange = (e) => setPref('motion', e.target.checked ? 'reduce' : 'auto');
+
+// ---- table of contents ----
+const secs = [...document.querySelectorAll('.ref-sec')];
+$('ref-toc').append(...secs.map((s) => h('a.list-item', { href: '#' + s.id, 'data-for': s.id }, s.dataset.title)));
+const spy = new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) document.querySelectorAll('#ref-toc a').forEach((a) => a.setAttribute('aria-current', String(a.dataset.for === e.target.id))); }, { rootMargin: '-20% 0px -70% 0px' });
+secs.forEach((s) => spy.observe(s));
+
+// ---- colour ----
+const lum = (hex) => { const n = hex.replace('#', ''); const [r, g, b] = [0, 2, 4].map((i) => parseInt(n.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+const SURF = [['--bg-0', 'viewport, wells'], ['--bg-1', 'chrome, inputs'], ['--bg-2', 'panels'], ['--bg-3', 'raised: cards, keys'], ['--bg-4', 'hover'], ['--bg-5', 'pressed, tracks']];
+const MEAN = [['--text', 'Text', 'What you read.'], ['--text-2', 'Secondary', 'Supporting text, descriptions.'], ['--text-3', 'Quiet', 'Labels beside values. 11 to 12 px, never body text.'],
+  ['--person', 'Person', 'Only for people and confirmed finds. The most important thing on screen.'], ['--warn', 'Possible', 'A possible person, something that needs a look.'], ['--accent', 'Interactive', 'Things you can press, routes, focus, the current item.'],
+  ['--ok', 'Clear', 'Searched and clear, done, healthy.'], ['--danger', 'Hazard', 'Hazards, faults and stop.'], ['--sim', 'Simulated', 'The label for simulated and concept. Nothing else.']];
+function drawColour() {
+  $('ref-surf').replaceChildren(...SURF.map(([v, use]) => h('div', { style: { background: 'var(' + v + ')' } }, h('b', null, v), h('span', null, use), h('span.num', null, cssVar(v)))));
+  const bg = cssVar('--bg-2');
+  $('ref-mean').replaceChildren(...MEAN.map(([v, word, rule]) => { const hex = cssVar(v), r = ratio(hex, bg);
+    return h('div.ref-mean', { style: '--c: var(' + v + ')' }, h('i'), h('span.ref-word', null, word), h('b', null, hex), h('span.muted', null, rule), h('code.ref-code', null, v), h('span.num', { style: { textAlign: 'right', color: r >= 4.5 ? 'var(--text-2)' : 'var(--danger)' }, title: 'Contrast against --bg-2' }, r.toFixed(1) + ' : 1')); }));
+}
+
+// ---- type roles ----
+const ROLES = [['--type-hero', 'Hero', 'After the flood'], ['--type-display', 'Display', 'Person confirmed, room 104'], ['--type-title', 'Title', 'Wi-Fi sensing through a wall'], ['--type-heading', 'Heading', 'Stop every unit?'],
+  ['--type-figure', 'Figure', '86.9 %'], ['--type-panel', 'Panel title', 'Evidence for this finding'], ['--type-body', 'Body', 'HOUND-01 drives in, stops, and listens for ten seconds.'], ['--type-label', 'Label', 'Person threshold'],
+  ['--type-data', 'Data', '28.25285 N  85.36667 E   07:42   0.53'], ['--type-caption', 'Caption', 'Simulated people. 955 test windows.']];
+$('ref-scale').append(...ROLES.map(([v, name, sample]) => { const s = h('span', { style: { font: 'var(' + v + ')' } }, sample); const size = h('span.caption.num');
+  requestAnimationFrame(() => { const cs = getComputedStyle(s); size.textContent = Math.round(parseFloat(cs.fontSize)) + ' / ' + Math.round(parseFloat(cs.lineHeight)) + ' px · ' + cs.fontWeight; });
+  return h('div.ref-scale', null, h('code.ref-code', null, v), h('span.col.tight', null, h('span', null, name), size), s); }));
+
+// ---- space, radius, motion ----
+$('ref-space').append(...[1, 2, 3, 4, 5, 6, 8, 10, 12, 16].map((n) => h('div', null, h('i', { style: { width: 'var(--s-' + n + ')' } }), h('span.caption.num', null, n * 4))));
+$('ref-radius').append(...[1, 2, 3, 4].map((n) => h('div.ref-box', { style: { width: '84px', background: 'var(--bg-3)', border: '1px solid var(--line-3)', borderRadius: 'var(--r-' + n + ')' } }, cssVar('--r-' + n))));
+const motions = [['--t-fast', 'hover, press'], ['--t-med', 'panels, toasts'], ['--t-slow', 'camera cues, big moves']].map(([v, use]) => { const track = h('div.ref-motion', { style: '--d: var(' + v + ')' }, h('i')); return { track, row: h('div', { style: { display: 'grid', gridTemplateColumns: '170px 1fr', gap: '12px', alignItems: 'center' } }, h('span', null, h('code.ref-code', null, v), ' ', h('span.caption', null, use)), track) }; });
+$('ref-motion').append(...motions.map((m) => m.row));
+$('ref-motion-go').onclick = () => motions.forEach((m) => { m.track.style.setProperty('--run', (m.track.clientWidth - 34) + 'px'); m.track.classList.toggle('go'); });
+
+// ---- buttons ----
+const kinds = [['', 'Plan again', 'route'], ['.btn-primary', 'Approve route', 'check'], ['.btn-danger', 'All stop', 'stop'], ['.btn-ghost', 'Dismiss', 'close']];
+const st = $('ref-btn-states');
+st.append(h('span'), ...['Rest', 'Pressed', 'On', 'Focus', 'Disabled'].map((s) => h('span.ref-h', null, s)));
+for (const [cls, label, ic] of kinds) {
+  const mk = (extra, props) => h('button.btn' + cls + (extra || ''), props || null, icon(ic), label);
+  const focus = mk('', { style: { outline: '2px solid var(--focus)', outlineOffset: '2px' } });
+  st.append(h('code.ref-code', null, cls ? cls.slice(1) : '.btn'), h('div', null, mk()), h('div', null, mk('.is-pressed')), h('div', null, cls === '' || cls === '.btn-ghost' ? mk('', { 'aria-pressed': 'true' }) : h('span.caption', null, 'not a toggle')), h('div', null, focus), h('div', null, mk('', { disabled: true })));
+}
+$('ref-btn-sizes').append(h('button.btn.btn-sm', null, icon('layers'), 'Layers'), h('button.btn', null, icon('layers'), 'Layers'), h('button.btn.btn-lg.btn-primary', null, 'Start mission'), h('button.btn.btn-icon.btn-sm', { 'aria-label': 'Zoom in' }, icon('plus')), h('button.btn.btn-icon', { 'aria-label': 'Fit the view' }, icon('fit')), h('button.btn', null, 'Search', h('kbd', null, '⌘K')));
+$('ref-btn-group').append(h('div.btn-group', { role: 'group', 'aria-label': 'Step through the mission' }, h('button.btn.btn-icon', { 'aria-label': 'Previous event' }, icon('skip-back')), h('button.btn.btn-icon', { 'aria-label': 'Play' }, icon('play')), h('button.btn.btn-icon', { 'aria-label': 'Next event' }, icon('skip-forward'))), h('div.btn-group', null, h('button.btn', null, icon('zoom-out'), 'Out'), h('button.btn', null, icon('zoom-in'), 'In')));
+const toggles = [['wall', 'Walls', true], ['heat', 'Heat', false], ['route', 'Route', true]];
+$('ref-btn-toggle').append(...toggles.map(([ic, label, on]) => h('button.btn', { 'aria-pressed': String(on), onclick: (e) => { const b = e.currentTarget; b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); } }, icon(ic), label)));
+
+// ---- labels ----
+$('ref-reality').append(...Object.keys(REALITY).map((k) => h('div.col.tight', { style: { minWidth: '30%', flex: '1' } }, h('div', null, realityTag(k)), h('span.caption', null, REALITY[k].means))));
+$('ref-wshead').append(realityTag('live-algo'), h('button.btn', null, icon('help'), 'How it works'));
+
+// ---- inputs ----
+$('ref-indet').indeterminate = true;
+const sl = $('ref-sl'); const syncSl = () => { sl.style.setProperty('--p', (sl.value * 100) + '%'); $('ref-sl-out').textContent = (+sl.value).toFixed(2); }; sl.oninput = syncSl; syncSl();
+const pick = (wrap, attr) => (e) => { const b = e.target.closest('button'); if (!b) return; wrap.querySelectorAll('button').forEach((x) => x.setAttribute(attr, String(x === b))); };
+$('ref-seg').append(...[['Follow', 'rover'], ['Top', 'grid'], ['Orbit', 'rotate'], ['Film', 'camera']].map(([t, ic], i) => h('button', { 'aria-pressed': String(i === 0) }, icon(ic, 14), t))); $('ref-seg').onclick = pick($('ref-seg'), 'aria-pressed');
+$('ref-seg2').append(...['1×', '2×', '4×', '8×', '16×', '32×'].map((t, i) => h('button.num', { 'aria-pressed': String(i === 3) }, t))); $('ref-seg2').onclick = pick($('ref-seg2'), 'aria-pressed');
+$('ref-chips').append(...[['Wi-Fi', '--accent', 12, true], ['Radar', '--ok', 7, true], ['Thermal', '--warn', 5, false], ['Drone', '--sim', 2, false], ['Confirmed only', null, null, false]].map(([t, c, n, on]) => h('button.chip', { 'aria-pressed': String(on), onclick: (e) => { const b = e.currentTarget; b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); } }, c && h('i', { style: '--chip-c: var(' + c + ')' }), t, n != null && h('span.badge-count', null, n))));
+const TABS = { Evidence: 'The readings behind this finding, newest first.', Fusion: 'How each reading moved the probability, step by step.', Location: 'Where the radar puts the person, with its uncertainty.' };
+$('ref-tabs').append(...Object.keys(TABS).map((t, i) => h('button', { role: 'tab', 'aria-selected': String(i === 0) }, t))); $('ref-tab-body').textContent = TABS.Evidence;
+$('ref-tabs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; pick($('ref-tabs'), 'aria-selected')(e); $('ref-tab-body').textContent = TABS[b.textContent]; };
+
+// ---- data: the published test results (docs/FACTS.md). Simulated people. ----
+const ROWS = [['Person moving', 'Person', 'tag-person', '86.9 %', 0.869, 'person'], ['Person standing still', 'Person', 'tag-person', '25.5 %', 0.255, 'person'], ['Person lying still', 'Person', 'tag-person', '12.4 %', 0.124, 'person'],
+  ['Empty room', 'No one', 'tag-ok', '87.0 %', 0.870, 'ok'], ['Empty room with a fan', 'No one', 'tag-ok', '92.1 %', 0.921, 'ok']];
+const tb = $('ref-table').tBodies[0];
+tb.append(...ROWS.map(([name, called, tag, right, v, cls], i) => h('tr', { tabindex: '0', 'aria-selected': String(i === 0) }, h('td', null, name), h('td', null, h('span.tag.' + tag, null, called)), h('td.num', null, right), h('td', null, h('div.meter.sm.' + cls, { style: '--v: ' + v, role: 'meter', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(Math.round(v * 100)), 'aria-label': name + ', share right' })))));
+tb.onclick = (e) => { const r = e.target.closest('tr'); if (r) [...tb.rows].forEach((x) => x.setAttribute('aria-selected', String(x === r))); };
+tb.onkeydown = (e) => { const i = [...tb.rows].indexOf(document.activeElement); if (i < 0) return; const n = e.key === 'ArrowDown' ? i + 1 : e.key === 'ArrowUp' ? i - 1 : -1; if (n >= 0 && n < tb.rows.length) { e.preventDefault(); tb.rows[n].focus(); tb.rows[n].click(); } };
+const FIND = [['person', 'Person, moving', 'Room 104 · Wi-Fi, radar', '94 %', 'tag-person', 'Confirmed'], ['person', 'Person, still', 'Room 102 · Wi-Fi, thermal', '71 %', 'tag-warn', 'Possible'], ['heat', 'Hot pipe', 'Room 103 · thermal only', '4 %', '', 'Rejected'], ['rover', 'HOUND-01', 'Listening at stop 3', '', 'tag-ok', 'Healthy']];
+$('ref-list').append(...FIND.map(([ic, t, sub, p, tag, word], i) => h('li.list-item', { role: 'option', tabindex: '0', 'aria-selected': String(i === 0), onclick: (e) => $('ref-list').querySelectorAll('.list-item').forEach((x) => x.setAttribute('aria-selected', String(x === e.currentTarget))) }, icon(ic), h('span.grow', null, t, h('span.sub', null, sub)), h('span.tag' + (tag ? '.' + tag : ''), null, word), h('span.meta', null, p))));
+const METERS = [['Wi-Fi', 0.81, 'person', 0.53], ['Radar', 0.64, 'person', null], ['Thermal', 0.38, 'warn', null], ['Link', 0.88, 'ok', null], ['Battery', 0.12, 'danger', null]];
+$('ref-meters').append(...METERS.map(([name, v, cls, mark]) => h('div.meter-row', null, h('span', null, name), h('span.meter-wrap', { style: mark != null ? '--mark: ' + mark : null }, h('div.meter.' + cls, { style: '--v: ' + v, role: 'meter', 'aria-valuemin': '0', 'aria-valuemax': '1', 'aria-valuenow': String(v), 'aria-label': name })), h('span', null, v.toFixed(2)))), h('span.caption', null, 'Example values for layout. The tick on Wi-Fi is the 0.53 threshold.'));
+
+// ---- chart: drawn by hand so this page needs no library ----
+function drawChart() {
+  const svg = $('ref-chart'), NS = 'http://www.w3.org/2000/svg'; svg.replaceChildren();
+  const el = (tag, attrs, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; svg.append(e); return e; };
+  const D = [['Moving', 0.869, '--person'], ['Standing still', 0.255, '--person'], ['Lying still', 0.124, '--person'], ['Empty room', 0.130, '--text-3'], ['Empty, fan on', 0.079, '--text-3']];
+  const L = 112, R = 44, T = 12, Bm = 40, W = 640 - L - R, H = 280 - T - Bm, bh = 22, gap = (H - D.length * bh) / D.length;
+  const x = (v) => L + v * W;
+  for (const t of [0, 0.25, 0.5, 0.75, 1]) { el('line', { class: 'gridline', x1: x(t), x2: x(t), y1: T, y2: T + H }); const tx = el('text', { x: x(t), y: T + H + 16, 'text-anchor': 'middle' }, Math.round(t * 100) + ' %'); tx.setAttribute('class', 'axis'); }
+  el('text', { class: 'axis-title', x: L + W / 2, y: 280 - 4, 'text-anchor': 'middle' }, 'Windows where the network said PERSON (simulated test set)');
+  D.forEach(([name, v, c], i) => { const y = T + gap / 2 + i * (bh + gap);
+    el('text', { class: 'series-label', x: L - 10, y: y + bh / 2 + 4, 'text-anchor': 'end' }, name);
+    el('rect', { x: L, y, width: Math.max(2, v * W), height: bh, fill: 'var(' + c + ')', rx: 1 });
+    const lab = el('text', { x: x(v) + 8, y: y + bh / 2 + 4 }, (v * 100).toFixed(1) + ' %'); lab.setAttribute('style', 'fill: var(--text); font: 500 12px var(--mono)'); });
+  el('line', { x1: L, x2: L, y1: T, y2: T + H, stroke: 'var(--line-3)' });
+  const yDiv = T + 3 * (bh + gap); el('line', { x1: L - 104, x2: L + W, y1: yDiv, y2: yDiv, stroke: 'var(--line-2)', 'stroke-dasharray': '2 3' });
+  const note = el('text', { x: L + W, y: yDiv + 14, 'text-anchor': 'end' }, 'below: no one there, so these are false alarms'); note.setAttribute('class', 'chart-note');
+}
+
+// ---- notes, states, toasts, toolbar ----
+for (const [id, ic] of [['ref-note-sim', 'flask'], ['ref-note-warn', 'alert'], ['ref-note-danger', 'hazard'], ['ref-note-ok', 'check-circle'], ['ref-note-info', 'info'], ['ref-note-quiet', 'info']]) $(id).prepend(icon(ic));
+$('ref-empty').prepend(icon('search', 24)); $('ref-error').prepend(icon('alert', 24));
+$('ref-tip-btn').append(icon('fit')); $('ref-more').append(icon('more'));
+$('ref-do-h').prepend(icon('check', 14)); $('ref-dont-h').prepend(icon('close', 14));
+$('ref-toolbar').append(...[['wall', 'See-through walls', true], ['heat', 'Heat', false], ['route', 'Route', true], ['layers', 'Layers', false]].map(([ic, label, on]) => h('button.btn.btn-icon.btn-ghost', { 'aria-label': label, 'data-tip': label, 'data-tip-pos': 'bottom', 'aria-pressed': String(on), onclick: (e) => { const b = e.currentTarget; b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); } }, icon(ic))));
+const toastCss = h('link', { rel: 'stylesheet', href: '../shell.css' }); document.head.append(toastCss);   // toast and dialog styles live with the shell
+$('ref-toasts').append(...[['alert', 'alert', 'Person confirmed in room 104. Wi-Fi and radar agree.'], ['ok', 'check', 'Route approved. The team is walking in.'], ['info', 'info', 'The drone has finished its survey.']].map(([lvl, ic, t]) => h('div.toast.glass.' + lvl, null, icon(ic), h('span', null, t))));
+$('ref-toast-go').onclick = () => { $('ref-toast-go').replaceWith(h('span', null, 'alert = a person or a fault · ok = done · info = everything else')); };
+
+// ---- icons ----
+$('ref-icons').append(...iconNames().map((n) => h('button', { title: 'Copy "' + n + '"', onclick: async (e) => { const s = e.currentTarget.querySelector('span'); try { await navigator.clipboard.writeText(n); s.textContent = 'copied'; } catch { s.textContent = 'copy blocked'; } setTimeout(() => { s.textContent = n; }, 900); } }, icon(n, 20), h('span', null, n))));
+
+applyPrefs();
+</script>
+</body>
+</html>

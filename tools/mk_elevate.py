@@ -20,6 +20,18 @@ dashboard is too round and bouncy, just to name some stuff. This is not even clo
 Palantir Gotham should see this and be like 'I need to recruit him'. Don't skimp on features." "I am not saying the
 1,000,000,000 things that need to be changed; you need to understand and know."
 That last line is your job description. He will not list the problems. You find all of them.
+Latest: "All animation, everything, ultra smooth." Treat smoothness as a measured requirement: steady 60 frames a
+second with no dropped frames during camera moves, transitions and data updates (measure it: sample
+requestAnimationFrame deltas with tools/shoot.py --do eval and report the worst and the 95th percentile frame
+time); interpolate anything that updates in steps (positions, numbers, chart lines) so nothing ticks or snaps;
+ease every start and stop; no layout shift; no flash of unstyled or empty content; transitions are interruptible.
+And: "I don't want it to look like AI-generated slop. It should have a high-quality look but not an AI vibe. I like
+[the generated images], but for them to work they have to be incorporated VERY well." So generated stills
+(assets/img/gen) are raw material, never the design: grade them to one restrained palette, add honest grain, crop
+with intent, let type and layout lead, pair them with the real things (frames from the project film in
+assets/img/film, the real network running, the live 3-D twin, real data), caption them as illustrations, and cut
+any image that reads as stock or synthetic (over-smooth, over-saturated, glossy, symmetrical). The same test
+applies to layout, copy and motion: if it has the generic machine-made feel, redo it with a point of view.
 
 AREA: {area}
 YOU NOW OWN: {files}   (the first builder is finished; these files are yours. Still never edit files outside them;
