@@ -157,3 +157,20 @@
 .dock-item:focus-visible { outline-offset: -4px; }
 .dock-step { display: flex; gap: 6px; justify-content: flex-end; }
 @media (max-width: 1500px) { .dock-item { padding: 0 11px; } .dock-item::before { left: 11px; right: 11px; } .dock-item b { font-size: var(--fs-12); } .dock-note span { display: none; } }
+
+/* ---------- boot and hand-over ---------- */
+#boot { z-index: 6; transition: opacity 480ms var(--ease-in-out); }
+#boot.out { opacity: 0; pointer-events: none; }
+.boot-mark { position: relative; width: 56px; height: 64px; }
+.boot-mark i { position: absolute; top: 0; bottom: 0; width: 13px; background: var(--text); }
+.boot-mark i:first-child { left: 0; } .boot-mark i:nth-child(2) { right: 0; }
+.boot-mark i { animation: boot-wall 1.6s var(--ease-in-out) infinite alternate; transform-origin: 50% 100%; }
+.boot-mark b { position: absolute; left: 50%; top: 50%; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%; background: var(--person); animation: boot-dot 1.6s var(--ease-in-out) infinite alternate; }
+@keyframes boot-wall { from { opacity: 0.35; } to { opacity: 1; } }
+@keyframes boot-dot { from { opacity: 0.25; } to { opacity: 1; } }
+.boot-line { color: var(--text-2); }
+.boot-bar { width: 220px; }
+#veil { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: var(--bg-0); opacity: 0; pointer-events: none; transition: opacity 420ms var(--ease-in-out); }
+#veil.on { opacity: 1; transition-duration: 150ms; }
+#veil span { font: italic 400 28px/1 var(--font-display); color: var(--text-3); }
+@media (prefers-reduced-motion: reduce) { .boot-mark i, .boot-mark b { animation: none; } }

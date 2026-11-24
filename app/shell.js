@@ -161,15 +161,29 @@ function refreshChrome() {
   $('sb-event').textContent = last ? `${fmt.clock(last.t)}  ${last.text}` : 'Ready.';
 }
 
+// A dark veil covers the stage while one workspace hands over to the next, so building a scene is never seen.
+const reduced = () => document.documentElement.dataset.motion === 'reduce' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const frames = (n) => new Promise((r) => { const f = () => (n-- > 0 ? requestAnimationFrame(f) : r()); f(); });
+let opening = 0;
+async function veil(on) {
+  const v = $('veil'); if (reduced()) { v.classList.remove('on'); return; }
+  v.classList.toggle('on', on); if (on) await wait(150);
+}
+
 async function openWorkspace(id, params = {}) {
   const m = MANIFEST.find((x) => x.id === id) || MANIFEST[0];
   if (current === m.id && mounted.has(m.id)) { mounted.get(m.id).api?.onParams?.(params); return; }
-  if (current && mounted.has(current)) { const prev = mounted.get(current); prev.root.hidden = true; try { prev.api?.onHide?.(); } catch (e) { console.error(e); } }
-  current = m.id;
+  const token = ++opening, first = !current;
   document.querySelectorAll('.rail-item').forEach((a) => a.setAttribute('aria-current', a.id === 'rail-' + m.id ? 'page' : 'false'));
   document.querySelectorAll('.dock-item').forEach((a) => a.setAttribute('aria-current', a.id === 'dock-' + m.id ? 'page' : 'false'));
   document.title = `${m.title} · HOUND`;
   if (location.hash !== '#/' + m.id) history.replaceState(null, '', '#/' + m.id);
+  const label = $('veil-label'); label.textContent = CHAPTERS.find((c) => c.id === m.id)?.label || m.title;
+  if (!first) await veil(true);
+  if (token !== opening) return;                                   // a newer click won
+  if (current && mounted.has(current)) { const prev = mounted.get(current); prev.root.hidden = true; try { prev.api?.onHide?.(); } catch (e) { console.error(e); } }
+  current = m.id;
   let rec = mounted.get(m.id);
   if (!rec) {
     const root = h('div.ws', { id: 'ws-' + m.id, 'data-ws': m.id, role: 'region', 'aria-label': m.title });
@@ -191,18 +205,27 @@ async function openWorkspace(id, params = {}) {
   if (current === m.id) { try { rec.api?.onShow?.(); } catch (e) { console.error(e); } }
   else if (rec.root) rec.root.hidden = true;
   bus.emit('workspace', m.id);
+  if (token === opening) { if (!first) await frames(2); veil(false); preloadNext(m.id); }
+}
+
+// Fetch the next chapter's code while this one plays, so moving on is instant.
+function preloadNext(id) {
+  const i = CHAPTERS.findIndex((c) => c.id === id); if (i < 0 || ctx.mode !== 'demo') return;
+  const next = CHAPTERS[(i + 1) % CHAPTERS.length].id;
+  const go = () => { if (!document.querySelector(`link[data-preload="${next}"]`)) document.head.append(h('link', { rel: 'modulepreload', href: `workspaces/${next}/index.js`, 'data-preload': next })); };
+  (window.requestIdleCallback || ((f) => setTimeout(f, 1500)))(go, { timeout: 4000 });
 }
 
 async function boot() {
   buildChrome();
-  const loading = h('div.empty', { id: 'boot' }, h('div.spinner'), h('p', null, 'Loading the neural network (5 MB)…'));
-  $('main').append(loading);
+  const loading = h('div.empty', { id: 'boot' }, h('div.boot-mark', { 'aria-hidden': 'true' }, h('i'), h('i'), h('b')), h('p.boot-line', { role: 'status' }, 'Loading the neural network, 23,372 numbers'), h('div.bar.indeterminate.boot-bar', null, h('i')));
+  $('main').append(loading, h('div', { id: 'veil', 'aria-hidden': 'true' }, h('span', { id: 'veil-label' })));
   let nn;
   try { nn = await loadNN(); }
   catch (e) { loading.replaceChildren(icon('alert', 28), h('h2', null, 'The neural network did not load'), h('p.muted', null, String(e.message || e)), h('button.btn.btn-primary', { onclick: () => location.reload() }, 'Try again')); return; }
   ctx.nn = nn; ctx.sim = createSim({ bus, nn });
   try { const name = localStorage.getItem('hound_operator'); if (name) ctx.sim.command('setOperator', { name }); } catch { /* no storage */ }
-  loading.remove();
+  loading.classList.add('out'); setTimeout(() => loading.remove(), 520);
   bus.on('tick', refreshChrome); bus.on('reset', refreshChrome); bus.on('seek', refreshChrome);
   bus.on('event', (ev) => { if (ev.level === 'alert' && current !== 'mission') toast(ev.text, { level: 'alert', ms: 6000 }); });
   window.addEventListener('hashchange', () => openWorkspace(location.hash.replace(/^#\/?/, '').split('?')[0]));

@@ -133,7 +133,7 @@ export default {
       if (since > minT && n % 6 === 0) { const sp = P.maxSpeed(pile); if (!pile.calmed && sp < 0.6) P.calm(pile); S.quiet = sp < 0.03 ? S.quiet + 1 : 0; if (S.quiet >= 5 || since > (S.phase === 'collapsing' ? 20 : 8)) settle(); }
     }
     function settle() {
-      const pile = S.pile; P.sleepAll(pile); if (S.phase === 'collapsing') S.settleT = pile.t; S.phase = 'settled'; S.live = null; S.quiet = 0; S.keNow = 0;
+      const pile = S.pile; P.sleepAll(pile); P.calm(pile, false); pile.calmed = false; if (S.phase === 'collapsing') S.settleT = pile.t; S.phase = 'settled'; S.live = null; S.quiet = 0; S.keNow = 0;
       S.poses = P.readPoses(pile, pile.world, S.poses); view.sync(pile, S.poses);
       analyse();
     }
@@ -531,7 +531,7 @@ export default {
           const cell = (r, b) => r ? h('td.num', { class: 'structure-ok', title: 'Path ' + r.length.toFixed(2) + ' m, tightest gap ' + (r.minClear * 200).toFixed(0) + ' cm' }, r.length.toFixed(1) + ' m') : h('td.num.structure-no', { title: b.label + ' cannot reach this void within its limits' }, 'no way in');
           kids.push(sec('Which voids each can reach', 'path length from open air',
             h('div.structure-tablewrap', null, h('table.table.dense', null, h('thead', null, h('tr', null, h('th', null, 'Void'), h('th.num', null, 'way in, cm'), ROBOTS.map((b) => h('th.num', null, b.label.replace(' robot', '').replace('HOUND ', ''))))),
-              h('tbody', null, S.bots.table.map((row) => h('tr', { tabindex: 0, 'aria-selected': String(row.id === S.selVoid), onclick: () => selectVoid(row.id, true), onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectVoid(row.id, true); } } }, h('td', null, h('b', null, row.id), row.id === S.boxVoid ? h('span.c-person', null, '  ●') : null), h('td.num', null, row.v.sealed ? 'sealed' : (row.v.throat * 200).toFixed(0)), ROBOTS.map((b) => cell(row.routes[b.id], b)))))),
+              h('tbody', null, S.bots.table.map((row) => h('tr', { tabindex: 0, 'aria-selected': String(row.id === S.selVoid), onclick: () => selectVoid(row.id, true), onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectVoid(row.id, true); } } }, h('td', null, h('b', null, row.id), row.id === S.boxVoid ? h('span.c-person', null, '  ●') : null), h('td.num', null, row.v.sealed ? 'sealed' : (row.v.throat * 200).toFixed(0)), ROBOTS.map((b) => cell(row.routes[b.id], b))))))),
               h('p.caption', null, (() => { const n = S.bots.table.length, c = (id) => S.bots.table.filter((r) => r.routes[id]).length; return 'Of ' + n + ' voids: rover ' + c('rover') + ', snake ' + c('snake') + ', vine ' + c('vine') + '. Select a row to draw its routes.'; })())));
           const row = S.bots.table.find((r) => r.id === S.selVoid);
           if (row) kids.push(sec('Routes into ' + row.id, null, h('div.structure-tablewrap', null, h('table.table.dense', null, h('thead', null, h('tr', null, h('th', null, 'Robot'), h('th.num', null, 'length'), h('th.num', { title: 'Narrowest free width along the path' }, 'tightest gap'), h('th.num', { title: 'Smallest radius of any bend on the path' }, 'tightest bend'), h('th.num', { title: 'Sum of all direction changes' }, 'turning'))),

@@ -198,7 +198,7 @@ export function maxSpeed(pile, world = pile.world, alive = null) {
 }
 // Once the pile is only creeping, raise the damping (dust, crushing and grinding eat the last of the energy) and let it sleep.
 export function calm(pile, on = true) {
-  for (const p of pile.pieces) { if (!p.alive || p.fixed) continue; const b = pile.world.getRigidBody(p.handle); if (!b) continue; b.setLinearDamping(on ? 0.9 : 0.04); b.setAngularDamping(on ? 1.2 : 0.08); }
+  for (const p of pile.pieces) { if (!p.alive || p.fixed) continue; const b = pile.world.getRigidBody(p.handle); if (!b) continue; b.setLinearDamping(on ? 2.2 : 0.04); b.setAngularDamping(on ? 3 : 0.08); }
   pile.calmed = on;
 }
 export function sleepAll(pile) { for (const p of pile.pieces) { if (!p.alive || p.fixed) continue; const b = pile.world.getRigidBody(p.handle); if (b && b.isDynamic()) { b.setLinvel({ x: 0, y: 0, z: 0 }, false); b.setAngvel({ x: 0, y: 0, z: 0 }, false); b.sleep(); } } }
@@ -239,37 +239,46 @@ export function rollback(pile, snap) {
 
 // ---------------------------------------------------------------- contact forces (the load path)
 // Wake the pile, solve a few steps, and read every contact's normal impulse. force = impulse / dt.
-export function measureContacts(pile, world = pile.world) {
-  const { pieces } = pile, n = pieces.length, dt = world.timestep;
-  for (const p of pieces) if (p.alive && !p.fixed) world.getRigidBody(p.handle)?.wakeUp();
-  for (let k = 0; k < 10; k++) world.step();
-  const edges = [], loadAbove = new Float32Array(n), support = new Float32Array(n);
-  let ground = 0, weight = 0;
+// One step's contact impulses jitter, so the forces are averaged over `samples` readings taken two steps apart.
+export function measureContacts(pile, world = pile.world, { warm = 12, samples = 24, wake = true } = {}) {
+  const { pieces } = pile, n = pieces.length;
+  if (wake) for (const p of pieces) if (p.alive && !p.fixed) world.getRigidBody(p.handle)?.wakeUp();
+  for (let k = 0; k < warm; k++) world.step();
+  const acc = new Map(), loadAbove = new Float32Array(n), support = new Float32Array(n);
+  for (let k = 0; k < samples; k++) { if (k) { world.step(); world.step(); } readContacts(pile, world, acc, 1 / samples); }
+  return foldContacts(pile, acc, loadAbove, support);
+}
+// Add one reading of every contact's normal force (impulse / dt) into acc, weighted.
+export function readContacts(pile, world, acc, w = 1) {
+  const { pieces } = pile, dt = world.timestep;
   const visit = (p, c) => {
     world.contactPairsWith(c, (c2) => {
       const b2 = c2.parent(); const j = b2 ? pile.byBodyAny(world, b2.handle) : -1;
-      if (j >= 0 && j < p.idx) return;
-      if (j >= 0 && !pieces[j].alive) return;
+      if (j >= 0 && (j < p.idx || !pieces[j].alive)) return;
+      if (p.fixed && j < 0) return;
       world.contactPair(c, c2, (man, flipped) => {
         let imp = 0; const m = man.numContacts(); for (let i = 0; i < m; i++) imp += man.contactImpulse(i);
         if (!(imp > 0)) return;
-        const nrm = man.normal(), sgn = flipped ? 1 : -1;       // force on p = sgn * normal * F
-        const F = imp / dt;
-        let pt = null; const ns = man.numSolverContacts();
-        if (ns > 0) { let x = 0, y = 0, z = 0; for (let i = 0; i < ns; i++) { const s = man.solverContactPoint(i); x += s.x; y += s.y; z += s.z; } pt = [x / ns, y / ns, z / ns]; }
-        const fy = sgn * nrm.y * F;                               // vertical force on p from the other body
-        if (fy < 0) loadAbove[p.idx] += -fy; else support[p.idx] += fy;
-        if (j >= 0) { if (fy > 0) loadAbove[j] += fy; else support[j] += -fy; }
-        if (!p.fixed && (j < 0 || pieces[j].fixed)) ground += fy; else if (p.fixed && j >= 0 && !pieces[j].fixed) ground -= fy;
-        edges.push({ a: p.idx, b: j, F, fy, pt, n: [nrm.x * sgn, nrm.y * sgn, nrm.z * sgn] });
+        const nrm = man.normal(), sgn = flipped ? 1 : -1, F = imp / dt * w;   // force on p = sgn * normal * F
+        let e = acc.get(p.idx * 4096 + j); if (!e) { e = { a: p.idx, b: j, F: 0, fy: 0, pt: null, np: 0, n: null }; acc.set(p.idx * 4096 + j, e); }
+        e.F += F; e.fy += sgn * nrm.y * F; e.n = [nrm.x * sgn, nrm.y * sgn, nrm.z * sgn];
+        const ns = man.numSolverContacts();
+        for (let i = 0; i < ns; i++) { const s = man.solverContactPoint(i); if (!s) continue; if (!e.pt) e.pt = [0, 0, 0]; e.np++; e.pt[0] += (s.x - e.pt[0]) / e.np; e.pt[1] += (s.y - e.pt[1]) / e.np; e.pt[2] += (s.z - e.pt[2]) / e.np; }
       });
     });
   };
-  for (const p of pieces) {
-    if (!p.alive) continue; const body = world.getRigidBody(p.handle); if (!body) continue;
-    if (!p.fixed) weight += p.mass * G;
-    for (let k = 0; k < body.numColliders(); k++) visit(p, body.collider(k));
+  for (const p of pieces) { if (!p.alive) continue; const body = world.getRigidBody(p.handle); if (!body) continue; for (let k = 0; k < body.numColliders(); k++) visit(p, body.collider(k)); }
+  return acc;
+}
+function foldContacts(pile, acc, loadAbove, support) {
+  const { pieces } = pile; let ground = 0, weight = 0; const edges = [...acc.values()];
+  for (const e of edges) {
+    const p = pieces[e.a], j = e.b, fy = e.fy;
+    if (fy < 0) loadAbove[p.idx] += -fy; else support[p.idx] += fy;
+    if (j >= 0) { if (fy > 0) loadAbove[j] += fy; else support[j] += -fy; }
+    if (!p.fixed && (j < 0 || pieces[j].fixed)) ground += fy; else if (p.fixed && j >= 0 && !pieces[j].fixed) ground -= fy;
   }
+  for (const p of pieces) if (p.alive && !p.fixed) weight += p.mass * G;
   return { edges, loadAbove, support, ground, weight };
 }
 
@@ -352,7 +361,7 @@ function summarise(pile, world, snap, before, skip, box, base) {
   let prot = null, roofLoad = null;
   if (box) {
     prot = protectedMetrics(pile, world, box);
-    const con = measureContacts(pile, world);
+    const con = measureContacts(pile, world, { warm: 4, samples: 10 });
     roofLoad = 0; for (const i of (base?.roof || prot.roof)) if (pile.pieces[i].alive) roofLoad += con.loadAbove[i];
   }
   pile.pieces.forEach((p, i) => { p.alive = saveAlive[i]; });
@@ -445,4 +454,26 @@ export function beginLift(pile, idx) {
   cutTies(pile, pile.world, idx);
   b.setBodyType(R.RigidBodyType.KinematicVelocityBased, true); b.setLinvel({ x: 0, y: 0.6, z: 0 }, true); b.setAngvel({ x: 0, y: 0, z: 0 }, true);
   return true;
+}
+
+// A second pile object on a restored copy of the world, so the live step (ties that break, furniture that crushes)
+// runs there too and the original is never touched.
+export function fork(pile, snap) {
+  const f = { ...pile, world: restoreWorld(snap), pieces: pile.pieces.slice(0, snap.nPieces).map((p, i) => ({ ...p, alive: snap.alive[i], boxes: snap.boxes[i], crushed: snap.crushed[i] })), ties: pile.ties.map((t, i) => ({ ...t, alive: snap.ties[i] })), shores: snap.shores.slice(), dustClock: new Map(), t: snap.t, tiesBroken: 0, crushed: 0 };
+  f.byBody = new Map(f.pieces.map((p) => [p.handle, p.idx])); f.byBodyAny = (w, h) => { const i = f.byBody.get(h); return i == null ? -1 : i; };
+  return f;
+}
+// A jack: a steel head driven up at a set speed under one point of a piece. It is a real body in the world, so the
+// force it carries is the solver's contact force.
+export const JACK = { half: [0.13, 0.03, 0.13], speed: 0.11, rise: 0.34 };
+export function addJack(pile, at) {
+  const { world } = pile, hy = JACK.half[1];
+  const body = world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(at.x, at.top - hy - 0.004, at.z));
+  const col = world.createCollider(R.ColliderDesc.cuboid(...JACK.half).setFriction(0.9).setRestitution(0), body);
+  return { body, col, y0: at.top - hy - 0.004 };
+}
+export function forceOn(world, col) {
+  let F = 0; const dt = world.timestep;
+  world.contactPairsWith(col, (c2) => world.contactPair(col, c2, (man) => { const m = man.numContacts(); for (let i = 0; i < m; i++) F += man.contactImpulse(i) * Math.abs(man.normal().y); }));
+  return F / dt;
 }
