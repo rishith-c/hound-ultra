@@ -11,23 +11,23 @@ const VIEWS = [
 export default {
   async mount(root, ctx) {
     const { h, icon, realityTag } = ctx.kit;
-    for (const f of ['style.css', 'eval.css', 'story.css']) {
+    for (const f of ['style.css', 'eval.css', 'story.css', 'hero.css']) {
       const href = new URL('./' + f, import.meta.url).href;
       if (!document.querySelector(`link[href="${href}"]`)) document.head.append(h('link', { rel: 'stylesheet', href }));
     }
     const views = new Map();
     let current = null, visible = false;
     const tabs = h('div.seg', { role: 'tablist', 'aria-label': 'Wi-Fi AI views' }, VIEWS.map((v) => h('button', { role: 'tab', id: 'sense-tab-' + v.id, 'aria-selected': 'false', title: v.hint, onclick: () => show(v.id) }, v.label)));
-    const body = h('div.sense-body');
+    const body = h('div.sense-body.adv-only'), stage = h('div.sense-hero.demo-only');
     root.classList.add('sense');
     root.append(
-      h('header.sense-head', null,
+      h('header.sense-head.adv-only', null,
         h('div.sense-title', null, icon('wifi', 20), h('h2', null, 'Wi-Fi AI'), realityTag('live-ai')),
         h('p.sense-lede', null, 'HOUND’s real 23,372-parameter network, listening for a person behind a wall. It runs in this page, now, on held-out test windows.'),
         h('div.grow'),
         h('span.tag.tag-sim', { title: 'Blender-built people in a Wi-Fi channel simulator. No window was recorded with the rover, and the network has never been tested on real people.' }, 'Every window is simulated'),
         tabs),
-      body);
+      body, stage);
 
     async function show(id, params) {
       const def = VIEWS.find((v) => v.id === id) || VIEWS[0];
@@ -48,15 +48,27 @@ export default {
             h('button.btn', { onclick: () => { views.delete(def.id); el.remove(); show(def.id, params); } }, 'Try again')));
         }
       } else { rec.el.hidden = false; if (params) rec.api?.onParams?.(params); }
-      if (current === def.id && visible) { try { rec.api?.onShow?.(); } catch (e) { console.error(e); } } else if (current !== def.id) rec.el.hidden = true;
+      if (current === def.id && visible && ctx.mode === 'advanced') { try { rec.api?.onShow?.(); } catch (e) { console.error(e); } } else if (current !== def.id) rec.el.hidden = true;
     }
     const route = (p = {}) => show(p.view || (p.sample != null ? 'bench' : current || 'bench'), p);
     ctx.bus.on('prefs', clearTokens);
-    await route(ctx.params);
+
+    // Demo: one film-like hero. Advanced: the three views. Only the one on screen runs; the other is built when first needed.
+    let hero = null, heroLoad = null;
+    async function openHero(p) {
+      if (!heroLoad) heroLoad = import('./hero.js').then((m) => m.create(stage, ctx)).then((a) => (hero = a)).catch((e) => { console.error('[sense] the demo view failed', e); heroLoad = null; stage.replaceChildren(h('div.empty', null, icon('alert', 28), h('h3', null, 'The demo could not start'), h('p.muted', null, String(e.message || e)), h('button.btn', { onclick: () => { stage.replaceChildren(); enter(); } }, 'Try again'))); });
+      else if (p && Object.keys(p).length) hero?.onParams(p);
+      await heroLoad;
+      if (visible && ctx.mode !== 'advanced') hero?.onShow();
+    }
+    const pause = () => { try { hero?.onHide(); views.get(current)?.api?.onHide?.(); } catch (e) { console.error(e); } };
+    const enter = (p) => (ctx.mode === 'advanced' ? route(p) : openHero(p));
+    ctx.bus.on('mode', () => { pause(); if (visible) requestAnimationFrame(() => enter()); });
+    await enter(ctx.params);
     return {
-      onShow() { visible = true; try { views.get(current)?.api?.onShow?.(); } catch (e) { console.error(e); } },
-      onHide() { visible = false; try { views.get(current)?.api?.onHide?.(); } catch (e) { console.error(e); } },
-      onParams(p) { if (p && Object.keys(p).length) route(p); },
+      onShow() { visible = true; if (ctx.mode === 'advanced' ? !current : !heroLoad) enter(); else if (ctx.mode === 'advanced') { try { views.get(current)?.api?.onShow?.(); } catch (e) { console.error(e); } } else hero?.onShow(); },
+      onHide() { visible = false; pause(); },
+      onParams(p) { if (p && Object.keys(p).length) enter(p); },
     };
   },
 };

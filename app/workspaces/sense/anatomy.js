@@ -13,7 +13,7 @@ export const STAGES = [
   { id: 'x', name: 'The window', short: 'Window', rows: 52, T: 200, stride: 1, c0: 0.5, dims: '52 × 200', say: 'The 10-second window enters: 51 Wi-Fi subcarriers, then the motion row at the front. Blue is below a subcarrier’s average, amber is above.' },
   { id: 'c1', name: 'Convolution 1', short: 'Conv 1', rows: 24, T: 192, stride: 1, c0: 4.5, dims: '24 × 192', say: 'Convolution 1: 24 filters slide along the window. Each cell reads 0.45 s of all 52 rows at once.' },
   { id: 'p1', name: 'Average pool', short: 'Pool', rows: 24, T: 48, stride: 4, c0: 6, dims: '24 × 48', say: 'Average pool: every 4 steps become 1, so the signal is now 5 samples a second.' },
-  { id: 'c2', name: 'Convolution 2', short: 'Conv 2', rows: 24, T: 40, stride: 4, c0: 22, dims: '24 × 40', say: 'Convolution 2: each cell now sees 2.2 s of the window, about the length of one breath.' },
+  { id: 'c2', name: 'Convolution 2', short: 'Conv 2', rows: 24, T: 40, stride: 4, c0: 22, dims: '24 × 40', say: 'Convolution 2: each cell now sees 2.2 s of the window.' },
   { id: 'p2', name: 'Average pool', short: 'Pool', rows: 24, T: 20, stride: 8, c0: 24, dims: '24 × 20', say: 'Average pool: every 2 steps become 1.' },
   { id: 'c3', name: 'Convolution 3', short: 'Conv 3', rows: 24, T: 12, stride: 8, c0: 56, dims: '24 × 12', say: 'Convolution 3: each cell sees 5.6 s, more than half the window.' },
   { id: 'feat', name: 'Mean and max', short: 'Mean, max', dims: '48', say: 'Time is removed: for each of the 24 filters, its average over the window (left) and its single highest peak (right).' },

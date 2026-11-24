@@ -34,6 +34,8 @@ HOW TO WORK (the machine melted last time: load average 350)
 - If a file write fails because a hook timed out, just retry that single write once.
 - Be economical: do not re-read files you already know, do not print large files, no long deliberation. Aim to finish in
   about 80 tool calls. Depth over breadth: a perfect hero beats three half-done extras.
+- Run JavaScript checks inside `tools/shoot.py --do eval:`. Do not look for another JavaScript runtime (osascript and the
+  like) to get round the blocked `node`.
 - You own only your files. Requests for other files go in orchestration/requests/<agent>.md. No git, no deploy, no
   installs, no new downloads of third-party files. Labels and facts: docs/FACTS.md still rules; never invent a result.
 - The glass token no longer blurs (blur over a live canvas cost frames); do not add backdrop-filter over 3-D.
