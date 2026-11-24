@@ -79,25 +79,25 @@
    "fo": 3
   },
   {
-   "file": "/Users/rishith/Developer/.hound-release/film/v4/sfx/tick.wav",
+   "file": "../v4/sfx/tick.wav",
    "at": 0,
    "db": -13,
    "end": 239.0
   },
   {
-   "file": "/Users/rishith/Developer/.hound-release/film/v4/sfx/collapse.wav",
+   "file": "../v4/sfx/collapse.wav",
    "at": 0,
    "db": -11,
    "end": 5.5
   },
   {
-   "file": "/Users/rishith/Developer/.hound-release/film/v4/sfx/motor1.wav",
+   "file": "../v4/sfx/motor1.wav",
    "at": 7.647,
    "db": -9,
    "end": 9.387
   },
   {
-   "file": "/Users/rishith/Developer/.hound-release/film/v4/sfx/motor2.wav",
+   "file": "../v4/sfx/motor2.wav",
    "at": 53.717,
    "db": -9,
    "end": 54.837

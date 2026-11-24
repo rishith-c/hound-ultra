@@ -1,4 +1,4 @@
-# The film, cut 4
+# The film, cut 5
 
 3 minutes 59 seconds, someone speaking the whole way through. It is a demonstration of the Advanced console, with a real cursor, and
 the robot, the network and the drone shown inside it.
@@ -6,10 +6,14 @@ the robot, the network and the drone shown inside it.
 ## How it is made
 
 - `tools/film-shots4.json` lists the shots. `python3 tools/film.py tools/film-shots4.json` records them from the live console.
-- `tools/film-edit4.json` is the edit. `python3 tools/film_cut.py tools/film-edit4.json --out NAME` renders it; `--k 2` renders 4K,
-  `--srt` writes the subtitles.
+- `tools/film-edit5.json` is the edit. `python3 tools/film_cut.py tools/film-edit5.json --out NAME --no-captions` renders it; `--k 2`
+  renders 4K, `--srt` writes the subtitles, and without `--no-captions` they are burnt in.
 - The voices decide the timing: every cut is placed on a spoken word.
-- Tags on screen say what is simulated. Every claim follows `docs/FACTS.md`. The robot and its footage are real. The build is sped up.
+- The score is written to the picture and follows the voices when their timing changes. Every note is a real recording: string ensemble,
+  horns, trombones, tuba, a Steinway, a floor tom tuned down for the drum, and two small pieces of wood for the clock. No synthesiser.
+- It has silences on purpose: after the opening, on "You can't hear them", before "is anyone in there?", when the robot stops, before
+  "ninety-four", at "Does it work?", when the radio is cut, and at the end.
+- Tags on screen say what is simulated. Real shots of the robot inside the search are tagged as driven by remote. Every claim follows `docs/FACTS.md`. The robot and its footage are real. The build is sped up.
 
 ## Recording the voices
 

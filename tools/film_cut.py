@@ -7,7 +7,8 @@ The edit file: {"segments": [{"clip", "a": start, "d": seconds used from the cli
 "cap": [[t0, t1, text], ...], "band": true, "card": "html", "zoom": [from, to, cx, cy], "blur", "dim", "html": [[t0, t1, html, fade], ...],
 "over": [{"clip", "a", "s", "d", "x", "y", "w", "h", "at", "fi", "fo", "frame"}], "voice": [[name, t], ...],
 "cam": [[t, zoom, cx, cy], ...] moves the window over the picture, "adv": true for a console take (1536 x 800, sits above the caption bar),
-"scope": true for a 2.39 : 1 picture}], "music": [{"file", "at": block, "db", "fi", "fo"}], "block": seconds, "k": 1 or 2 (2 = a 3840 x 2160 film)}
+"scope": true for a 2.39 : 1 picture, "bars": height of black bars above and below, "grade": "film" or "ui", "clean": true puts a console take in the
+middle of the frame (no caption bar)}], "music": [{"file", "at": block, "db", "fi", "fo"}], "block": seconds, "k": 1 or 2 (2 = a 3840 x 2160 film)}
 Captions are set in the site's own type by Chrome and laid over the lower bar, so no picture is covered.
 """
 import argparse, hashlib, base64, concurrent.futures, json, os, subprocess, sys, tempfile
@@ -17,7 +18,13 @@ FF = film.FFMPEG
 HERE = os.path.dirname(os.path.abspath(__file__))
 FILM = os.path.expanduser("~/Developer/.hound-release/film")
 K = 1
-ENC = ["-c:v", "libx264", "-preset", "medium", "-crf", "15", "-pix_fmt", "yuv420p", "-r", "60", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709", "-video_track_timescale", "60000"]
+# one look for the whole film: colour held back, shadows a little cold, corners a little dark, a trace of grain (none on the console, so its text stays clean)
+GRADE = {"film": "eq=contrast=1.05:saturation=0.85,colorbalance=rs=-0.014:bs=0.020:rh=0.008:bh=-0.010,vignette=angle=PI/6.5,noise=c0s=KK:c0f=t",
+         "dust": "eq=contrast=1.22:brightness=-0.055:saturation=0.5,colorbalance=rs=-0.03:bs=0.04:rm=-0.02:bm=0.03,vignette=angle=PI/5,noise=c0s=KK:c0f=t",
+         "real": "eq=saturation=0.90:gamma=1.06,colorbalance=rs=-0.010:bs=0.014,noise=c0s=KK:c0f=t",
+         "lift": "eq=saturation=0.95:gamma=1.32,colorbalance=rs=-0.010:bs=0.014,noise=c0s=KK:c0f=t",
+         "ui": "eq=saturation=0.88:gamma=1.05"}
+ENC = ["-c:v", "libx264", "-preset", "medium", "-crf", "15", "-pix_fmt", "yuv420p", "-r", "60", "-color_range", "tv", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709", "-video_track_timescale", "60000"]
 
 
 def font(name):
@@ -72,11 +79,13 @@ def cut(job):
             return f"({e})"
         z, l, t = ex(1), ex(2), ex(3)
         g += f"scale=3840:{2 * ph}:flags=lanczos,perspective=x0='W*{l}':y0='H*{t}':x1='W*({l}+{z})':y1='H*{t}':x2='W*{l}':y2='H*({t}+{z})':x3='W*({l}+{z})':y3='H*({t}+{z})':interpolation=cubic:eval=frame,"
-    g += f"scale={1920 * K}:{ph * K}:flags=lanczos,setsar=1"
+    g += f"scale={1920 * K}:{ph * K}:flags=lanczos:out_range=tv:out_color_matrix=bt709,setsar=1"
     if seg.get("adv"):
-        g += f",pad={1920 * K}:{1080 * K}:0:0:color=0x0a0d11"
+        g += f",pad={1920 * K}:{1080 * K}:0:{40 * K if seg.get('clean') else 0}:color={'black' if seg.get('clean') else '0x0a0d11'}"
     if seg.get("blur"):
         g += f",gblur=sigma={seg['blur']}"
+    if seg.get("grade"):
+        g += "," + GRADE[seg["grade"]].replace("KK", str(3 * K))
     if seg.get("dim"):
         g += f",lutyuv=y='16+(val-16)*{seg['dim']}':u='128+(val-128)*{(1 + seg['dim']) / 2}':v='128+(val-128)*{(1 + seg['dim']) / 2}'"
     g += "[b]"
@@ -98,6 +107,8 @@ def cut(job):
         last = f"q{k}"
         k += 1
     tail = []
+    if seg.get("bars"):
+        tail += [f"drawbox=x=0:y={y * K}:w={1920 * K}:h={seg['bars'] * K}:color=black:t=fill" for y in (0, 1080 - seg["bars"])]
     if seg.get("band"):
         tail.append(f"drawbox=x=0:y={1000 * K}:w={1920 * K}:h={80 * K}:color=0x0a0d11:t=fill")
     if seg.get("scope"):
@@ -114,7 +125,7 @@ def cut(job):
         fades = f",fade=t=in:st=0:d={f}:alpha=1,fade=t=out:st={t1 - t0 - f:.3f}:d={f}:alpha=1" if f else ""
         g += f";[{k + n}:v]format=rgba{fades},setpts=PTS-STARTPTS+{t0:.3f}/TB[c{n}];[{last}][c{n}]overlay=0:0:eof_action=pass:format=auto[o{n}]"
         last = f"o{n}"
-    cmd += ["-filter_complex", g + f";[{last}]format=yuv420p[out]", "-map", "[out]", "-t", f"{dur:.3f}", "-an"] + ENC
+    cmd += ["-filter_complex", g + f";[{last}]format=yuv420p,setparams=range=tv[out]", "-map", "[out]", "-t", f"{dur:.3f}", "-an"] + ENC
     h = hashlib.sha1()                      # a shot that has not changed is not rendered again
     for c in cmd:
         if c.endswith(".png"):
@@ -152,13 +163,14 @@ def speak(ed, total, bed, out):
         cmd += ["-i", os.path.join(FILM, "voice", n + ".wav")]
         g.append(f"[{k + 1}:a]aresample=48000,aformat=channel_layouts=stereo,adelay={int(at * 1000)}|{int(at * 1000)}[v{k}]")
     g.append("".join(f"[v{k}]" for k in range(len(v))) + f"amix=inputs={len(v)}:normalize=0:duration=longest,apad,atrim=0:{total:.3f},volume={ed.get('voice_db', 1.5)}dB,asplit[v][sc]")
-    g.append("[0:a][sc]sidechaincompress=threshold=0.018:ratio=3.2:attack=45:release=520:knee=4[m]")
+    th, ra = ed.get("duck", [0.018, 3.2])
+    g.append(f"[0:a][sc]sidechaincompress=threshold={th}:ratio={ra}:attack=45:release=520:knee=4[m]")
     g.append(f"[m][v]amix=inputs=2:normalize=0,alimiter=limit=0.87:level=false,atrim=0:{total:.3f}[a]")
     subprocess.run(cmd + ["-filter_complex", ";".join(g), "-map", "[a]", "-ar", "48000", out], check=True)
 
 
 def music(ed, total, out):
-    B = ed["block"]
+    B, tail = ed["block"], ed.get("tail", 4.5)
     cmd, g, names = [FF, "-y", "-loglevel", "error"], [], []
     for k, m in enumerate(ed["music"]):
         cmd += ["-i", os.path.join(FILM, "music", m["file"])]
@@ -179,12 +191,12 @@ def music(ed, total, out):
         chain += f",volume={m.get('db', 0)}dB,adelay={at}|{at}[m{k}]"
         g.append(chain)
         names.append(f"[m{k}]")
-    g.append("".join(names) + f"amix=inputs={len(names)}:normalize=0:duration=longest,apad,atrim=0:{total:.3f},highpass=f=32,volume=-9dB,afade=t=out:st={total - 4.5:.3f}:d=4.5[a]")
+    g.append("".join(names) + f"amix=inputs={len(names)}:normalize=0:duration=longest,apad,atrim=0:{total:.3f},highpass=f=32,volume=-9dB" + (f",afade=t=out:st={total - tail:.3f}:d={tail}" if tail else "") + "[a]")
     raw = out + ".raw.wav"
     subprocess.run(cmd + ["-filter_complex", ";".join(g), "-map", "[a]", "-ar", "48000", "-c:a", "pcm_f32le", raw], check=True)
     r = subprocess.run([FF, "-hide_banner", "-i", raw, "-af", "ebur128", "-f", "null", "-"], capture_output=True, text=True).stderr
     lufs = float(r[r.rindex("I:") + 2:].split("LUFS")[0])
-    gain = ed.get("lufs", -18) - lufs
+    gain = ed["music_gain"] if "music_gain" in ed else ed.get("lufs", -18) - lufs
     print(f"music {lufs:.1f} LUFS, gain {gain:+.1f} dB")
     subprocess.run([FF, "-y", "-loglevel", "error", "-i", raw, "-af", f"volume={gain:.2f}dB,alimiter=limit=0.79:level=false", "-ar", "48000", out], check=True)
 
