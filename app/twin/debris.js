@@ -1,7 +1,7 @@
 // What the flood carried in and left: a truck buried to its axles, a bus shelter, silt banked against every wall it met,
 // tree trunks, boulders, bent roofing sheets and the small things (branches, bricks, planks, paper). Seeded; invented.
 import * as THREE from 'three';
-import { box, cyl, merge, mesh, tint, rng, tube, xform, instanced, matrix, worldUV, makeNoise, smooth } from './util.js';
+import { box, cyl, merge, mesh, tint, rng, tube, xform, instanced, matrix, worldUV, makeNoise, smooth, ironSheet } from './util.js';
 
 export function build(env) {
   const { world, mats, environment } = env, R = rng('debris'), n = makeNoise('silt'), group = new THREE.Group(); group.name = 'debris';
@@ -22,7 +22,7 @@ export function build(env) {
 
   // ---- the bus shelter ----
   { const C = [], T = [], s = new THREE.Group(); for (const x of [-1.9, 1.9]) for (const z of [-0.8, 0.8]) C.push(tint(cyl(0.05, 0.06, 2.5, x, 0, z, 8), 0x2f4a52)); C.push(tint(box(4, 1.5, 0.05, 0, 0.5, -0.82), 0x6f7a74), tint(box(3.4, 0.07, 0.42, 0, 0.5, -0.5), 0x5b4a38), tint(box(0.9, 1.3, 0.04, 1.2, 1.0, 0.86, 0.1), 0x9c9a90)); for (const x of [-1.5, 0, 1.5]) C.push(tint(box(0.06, 0.5, 0.3, x, 0, -0.5), 0x2a2d30));
-    const g = new THREE.PlaneGeometry(4.8, 2.3, 30, 6).rotateX(-Math.PI / 2), p = g.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i); p.setY(i, 2.55 + z * 0.12 + Math.sin(x * 12) * 0.018 - smooth(0.8, 2.4, x) * 0.5 * smooth(-1.2, 1.2, z)); } g.computeVertexNormals(); T.push(g);
+    for (let q = 0; q < 6; q++) { const x0 = -2.2 + q * 0.84, g = ironSheet(0.912, 2.3, R, { bend: 0.015, dent: 0.03, tear: 0.06 }), p = g.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i) + x0, z = p.getZ(i) + R.gauss() * 0.002; p.setXYZ(i, x, p.getY(i) + 2.55 + (q % 2) * 0.012 + z * 0.12 - smooth(0.8, 2.4, x) * 0.5 * smooth(-1.2, 1.2, z), z); } g.computeVertexNormals(); T.push(g); }
     s.add(mesh(merge(C, { keepUV: false, keepColor: true }), mats.paint), mesh(merge(T, {}), mats.cgi)); s.position.set(88, -0.18, -2.5); s.rotation.set(0.03, Math.PI + 0.06, -0.07); s.name = 'bus-shelter'; group.add(s); }
 
   // ---- silt banked against the walls of block B and the buildings either side: a lip of mud, deeper on the side the water came from ----
@@ -37,11 +37,11 @@ export function build(env) {
 
   // ---- small things, thousands of them, thickest along lines where the water slowed ----
   const high = env.quality === 'high', drift = (x, y) => n.fbm(x / 9 + 20, y / 9 + 4, 3); const scatter = (count, fn, m = 0.4) => { const out = []; for (let i = 0; i < count * 6 && out.length < count; i++) { const x = 6 + R() * 112, y = -2 + R() * 92; if (!free(x, y, m) || drift(x, y) < 0.5 + (R() - 0.5) * 0.2) continue; out.push(fn(x, y)); } return out; };
-  const k = high ? 1 : 0.4, sheet = new THREE.PlaneGeometry(1.1, 2.2, 14, 3).rotateX(-Math.PI / 2); { const p = sheet.attributes.position; for (let i = 0; i < p.count; i++) p.setY(i, Math.sin(p.getX(i) * 34) * 0.016 + Math.pow(p.getZ(i), 2) * 0.16 + p.getX(i) * p.getZ(i) * 0.1); sheet.computeVertexNormals(); }
+  const k = high ? 1 : 0.4;
   const branch = merge([tube([new THREE.Vector3(-0.8, 0, 0), new THREE.Vector3(-0.2, 0.06, 0.08), new THREE.Vector3(0.4, 0.03, -0.04), new THREE.Vector3(0.9, 0.08, 0.1)], 0.022, { radial: 4, segs: 6 }), tube([new THREE.Vector3(-0.1, 0.05, 0.06), new THREE.Vector3(0.2, 0.16, 0.35), new THREE.Vector3(0.45, 0.1, 0.6)], 0.012, { radial: 3, segs: 3 }), tube([new THREE.Vector3(0.3, 0.03, -0.02), new THREE.Vector3(0.6, 0.18, -0.3)], 0.01, { radial: 3, segs: 2 })], { keepUV: false });
   const add = (geo, mat, list, colors, cast, name) => { if (list.length) group.add(instanced(geo, mat, list, { colors, cast, name })); }, cols = (list, set) => list.map(() => R.pick(set));
   const wood = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95 }), mattePaper = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, side: THREE.DoubleSide });
-  const sh = scatter(46 * k, (x, y) => matrix(x, 0.12 + R() * 0.12, -y, R() * 6, (R() - 0.5) * 0.4, (R() - 0.5) * 0.4)); add(sheet, mats.cgi, sh, null, true, 'sheets');
+  for (let q = 0; q < 4; q++) { const sh = scatter(12 * k, (x, y) => matrix(x, 0.1 + R() * 0.1, -y, R() * 6, (R() - 0.5) * 0.4, (R() - 0.5) * 0.4)); add(ironSheet(0.912, 1.5 + q * 0.28, R, { bend: 0.16, dent: 0.07, tear: 0.1 }), mats.cgi, sh, null, true, 'sheets'); }
   const br = scatter(900 * k, (x, y) => matrix(x, 0.02, -y, R() * 6, R.gauss() * 0.1, R.gauss() * 0.1, 0.5 + R() * 1.1)); add(branch, wood, br, cols(br, [0x3a2e23, 0x4a3b2c, 0x2c241c]), high, 'branches');
   const bk = scatter(1500 * k, (x, y) => matrix(x, 0.02, -y, R() * 6, R.gauss() * 0.5, R.gauss() * 0.5, 0.8 + R() * 0.35)); add(new THREE.BoxGeometry(0.22, 0.075, 0.11), wood, bk, cols(bk, [0x6b3f30, 0x7a4a38, 0x5a3a2e, 0x6a6058]), false, 'bricks');
   const pl = scatter(420 * k, (x, y) => matrix(x, 0.035, -y, R() * 6, R.gauss() * 0.06, R.gauss() * 0.08, [0.5 + R() * 1.4, 1, 1])); add(new THREE.BoxGeometry(1.4, 0.03, 0.13), wood, pl, cols(pl, [0x5b4a38, 0x6d5a44, 0x453729]), high, 'planks');

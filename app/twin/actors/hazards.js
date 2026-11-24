@@ -193,6 +193,17 @@ function noiseTexture(THREE, size) {
   return tx;
 }
 
+// A broken stone: a ball pushed in and out, with flat faces where it split.
+function stoneGeometry(THREE) {
+  const g = new THREE.IcosahedronGeometry(0.5, 1), p = g.attributes.position, cuts = [[0.8, 0.5, 0.33, 0.27], [-0.5, 0.2, 0.84, 0.31], [0.1, -0.95, 0.3, 0.25], [-0.75, 0.6, -0.27, 0.34], [0.3, 0.1, -0.95, 0.29]];
+  for (let i = 0; i < p.count; i++) {
+    let x = p.getX(i), y = p.getY(i), z = p.getZ(i); const k = 0.86 + 0.28 * Math.abs(Math.sin(x * 12.9 + y * 7.8 + z * 4.1)); x *= k; y *= k; z *= k;
+    for (const c of cuts) { const d = x * c[0] + y * c[1] + z * c[2] - c[3]; if (d > 0) { x -= c[0] * d; y -= c[1] * d; z -= c[2] * d; } }
+    p.setXYZ(i, x, y, z);
+  }
+  g.computeVertexNormals(); return g;
+}
+
 function inPoly(p, poly) { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const a = poly[i], b = poly[j]; if ((a[1] > p[1]) !== (b[1] > p[1]) && p[0] < ((b[0] - a[0]) * (p[1] - a[1])) / (b[1] - a[1]) + a[0]) c = !c; } return c; }
 function hashId(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
 function shortName(name) {
@@ -348,7 +359,7 @@ export default {
 
     // Small stones and crumbs loosened along the cracks.
     function addCrumbs(z, lines, rnd) {
-      const n = low ? 40 : 150, mesh = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(0.5, 0), new THREE.MeshStandardMaterial({ color: 0x6a6258, roughness: 0.96, flatShading: true }), n), col = new THREE.Color(), e = new THREE.Euler();
+      const n = low ? 40 : 150, mesh = new THREE.InstancedMesh(stoneGeometry(THREE), new THREE.MeshStandardMaterial({ color: 0x6a6258, roughness: 0.96, flatShading: true }), n), col = new THREE.Color(), e = new THREE.Euler();
       for (let i = 0; i < n; i++) {
         const L = lines[Math.floor(rnd() * lines.length)], p = L[Math.floor(rnd() * L.length)], s = 0.012 + Math.pow(rnd(), 3) * 0.075;
         m4.compose(v.set(p[0] + (rnd() - 0.5) * 0.4, t.groundY + 0.02 + s * 0.2, -(p[1] + (rnd() - 0.5) * 0.4)), q.setFromEuler(e.set(rnd() * 6, rnd() * 6, rnd() * 6)), sc.set(s * (0.8 + rnd() * 0.7), s * (0.5 + rnd() * 0.4), s));
@@ -372,8 +383,8 @@ export default {
         c.tf = Math.sqrt((2 * c.h) / 9.81); c.vb = 0.26 * 9.81 * c.tf; c.tb = (2 * c.vb) / 9.81;
         chunks.push(c); i++;
       }
-      const geo = new THREE.DodecahedronGeometry(0.5, 0);
-      const mat = new THREE.MeshStandardMaterial({ color: 0x6d655c, roughness: 0.96, metalness: 0, flatShading: true });
+      const geo = stoneGeometry(THREE);
+      const mat = new THREE.MeshStandardMaterial({ color: 0x58514a, roughness: 0.96, metalness: 0, flatShading: true });
       const mesh = new THREE.InstancedMesh(geo, mat, chunks.length); mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false;
       const col = new THREE.Color();
       chunks.forEach((c, i) => { const g = 0.75 + rnd() * 0.45; mesh.setColorAt(i, col.setRGB(g, g * (0.94 + rnd() * 0.05), g * (0.86 + rnd() * 0.08))); });

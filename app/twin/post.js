@@ -20,7 +20,7 @@ const AIR = `
       vec3 P = wpos(vUv, d), toP = P - uCam; float dist = length(toP); vec3 V = toP / dist;
       float ao = texture2D(tAO, vUv).r; if (isnan(ao)) ao = 1.0; col *= mix(1.0, ao, uAO * smoothstep(320.0, 90.0, dist));
       float wet = clamp(1.0 - s.a, 0.0, 1.0);
-      if (uSSR > 0.5 && wet > 0.03 && dist < 220.0) {
+      if (uSSR > 0.5 && wet > 0.03 && dist < 75.0) {
         vec2 rp = vec2(nn(P.xz * 3.0 + uTime * 0.35), nn(P.xz * 3.0 - uTime * 0.3 + 8.0)) - 0.5;
         vec3 N = normalize(vec3(rp.x * 0.025, 1.0, rp.y * 0.025)), R = reflect(V, N); float F = 0.05 + 0.95 * pow(1.0 - max(-dot(V, N), 0.0), 4.0);
         float t = 0.12 + ign(gl_FragCoord.xy) * 0.18, stepL = 0.22; vec3 hit = vec3(0.0); float ok = 0.0; float prev = 0.0;
@@ -31,7 +31,7 @@ const AIR = `
             vec2 e = smoothstep(vec2(0.0), vec2(0.09), uv) * smoothstep(vec2(0.0), vec2(0.09), 1.0 - uv); hit = min(texture2D(tScene, uv).rgb, vec3(3.0)); ok = e.x * e.y; break; } }
           prev = t; t += stepL; stepL *= 1.16;
         }
-        col = mix(col, hit, ok * wet * clamp(F * 1.35 + 0.08, 0.0, 0.92));
+        col = mix(col, hit, ok * wet * smoothstep(75.0, 32.0, dist) * clamp(F * 1.35 + 0.08, 0.0, 0.92));
       }
       // mist: density falls off with height; integrate it along the ray
       float b = uFog.z, y0 = uCam.y - uFog.w, dy = V.y * dist; float k = abs(dy * b) > 0.001 ? (1.0 - exp(-dy * b)) / (dy * b) : 1.0;

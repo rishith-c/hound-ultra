@@ -41,7 +41,7 @@ function builder(THREE) {
 function machineMaterial(THREE) {
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 1, roughness: 1, envMapIntensity: 2.1 });
   mat.onBeforeCompile = (sh) => {
-    sh.vertexShader = 'attribute vec4 aPbr; varying vec4 vPbr; varying vec3 vObj; varying vec3 vObjN;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vPbr = aPbr; vObj = position; vObjN = normal;');
+    sh.vertexShader = 'attribute vec4 aPbr; varying vec4 vPbr; varying vec3 vObj; varying vec3 vObjN;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vPbr = aPbr; vObj = position; vObjN = dot(normal, normal) > 0.1 ? normal : vec3(0.0, 1.0, 0.0);');
     sh.fragmentShader = `varying vec4 vPbr; varying vec3 vObj; varying vec3 vObjN;
       float rh(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
       float rn(vec3 x) { vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
@@ -54,8 +54,10 @@ function machineMaterial(THREE) {
         float rDust = rUp * 0.22 * smoothstep(0.4, 0.75, rA);
         diffuseColor.rgb *= 0.9 + 0.2 * rB;
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.105, 0.082, 0.06) * (0.7 + 0.7 * rC), max(rDirt, rDust));`)
+      .replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\n if (!(dot(normal, normal) > 0.5)) normal = vec3(0.0, 0.0, 1.0);')
+      .replace('#include <opaque_fragment>', 'if (!(dot(outgoingLight, outgoingLight) < 1e8)) outgoingLight = vec3(0.0);                // one bad pixel would spread through the bloom\n #include <opaque_fragment>')
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-      { float rf = 1.0 - clamp(dot(normalize(vViewPosition), normalize(vNormal)), 0.0, 1.0); totalEmissiveRadiance += (diffuseColor.rgb * 0.07 + vec3(0.02, 0.026, 0.034)) * (0.35 + 1.4 * rf * rf * rf); }   // a little fill, so the machine reads in an unlit room`)
+      { float rf = 1.0 - clamp(dot(normalize(vViewPosition), normal), 0.0, 1.0); totalEmissiveRadiance += (diffuseColor.rgb * 0.07 + vec3(0.02, 0.026, 0.034)) * (0.35 + 1.4 * rf * rf * rf); }   // a little fill, so the machine reads in an unlit room`)
       .replace('#include <roughnessmap_fragment>', `float roughnessFactor = vPbr.y;
         float rS = rn(vec3(vObj.x * 18.0, vObj.y * 1500.0, vObj.z * 1500.0)) * step(abs(vObjN.x), 0.5) + rn(vec3(vObj.x * 1500.0, vObj.y * 1500.0, vObj.z * 18.0)) * step(0.5, abs(vObjN.x));
         float rF = 1.0 - smoothstep(0.0004, 0.0016, max(length(dFdx(vObj)), length(dFdy(vObj))));
@@ -318,7 +320,7 @@ export default {
     const pose = { x: 0, y: 0, h: Math.PI / 2 }, prev = { x: 0, y: 0, h: 0 };
     let speedS = 0, pitch = 0, pitchV = 0, beamK = 0, sprayK = 0, dist = 0, sweep = 0, sweepT = 0, tilt = -0.1, selected = false, modeNow = 0;
     const ringTarget = new THREE.Color(), ledTarget = new THREE.Color(), tmpV = new THREE.Vector3();
-    const WMAX = 15;    // rad/s: above this the eye sees wheels strobe, so the visible spin saturates
+    const WMAX = 22;    // rad/s: above this the eye sees wheels strobe, so the visible spin saturates
 
     function update(state, dt, time) {
       const u = state.units['HOUND-01']; if (!u) { root.visible = ringRoot.visible = false; return; }
@@ -381,7 +383,7 @@ export default {
 
       const lightsOn = mode === 'drive' ? 1 : u.odo > 0.5 && state.phase !== 'complete' ? 0.35 : 0;
       beamK = snap ? lightsOn : damp(beamK, lightsOn, 4, dt);
-      beamMat.uniforms.uK.value = beamK; if (!still) beamMat.uniforms.uT.value = time; spot.intensity = beamK * 5; spot.visible = beamK > 0.01; beams[0].visible = beams[1].visible = beamK > 0.01;
+      beamMat.uniforms.uK.value = beamK; if (!still) beamMat.uniforms.uT.value = time; spot.intensity = beamK * 5; beams[0].visible = beams[1].visible = beamK > 0.01;
       lensMat.color.setRGB(0.05 + beamK * 0.8, 0.055 + beamK * 0.84, 0.06 + beamK * 0.88);
       if (spray) { sprayK = damp(sprayK, still || inside ? 0 : moving, 6, dt); spray.visible = sprayK > 0.03; if (spray.visible) { sprayMat.uniforms.uT.value = time; sprayMat.uniforms.uK.value = sprayK; sprayMat.uniforms.uPx.value = t.renderer.domElement.height * 1.5; } }
 

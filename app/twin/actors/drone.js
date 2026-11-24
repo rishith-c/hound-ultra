@@ -129,9 +129,11 @@ function bladeGeometry(THREE) {
 // One material for the whole airframe: colour, roughness, metalness and carbon weave come from the vertices.
 function frameMaterial(THREE) {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 1 });
+  m.envMapIntensity = 2.2;
   m.onBeforeCompile = (sh) => {
     sh.vertexShader = 'attribute vec3 aM; varying vec3 vM, vO;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vM = aM; vO = position;');
     sh.fragmentShader = 'varying vec3 vM, vO;\nfloat dh(vec3 p) { p = fract(p * 0.1031); p += dot(p, p.yzx + 33.33); return fract((p.x + p.y) * p.z); }\n' + sh.fragmentShader
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n { float rf = 1.0 - clamp(dot(normalize(vViewPosition), normal), 0.0, 1.0); totalEmissiveRadiance += (diffuseColor.rgb * 0.14 + vec3(0.018, 0.022, 0.028)) * (0.4 + 2.2 * rf * rf * rf); }')   // sky fill: the underside is seen against a bright sky
       .replace('#include <color_fragment>', '#include <color_fragment>\n vec2 tq = vec2(vO.x + vO.z, vO.x - vO.z) * 170.0; float tk = vM.z * (1.0 - smoothstep(0.25, 0.7, fwidth(tq.x) + fwidth(tq.y))); float tw = step(0.5, fract((floor(tq.x) + floor(tq.y * 0.5)) * 0.25)) - 0.5; diffuseColor.rgb *= 1.0 + 0.55 * tw * tk;')
       .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = clamp(vM.x * (0.9 + 0.2 * dh(floor(vO * 700.0))) + 0.16 * tw * tk, 0.04, 1.0);')
       .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = vM.y;');
@@ -171,7 +173,7 @@ void main() {
     float ray = 1.0 - smoothstep(w * 0.4, w, f), on = smoothstep(0.78, 1.0, h1(vec2(id, uTick)));
     float pulse = 0.5 + 0.5 * smoothstep(0.25, 0.0, abs(fract(vC.y - h1(vec2(id, uTick + 7.0))) - 0.5));
     float down = smoothstep(0.0, 0.35, vC.y);
-    a = ends * down * (0.012 + 0.016 * vC.y * vC.y + 0.085 * ray * on * pulse);
+    a = ends * down * (0.02 + 0.045 * vC.y * vC.y + 0.2 * ray * on * pulse);
   }
   gl_FragColor = vec4(uColor * a * uOpacity, 1.0);
   #include <colorspace_fragment>
@@ -202,8 +204,8 @@ export default {
         '  float r = vUv.y, dir = mod(vI, 2.0) * 2.0 - 1.0;',
         '  float prof = smoothstep(0.04, 0.22, r) * (1.0 - smoothstep(0.86, 1.0, r));',
         '  float g = abs(cos(vUv.x * 6.2831853 + dir * uPhase + vI * 1.3)); g *= g; g *= g; g *= g; g *= g;',   // the two blades, blurred
-        '  float a = uSpin * prof * (0.18 + 0.4 * g);',
-        '  gl_FragColor = vec4(mix(vec3(0.05, 0.055, 0.06), vec3(0.17, 0.18, 0.2), g * r), a);',
+        '  float a = uSpin * (prof * (0.2 + 0.45 * g) + 0.22 * smoothstep(0.9, 0.96, r) * (1.0 - smoothstep(0.97, 1.0, r)));',
+        '  gl_FragColor = vec4(mix(vec3(0.07, 0.075, 0.085), vec3(0.3, 0.32, 0.36), max(g * r, smoothstep(0.88, 0.97, r))), a);',
         '  #include <colorspace_fragment>',
         '}'].join('\n'),
     });

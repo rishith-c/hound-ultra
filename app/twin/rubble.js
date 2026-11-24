@@ -3,7 +3,7 @@
 // its way down. Each pile is a mud mound shaped from its polygon in world.OBSTACLES plus instanced and merged pieces.
 import * as THREE from 'three';
 import { pointInPoly, distToSeg } from '../core/geometry.js';
-import { rng, makeNoise, merge, mesh, instanced, matrix, rock, slab, tube, worldUV, box, cyl, xform, polyBounds, polyCentroid, smooth, tint } from './util.js';
+import { rng, makeNoise, merge, mesh, instanced, matrix, rock, slab, tube, worldUV, box, cyl, xform, polyBounds, polyCentroid, smooth, tint, ironSheet } from './util.js';
 
 export function build(env) {
   const { world, mats, label } = env, group = new THREE.Group(); group.name = 'rubble';
@@ -57,7 +57,7 @@ export function build(env) {
     }
     scatter(o.poly, 70, R, (p, d) => { const h = hf(p, d), s = 0.12 + R() * R() * 0.6, [rx, rz] = tilt(R, 0.7); rocks[Math.floor(R() * 3)].push(matrix(p[0], h - s * 0.15, -p[1], R() * 6.3, rx, rz, [s, s * (0.5 + R() * 0.6), s * (0.7 + R() * 0.6)])); });
     scatter(o.poly, 260, R, (p, d) => { const h = hf(p, d), [rx, rz] = tilt(R, 0.8); bricks.push(matrix(p[0], h + 0.03, -p[1], R() * 6.3, rx, rz)); brickCol.push(R() < 0.75 ? 0x7d5847 : 0x9c8f82); }, 0.05);
-    scatter(o.poly, 8, R, (p, d) => { const h = hf(p, d), [rx, rz] = tilt(R, 0.5), g = new THREE.PlaneGeometry(0.9, 2 + R() * 1.2, 1, 6); const a = g.attributes.position; for (let i = 0; i < a.count; i++) a.setZ(i, Math.sin(a.getY(i) * 1.4 + R()) * 0.12); g.computeVertexNormals(); g.rotateX(-Math.PI / 2); G.cgi.push(xform(g, p[0], h + 0.2, -p[1], R() * 3.1, rx, rz)); });
+    scatter(o.poly, 8, R, (p, d) => { const h = hf(p, d), [rx, rz] = tilt(R, 0.5), g = ironSheet(0.912, 2 + R() * 1.2, R, { bend: 0.2, dent: 0.08, tear: 0.12 }); G.cgi.push(xform(g, p[0], h + 0.2, -p[1], R() * 3.1, rx, rz)); });
     for (let i = 0; i < 7; i++) { const p = [79 + R() * 6, 52 + R() * 7], len = 1.5 + R() * 2.2; G.wood.push(worldUV(xform(new THREE.BoxGeometry(len, 0.07, 0.14), p[0], hf(p, sd(p, o.poly)) + 0.3 + R() * 0.4, -p[1], R() * 3.1, ...tilt(R, 0.8)), 0.9)); }
     label('Collapsed corner', { sub: 'Roof slab and mud. Do not enter', tone: 'danger', priority: 3, maxDist: 110, position: new THREE.Vector3(82.4, 2.9, -55.4) });
   }
@@ -69,7 +69,7 @@ export function build(env) {
     scatter(o.poly, 120, R, (p, d) => { const h = hf(p, d), s = 0.1 + R() * R() * 0.75, [rx, rz] = tilt(R, 0.6); rocks[Math.floor(R() * 3)].push(matrix(p[0], h - s * 0.25, -p[1], R() * 6.3, rx, rz, [s, s * (0.5 + R() * 0.5), s * (0.7 + R() * 0.6)])); }, -1.2);
     scatter(o.poly, 9, R, (p, d) => { const h = hf(p, d), len = 2.5 + R() * 3.5, r0 = 0.09 + R() * 0.1, ang = 3.6 + R.gauss() * 0.5; G.wood.push(xform(new THREE.CylinderGeometry(r0 * 0.7, r0, len, 7).rotateZ(Math.PI / 2), p[0], h + r0 * 0.7, -p[1], ang, 0, (R() - 0.5) * 0.25)); if (R() < 0.6) G.wood.push(xform(new THREE.CylinderGeometry(r0 * 0.25, r0 * 0.4, len * 0.4, 5).rotateZ(Math.PI / 2 - 0.7), p[0] + Math.cos(ang) * len * 0.2, h + r0 + 0.25, -(p[1] + Math.sin(ang) * len * 0.2) , ang + 0.4, 0, 0)); }, 0.6);
     scatter(o.poly, 16, R, (p, d) => { const h = hf(p, d), len = 1.2 + R() * 2; G.wood.push(worldUV(xform(new THREE.BoxGeometry(len, 0.045, 0.12 + R() * 0.1), p[0], h + 0.06 + R() * 0.2, -p[1], 3.6 + R.gauss() * 0.7, ...tilt(R, 0.35)), 0.9)); }, 0.3);
-    scatter(o.poly, 9, R, (p, d) => { const h = hf(p, d), g = new THREE.PlaneGeometry(0.9, 1.8 + R() * 1.4, 1, 6), a = g.attributes.position, ph = R() * 6; for (let i = 0; i < a.count; i++) a.setZ(i, Math.sin(a.getY(i) * 1.7 + ph) * 0.16 + (R() - 0.5) * 0.03); g.computeVertexNormals(); g.rotateX(-Math.PI / 2); G.cgi.push(xform(g, p[0], h + 0.14, -p[1], R() * 3.1, ...tilt(R, 0.3))); }, 0.5);
+    scatter(o.poly, 9, R, (p, d) => { const h = hf(p, d), g = ironSheet(0.912, 1.8 + R() * 1.4, R, { bend: 0.24, dent: 0.1, tear: 0.13 }); G.cgi.push(xform(g, p[0], h + 0.14, -p[1], R() * 3.1, ...tilt(R, 0.3))); }, 0.5);
     scatter(o.poly, 6, R, (p, d) => { const h = hf(p, d); G.concrete.push(xform(slab(0.8 + R() * 1.2, 0.7 + R(), 0.14, R, 0.25), p[0], h + 0.05, -p[1], R() * 3.1, ...tilt(R, 0.45))); }, 0.6);
     scatter(o.poly, 60, R, (p, d) => { bricks.push(matrix(p[0], hf(p, d) + 0.03, -p[1], R() * 6.3, ...tilt(R, 0.6))); brickCol.push(R() < 0.6 ? 0x7d5847 : 0x8f8a82); }, 0.2);
     label('Debris field', { sub: 'Loose flood debris. Passable on foot with care', tone: 'muted', priority: 2, maxDist: 130, position: new THREE.Vector3(97, 2.2, -69) });

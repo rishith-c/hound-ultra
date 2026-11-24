@@ -38,7 +38,7 @@ export function createMaterials(tex, photos = null) {
     concrete: S({ map: co.map, normalMap: co.normalMap, normalScale: ns(1), roughness: 0.92 }),
     concreteDark: S({ map: co.map, normalMap: co.normalMap, normalScale: ns(1), roughness: 0.95, color: 0x9a948a }),
     floor: S({ map: fl.map, normalMap: fl.normalMap, normalScale: ns(0.8), roughnessMap: fl.roughnessMap, roughness: 1 }),
-    cgi: S({ map: cg.map, normalMap: cg.normalMap, normalScale: ns(1.3), roughness: 0.5, metalness: 0.65, side: THREE.DoubleSide }),
+    cgi: S({ map: cg.map, normalMap: cg.normalMap, normalScale: ns(0.5), roughnessMap: cg.roughnessMap, metalnessMap: cg.roughnessMap, roughness: 1, metalness: 1, envMapIntensity: 0.4, side: THREE.DoubleSide }),
     wood: S({ map: wd.map, normalMap: wd.normalMap, roughness: 0.85 }),
     fabric: S({ map: fb.map, normalMap: fb.normalMap, roughness: 0.82, side: THREE.DoubleSide }),
     steel: S({ color: 0x8d949b, roughness: 0.42, metalness: 0.85 }),
@@ -57,7 +57,7 @@ export function createMaterials(tex, photos = null) {
     for (const k of ['plaster', 'plasterA', 'plasterC', 'inner']) photoTri(m[k], photos.plaster, { scale: 2.7, k: 0.78, bump: 0.8, sat: 0.12, key: 'plaster' });
     photoTri(m.concrete, photos.concrete, { scale: 3.1, k: 0.85, bump: 0.7, key: 'conc' });
     // flat roofs hold shallow rainwater: low, noisy patches go smooth and mirror the sky
-    photoTri(m.concreteDark, photos.concrete, { scale: 4.3, k: 0.95, bump: 0.8, key: 'concw', extra: ' float rpN = sin(vPW.x * 0.31 + sin(vPW.z * 0.23) * 2.0) * sin(vPW.z * 0.37 + sin(vPW.x * 0.19) * 2.0) + (pC.g - 1.0) * 0.25; float rpW = smoothstep(0.3, 0.42, rpN) * step(0.9, pN.y); diffuseColor.rgb *= mix(1.0, 0.42, rpW);', rough: ' roughnessFactor = mix(roughnessFactor, 0.07, rpW);', wet: 'rpW' });
+    photoTri(m.concreteDark, photos.concrete, { scale: 4.3, k: 0.95, bump: 0.8, key: 'concw', extra: ' float rpN = sin(vPW.x * 0.31 + sin(vPW.z * 0.23) * 2.0) * sin(vPW.z * 0.37 + sin(vPW.x * 0.19) * 2.0) + (pC.g - 1.0) * 0.25; float rpW = smoothstep(0.3, 0.42, rpN) * step(0.9, pN.y) * smoothstep(55.0, 25.0, length(vPW - cameraPosition)); diffuseColor.rgb *= mix(1.0, 0.42, rpW);', rough: ' roughnessFactor = mix(roughnessFactor, 0.07, rpW);', wet: 'rpW' });
     photoTri(m.mud, photos.wet, { scale: 2.4, k: 0.9, bump: 1.1, key: 'mud' }); photoTri(m.rock, photos.rubble, { scale: 1.8, k: 0.7, bump: 0.9, key: 'rock' });
   }
   m.dispose = () => { for (const v of Object.values(m)) v?.dispose?.(); };

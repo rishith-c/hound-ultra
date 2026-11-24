@@ -303,7 +303,7 @@ export function build(env) {
   function sheet(len, Rn, curl = Rn.gauss() * 0.5) {                               // corrugated roofing sheet, bent; lies along x
     const g = new THREE.PlaneGeometry(0.86, len, 1, 7).rotateX(-PI / 2).rotateY(PI / 2).translate(len / 2, 0, 0), p = g.attributes.position, kink = 0.25 + Rn() * 0.5, kb = Rn.gauss() * 0.5;
     for (let i = 0; i < p.count; i++) { const t = p.getX(i) / len, d = t - kink; p.setY(i, 0.03 + curl * len * 0.25 * t * t + (d > 0 ? d * len * kb : 0) + Math.abs(p.getZ(i)) * Rn.gauss() * 0.02); }
-    g.computeVertexNormals(); return [['cgi', uvMul(g, 1, len / 1.1)]];
+    g.computeVertexNormals(); return [['cgi', uvMul(g, 0.86 / 0.912, len / 2.4)]];
   }
   function oilDrum(col) {
     const out = [P('metal', cyl(0.285, 0.285, 0.88, 0, 0, 0, 16), col)];

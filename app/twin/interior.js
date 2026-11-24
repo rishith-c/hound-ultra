@@ -39,7 +39,7 @@ export function build(env) {
   const { box, cyl, xform, matrix, merge, mesh, instanced, tint, worldUV, clamp } = U;
   const group = new THREE.Group(); group.name = 'interior';
   const B = world.BUILDING.rect, room = (id) => world.roomById(id), noise = U.makeNoise('interior-silt');
-  const G = { paint: [], wood: [], metal: [], plastic: [], mud: [], concrete: [], board: [] };
+  const G = { paint: [], wood: [], metal: [], plastic: [], mud: [], concrete: [], board: [], paintW: [], woodW: [], metalW: [] };   // W: hung on a wall, so it fades with that wall
 
   // ---- small geometry helpers ----
   const P = (w, h, d, x, y, z, c, ry = 0, rx = 0, rz = 0) => tint(box(w, h, d, x, y, z, ry, rx, rz), c);      // a box whose base is at y, painted
@@ -57,7 +57,7 @@ export function build(env) {
   // ---- rooms: the faces of their walls ----
   const inner = (r) => { const [x0, y0, x1, y1] = r.rect; return [x0 + (x0 === B[0] ? T_OUT : T_IN), y0 + (y0 === B[1] ? T_OUT : T_IN), x1 - (x1 === B[2] ? T_OUT : T_IN), y1 - (y1 === B[3] ? T_OUT : T_IN)]; };
   const WALL = { N: (I, s) => ({ x: s, y: I[3], nx: 0, ny: -1 }), S: (I, s) => ({ x: s, y: I[1], nx: 0, ny: 1 }), E: (I, s) => ({ x: I[2], y: s, nx: -1, ny: 0 }), W: (I, s) => ({ x: I[0], y: s, nx: 1, ny: 0 }) };
-  function onWall(bucket, geos, r, side, s, h, off = 0, rz = 0, dyaw = 0) { const w = WALL[side](inner(r), s); place(bucket, geos, w.x + w.nx * off, w.y + w.ny * off, yawOut(w.nx, w.ny) + dyaw, h, 0, rz); return w; }
+  function onWall(bucket, geos, r, side, s, h, off = 0, rz = 0, dyaw = 0) { const w = WALL[side](inner(r), s); place(h > 0.5 && G[bucket + 'W'] ? bucket + 'W' : bucket, geos, w.x + w.nx * off, w.y + w.ny * off, yawOut(w.nx, w.ny) + dyaw, h, 0, rz); return w; }
 
   // ---- where nothing taller than litter may rest: the rover's lanes, doorways, listening stops, the rubble piles ----
   const KEEP = [
@@ -411,8 +411,9 @@ export function build(env) {
   // ---- assemble: one mesh per material, the repeats instanced ----
   const own = { paint: siltify(mats.paint.clone()), wood: siltify(mats.wood.clone()), metal: siltify(mats.metalPaint.clone()), plastic: siltify(mats.plastic.clone()), concrete: siltify(mats.concrete.clone()), board: new THREE.MeshStandardMaterial({ map: tex.board().map, roughness: 0.88 }) };
   own.wood.vertexColors = true;
+  const hung = env.wallReveal || ((m) => m); for (const k of ['paint', 'wood', 'metal']) { own[k + 'W'] = hung(siltify(own[k].clone())); own[k + 'W'].vertexColors = true; } hung(own.board);
   const add = (o) => { group.add(o); return o; };
-  for (const [k, mat, uv, col] of [['paint', own.paint, false, true], ['wood', own.wood, true, true], ['metal', own.metal, false, true], ['plastic', own.plastic, false, true], ['concrete', own.concrete, true, false], ['board', own.board, true, false], ['mud', mats.mud, true, false]]) {
+  for (const [k, mat, uv, col] of [['paint', own.paint, false, true], ['wood', own.wood, true, true], ['metal', own.metal, false, true], ['plastic', own.plastic, false, true], ['concrete', own.concrete, true, false], ['board', own.board, true, false], ['paintW', own.paintW, false, true], ['woodW', own.woodW, true, true], ['metalW', own.metalW, false, true], ['mud', mats.mud, true, false]]) {
     if (G[k].length) add(mesh(merge(G[k], { keepUV: uv, keepColor: col }), mat, { name: 'interior-' + k, cast: k !== 'mud' && k !== 'board' }));
   }
   for (const [k, geo] of [['desk', deskGeo()], ['table', tableGeo()], ['chair', chairGeo()]]) { const l = DEF[k].list; if (l.length) add(instanced(geo, own.paint, l.map((e) => e.m), { colors: l.map((e) => e.tone), name: 'interior-' + k + 's' })); else geo.dispose(); }

@@ -39,3 +39,7 @@ HOW TO WORK (the machine melted last time: load average 350)
 - You own only your files. Requests for other files go in orchestration/requests/<agent>.md. No git, no deploy, no
   installs, no new downloads of third-party files. Labels and facts: docs/FACTS.md still rules; never invent a result.
 - The glass token no longer blurs (blur over a live canvas cost frames); do not add backdrop-filter over 3-D.
+
+**New, for every Demo chapter (23 Nov, 19:40):** the shell can now play the whole story by itself (`app/global/story.js`). When your film reaches the end of
+its held last beat (before it loops), emit `ctx.bus.emit('chapter:done')` once per loop. Nothing else changes: if nobody is playing the story, your film
+loops as before. Blue `.btn-primary` buttons inside a Demo chapter are now drawn quietly by the shell (one blue button per screen, in the dock).

@@ -200,8 +200,8 @@ void main() {
   gl_PointSize = px * mix(1.0, 1.0 - 0.4 * s, 1.0 - uPlain);
   // height: deep steel on the ground, cool at the eaves, pale and warm on top
   vec3 c = mix(vec3(0.13, 0.225, 0.335), vec3(0.20, 0.33, 0.44), smoothstep(0.02, 0.9, hh));
-  c = mix(c, vec3(0.42, 0.59, 0.68), smoothstep(0.7, 3.6, hh));
-  c = mix(c, vec3(0.84, 0.775, 0.68), smoothstep(3.7, 7.2, hh));
+  c = mix(c, vec3(0.31, 0.47, 0.57), smoothstep(0.7, 3.6, hh));
+  c = mix(c, vec3(0.66, 0.57, 0.46), smoothstep(3.7, 7.2, hh));
   c *= 0.3 + 1.5 * aD.x;
   c = mix(c, uScan * 1.15, k * k * 0.8);
   vCol = vec4(c, uOpacity * (1.0 - s) * clamp(raw / (1.15 * uScale), 0.35, 1.0));

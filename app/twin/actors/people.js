@@ -7,6 +7,7 @@
 // is drawn lying, with a fixed yaw taken from the detection id. Everything here is simulated.
 // The 'truth' layer (off by default) is the only place ground truth is drawn.
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { moundHeight } from './routes.js';
 import { TRUTH } from '../../core/world.js';
 import { palette, Y, clamp, lerp, damp, smoothstep, stateWatcher, decalMaterial, disposeTree, mulberry32 } from './common.js';
 
@@ -128,6 +129,8 @@ const FLAT_FRAG = /* glsl */ `uniform vec3 uColor; uniform float uAlpha; void ma
 }`;
 
 function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+// Posture is drawn from the rover's own readings, never from the truth: moving in a Wi-Fi window = upright, otherwise lying.
+function seenMoving(d) { const e = d.evidence; if (e) for (let i = 0; i < e.length; i++) if (e[i].sensor === 'csi' && e[i].moving > 0.5) return true; return false; }
 const toward = (v, target, step) => (v < target ? Math.min(target, v + step) : Math.max(target, v - step));
 
 // A standing body 1.7 m tall, feet on y = 0, facing +z. detail = radial segments.
@@ -273,10 +276,10 @@ export default {
         }
         v.status = st;
         if (v.pulse > 0) v.pulse = Math.max(0, v.pulse - dt / 1.5);
-        const ap = v.appear * v.appear * (3 - 2 * v.appear), sel = isSelected(d), lying = !(sv && sv.motion === 'moving');
+        const ap = v.appear * v.appear * (3 - 2 * v.appear), sel = isSelected(d), lying = !seenMoving(d);
         // While it is uncertain the volume wanders inside its own error ellipse.
         const loose = reduced ? 0 : (1 - v.kRes) * Math.min(v.sigma, 2.5) * 0.42;
-        v.group.visible = true; v.group.position.set(v.x, 0, -v.y);
+        v.group.visible = true; const up = mound(v.x, v.y); v.group.position.set(v.x, up, -v.y);
         v.fig.position.set(loose * (Math.sin(time * 0.31 + v.bph) * 0.7 + Math.sin(time * 0.83 + v.bph * 3) * 0.3), 0, loose * (Math.cos(time * 0.27 + v.bph * 2) * 0.7 + Math.sin(time * 0.71) * 0.3));
 
         // error ellipse, confidence arc
@@ -314,14 +317,14 @@ export default {
           }
           if (tone !== v.tone) { v.tone = tone; v.label.setTone?.(tone); v.label.setPriority?.(conf ? 8 : 5); }
           const ly = conf ? lerp(1.6, v.lying === true ? 0.75 : 1.95, v.kFig) : clamp(domeH * 0.55, 0.8, 1.35) + 0.5;
-          v.lp.set(v.x, t.groundY + ly, -v.y); v.label.setPosition(v.lp);
+          v.lp.set(v.x, t.groundY + up + ly, -v.y); v.label.setPosition(v.lp);
           v.label.setSelected?.(sel);
         }
       }
       // anything not in this state (after a reset or seek) disappears at once
       if (visuals.size !== dets.length || fresh) for (const v of visuals.values()) if (v.seen !== frame && v.group.visible) { v.group.visible = false; v.labelOn = false; v.label.setVisible?.(false); if (!v.label.setVisible) v.label.el.style.visibility = 'hidden'; v.status = ''; }
     }
-    const watch = stateWatcher();
+    const watch = stateWatcher(), mound = moundHeight(t);
 
     return {
       update,

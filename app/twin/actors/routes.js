@@ -205,9 +205,29 @@ function resample(path, step) {
   const e = path[path.length - 1]; if (dist2(out[out.length - 1], e) > step * 0.3) out.push(e.slice()); else out[out.length - 1] = e.slice();
   return out;
 }
-// The route's ribbon: five columns across (the outer ones carry the hazard distance), uv = metres along and across.
-const COLS = [-1.65, -0.8, 0, 0.8, 1.65];
-function routeGeometry(THREE, pts, hazards) {
+// Height of the mud mounds above the floor at a world point (0 elsewhere). The mounds are regular grids of vertices.
+export function moundHeight(t) {
+  const grids = [];
+  for (const name of ['corridor-mud', 'ne-mud', 'field-mud']) {
+    const m = t.scene.getObjectByName(name); if (!m) continue;
+    const p = m.geometry.attributes.position; m.geometry.computeBoundingBox(); const b = m.geometry.boundingBox;
+    const res = Math.max(Math.abs(p.getZ(1) - p.getZ(0)), Math.abs(p.getX(1) - p.getX(0))), nx = Math.round((b.max.x - b.min.x) / res) + 1, nz = Math.round((b.max.z - b.min.z) / res) + 1, h = new Float32Array(nx * nz);
+    for (let i = 0; i < p.count; i++) h[Math.round((p.getZ(i) - b.min.z) / res) * nx + Math.round((p.getX(i) - b.min.x) / res)] = p.getY(i);
+    grids.push({ x: b.min.x, z: b.min.z, res, nx, nz, h });
+  }
+  return (x, y) => {
+    let top = 0;
+    for (const g of grids) {
+      const u = (x - g.x) / g.res, w = (-y - g.z) / g.res, i = Math.floor(u), j = Math.floor(w); if (i < 0 || j < 0 || i >= g.nx - 1 || j >= g.nz - 1) continue;
+      const k = j * g.nx + i, a = u - i, b = w - j;
+      top = Math.max(top, (g.h[k] * (1 - a) + g.h[k + 1] * a) * (1 - b) + (g.h[k + g.nx] * (1 - a) + g.h[k + g.nx + 1] * a) * b);
+    }
+    return top;
+  };
+}
+// The route's ribbon: seven columns across (the outer ones carry the hazard distance), uv = metres along and across.
+const COLS = [-1.65, -0.8, -0.4, 0, 0.4, 0.8, 1.65];
+function routeGeometry(THREE, pts, hazards, mound) {
   const n = pts.length, C = COLS.length, pos = new Float32Array(n * C * 3), uv = new Float32Array(n * C * 2), hz = new Float32Array(n * C), idx = []; let s = 0;
   const p = [0, 0];
   for (let i = 0; i < n; i++) {
@@ -215,7 +235,7 @@ function routeGeometry(THREE, pts, hazards) {
     if (i) s += dist2(pts[i - 1], pts[i]);
     for (let c = 0; c < C; c++) {
       const k = i * C + c; p[0] = pts[i][0] - dy * COLS[c]; p[1] = pts[i][1] + dx * COLS[c];
-      pos.set([p[0], 0, -p[1]], k * 3); uv.set([s, COLS[c]], k * 2);
+      const up = mound(p[0], p[1]); pos.set([p[0], up + Math.min(0.03, up), -p[1]], k * 3); uv.set([s, COLS[c]], k * 2);
       let d = 9; for (const h of hazards) { const q = polyDist(p, h.poly); if (Math.abs(q) < Math.abs(d) || (q < 0 && d > 0)) d = q; } hz[k] = d;
       if (i < n - 1 && c < C - 1) idx.push(k, k + C, k + 1, k + 1, k + C, k + C + 1);
     }
@@ -237,7 +257,7 @@ export default {
     const { THREE } = t, pal = palette(t), low = t.quality === 'low';
     const root = new THREE.Group(); root.name = 'routes'; t.scene.add(root);
     const routeG = new THREE.Group(), trailG = new THREE.Group(); root.add(routeG, trailG);
-    const watch = stateWatcher();
+    const watch = stateWatcher(), mound = moundHeight(t);
     const on = { route: true, trail: true }; let demo = false;
     const white = new THREE.Color(1, 1, 1), m4 = new THREE.Matrix4();
 
@@ -336,7 +356,7 @@ export default {
         for (let j = 0; j < PER; j++) {
           const k = (i - 1) * PER + j; if (k >= PCAP) break;
           const r1 = Math.sin(k * 12.9898) * 43758.5453, r2 = Math.sin(k * 78.233) * 12543.123, q = (j + 0.8 * (r1 - Math.floor(r1))) / PER, side = (k % 2 ? 1 : -1) * 0.1 + (r2 - Math.floor(r2) - 0.5) * 0.22;
-          m4.makeRotationY(h - (k % 2 ? -1 : 1) * 0.1 + (r2 - Math.floor(r2) - 0.5) * 0.2); m4.setPosition(a[0] + (b[0] - a[0]) * q - s * side, t.groundY + 0.015, -(a[1] + (b[1] - a[1]) * q + c * side)); boots.mesh.setMatrixAt(k, m4);
+          m4.makeRotationY(h - (k % 2 ? -1 : 1) * 0.1 + (r2 - Math.floor(r2) - 0.5) * 0.2); const bx = a[0] + (b[0] - a[0]) * q - s * side, by = a[1] + (b[1] - a[1]) * q + c * side; m4.setPosition(bx, t.groundY + 0.015 + mound(bx, by), -by); boots.mesh.setMatrixAt(k, m4);
         }
       }
       boots.src = tr.length; boots.mesh.count = Math.min(PCAP, Math.max(0, (tr.length - 1) * PER - 3)); boots.mesh.material.uniforms.uCount.value = boots.mesh.count; boots.mesh.instanceMatrix.needsUpdate = true;
@@ -379,7 +399,7 @@ export default {
         if (!leg.ok || !leg.path || leg.path.length < 2) continue;
         n++;
         const pts = resample(smoothPath(leg.path, { iterations: 3, radius: 1.0 }), low ? 0.6 : 0.35);
-        const geo = routeGeometry(THREE, pts, hazards), len = geo.userData.length;
+        const geo = routeGeometry(THREE, pts, hazards, mound), len = geo.userData.length;
         const U = { uColor: { value: pal.accent }, uOk: { value: pal.ok }, uHaz: { value: pal.danger }, uLen: { value: len }, uOff: { value: rescue.total }, uFront: { value: 1e6 }, uBack: { value: -1e6 }, uHead: { value: 0 }, uDone: { value: -1e3 }, uFlow: { value: 0 }, uFlowAmt: { value: 0 }, uRank: { value: first ? 0 : 1 }, uPlanned: { value: r.status === 'planned' ? 1 : 0 }, uCalm: { value: leg.arrivedAt != null || r.status === 'done' ? 1 : 0 }, uFadeIn: { value: first ? 1 : 0 } };
         const mesh = new THREE.Mesh(geo, decalMaterial(THREE, { vertexShader: RESCUE_VERT, fragmentShader: RESCUE_FRAG, uniforms: U, ...lightBlend(THREE) }));
         mesh.position.y = t.groundY + 0.018 + n * 0.001; mesh.renderOrder = 5; mesh.frustumCulled = false; group.add(mesh);

@@ -146,6 +146,24 @@ export function tube(points, radius, { radial = 5, segs = null, closed = false }
 
 export function polyCentroid(poly) { let x = 0, y = 0; for (const p of poly) { x += p[0]; y += p[1]; } return [x / poly.length, y / poly.length]; }
 export function polyBounds(poly) { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const p of poly) { a = Math.min(a, p[0]); b = Math.min(b, p[1]); c = Math.max(c, p[0]); d = Math.max(d, p[1]); } return [a, b, c, d]; }
+// A corrugated iron sheet lying in x/z, ridges along z: bent, creased, dented, with torn edges. Its texture coordinates
+// are in metres (0.912 m = 12 ridges of 76 mm across, 2.4 m along), so the ridges have the same pitch on every sheet.
+export function ironSheet(w, l, R, { bend = 0.14, dent = 0.05, tear = 0.07, segs = [Math.ceil(w / 0.13), Math.ceil(l / 0.16)] } = {}) {
+  const [nx, nz] = segs, g = new THREE.PlaneGeometry(w, l, nx, nz).rotateX(-Math.PI / 2), p = g.attributes.position, uv = g.attributes.uv, ou = Math.floor(R() * 12) / 12, ov = R();
+  const curl = R.gauss() * bend, twist = R.gauss() * bend * 0.6, k = 0.25 + R() * 0.5, kink = R.gauss() * bend * 1.6, skew = R.gauss() * 0.3, dents = Array.from({ length: 4 }, () => [(R() - 0.5) * w, (R() - 0.5) * l, 0.12 + R() * 0.3, (R() - 0.65) * dent * 2]);
+  const bite = [0, 1, 2].map(() => [R() * l - l / 2, R.sign(), 0.08 + R() * 0.2, tear * (1 + R() * 3)]);
+  for (let i = 0; i < p.count; i++) {
+    const ix = i % (nx + 1), iz = Math.floor(i / (nx + 1)); let x = p.getX(i), z = p.getZ(i); uv.setXY(i, x / 0.912 + ou, z / 2.4 + ov);
+    if (iz === 0 || iz === nz) z -= Math.sign(z) * R() * R() * tear * 1.1;
+    if (ix === 0 || ix === nx) { x -= Math.sign(x) * R() * R() * tear; for (const b of bite) if (Math.sign(x) === b[1] && Math.abs(z - b[0]) < b[2]) x -= Math.sign(x) * b[3] * R(); }
+    const u = x / w, v = z / l; let y = curl * v * v * l + twist * u * v * l + Math.max(0, v + 0.5 - k + u * skew) * kink * l + (Math.abs(u) > 0.4 && Math.abs(v) > 0.42 ? R() * tear * 1.5 : 0);
+    for (const d of dents) y += d[3] * Math.exp(-((x - d[0]) ** 2 + (z - d[1]) ** 2) / (d[2] * d[2]));
+    p.setXYZ(i, x, y, z);
+  }
+  g.computeVertexNormals(); return g;
+}
+// Put metric sheet coordinates on a plane made elsewhere (w across the ridges, l along them).
+export function ironUV(g, w, l) { const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / 0.912, uv.getY(i) * l / 2.4); return g; }
 export const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 export const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 export const lerp = (a, b, t) => a + (b - a) * t;

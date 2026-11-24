@@ -231,16 +231,24 @@ export function createTextures(world, maxAniso = 8) {
     });
   }
 
-  // Corrugated roofing sheet, 1 m repeat, ridges running along v.
+  // Corrugated iron: 0.912 m (12 ridges of 76 mm) by 2.4 m, ridges along v. Dull zinc, rust runs from the nail rows and the laps.
   function cgi() {
     return memo('cgi', () => {
-      const S = 512, r = rng('tex:cgi'), [ac, a] = cv(S), [hc, h] = cv(S), id = h.createImageData(S, S);
-      for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) { const v = 128 + 120 * Math.sin(x / S * 6.283 * 10), i = (y * S + x) * 4; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; }
+      const stain = (q, x, y, s, c, k) => { const g = q.createRadialGradient(x, y, 0, x, y, s); g.addColorStop(0, hex2(c, k)); g.addColorStop(0.6, hex2(c, k * 0.5)); g.addColorStop(1, hex2(c, 0)); q.fillStyle = g; q.fillRect(x - s, y - s, s * 2, s * 2); };
+      const W = 512, H = 1024, r = rng('tex:cgi'), [ac, a] = cv(W, H), [hc, h] = cv(W, H), [mc, m] = cv(W, H), id = h.createImageData(W, H);
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const v = 128 + 110 * Math.sin(x / W * 6.28319 * 12), i = (y * W + x) * 4; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; }
       h.putImageData(id, 0, 0);
-      a.fillStyle = '#8b9196'; a.fillRect(0, 0, S, S); tileNoise(a, S, S, r, { cells: [128, 32, 8], alpha: 0.35, mode: 'soft-light' });
-      for (let i = 0; i < 70; i++) { const x = r() * S, y = r() * S, len = 30 + r() * 200, g = a.createLinearGradient(0, y, 0, y + len); g.addColorStop(0, 'rgba(112,72,48,' + (0.25 + r() * 0.45) + ')'); g.addColorStop(1, 'rgba(112,72,48,0)'); a.fillStyle = g; a.fillRect(x, y, 3 + r() * 14, len); }
-      for (let i = 0; i < 26; i++) blob(a, r() * S, r() * S, 10 + r() * 40, '#6a4631', 0.4);
-      return { map: T(ac), normalMap: T(toNormal(hc, 5), { srgb: false }) };
+      a.fillStyle = '#78726a'; a.fillRect(0, 0, W, H); m.fillStyle = 'rgb(0,158,78)'; m.fillRect(0, 0, W, H);      // green: roughness, blue: metalness
+      tileNoise(a, W, H, r, { cells: [128, 32, 8, 3], alpha: 0.35, mode: 'soft-light' });
+      for (let i = 0; i < 60; i++) stain(a, r() * W, r() * H, 12 + r() * 46, r() < 0.5 ? '#86827b' : '#625d56', 0.3);
+      const rust = (x, y, w, len, k) => { const g = a.createLinearGradient(0, y, 0, y + len), q = m.createLinearGradient(0, y, 0, y + len); for (let s = 0; s <= 1; s += 0.25) { g.addColorStop(s, 'rgba(' + (92 + r() * 24 | 0) + ',' + (56 + r() * 12 | 0) + ',36,' + (k * (1 - s)) + ')'); q.addColorStop(s, 'rgba(0,238,0,' + (k * (1 - s)) + ')'); } a.fillStyle = g; a.fillRect(x - w / 2, y, w, len); m.fillStyle = q; m.fillRect(x - w / 2, y, w, len); };
+      for (const row of [60, 400, 740]) for (let i = 0; i < 12; i++) { if (r() < 0.6) continue; const x = (i + 0.25) / 12 * W + r.gauss() * 2, y = row + r.gauss() * 4; rust(x, y, 6 + r() * r() * 46, 60 + r() * 300, 0.3 + r() * 0.5); a.fillStyle = '#2c211a'; a.beginPath(); a.arc(x, y, 3, 0, 7); a.fill(); }
+      for (let i = 0; i < 70; i++) rust(r() * W, r() * H, 3 + r() * r() * 70, 40 + r() * 300, 0.1 + r() * 0.35);
+      for (let i = 0; i < 46; i++) { const x = r() * W, y = r() * H, s = 10 + r() * r() * 80; const c = r() < 0.6 ? '#5f3d2b' : '#744c33'; stain(a, x, y, s, c, 0.5); stain(m, x, y, s, '#00f000', 0.6); }
+      for (let i = 0; i < 900; i++) { a.fillStyle = r() < 0.7 ? 'rgba(84,50,32,0.4)' : 'rgba(150,150,146,0.25)'; a.fillRect(r() * W, r() * H, 1 + r() * 2.5, 1 + r() * 4); }
+      a.fillStyle = 'rgba(30,24,20,0.7)'; a.fillRect(0, 0, 3, H); for (let i = 0; i < 24; i++) rust(r() * 14, r() * H, 10, 60 + r() * 160, 0.5);
+      for (let i = 0; i < 14; i++) { stain(h, r() * W, r() * H, 14 + r() * 40, r() < 0.6 ? '#404040' : '#c0c0c0', 0.3); }
+      return { map: T(ac), normalMap: T(toNormal(hc, 3.2), { srgb: false }), roughnessMap: T(mc, { srgb: false }) };
     });
   }
 

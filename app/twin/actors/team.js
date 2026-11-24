@@ -4,6 +4,7 @@
 // The team is simulated.
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { damp, dampAngle, clamp, lerp, smoothstep, stateWatcher, disposeTree, dist2 } from './common.js';
+import { moundHeight } from './routes.js';
 
 const LT = 0.42, LS = 0.41, ANK = 0.09, HIP = 0.92;     // thigh, shank, ankle height, hip height (m)
 const REST = 0.897;                                      // hip height when standing easy
@@ -149,7 +150,7 @@ function buildFigure(THREE, V, low) {
   push(loft([[1.548, 0.05, 0, 0.012, 0.012], [1.556, 0.045, 0, 0.036, 0.034], [1.575, 0.034, 0, 0.06, 0.052], [1.605, 0.023, 0, 0.078, 0.062], [1.64, 0.015, 0, 0.09, 0.07], [1.675, 0.01, 0, 0.096, 0.074], [1.71, 0.006, 0, 0.098, 0.076], [1.75, 0, 0, 0.09, 0.07], [1.78, 0, 0, 0.06, 0.05]], { n: 2.15 }), V.skin, SKIN, on(HEAD));
   push(ball(0.02, 0.026, 0.014, 0.103, 1.648, 0), V.skin, SKIN, on(HEAD)); push(ball(0.014, 0.011, 0.014, 0.114, 1.634, 0), V.skin, SKIN, on(HEAD));
   for (const s of [-1, 1]) { push(ball(0.018, 0.03, 0.011, -0.002, 1.652, s * 0.077), V.skin, SKIN, on(HEAD)); push(ball(0.02, 0.008, 0.02, 0.094, 1.694, s * 0.033), '#2a211b', SKIN, on(HEAD)); }
-  if (V.mask) { push(ball(0.044, 0.04, 0.05, 0.078, 1.607, 0), '#8d8f8c', [0.85, 0.25, 0, 0], on(HEAD)); push(cyl(0.014, 0.016, 0.014, 0.117, 1.6, 0.022, 0, Math.PI / 2), '#55585a', PLASTIC, on(HEAD)); for (const s of [-1, 1]) push(tube([[0.07, 1.61, s * 0.048], [0.02, 1.625, s * 0.074], [-0.07, 1.65, s * 0.06]], 0.003, 4), '#24272a', NYLON, on(HEAD)); }
+  if (V.mask) { push(ball(0.044, 0.04, 0.05, 0.078, 1.607, 0), '#5f6260', [0.85, 0.25, 0, 0], on(HEAD)); push(cyl(0.014, 0.016, 0.014, 0.117, 1.6, 0.022, 0, Math.PI / 2), '#55585a', PLASTIC, on(HEAD)); for (const s of [-1, 1]) push(tube([[0.07, 1.61, s * 0.048], [0.02, 1.625, s * 0.074], [-0.07, 1.65, s * 0.06]], 0.003, 4), '#24272a', NYLON, on(HEAD)); }
   else push(loft([[1.52, 0.004, 0, 0.066, 0.066], [1.545, 0.016, 0, 0.066, 0.06], [1.575, 0.03, 0, 0.068, 0.058], [1.61, 0.022, 0, 0.087, 0.07], [1.645, 0.018, 0, 0.1, 0.079], [1.66, 0.016, 0, 0.102, 0.08], [1.664, 0.016, 0, 0.094, 0.073]], { n: 2.1, caps: false }), V.buff, CLOTH, (x, y) => y < 1.55 ? [NECK, 1, 0, 0] : [HEAD, 1, 0, 0]);   // neck gaiter pulled up
   push(rbox(0.026, 0.036, 0.142, 0.012, 0.096, 1.68, 0), '#0b0d10', GLASS, on(HEAD)); for (const s of [-1, 1]) push(rbox(0.1, 0.008, 0.005, 0.002, 0.045, 1.684, s * 0.076), '#101214', PLASTIC, on(HEAD));
   // helmet, brim, ribs, side rails, strap, head lamp
@@ -235,9 +236,9 @@ function buildFigure(THREE, V, low) {
 
 // Muted, worn, real colours. The only accent is a faded orange edge on the tape.
 const WEAR = [
-  { jacket: '#252a31', trouser: '#24282d', boot: '#1c1a18', helmet: '#8f8d85', pack: '#2d3335', pack2: '#262b2e', accent: '#8a5233', skin: '#5f4d43', buff: '#33373a', glove: '#23262a', mask: false, kit: 'rope' },
-  { jacket: '#3a3d30', trouser: '#2b2c27', boot: '#211d19', helmet: '#85837b', pack: '#33362e', pack2: '#2a2d27', accent: '#82502f', skin: '#533f35', glove: '#3a3228', mask: true, kit: 'bar', sledge: true },
-  { jacket: '#2b2f34', trouser: '#2a2d31', boot: '#1b1b1b', helmet: '#979489', pack: '#3a382f', pack2: '#2e2d28', accent: '#8a5233', skin: '#69574c', glove: '#26292c', mask: true, kit: 'stretcher' },
+  { jacket: '#333942', trouser: '#30353a', boot: '#2c2925', helmet: '#8f8d85', pack: '#434a4b', pack2: '#363d3f', accent: '#8a5233', skin: '#5f4d43', buff: '#33373a', glove: '#23262a', mask: false, kit: 'rope' },
+  { jacket: '#44473a', trouser: '#37382f', boot: '#322c26', helmet: '#85837b', pack: '#45483c', pack2: '#383b32', accent: '#82502f', skin: '#533f35', glove: '#3a3228', mask: true, kit: 'bar', sledge: true },
+  { jacket: '#3b4046', trouser: '#36393d', boot: '#2a2a29', helmet: '#979489', pack: '#4b483c', pack2: '#3b3932', accent: '#8a5233', skin: '#69574c', glove: '#26292c', mask: true, kit: 'stretcher' },
 ];
 
 export default {
@@ -268,7 +269,7 @@ export default {
       const proxy = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 1.85, 8), new THREE.MeshBasicMaterial({ visible: false })); proxy.position.y = 0.92;
       const hit = new THREE.Group(); hit.add(proxy); root.add(hit); t.pickable(hit, { type: 'unit', id: 'TEAM-1' });
       const foot = () => ({ x: 0, y: 0, h: 0, fx: 0, fy: 0, fh: 0, k: 0, swing: false, pitch: 0, lift: 0 });
-      return { i, mesh, b, lamp, hit, x: 0, y: 0, h: 0, sp: 0, w: 0, kn: 0, phase: i * 0.37, feet: [foot(), foot()], q: new Float32Array(16), seed: i * 2.3 };
+      return { i, mesh, b, lamp, hit, x: 0, y: 0, g: 0, h: 0, sp: 0, w: 0, kn: 0, phase: i * 0.37, feet: [foot(), foot()], q: new Float32Array(16), seed: i * 2.3 };
     }
     const figs = [0, 1, 2].map(makeFig);
     const home = (t.world.UNITS.find((u) => u.id === 'TEAM-1') || {}).home || [22, 9];
@@ -338,7 +339,7 @@ export default {
       }
     }
 
-    const watch = stateWatcher(), v = new THREE.Vector3(), v2 = new THREE.Vector3(), q = new THREE.Quaternion(), m4 = new THREE.Matrix4(), sc = new THREE.Vector3(), eu = new THREE.Euler(), qg = new THREE.Quaternion();
+    const watch = stateWatcher(), mound = moundHeight(t), v = new THREE.Vector3(), v2 = new THREE.Vector3(), q = new THREE.Quaternion(), m4 = new THREE.Matrix4(), sc = new THREE.Vector3(), eu = new THREE.Euler(), qg = new THREE.Quaternion();
     const T = new Float32Array(16);
     let swing = 0, lastStrike = 0, workT = 0, labelSub = '';
 
@@ -380,7 +381,7 @@ export default {
       // ankle in the figure's frame; the foot pivots on its ball when the heel is up, on its heel when the toe is up
       let ax, ay; if (p < 0) { const sp = Math.sin(-p), cp = Math.cos(p); ax = 0.13 - 0.13 * cp + ANK * sp; ay = 0.13 * sp + ANK * cp; } else { const sp = Math.sin(p), cp = Math.cos(p); ax = -0.06 + 0.06 * cp - ANK * sp; ay = 0.06 * sp + ANK * cp; }
       let dh = (F.h - f.h) % 6.283; if (dh > Math.PI) dh -= 6.283; if (dh < -Math.PI) dh += 6.283; dh = clamp(dh, -0.7, 0.7);
-      v.set(c * wx + n * wy + ax * Math.cos(dh), ay + F.lift, -(-n * wx + c * wy + ax * Math.sin(dh)));
+      v.set(c * wx + n * wy + ax * Math.cos(dh), ay + F.lift + (mound(F.x, F.y) - f.g) / k, -(-n * wx + c * wy + ax * Math.sin(dh)));
       v.sub(hips.position).applyQuaternion(q.copy(hips.quaternion).invert()).sub(TH.position);
       const d = clamp(v.length(), 0.3, LT + LS - 0.002); v.normalize();
       const bd = Math.asin(clamp(v.x, -1, 1)), a = Math.atan2(-v.z, -v.y), al = Math.acos(clamp((LT * LT + d * d - LS * LS) / (2 * LT * d), -1, 1)), kn = Math.PI - Math.acos(clamp((LT * LT + LS * LS - d * d) / (2 * LT * LS), -1, 1));
@@ -474,22 +475,24 @@ export default {
           f.w = fresh ? 0 : damp(f.w, walking ? 1 : 0, walking ? 5 : 7, dt);
           f.kn = fresh ? f.kn : damp(f.kn, kneel ? 1 : 0, 3.2, dt);
           stepFeet(f, moved, dt, fresh, walking, kneel ? 1 : 0);
+          const g0 = mound(f.feet[0].x, f.feet[0].y), g1 = mound(f.feet[1].x, f.feet[1].y), gt = Math.min(g0, g1) * 0.7 + Math.max(g0, g1) * 0.3;   // the body rides nearer the lower foot
+          f.g = fresh ? gt : damp(f.g, gt, 9, dt); const gy = t.groundY + f.g;
           pose(f, mode, dt, fresh, time);
-          const M = f.mesh; M.position.set(f.x, t.groundY, -f.y); M.rotation.y = f.h; M.updateMatrixWorld(true);
-          f.hit.position.set(f.x, t.groundY, -f.y);
+          const M = f.mesh; M.position.set(f.x, gy, -f.y); M.rotation.y = f.h; M.updateMatrixWorld(true);
+          f.hit.position.set(f.x, gy, -f.y);
           // lamp: beam, pool on the ground, the lead's real light
           beam.setMatrixAt(i, f.lamp.matrixWorld);
           v.setFromMatrixPosition(f.lamp.matrixWorld); v2.set(1, 0, 0).transformDirection(f.lamp.matrixWorld);
-          const reach = v2.y < -0.08 ? Math.min(5, (v.y - t.groundY) / -v2.y) : 5, hx = v.x + v2.x * reach, hz = v.z + v2.z * reach;
-          ground.setMatrixAt(i * 4 + 3, m4.compose(sc.set(hx, t.groundY + 0.02, hz), qg.setFromEuler(eu.set(0, Math.atan2(-v2.z, v2.x), 0)), v2.set(Math.min(4.6, 1.2 + reach * 0.8), 1, Math.min(2.4, 0.8 + reach * 0.35))));
-          if (i === 0 && spot) { spot.position.copy(v); spot.target.position.set(hx, t.groundY, hz); spot.target.updateMatrixWorld(); spot.updateMatrixWorld(); }
+          const reach = v2.y < -0.08 ? Math.min(5, (v.y - gy) / -v2.y) : 5, hx = v.x + v2.x * reach, hz = v.z + v2.z * reach;
+          ground.setMatrixAt(i * 4 + 3, m4.compose(sc.set(hx, t.groundY + mound(hx, -hz) + 0.02, hz), qg.setFromEuler(eu.set(0, Math.atan2(-v2.z, v2.x), 0)), v2.set(Math.min(4.6, 1.2 + reach * 0.8), 1, Math.min(2.4, 0.8 + reach * 0.35))));
+          if (i === 0 && spot) { spot.position.copy(v); spot.target.position.set(hx, gy, hz); spot.target.updateMatrixWorld(); spot.updateMatrixWorld(); }
           // contact shadows
           qg.setFromEuler(eu.set(0, f.h, 0)); const kn = f.kn;
-          ground.setMatrixAt(i * 4, m4.compose(v.set(f.x, t.groundY + 0.017, -f.y), qg, v2.set(1.0 + kn * 0.2, 1, 0.85)));
-          for (let s = 0; s < 2; s++) { const F = f.feet[s], g = 1 - F.lift * 6; ground.setMatrixAt(i * 4 + 1 + s, m4.compose(v.set(F.x + Math.cos(F.h) * 0.05, t.groundY + 0.019, -(F.y + Math.sin(F.h) * 0.05)), qg.setFromEuler(eu.set(0, F.h, 0)), v2.set(0.46 * g, 1, 0.28 * g))); }
+          ground.setMatrixAt(i * 4, m4.compose(v.set(f.x, t.groundY + mound(f.x, f.y) + 0.017, -f.y), qg, v2.set(1.0 + kn * 0.2, 1, 0.85)));
+          for (let s = 0; s < 2; s++) { const F = f.feet[s], g = 1 - F.lift * 6; ground.setMatrixAt(i * 4 + 1 + s, m4.compose(v.set(F.x + Math.cos(F.h) * 0.05, t.groundY + mound(F.x, F.y) + 0.019, -(F.y + Math.sin(F.h) * 0.05)), qg.setFromEuler(eu.set(0, F.h, 0)), v2.set(0.46 * g, 1, 0.28 * g))); }
         }
         beam.instanceMatrix.needsUpdate = true; ground.instanceMatrix.needsUpdate = true;
-        label.setPosition(v.set(figs[0].x, t.groundY + 2.05, -figs[0].y));
+        label.setPosition(v.set(figs[0].x, t.groundY + figs[0].g + 2.05, -figs[0].y));
       },
       setLayer() {},
       onSelect(sel) { label.setSelected?.(!!sel && sel.type === 'unit' && sel.id === 'TEAM-1'); },

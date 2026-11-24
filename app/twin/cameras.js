@@ -77,11 +77,23 @@ export function createCameras({ camera, dom, ctx, world, reduced = () => false, 
       default: return 'done';
     }
   }
+  // Where to stand for a close look at p: try every side, count the walls between, prefer none, then the shortest swing.
+  const pA = [0, 0], pB = [0, 0];
+  function clearYaw(p, base, reach) {
+    let best = base, score = Infinity;
+    for (let i = 0; i < 24; i++) {
+      const y = base + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.2618; let s = Math.abs(wrap(y - base)) * 0.16;
+      for (const [d, k] of [[0.45, 2], [1, 1]]) for (const o of [0, 0.3]) { pA[0] = p[0] + Math.sin(y + o) * reach * d; pA[1] = p[1] - Math.cos(y + o) * reach * d; s += world.wallsCrossed(pA, p).length * k; }
+      if (world.lineOfSight) { pB[0] = p[0] + Math.sin(y) * 2.5; pB[1] = p[1] - Math.cos(y) * 2.5; if (!world.lineOfSight(pB, p)) s += 1; }
+      if (s < score) { score = s; best = y; }
+    }
+    return wrap(best);
+  }
   function direct(S, dt) {
     const want = pickShot(S), urgent = want === 'find' || want === 'route';
     if (want !== shot.key && (shot.key === '' || urgent || now - shot.t0 > 3.2)) {
       const first = shot.key === '';
-      shot = { key: want, t0: now, yaw0: want === 'listen' || want === 'find' ? wrap(C.yaw) * 0.4 + 0.2 : C.yaw };
+      shot = { key: want, t0: now, yaw0: want === 'listen' || want === 'find' ? clearYaw(want === 'find' && find ? find.pos : unit(S, 'HOUND-01').pos, wrap(C.yaw) * 0.4 + 0.2, want === 'find' ? 6.4 : 7.5) : C.yaw };
       if (!first) begin(want === 'find' ? 2.6 : 3.4);
     }
     SHOTS[shot.key](S, now - shot.t0, reduced() ? 0 : 1);

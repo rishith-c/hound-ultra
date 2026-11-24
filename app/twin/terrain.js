@@ -166,12 +166,14 @@ export function buildTerrain(env, D) {
   const want = high ? 6200 : 1800; let made = 0;
   for (let i = 0; i < want * 12 && made < want; i++) {
     const a = Q() * 6.283, rad = 70 + Math.pow(Q(), 1.25) * 1150, x = 60 + Math.cos(a) * rad, y = 45 + Math.sin(a) * rad; if (clear(x, y, 9) || H.slide(x, y) > 0.1 || (y < 0 && x > -45 && x < 190 && H.padDist(x, y) < 95)) continue;
-    const k = N.fbm(x / 70 + 3, y / 70, 4); if (k < 0.4 + (Q() - 0.5) * 0.12) continue; const h = H.at(x, y); if (Math.abs(H.at(x + 4, y) - h) > 6) continue;
-    const t = Q() < 0.7 ? (Q() < 0.5 ? 0 : 1) : 2, s = (0.5 + Q() * Q() * 0.85 + Q() * 0.25) * (t === 2 ? 0.9 : 1.1); trees[t].push(matrix(x, h - 0.4, -y, Q() * 6.3, (Q() - 0.5) * 0.08, (Q() - 0.5) * 0.08, [s, s * (0.85 + Q() * 0.4), s])); made++;
-    const v = 0.75 + Q() * 0.5; tcol[t].push(t === 2 ? c.setRGB(0.3 * v, 0.3 * v, 0.22 * v).getHex() : c.setRGB(0.3 * v, 0.31 * v, 0.33 * v).getHex());
+    const k = N.fbm(x / 70 + 3, y / 70, 4); if (k < 0.4 + (Q() - 0.5) * 0.12) continue; const h = H.at(x, y), gx = (H.at(x + 4, y) - H.at(x - 4, y)) / 8, gy = (H.at(x, y + 4) - H.at(x, y - 4)) / 8, steep = Math.max(Math.hypot(gx, gy), Math.abs(H.at(x + 7, y) - h) / 7, Math.abs(H.at(x - 7, y) - h) / 7, Math.abs(H.at(x, y + 7) - h) / 7, Math.abs(H.at(x, y - 7) - h) / 7);
+    const up = Math.max(0, h - 4), thin = (1 - smooth(0.4, 0.8, steep)) * (1 - smooth(8, 46, up)); if (Q() > thin) continue;                            // none on rock faces, fewer with height
+    const t = Q() < 0.7 ? (Q() < 0.5 ? 0 : 1) : 2, s = (0.34 + Q() * Q() * 0.42 + Q() * 0.14) * (t === 2 ? 0.95 : 1) * (1 - 0.35 * smooth(40, 260, up)); trees[t].push(matrix(x, h - 0.25 - steep * s * 0.9, -y, (Q() - 0.5) * 1.05, clamp(-gy * 0.16, -0.12, 0.12) + Q.gauss() * 0.03, clamp(gx * 0.16, -0.12, 0.12) + Q.gauss() * 0.03, [s * (0.85 + Q() * 0.3), s * (0.85 + Q() * 0.5), s * (0.85 + Q() * 0.3)])); made++;
+    let lit = smooth(-0.05, 0.3, (-gx * 0.78 - gy * 0.56 + 0.33) / Math.hypot(gx, gy, 1)); for (let d = 8; d < 600; d *= 1.8) if (H.at(x + 0.812 * d, y + 0.583 * d) > h + 5 + 0.344 * d) lit = 0;      // the hill's own shade at first light: trees stand in it too
+    const v = (0.75 + Q() * 0.5) * (0.34 + 0.5 * lit); tcol[t].push(t === 2 ? c.setRGB(0.3 * v, 0.3 * v, 0.22 * v).getHex() : c.setRGB(0.2 * v, 0.36 * v, 0.27 * v).getHex()); 
   }
   const tm = new THREE.MeshStandardMaterial({ map: fol, alphaTest: 0.5, roughness: 0.95, side: THREE.DoubleSide, envMapIntensity: 0.6 });
-  tm.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', 'float faceDirection = 1.0; vec3 normal = normalize(vNormal); vec3 nonPerturbedNormal = normal;'); };
+  tm.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <opaque_fragment>', 'outgoingLight = mix(outgoingLight, vec3(0.27, 0.33, 0.38) * (0.15 + dot(outgoingLight, vec3(0.5, 1.4, 0.5))), 0.75 * (1.0 - exp(-max(length(vViewPosition) - 110.0, 0.0) / 420.0)));\n#include <opaque_fragment>').replace('#include <normal_fragment_begin>', 'float faceDirection = 1.0; vec3 normal = normalize(vNormal); vec3 nonPerturbedNormal = normal;'); };
   const pines = trees[0].concat(trees[1]);
   [pine(1), pine(0.7), bush].forEach((gg, i) => { if (trees[i].length) group.add(instanced(gg, tm, trees[i], { colors: tcol[i], cast: false, receive: false, name: 'trees-' + i })); });
   if (pines.length) group.add(instanced(trunk, new THREE.MeshStandardMaterial({ color: 0x2e261f, roughness: 1 }), pines, { cast: false, receive: false, name: 'trunks' }));
@@ -188,7 +190,7 @@ export function buildTerrain(env, D) {
   const rShape = new THREE.Shape([[-0.5, 0], [0, 0.5], [0.5, 0], [0.5, 0.04], [0, 0.56], [-0.5, 0.04]].map((p) => new THREE.Vector2(p[0], p[1]))), roofG = new THREE.ExtrudeGeometry(rShape, { depth: 1, bevelEnabled: false }).translate(0, 0, -0.5).rotateY(Math.PI / 2);
   const gable = new THREE.BufferGeometry(); gable.setAttribute('position', new THREE.Float32BufferAttribute([-0.43, 0, -0.42, -0.43, 0.44, 0, -0.43, 0, 0.42, 0.43, 0, 0.42, 0.43, 0.44, 0, 0.43, 0, -0.42], 3)); gable.computeVertexNormals();
   const hm = photoTri(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 }), env.photos.stone, { scale: 2.2, k: 0.9, bump: 0.9, key: 'stone' });
-  const rm = photoTri(new THREE.MeshStandardMaterial({ roughness: 0.5, metalness: 0.45, side: THREE.DoubleSide }), env.photos.tin, { scale: 2.6, k: 0.95, bump: 0.8, key: 'tin' });
+  const rm = photoTri(new THREE.MeshStandardMaterial({ roughness: 0.5, metalness: 0.45, side: THREE.DoubleSide }), env.photos.tin, { scale: 1.0, k: 0.9, bump: 0.8, sat: 0.6, key: 'tin' });
   group.add(instanced(merge(hp, { keepUV: false }), hm, houses, { colors: hc, cast: false, receive: false, name: 'town' }), instanced(roofG, rm, roofs, { colors: rc, cast: false, receive: false, name: 'town-roofs' }), instanced(gable, new THREE.MeshStandardMaterial({ roughness: 0.95, side: THREE.DoubleSide }), roofs, { colors: hc, cast: false, receive: false, name: 'town-gables' }), instanced(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshStandardMaterial({ color: 0x6f6b64, roughness: 1 }), stones, { cast: false, receive: false, name: 'roof-stones' }));
 
   // ---- boulders along the river and at the foot of the slide ----
