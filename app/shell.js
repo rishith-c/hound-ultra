@@ -37,7 +37,7 @@ export const MANIFEST = [
 // Demo mode: the short, cinematic path through the product. Everything else is one click away in Advanced.
 export const CHAPTERS = [
   { id: 'area', label: 'The problem', part: 'How HOUND finds people' }, { id: 'radio', label: 'The idea' }, { id: 'forge', label: 'The training' }, { id: 'sense', label: 'The network' }, { id: 'rover', label: 'The rover' },
-  { id: 'mission', label: 'The search' }, { id: 'fusion', label: 'The proof' }, { id: 'report', label: 'The rescue' },
+  { id: 'mission', label: 'The search' }, { id: 'fusion', label: 'The proof' }, { id: 'report', label: 'The rescue' }, { id: 'status', label: 'The test' },
   { id: 'aerial', label: 'Drone eyes', part: 'What comes next' }, { id: 'scan', label: 'Inside the rubble' }, { id: 'swarm', label: 'Many rovers' },
   { id: 'structure', label: 'The collapse' }, { id: 'horizon', label: 'The horizon' },
 ];

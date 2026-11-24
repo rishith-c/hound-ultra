@@ -16,7 +16,7 @@ are a training exercise: simulated, and labelled that way on every screen.
 
 1. Open the site and press **Begin**. The console opens in **Demo**.
 2. Press the blue button, bottom right, to move through the story: the problem, the idea, the training, the network, the
-   rover, the search, the proof, the rescue.
+   rover, the search, the proof, the rescue, the test.
 3. In **The search**, watch a whole mission: a drone survey, the rover driving in, four listening stops, a fan and a hot
    pipe recognised and ruled out, two people found behind walls, a route planned and walked.
 4. The second group in the dock is **What comes next**: drone eyes, inside the rubble, many rovers, the collapse, the horizon.

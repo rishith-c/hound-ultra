@@ -163,3 +163,5 @@ Hardware and Robotics, Best AI Engineering, Best Design and UX, Originality, Bes
 - Not restarted yet: 10-copilot, 11-signals (Advanced only; low priority).
 - Then: tools/tour.py in demo and advanced when quiet, deploy to a NEW Vercel project, README, Devpost text.
 - Usage 61 % weekly at 19:00; keep 10 % reserve.
+- **23 Nov 20:25.** Every agent has finished except 11-signals (Advanced). Positive pass done (owner: only good, confident wording where judges look; small Simulated / Concept tags, What is real and the full test table in Advanced stay; Devpost Q5 stays because the rubric scores limits). Core: planner smoothing and the Wi-Fi window guard fixed, all 2,067 self-test checks pass, 200-mission counts unchanged, the mission is now 10:51. Release: `python3 tools/release.py snapshot`, tour the snapshot, then `deploy` to https://hound-command.vercel.app. Next: 2 to 4 minute video, gallery, Devpost text (ask the owner right before repo public / submit / upload).
+
