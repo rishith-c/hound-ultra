@@ -52,7 +52,7 @@ export function siteShells(buildings, seed) {
   const list = [];
   for (const b of buildings) {
     const [x0, y0, x1, y1] = b.rect, r = hash(b.id * 31 + seed * 7 + 5), r2 = hash(b.id * 17 + seed + 99), top = (r < 0.35 ? 2 : r < 0.8 ? 3 : 1) * 3.05 + 0.6, dmg = (r2 - 0.5) * 0.16;
-    addShell(list, x0 - 0.06, x1 + 0.06, -y1 - 0.06, -y0 + 0.06, 0, top, top, 1, dmg);
+    addShell(list, x0 - 0.06, x1 + 0.06, -y1 - 0.06, -y0 + 0.06, -0.6, top, top, 1, dmg);
     // parapet and plant on the roof
     for (const [a, b2, c, d] of [[x0, x1, -y1, -y1 + 0.25], [x0, x1, -y0 - 0.25, -y0], [x0, x0 + 0.25, -y1, -y0], [x1 - 0.25, x1, -y1, -y0]]) addShell(list, a, b2, c, d, top, top + 0.45, top + 1.2, 1, dmg);
     const n = 2 + Math.floor(r2 * 4); for (let q = 0; q < n; q++) { const w = 1 + hash(q * 7 + b.id * 3 + seed) * 2.4, d = 1 + hash(q * 11 + b.id * 5 + seed) * 1.8, x = x0 + 1.5 + hash(q + b.id * 77 + seed) * Math.max(0.1, x1 - x0 - 6), y = y0 + 1.5 + hash(q * 3 + b.id * 41 + seed) * Math.max(0.1, y1 - y0 - 5); addShell(list, x, x + w, -y - d, -y, top, top + 0.7 + hash(q * 13 + b.id) * 0.9, top + 2, 1, dmg); }
@@ -65,7 +65,7 @@ export function citySurround(SX, SY, seed) {
     const cx = gx * pitch + 12, cy = gy * pitch + 8, r = hash(gx * 733 + gy * 97 + 11), r2 = hash(gx * 19 + gy * 613 + 5), w = 15 + r * 9, d = 14 + r2 * 10;
     if (cx + w / 2 > -11 && cx - w / 2 < SX + 11 && cy + d / 2 > -11 && cy - d / 2 < SY + 11) continue; if (hash(gx * 5 + gy * 71) < 0.1) continue;
     const dist = Math.max(0, Math.max(-cx, cx - SX, -cy, cy - SY)), top = (2 + Math.floor(hash(gx * 41 + gy * 3) * (dist > 60 ? 8 : 4.2))) * 3.05 + 0.6;
-    addShell(list, cx - w / 2, cx + w / 2, -cy - d / 2, -cy + d / 2, 0, top, top, 0, (r - 0.5) * 0.1 - 0.05);
+    addShell(list, cx - w / 2, cx + w / 2, -cy - d / 2, -cy + d / 2, -0.6, top, top, 0, (r - 0.5) * 0.1 - 0.05);
     addShell(list, cx - w / 2, cx + w / 2, -cy - d / 2, -cy - d / 2 + 0.3, top, top + 0.5, top + 2, 0, -0.4); addShell(list, cx - w / 2, cx + w / 2, -cy + d / 2 - 0.3, -cy + d / 2, top, top + 0.5, top + 2, 0, -0.4);
     if (r2 > 0.3) { const px = cx - w / 4, pz = -cy; addShell(list, px, px + 3.5, pz, pz + 2.6, top, top + 1.8, top + 4, 0, -0.4); }
   }

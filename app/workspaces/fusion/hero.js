@@ -144,7 +144,7 @@ export async function createHero(host, ctx, { openEvidence }) {
   }
 
   try { const { createStage } = await import('./stage.js'); three = await createStage(stage, ctx, { reduced: reduced() }); }
-  catch (e) { console.info('[fusion] the 3-D hero is unavailable: ' + (e.message || e)); stage.append(h('div.fusion-hero-flat', null, h('p', null, 'This view needs WebGL. Every reading is in Advanced.'), h('button.btn', { type: 'button', onclick: openEvidence }, 'Open the evidence'))); }
+  catch (e) { console.warn('[fusion] the 3-D hero is unavailable:', e); for (const el of [num, g85, g15]) el.hidden = true; stage.append(h('div.fusion-hero-flat', null, h('p', null, 'This view needs WebGL. Every reading is in Advanced.'), h('button.btn', { type: 'button', onclick: openEvidence }, 'Open the evidence'))); }
   press(); compute(0); words();
   if (three) { three.pose(P, 0.016, 0); if (stage.clientWidth) three.render(0, 0); }
   ctx.bus.on('prefs', () => { three?.readTokens(); shown.still = null; });

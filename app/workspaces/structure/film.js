@@ -30,8 +30,7 @@ export function createFilm({ ctx, view, host }) {
   const el = h('div.structure-film.demo-only', null,
     h('div.structure-shade', { 'aria-hidden': 'true' }),
     h('div.structure-title', null, tag, h('h1', null, 'Test the lift before anyone lifts.'), cap, act),
-    h('p.structure-note', null, 'Weak ties assumed; seed chosen by search. Not an engineering assessment.'),
-    h('div.structure-figs', null, ...F.map((f) => f.el)), h('div.structure-foot', null, steps, prog));
+    h('div.structure-figs', null, ...F.map((f) => f.el)), h('div.structure-foot', null, h('div.structure-footrow', null, steps, h('p.structure-note', null, 'Weak ties assumed; seed chosen by search. Not an engineering assessment.')), prog));
   host.append(el);
   let capNow = ''; function say(t) { if (t === capNow) return; capNow = t; cap.classList.add('is-out'); setTimeout(() => { cap.textContent = capNow; cap.classList.remove('is-out'); }, 160); }
   function figs(list) { for (let i = 0; i < 3; i++) { const f = F[i], x = list[i]; f.el.classList.toggle('is-off', !x); if (!x) continue; if (f.v.textContent !== x[0]) f.v.textContent = x[0]; if (f.u.textContent !== x[1]) f.u.textContent = x[1]; if (f.l.textContent !== x[2]) f.l.textContent = x[2]; const c = x[3] || ''; if (f.key !== c) { f.key = c; f.el.dataset.tone = c; } } }
@@ -103,7 +102,7 @@ export function createFilm({ ctx, view, host }) {
   function posesX(r, f) { if (r.n > D.n) { const o = D.n * 7, s = Math.max(0, Math.min(r.total - 1, Math.floor(f))) * r.n * 7 + o; for (let k = 0; k < 7; k++) poses[o + k] = r.frames[s + k]; } return poses; }
 
   // ---------------- camera: slow, critically damped, hands over while the visitor drags
-  const CAM = { wide: [[-15.6, 4.6, 15.2], [0.2, 2.1, 0.6]], fall: [[-14.2, 2.3, 11.6], [0, 2.1, 0.6]], mid: [[-12.6, 3.0, 9.4], [-1.6, 1.3, 1.6]], pocket: [[-8.6, 1.15, 4.7], [-3.6, 0.42, 2.7]], jack: [[-8.1, 1.0, 3.0], [-3.5, 0.45, 2.3]], hold: [[-8.3, 1.35, 4.1], [-3.5, 0.42, 2.45]], high: [[-11.4, 5.6, 9.8], [-0.4, 1.0, 0.8]] };
+  const CAM = { wide: [[-15.6, 4.6, 15.2], [0.2, 2.1, 0.6]], fall: [[-14.2, 2.3, 11.6], [0, 2.1, 0.6]], mid: [[-12.6, 3.0, 9.4], [-1.6, 1.3, 1.6]], pocket: [[-8.6, 1.15, 4.7], [-3.6, 0.42, 2.7]], jack: [[-8.1, 1.0, 3.0], [-3.5, 0.45, 2.3]], hold: [[-8.3, 1.35, 4.1], [-3.5, 0.42, 2.45]], high: [[-13.2, 5.2, 11.4], [-1.9, 0.5, -0.5]] };
   const cp = new THREE.Vector3(...CAM.wide[0]), ct = new THREE.Vector3(...CAM.wide[1]), vp = new THREE.Vector3(), vt = new THREE.Vector3(), gp = new THREE.Vector3(), gt = new THREE.Vector3(), acc = new THREE.Vector3(); let camW = 1.0, drift = 0, shakeA = 0;
   function camTo(name, rate) { gp.set(...CAM[name][0]); gt.set(...CAM[name][1]); camW = rate || 0.9; }
   function camStep(dt, time) {

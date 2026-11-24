@@ -155,3 +155,11 @@ Hardware and Robotics, Best AI Engineering, Best Design and UX, Originality, Bes
 > ARCHITECTURE.md, STYLE.md, FACTS.md. Run `python3 tools/agents_status.py`, read new files in orchestration/reports and
 > orchestration/requests, look at every Demo chapter with tools/shoot.py, and carry on from the schedule. Do not ask me
 > questions. Sub-agents: Claude Code CLI in code mode, Opus, medium effort, through tools/resume.py.
+
+
+## Status log (orchestrator)
+- **23 Nov 19:00.** Demo is now one story: 01 area, 02 radio, 03 forge (The training: hall of 900 people), 04 sense, 05 rover (new workspace, agent 28), 06 mission, 07 fusion, 08 report | frontier: aerial, scan, swarm, structure, horizon. Opening title app/global/intro.js. Dock in two groups with progress. Shell evicts old workspaces (KEEP 4) and the Demo mission plays only while watched. Owner's latest rules: looks first in Demo; scripted demo readings are fine with a Simulated / Concept tag; he delegates all design decisions ("you are boss"); do not reuse his film's visuals, make the best possible. Scope is frozen.
+- Second-pass briefs: orchestration/briefs/p2-*.md. Send with `HOUND_AGENT_SLOTS=26 python3 tools/resume.py <agent> --prompt orchestration/briefs/p2-<x>.md` once that agent's first run is finished (scan, radio sent; aerial -> 06-aerial, swarm -> 09-swarm, area -> 12-globe-area, twin -> 01-twin-core waiting).
+- Not restarted yet: 10-copilot, 11-signals (Advanced only; low priority).
+- Then: tools/tour.py in demo and advanced when quiet, deploy to a NEW Vercel project, README, Devpost text.
+- Usage 61 % weekly at 19:00; keep 10 % reserve.

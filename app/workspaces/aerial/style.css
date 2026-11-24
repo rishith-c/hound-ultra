@@ -197,4 +197,5 @@
 @media (max-width: 1500px) { .aerial-concept { grid-template-columns: 96px minmax(0, 1fr) !important; } .aerial-link-top .num { display: none; } }
 .aerial-link-map { grid-template-columns: 1fr; gap: 2px; } .aerial-link-map i { display: none; } .aerial-link-map > span { display: grid; grid-template-columns: 78px minmax(0, 1fr); align-items: baseline; }
 .aerial-strip { height: 268px; } .aerial-concept { grid-template-columns: 150px minmax(0, 1fr); }
-.ah-btn .spinner { width: 14px; height: 14px; }
+.ah-btn .spinner { width: 14px; height: 14px; } .aerial-recmini { height: 16px; padding: 0 5px; font-size: 10px; }
+@media (max-height: 940px) { .aerial-strip { height: 246px; } .aerial-side-body { gap: 9px; } }

@@ -115,7 +115,7 @@ export async function createStage(host, ctx, engine, { light = 'dawn' } = {}) {
       vertexShader: 'attribute float aHot; varying vec2 v; varying float vB; void main(){ v=uv; vB=aHot; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }',
       fragmentShader: 'uniform float uTime,uTo,uLen,uA,uK; uniform vec3 uColor,uBad; varying vec2 v; varying float vB; void main(){ float s=v.x; if(s>uTo) discard; float y=abs(v.y)*1.6, fw=fwidth(v.y)*1.6; float line=1.-smoothstep(.2,.2+fw*1.4+.05,y); float edge=exp(-pow((y-.38)/(.05+fw),2.)); float glow=exp(-y*y*1.7); float head=exp(-(uTo-s)*.55); float flow=pow(.5+.5*cos(6.2832*(s*.16-uTime*.55)),10.);'
         + 'vec3 c=mix(uColor,uBad,smoothstep(.2,.8,vB)); float a=(line*.5+glow*.13+flow*line*.5+head*(line*1.3+glow*.55))*smoothstep(0.,1.2,s); gl_FragColor=vec4(mix(c,vec3(1.),clamp(head*line*.6,0.,.6))*a*uA*uK*1.25,a*uA*uK); }' })); m.frustumCulled = false; m.renderOrder = 30; scene.add(m); return m; };
-    const front = mk(THREE.LessEqualDepth, 1), behind = mk(THREE.GreaterDepth, 0.2);
+    const front = mk(THREE.LessEqualDepth, 1), behind = mk(THREE.GreaterDepth, 0.36);
     return { length: s, to(m) { u.uTo.value = m; }, alpha(a) { u.uA.value = a; front.visible = behind.visible = a > 0.004; },
       at(m, out) { m = clamp(m, 0, s); let i = 1; while (i < n - 1 && cum[i] < m) i++; const k = (m - cum[i - 1]) / Math.max(1e-4, cum[i] - cum[i - 1]); out.x = pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * k; out.z = -(pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * k); return out; },
       dispose() { scene.remove(front, behind); geo.dispose(); front.material.dispose(); behind.material.dispose(); } };

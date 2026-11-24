@@ -74,13 +74,13 @@ float liftAt(vec2 uv, vec2 cell){ float s = scoreAt(uv, cell); return uLift * mi
 float edgeDrop(vec2 cell){ float e = min(min(cell.x, 1. - cell.x), min(cell.y, 1. - cell.y)); return pow(1. - smoothstep(0., .07, e - hash(cell * 7.) * .035), 2.) * -5.; }
 vec2 cellOf(vec2 uv){ return (floor(uv * ${CELLS}.) + .5) / ${CELLS}.; }
 float roll(vec2 cell){ float m = mixAt(cell); return -sin(m * 3.14159) * (.5 + hash(cell * 3.) * 1.1); }
-float total(vec2 uv){ vec2 c = cellOf(uv); return reliefAt(uv, c) + liftAt(uv, c) + edgeDrop(c) + roll(c); }
+float fullHeight(vec2 uv){ vec2 c = cellOf(uv); return reliefAt(uv, c) + liftAt(uv, c) + edgeDrop(c) + roll(c); }
 `;
 
 export function makeTerrain() {
   const blank = liftTexture(new Uint8Array([0, 0, 0, 0]), 1, false);
-  const U = { pA: { value: null }, pB: { value: null }, dA: { value: null }, dB: { value: null }, lA: { value: blank }, uRelief: { value: 3.2 }, uLift: { value: 0 }, uSmooth: { value: 0 }, uWave: { value: 0 }, uMixW: { value: 0 }, uTime: { value: 0 },
-    uFocus: { value: new THREE.Vector2(0.5, 0.5) }, uTint: { value: new THREE.Color('#ff6a45') }, uSun: { value: new THREE.Vector3(-0.62, 0.52, -0.42).normalize() }, uDim: { value: 0 }, uScan: { value: -1 }, uClick: { value: new THREE.Vector3(0, 0, -1) }, uFog: { value: new THREE.Color(0x0a0d11) }, uGlow: { value: 1 } };
+  const U = { pA: { value: null }, pB: { value: null }, dA: { value: null }, dB: { value: null }, lA: { value: blank }, uRelief: { value: 1.7 }, uLift: { value: 0 }, uSmooth: { value: 0 }, uWave: { value: 0 }, uMixW: { value: 0 }, uTime: { value: 0 },
+    uFocus: { value: new THREE.Vector2(0.5, 0.5) }, hT: { value: null }, uTint: { value: new THREE.Color('#ff6a45') }, uSun: { value: new THREE.Vector3(-0.62, 0.52, -0.42).normalize() }, uDim: { value: 0 }, uScan: { value: -1 }, uClick: { value: new THREE.Vector3(0, 0, -1) }, uFog: { value: new THREE.Color(0x0a0d11) }, uGlow: { value: 1 } };
   const mat = new THREE.ShaderMaterial({ uniforms: U, side: THREE.DoubleSide,
     vertexShader: HEIGHT.replace('lA, lB', 'lA') + `
       attribute vec2 aCell; varying vec2 vUv; varying vec2 vCell; varying float vSide, vDepth, vLift, vScore, vFace; varying vec3 vW;
@@ -93,12 +93,13 @@ export function makeTerrain() {
         gl_Position = projectionMatrix * viewMatrix * vec4(w, 1.);
       }`,
     fragmentShader: HEIGHT.replace('lA, lB', 'lA') + `
-      uniform sampler2D pA, pB; uniform vec3 uTint, uSun, uFog, uClick; uniform float uDim, uScan, uGlow;
+      uniform sampler2D pA, pB, hT; float total(vec2 uv){ return texture2D(hT, uv).r; }
+      uniform vec3 uTint, uSun, uFog, uClick; uniform float uDim, uScan, uGlow;
       varying vec2 vUv; varying vec2 vCell; varying float vSide, vDepth, vLift, vScore, vFace; varying vec3 vW;
       vec3 aces(vec3 x){ return clamp((x * (2.51 * x + .03)) / (x * (2.43 * x + .59) + .14), 0., 1.); }
       float shadow(vec2 uv, float y){
         float s = 1., t = .06 + .07 * hash(gl_FragCoord.xy * .013);
-        for (int i = 0; i < 18; i++) { vec2 p = uv + uSun.xz * t / ${SIZE}; float hh = total(p), c = y + uSun.y * t; s = min(s, 1. - smoothstep(-.02, .12 + t * .16, hh - c)); t *= 1.24; t += .05; if (s < .02) break; }
+        for (int i = 0; i < 22; i++) { vec2 p = uv + uSun.xz * t / ${SIZE}; float hh = total(p), c = y + uSun.y * t; s = min(s, 1. - smoothstep(-.02, .12 + t * .16, hh - c)); t *= 1.16; t += .05; if (s < .02) break; }
         return s;
       }
       void main(){
@@ -107,9 +108,9 @@ export function makeTerrain() {
         float top = step(vSide, .5), lum = dot(ph, vec3(.2126, .7152, .0722));
         float e = 1. / 518.;
         float hx = reliefAt(vUv + vec2(e, 0.), vCell) - reliefAt(vUv - vec2(e, 0.), vCell), hy = reliefAt(vUv + vec2(0., e), vCell) - reliefAt(vUv - vec2(0., e), vCell);
-        vec3 px = mix(texture2D(pA, vUv + vec2(.0012, 0.)).rgb, texture2D(pB, vUv + vec2(.0012, 0.)).rgb, m), py = mix(texture2D(pA, vUv + vec2(0., .0012)).rgb, texture2D(pB, vUv + vec2(0., .0012)).rgb, m);
-        vec2 b = vec2(dot(px, vec3(.33)) - dot(ph, vec3(.33)), dot(py, vec3(.33)) - dot(ph, vec3(.33)));
-        vec3 N = normalize(vec3(-hx / (2. * e * ${SIZE}) * .9 - b.x * 5., 1., -hy / (2. * e * ${SIZE}) * .9 - b.y * 5.));
+        vec3 px = mix(texture2D(pA, vUv + vec2(.0022, 0.), 1.).rgb, texture2D(pB, vUv + vec2(.0022, 0.), 1.).rgb, m), py = mix(texture2D(pA, vUv + vec2(0., .0022), 1.).rgb, texture2D(pB, vUv + vec2(0., .0022), 1.).rgb, m);
+        vec3 p0 = mix(texture2D(pA, vUv, 1.).rgb, texture2D(pB, vUv, 1.).rgb, m); vec2 b = vec2(dot(px, vec3(.33)) - dot(p0, vec3(.33)), dot(py, vec3(.33)) - dot(p0, vec3(.33)));
+        vec3 N = normalize(vec3(-hx / (2. * e * ${SIZE}) * .9 - b.x * 1.6, 1., -hy / (2. * e * ${SIZE}) * .9 - b.y * 1.6));
         float s = clamp(vScore, 0., 1.);
         float on = mix(smoothstep(.06, .6, s), smoothstep(.3, .7, s), uSmooth);
         vec3 col;
@@ -132,7 +133,7 @@ export function makeTerrain() {
           vec3 earth = mix(vec3(.055, .05, .046), vec3(.135, .115, .095), strata * .55 + gr * .35);
           earth = mix(earth, ph * .62, exp(-vDepth * 7.));
           float l = .28 + .9 * max(dot(n, uSun), 0.);
-          col = earth * l * exp(-vDepth * .16) + uTint * on * uGlow * (exp(-vDepth * 12.) * 1.1 + exp(-vDepth * 1.5) * .12);
+          col = earth * l * exp(-vDepth * .16) + uTint * on * uGlow * (exp(-vDepth * 34.) * 1.5 + exp(-vDepth * 3.) * .1);
           col *= step(.03, vLift + abs(edgeDrop(vCell)) + abs(roll(vCell)));
         }
         if (uScan > -.5) { float bnd = exp(-abs(vUv.y + hash(vCell) * .02 - uScan) * 60.); vec2 f = abs(fract(vUv * 32.) - .5); col += vec3(.35, .6, .95) * bnd * (.12 + .5 * step(.485, max(f.x, f.y))); }
@@ -144,17 +145,22 @@ export function makeTerrain() {
         gl_FragColor = vec4(col, 1.);
       }` });
   const mesh = new THREE.Mesh(columns(), mat); mesh.frustumCulled = false;
+  // the whole height field, baked once a frame, so shadows and contact shade cost one texture read a step
+  const rt = new THREE.WebGLRenderTarget(768, 768, { type: THREE.HalfFloatType, format: THREE.RedFormat, depthBuffer: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter }); U.hT.value = rt.texture;
+  const bakeScene = new THREE.Scene(), bakeCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const { hT, ...BU } = U; const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({ uniforms: BU, depthTest: false, depthWrite: false, vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }', fragmentShader: HEIGHT.replace('lA, lB', 'lA') + 'varying vec2 vUv; void main(){ gl_FragColor = vec4(fullHeight(vUv), 0., 0., 1.); }' })); quad.frustumCulled = false; bakeScene.add(quad);
+  const bake = (renderer) => { renderer.setRenderTarget(rt); renderer.render(bakeScene, bakeCam); renderer.setRenderTarget(null); };
   // height of the ground (without lift) at a point, for pins and beams
   const ground = (f, u, v) => { const { d, w, h, lo, hi } = f.depth.userData, i = Math.min(h - 1, v * h | 0) * w + Math.min(w - 1, u * w | 0); return ((d[i] - lo) / (hi - lo) - 0.35) * U.uRelief.value; };
-  return { mesh, U, ground, blank, at: (u, v, y = 0) => new THREE.Vector3((u - 0.5) * SIZE, y, (v - 0.5) * SIZE) };
+  return { mesh, U, ground, blank, bake, at: (u, v, y = 0) => new THREE.Vector3((u - 0.5) * SIZE, y, (v - 0.5) * SIZE) };
 }
 
 // A soft additive column of light and slow dust, shared by the scenes.
 export function makeBeam() {
-  const g = new THREE.CylinderGeometry(0.55, 0.3, 9, 40, 1, true); g.translate(0, 4.5, 0);
+  const g = new THREE.CylinderGeometry(0.16, 0.05, 6, 24, 1, true); g.translate(0, 3, 0);
   const m = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, uniforms: { uC: { value: new THREE.Color('#ff6a45') }, uA: { value: 0 } },
     vertexShader: 'varying vec2 vUv; varying vec3 vN, vV; void main(){ vUv = uv; vec4 p = modelViewMatrix * vec4(position, 1.); vN = normalize(normalMatrix * normal); vV = normalize(-p.xyz); gl_Position = projectionMatrix * p; }',
-    fragmentShader: 'uniform vec3 uC; uniform float uA; varying vec2 vUv; varying vec3 vN, vV; void main(){ float f = pow(abs(dot(vN, vV)), 1.6); gl_FragColor = vec4(uC, f * pow(1. - vUv.y, 2.4) * .3 * uA); }' });
+    fragmentShader: 'uniform vec3 uC; uniform float uA; varying vec2 vUv; varying vec3 vN, vV; void main(){ float f = pow(abs(dot(vN, vV)), 1.6); gl_FragColor = vec4(uC, f * pow(1. - vUv.y, 1.6) * .34 * uA); }' });
   const mesh = new THREE.Mesh(g, m); mesh.renderOrder = 5; return { mesh, U: m.uniforms };
 }
 export function makeDust(n = 700, R = 11) {

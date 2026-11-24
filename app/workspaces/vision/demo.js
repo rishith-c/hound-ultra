@@ -91,7 +91,7 @@ export function createDemo(root, ctx, lab) {
 
 // ---------- 01 words ----------
 const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
-const PERSON = '#ff6a45', BLUE = '#5aa9ff', AMBER = '#ffc24a';
+const PERSON = 'person', BLUE = 'blue', AMBER = 'amber', TINT = { person: [1, 0.2, 0.07], blue: [0.16, 0.46, 1], amber: [1, 0.55, 0.1] };   // linear light, tuned to the tokens after tone mapping
 async function wordsScene(env) {
   const { lab, ui, ease, span, lerp, pointer } = env, S = env.terrain(), T = S.terrain, U = T.U;
   const rec = await (await fetch(asset('data/vision/hero-words.json'))).json();
@@ -107,8 +107,8 @@ async function wordsScene(env) {
   for (const b of beats) { let bi = 0; for (let i = 0; i < 4096; i++) if (b.grid[i] > b.grid[bi]) bi = i; b.hu = ((bi % 64) + 0.5) / 64; b.hv = ((bi / 64 | 0) + 0.5) / 64; b.peak = b.grid[bi] / 255; }
   const first = await loadFrame('a', env.renderer), all = { a: first }; loadFrame('d', env.renderer).then((f) => { all.d = f; }); loadFrame('e', env.renderer).then((f) => { all.e = f; });
   const camera = new THREE.PerspectiveCamera(34, 1.8, 0.1, 80), pos = new THREE.Vector3(), tgt = new THREE.Vector3(), P = new THREE.Vector3(), C = new THREE.Vector3(), pinP = new THREE.Vector3();
-  const D = 11.2, MAXW = 'a person covered in mud'.length; let i = -1, b = null, t0 = 0, az = 0.35, init = true;
-  const start = (k, t) => { i = k; b = beats[k]; t0 = t; const f = all[b.f] || first, prev = U.pB.value ? U.pB.value : f.photo, pd = U.dB.value || f.depth; U.pA.value = prev; U.dA.value = pd; U.pB.value = f.photo; U.dB.value = f.depth; U.uMixW.value = prev === f.photo ? 1 : 0; U.lA.value = b.tex; U.uFocus.value.set(b.hu, b.hv); U.uTint.value.set(b.tint).convertSRGBToLinear(); S.beam.U.uC.value.set(b.tint).convertSRGBToLinear(); U.uWave.value = 0; };
+  const D = 15.2; let i = -1, b = null, t0 = 0, az = 0.35, init = true;
+  const start = (k, t) => { i = k; b = beats[k]; t0 = t; const f = all[b.f] || first, prev = U.pB.value ? U.pB.value : f.photo, pd = U.dB.value || f.depth; U.pA.value = prev; U.dA.value = pd; U.pB.value = f.photo; U.dB.value = f.depth; U.uMixW.value = prev === f.photo ? 1 : 0; U.lA.value = b.tex; U.uFocus.value.set(b.hu, b.hv); U.uTint.value.setRGB(...TINT[b.tint]); S.beam.U.uC.value.setRGB(...TINT[b.tint]); U.uWave.value = 0; };
   return { scene: S.ground, camera, still: 5.2,
     enter() { U.uSmooth.value = 0; U.uLift.value = 3.1; U.uDim.value = 0; U.uClick.value.z = -1; U.pB.value = null; U.dB.value = null; init = true; start(0, 0); },
     update(dt, t) {
@@ -125,12 +125,12 @@ async function wordsScene(env) {
       const g = T.ground(all[b.f] || first, b.hu, b.hv), topY = g + Math.pow(b.peak, 1.25) * 3.1 * U.uWave.value; pinP.copy(T.at(b.hu, b.hv, topY + 0.5));
       S.beam.mesh.position.set(pinP.x, topY - 0.05, pinP.z); S.beam.U.uA.value = U.uWave.value * (0.8 + 0.2 * Math.sin(t * 1.6));
       // one slow move: the camera circles the place the words point at
-      const push = ease(span(k, 1.2, 5.5)), dist = lerp(D + 2.6, D - 1.6, push); az += dt * 0.045;
+      const push = ease(span(k, 1.2, 5.5)), dist = lerp(D + 3.2, D - 1.2, push); az += dt * 0.045;
       C.copy(T.at(lerp(0.5, b.hu, 0.82), lerp(0.52, b.hv, 0.82), 0.5 + 0.6 * U.uWave.value)); C.x = clamp(C.x, -6.2, 6.2); C.z = clamp(C.z, -5.5, 4.2);
-      const a = Math.sin(az) * 0.55 + pointer.yaw, el = lerp(0.86, 0.62, push) + pointer.pitch;
+      const a = Math.sin(az) * 0.55 + pointer.yaw, el = clamp(lerp(1.02, 0.8, push) + pointer.pitch, 0.35, 1.4);
       P.set(C.x + Math.sin(a) * Math.cos(el) * dist, C.y + Math.sin(el) * dist, C.z + Math.cos(a) * Math.cos(el) * dist);
       const s = init ? 1 : 1 - Math.exp(-dt * 1.7); init = false; pos.lerp(P, s); tgt.lerp(C, s); camera.position.copy(pos); camera.lookAt(tgt);
-      camera.setViewOffset(1000, 1000, -70, 10, 1000, 1000); camera.updateMatrixWorld();
+      camera.updateMatrixWorld(); T.bake(env.renderer);
       if (k > 3.1 && k < 8.3) ui.pin(pinP, b.pin, b.cls); else ui.pin(null);
     },
     leave() { U.uScan.value = -1; S.beam.U.uA.value = 0; }, };
@@ -144,7 +144,7 @@ async function outlineScene(env) {
   const beats = await Promise.all(list.map(async ([id, tint, cls, pin, say]) => { const c = rec.clicks.find((x) => x.id === id); return { id, tint, cls, pin, say, tex: await maskTexture('assets/img/vision/mask-' + id + '.png'), u: c.pts[0][0] / 1254, v: c.pts[0][1] / 1254, area: c.cells[c.best] * m2, iou: c.iou[c.best], ms: c.ms }; }));
   const warm = rec.clicks.slice(1).map((c) => c.ms).sort((a, b) => a - b); const med = warm[warm.length >> 1];
   const camera = new THREE.PerspectiveCamera(34, 1.8, 0.1, 80), pos = new THREE.Vector3(), tgt = new THREE.Vector3(), P = new THREE.Vector3(), C = new THREE.Vector3(), pinP = new THREE.Vector3(); let i = 0, b = beats[0], t0 = 0, az = -0.5, init = true;
-  const start = (k, t) => { i = k; b = beats[k]; t0 = t; U.lA.value = b.tex; U.uFocus.value.set(b.u, b.v); U.uTint.value.set(b.tint).convertSRGBToLinear(); U.uClick.value.set(b.u, b.v, -1); };
+  const start = (k, t) => { i = k; b = beats[k]; t0 = t; U.lA.value = b.tex; U.uFocus.value.set(b.u, b.v); U.uTint.value.setRGB(...TINT[b.tint]); U.uClick.value.set(b.u, b.v, -1); };
   return { scene: S.ground, camera, still: 4.5,
     enter() { U.pA.value = U.pB.value = f.photo; U.dA.value = U.dB.value = f.depth; U.uMixW.value = 1; U.uSmooth.value = 1; U.uScan.value = -1; S.beam.U.uA.value = 0; init = true; start(0, 0); },
     update(dt, t) {
@@ -154,11 +154,11 @@ async function outlineScene(env) {
       ui.say(k > 1.5 ? b.say : 'One click.', k > 1.5 ? b.cls : '');
       const a0 = b.area * ease(span(k, 1.3, 2.6)); ui.fig(0, k > 1.2 ? a0.toFixed(1) : '–', 'm²', 'outlined area', b.cls); ui.fig(1, k > 1.2 ? Math.round(med).toString() : '–', 'ms', 'typical click'); ui.fig(2, k > 1.2 ? b.iou.toFixed(2) : '–', '', 'its own confidence');
       const g = T.ground(f, b.u, b.v); pinP.copy(T.at(b.u, b.v, g + U.uLift.value + 0.3));
-      const push = ease(span(k, 0.6, 4.5)), dist = lerp(12.6, b.id === 'waver' ? 7.2 : 9.6, push); az += dt * 0.05;
+      const push = ease(span(k, 0.6, 4.5)), dist = lerp(17.5, b.id === 'waver' ? 9.5 : 13.2, push); az += dt * 0.05;
       C.copy(T.at(lerp(0.5, b.u, 0.85), lerp(0.5, b.v, 0.85), 0.4)); C.x = clamp(C.x, -6.6, 6.6); C.z = clamp(C.z, -5.6, 4.6);
-      const a = Math.sin(az) * 0.6 + pointer.yaw, el = lerp(0.9, 0.6, push) + pointer.pitch;
+      const a = Math.sin(az) * 0.6 + pointer.yaw, el = clamp(lerp(1.02, 0.76, push) + pointer.pitch, 0.35, 1.4);
       P.set(C.x + Math.sin(a) * Math.cos(el) * dist, C.y + Math.sin(el) * dist, C.z + Math.cos(a) * Math.cos(el) * dist);
-      const s = init ? 1 : 1 - Math.exp(-dt * 1.9); init = false; pos.lerp(P, s); tgt.lerp(C, s); camera.position.copy(pos); camera.lookAt(tgt); camera.setViewOffset(1000, 1000, -70, 10, 1000, 1000); camera.updateMatrixWorld();
+      const s = init ? 1 : 1 - Math.exp(-dt * 1.9); init = false; pos.lerp(P, s); tgt.lerp(C, s); camera.position.copy(pos); camera.lookAt(tgt); camera.updateMatrixWorld(); T.bake(env.renderer);
       if (k > 2.2 && k < 6.2) ui.pin(pinP, b.pin + ', ' + b.area.toFixed(1) + ' m²', b.cls); else ui.pin(null);
     },
     leave() { U.uClick.value.z = -1; U.uSmooth.value = 0; }, };
