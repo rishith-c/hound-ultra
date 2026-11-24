@@ -190,3 +190,7 @@
 .aerial-table th, .aerial-table tbody th, .aerial-table td { padding-left: 6px; padding-right: 6px; } .aerial-cell { min-width: 64px; } .aerial-cellbar { width: 26px; }
 .aerial-concepts-body { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } .aerial-concept { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 12px; align-items: center; padding: 6px 12px; } .aerial-concept + .aerial-concept { border-left: 0; border-top: 1px solid var(--line); } .aerial-concept-text p { line-height: 1.36; }
 @media (max-width: 1500px) { .aerial-main { grid-template-columns: 148px minmax(0, 1fr) 340px; } .aerial-toolseg button > span:not(.tag) { display: none; } .aerial-strip { grid-template-columns: minmax(0, 1.75fr) minmax(0, 0.8fr) minmax(0, 0.95fr); } .aerial-concept { grid-template-columns: 92px minmax(0, 1fr); } .aerial-table tbody th span.dim { display: none; } }
+.aerial-side-body { padding-bottom: 0; } .aerial-side-body::after { content: ""; flex: none; height: 2px; } .aerial-lead { margin-bottom: 10px; bottom: 10px; }
+.aerial-link-map { grid-template-columns: 1fr; gap: 2px; } .aerial-link-map i { display: none; } .aerial-link-map > span { display: grid; grid-template-columns: 78px minmax(0, 1fr); align-items: baseline; }
+.aerial-strip { height: 252px; } .aerial-concept { grid-template-columns: 150px minmax(0, 1fr); }
+.ah-btn .spinner { width: 14px; height: 14px; }

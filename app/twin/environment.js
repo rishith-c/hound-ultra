@@ -7,7 +7,7 @@ import { rng, clamp } from './util.js';
 
 const C = (r, g, b) => new THREE.Color(r, g, b), V = (x, y, z) => new THREE.Vector3(x, y, z).normalize();
 export const LIGHTS = {
-  dawn: { sunDir: V(0.78, 0.33, -0.56), sun: C(1.0, 0.66, 0.4), sunI: 4.4, sky: C(0.5, 0.6, 0.8), earth: C(0.2, 0.15, 0.11), hemi: 0.85, zen: C(0.05, 0.075, 0.125), hor: C(0.27, 0.31, 0.39), warm: C(1.0, 0.52, 0.25), warmI: 1.25, fog: C(0.2, 0.245, 0.32), fogSun: C(0.95, 0.52, 0.27), fogA: 0.00042, fogH: 0.0075, fogB: 0.034, fogBase: -40, env: 0.85, exp: 1.12, lamps: 1.0, stars: 0, pic: 0.92 },
+  dawn: { sunDir: V(0.78, 0.33, -0.56), sun: C(1.0, 0.66, 0.4), sunI: 4.4, sky: C(0.5, 0.6, 0.8), earth: C(0.2, 0.15, 0.11), hemi: 0.85, zen: C(0.05, 0.075, 0.125), hor: C(0.27, 0.31, 0.39), warm: C(1.0, 0.52, 0.25), warmI: 1.25, fog: C(0.205, 0.235, 0.28), fogSun: C(0.95, 0.52, 0.27), fogA: 0.00042, fogH: 0.0075, fogB: 0.034, fogBase: -40, env: 0.85, exp: 1.12, lamps: 1.0, stars: 0, pic: 0.92 },
   day: { sunDir: V(0.5, 0.68, 0.46), sun: C(1.0, 0.93, 0.82), sunI: 3.6, sky: C(0.6, 0.72, 0.88), earth: C(0.3, 0.26, 0.21), hemi: 0.95, zen: C(0.13, 0.2, 0.31), hor: C(0.5, 0.54, 0.58), warm: C(0.9, 0.82, 0.68), warmI: 0.35, fog: C(0.42, 0.46, 0.5), fogSun: C(0.7, 0.66, 0.58), fogA: 0.0005, fogH: 0.005, fogB: 0.032, fogBase: -50, env: 0.95, exp: 0.95, lamps: 0.0, stars: 0, pic: 0 },
   night: { sunDir: V(-0.5, 0.62, -0.35), sun: C(0.55, 0.68, 1.0), sunI: 0.95, sky: C(0.2, 0.3, 0.55), earth: C(0.05, 0.05, 0.06), hemi: 0.28, zen: C(0.006, 0.011, 0.026), hor: C(0.03, 0.042, 0.068), warm: C(0.1, 0.13, 0.2), warmI: 0.25, fog: C(0.022, 0.03, 0.048), fogSun: C(0.05, 0.06, 0.09), fogA: 0.0008, fogH: 0.008, fogB: 0.034, fogBase: -46, env: 0.65, exp: 1.25, lamps: 1.6, stars: 1, pic: 0.9 },
 };
@@ -31,7 +31,7 @@ const SKY = `
     float st = step(0.9975, h2(floor(d.xy * 240.0 + d.z * 130.0))) * uStars * smoothstep(0.1, 0.4, y) * (1.0 - deck); col += st * 0.5;
     // photographed cloud, turned so that its sunrise sits where the sun is
     float su = fract(az / 6.2832 + uSkyRot), sv = 0.5 + asin(clamp(y, -1.0, 1.0)) / 3.14159; vec2 suv = vec2(su, clamp(sv, 0.505, 0.995));
-    vec3 pa = texture2D(tSkyA, suv).rgb, pb = texture2D(tSkyB, suv).rgb; pa = mix(vec3(dot(pa, vec3(0.3, 0.59, 0.11))), pa, 0.6) * vec3(0.62, 0.6, 0.6) + pow(pa, vec3(2.0)) * vec3(1.5, 1.0, 0.6) * pow(sa, 1.4); col = mix(col, mix(pa, pb * 0.55, uStars), uPicK * smoothstep(-0.02, 0.05, y));
+    vec3 pa = texture2D(tSkyA, suv).rgb, pb = texture2D(tSkyB, suv).rgb; pa = mix(vec3(dot(pa, vec3(0.3, 0.59, 0.11))), pa, 0.5) * vec3(0.7, 0.64, 0.58) + pow(pa, vec3(2.0)) * vec3(1.5, 1.0, 0.6) * pow(sa, 1.4); col = mix(col, mix(pa, pb * 0.55, uStars), uPicK * smoothstep(-0.02, 0.05, y));
     // far snow peaks over the valley's own walls
     vec2 ruv = vec2(fract(az / 6.2832 * 3.0 + 0.13), (y + 0.10) / 0.36); if (ruv.y > 0.0 && ruv.y < 1.0) { vec4 rg = textureGrad(tRidge, ruv, dFdx(ruv) * 0.0, dFdy(ruv)); float lum = dot(rg.rgb, vec3(0.3, 0.59, 0.11)); vec3 rc = mix(vec3(lum), rg.rgb, 0.45) * (uHor * 1.15 + 0.01) + uWarm * uWarmI * smoothstep(0.35, 0.9, lum) * (0.25 + 0.75 * pow(sa, 1.0)) * 0.5; col = mix(col, mix(uFog, rc, smoothstep(0.0, 0.2, y) * 0.75 + 0.1), rg.a); }
     col = mix(col, uFog, smoothstep(0.07, -0.02, y) * 0.9); col = mix(col, vec3(0.03, 0.027, 0.024) * (0.4 + uHor.g * 2.0), smoothstep(-0.03, -0.3, y));

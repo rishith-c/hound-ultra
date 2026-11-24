@@ -54,7 +54,7 @@
 .scan-glyph svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .scan-sectionbar { left: 50%; transform: translateX(-50%); bottom: calc(12px + var(--tb)); display: flex; align-items: center; gap: 12px; white-space: nowrap; }
 .scan-sectionbar .scan-slider { grid-template-columns: auto 150px 62px; }
-.scan-tip { left: 50%; transform: translateX(-50%); top: 12px; display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.scan-tip { left: 50%; transform: translateX(-50%); top: 96px; display: flex; align-items: center; gap: 10px; white-space: nowrap; }
 .scan-scale { position: absolute; left: 60px; bottom: calc(16px + var(--tb)); z-index: 2; display: flex; flex-direction: column; gap: 3px; color: var(--text-2); font-size: var(--fs-11); pointer-events: none; }
 .scan-scale i { height: 5px; border: 1px solid var(--text-2); border-top: 0; min-width: 20px; }
 .scan-compass { position: absolute; left: 14px; bottom: calc(12px + var(--tb)); z-index: 2; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line-2); background: var(--glass); display: grid; place-items: center; pointer-events: none; }
@@ -89,24 +89,24 @@
 .scan-tag-void::after { content: ""; position: absolute; left: 50%; top: 100%; width: 1px; height: 20px; background: var(--warn-line); }
 .scan-tag-void b { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; background: var(--warn); color: var(--bg-0); font: 700 10px var(--font); }
 .scan-tag-void.on { border-color: var(--warn); box-shadow: 0 0 0 3px var(--warn-soft); }
-.scan-tag-lead { translate: -50% calc(-100% - 2px); padding: 2px 7px; border-radius: 4px; background: rgba(10, 12, 16, 0.84); border: 1px solid var(--warn); color: var(--warn); }
+.scan-tag-lead { translate: -50% calc(-100% - 2px); padding: 2px 7px; border-radius: 4px; background: color-mix(in srgb, var(--bg-0) 84%, transparent); border: 1px solid var(--warn); color: var(--warn); }
 .scan-tag-lead.person { border-color: var(--person); color: var(--person); }
 .scan-tag-lead b { color: var(--text); }
-.scan-tag-handle { translate: 12px -50%; pointer-events: auto; cursor: grab; display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px 0 8px; border-radius: var(--r-1); border: 1px solid var(--line-3); background: rgba(12, 18, 26, 0.86); color: var(--text); font: 500 var(--fs-12) var(--mono); touch-action: none; }
+.scan-tag-handle { translate: 12px -50%; pointer-events: auto; cursor: grab; display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px 0 8px; border-radius: var(--r-1); border: 1px solid var(--line-3); background: color-mix(in srgb, var(--bg-0) 86%, transparent); color: var(--text); font: 500 var(--fs-12) var(--mono); touch-action: none; }
 .scan-tag-handle i { width: 8px; height: 12px; border-left: 2px solid currentColor; border-right: 2px solid currentColor; opacity: 0.7; }
 .scan-tag-handle.on, .scan-tag-handle:active { cursor: grabbing; background: var(--line-3); }
 .scan-tag-handle::before { content: ""; position: absolute; left: -13px; top: 50%; width: 9px; height: 9px; margin-top: -5px; border-radius: 50%; background: var(--focus); box-shadow: 0 0 0 3px var(--line-3); }
-.scan-tag-dot { translate: -50% -50%; width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--focus); background: rgba(7, 9, 12, 0.6); }
+.scan-tag-dot { translate: -50% -50%; width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--focus); background: color-mix(in srgb, var(--bg-0) 60%, transparent); }
 .scan-tag-dot.hover { border-color: var(--accent); width: 9px; height: 9px; }
-.scan-tag-measure { translate: -50% calc(-100% - 10px); display: inline-flex; align-items: baseline; gap: 8px; padding: 4px 9px; border-radius: 6px; background: rgba(10, 14, 20, 0.88); border: 1px solid var(--line-3); font-family: var(--mono); color: var(--text-2); }
+.scan-tag-measure { translate: -50% calc(-100% - 10px); display: inline-flex; align-items: baseline; gap: 8px; padding: 4px 9px; border-radius: 6px; background: color-mix(in srgb, var(--bg-0) 88%, transparent); border: 1px solid var(--line-3); font-family: var(--mono); color: var(--text-2); }
 .scan-tag-measure b { font-size: var(--fs-13); color: var(--text); }
 
 /* loading, drop target, plan editor */
-.scan-veil { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center; background: rgba(7, 9, 12, 0.6); }
+.scan-veil { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center; background: color-mix(in srgb, var(--bg-0) 60%, transparent); }
 .scan-veilbox { display: flex; align-items: center; gap: 14px; padding: 16px 18px; min-width: 340px; max-width: 460px; }
 .scan-veilbox.col { flex-direction: column; align-items: flex-start; }
 .scan-veilbox > div:last-child { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-.scan-drop { position: absolute; inset: 10px; z-index: 8; display: grid; place-items: center; border: 2px dashed var(--accent); border-radius: var(--r-4); background: rgba(8, 14, 22, 0.86); pointer-events: none; }
+.scan-drop { position: absolute; inset: 10px; z-index: 8; display: grid; place-items: center; border: 2px dashed var(--accent); border-radius: var(--r-4); background: color-mix(in srgb, var(--bg-0) 86%, transparent); pointer-events: none; }
 .scan-drop > div { display: flex; flex-direction: column; align-items: center; gap: 6px; color: var(--accent); }
 .scan-drop b { font-size: var(--fs-16); color: var(--text); }
 .scan-planhost { position: absolute; inset: 0; z-index: 4; background: var(--bg-0); }
@@ -165,7 +165,7 @@
 .scan-map { width: 100%; aspect-ratio: 4 / 3; display: block; background: var(--bg-0); border: 1px solid var(--line); border-radius: var(--r-2); cursor: crosshair; }
 .scan-key { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: var(--fs-12); color: var(--text-2); }
 .scan-key span { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.scan-key i, .scan-diff > i { width: 11px; height: 11px; border-radius: 2px; flex: none; border: 1px solid rgba(255, 255, 255, 0.14); }
+.scan-key i, .scan-diff > i { width: 11px; height: 11px; border-radius: 2px; flex: none; border: 1px solid color-mix(in srgb, var(--text) 14%, transparent); }
 .scan-key b { margin-left: auto; color: var(--text); font-weight: 500; }
 .scan-key i.hatch, .scan-diff > i.hatch { background: repeating-linear-gradient(45deg, var(--text-2) 0 1.5px, var(--bg-1) 1.5px 4px); }
 .scan-key i.hatch2 { background: repeating-linear-gradient(45deg, var(--line-3) 0 2px, var(--bg-1) 2px 4px); }
@@ -211,3 +211,6 @@
 .scan-film.loading .scan-film-right, .scan-film.loading .scan-film-text .btn { visibility: hidden; }
 .scan-stage:has(.scan-sectionbar:not([hidden])) .scan-scale, .scan-stage:has(.scan-sectionbar:not([hidden])) .scan-compass { display: none; }
 .scan-key b { white-space: nowrap; }
+.scan-planrow .num, .scan-planrow input { min-width: 0; }
+.scan-planrow .btn { flex: none; }
+.scan-planrow input { flex: 1 1 0; width: 0; padding-inline: 8px; }

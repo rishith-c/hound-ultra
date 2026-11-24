@@ -89,7 +89,7 @@ export async function create(stage, side, ctx, lab) {
     c.fillStyle = lab.tok('--text'); c.beginPath(); c.arc(P[0], P[1], 2.5, 0, 7); c.fill();
     lab.label(c, 'zone ' + cur.zone + ' · echo ' + cur.excess.toFixed(2) + ' m longer', P[0] + 0.28 * S + 4, P[1] - 0.11 * S, { color: lab.tok('--person'), bg: true });
     // magnifier on the chest: the bands at true scale against the chest's travel
-    const mz = 14, mr = Math.min(86, hh * 0.2), mx = w - mr - 14, my = mr + 14, rx = rxNow(), dDir = Math.hypot(rx[0] - TX[0], rx[1] - TX[1]), kk = (2 * Math.PI) / LAMBDA;
+    const mz = 14, mr = Math.min(86, hh * 0.2), mx = w - mr - 14, my = mr + (ctx.mode === 'demo' ? 64 : 14), rx = rxNow(), dDir = Math.hypot(rx[0] - TX[0], rx[1] - TX[1]), kk = (2 * Math.PI) / LAMBDA;
     c.save(); c.beginPath(); c.arc(mx, my, mr, 0, 7); c.clip(); c.fillStyle = lab.tok('--bg-0'); c.fillRect(mx - mr, my - mr, 2 * mr, 2 * mr);
     const cell = 3; for (let j = -mr; j < mr; j += cell) for (let i = -mr; i < mr; i += cell) { const x = st.p[0] + i / (S * mz), y = st.p[1] - j / (S * mz), d1 = Math.hypot(x - TX[0], y - TX[1]), d2 = Math.hypot(x - rx[0], y - rx[1]), v = Math.abs(Math.sin(kk * (d1 + d2 - dDir))), col = lab.ramp(0.08 + 0.8 * v); c.fillStyle = 'rgb(' + col[0] + ',' + col[1] + ',' + col[2] + ')'; c.fillRect(mx + i, my + j, cell, cell); }
     // the chest moves along the bisector of the two legs, toward the radios
@@ -121,7 +121,7 @@ export async function create(stage, side, ctx, lab) {
     lab.label(c, 'echo', e[0] + (Math.cos(ang) >= 0 ? 8 : -8), e[1] + (Math.sin(ang) >= 0 ? -8 : 10), { align: Math.cos(ang) >= 0 ? 'left' : 'right', color: lab.tok('--person') });
     lab.label(c, 'what the receiver measures', ox + 4, oy - Math.max(16, Math.abs(e[1] - oy) * 0.35) - 4, { color: lab.tok('--text-3') });
     lab.label(c, 'echo drawn ' + MAG.toFixed(0) + ' times longer than it is', ox + D * 0.3, oy + 30, { color: lab.tok('--text-3') });
-    const word = quad > 0.92 ? 'Echo at right angles to the straight path: breathing changes the strength most.' : quad < 0.3 ? 'Echo in line with the straight path: the swing is sideways, the strength barely changes.' : 'In between: part of the swing shows.';
+    const word = quad > 0.92 ? 'At right angles: breathing changes the strength most.' : quad < 0.3 ? 'In line: the strength barely changes.' : 'In between: part of the swing shows.';
     lab.label(c, word, 12, 16, { color: quad > 0.92 ? lab.tok('--ok') : quad < 0.3 ? lab.tok('--warn') : lab.tok('--text-2'), font: '600 12px ' + lab.tok('--font') });
     lab.label(c, 'echo angle ' + ((((cur.phase * 180) / Math.PI) % 360 + 360) % 360).toFixed(0) + '°, swing ' + ((cur.dphi * 180) / Math.PI).toFixed(0) + '° per breath', 12, 33, { font: '500 10.5px ' + lab.tok('--mono'), color: lab.tok('--text-3') });
   }, { label: 'Phasor diagram of the straight path and the echo' });
@@ -218,7 +218,7 @@ export async function create(stage, side, ctx, lab) {
   const run = lab.loop((t, dt) => {
     tNow += dt;
     const target = st.stop * STEP; if (Math.abs(st.offset - target) > 1e-5) st.offset += (target - st.offset) * Math.min(1, dt * 9); else st.offset = target;
-    if (st.auto && !drag) { autoT += dt; if (autoT > 3) { autoT = 0; go((st.stop + 1) % st.stops); } }
+    if ((st.auto || ctx.mode === 'demo') && !drag) { autoT += dt; if (autoT > 3) { autoT = 0; go((st.stop + 1) % st.stops); } }
     if (mcJob) { stepMc(); cvMc.redraw(); }
     redraw();
   });

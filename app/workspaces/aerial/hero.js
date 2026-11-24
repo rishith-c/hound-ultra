@@ -4,7 +4,7 @@
 //   3 Compare  two drawn flights of the same ground, aligned and compared live; drag the divider
 // Nothing here makes up a result: boxes come from data/aerial/recorded.json or a live run, heat from the RX worker,
 // changes from the change worker. Frames of act 1 are AI-generated illustrations and say so on screen.
-import { tileGrid, colourName, iouOf } from './shared.js';
+import { tileGrid, colourName, nms } from './shared.js';
 
 const STRIP = ['G-01', 'G-03', 'G-02', 'G-05'], FW = 1254, STEP = 1104, SW = FW + 3 * STEP, SH = FW, LAP = FW - STEP;
 const VIEW_H = 985, FOV = 30, TAN = Math.tan((FOV / 2) * Math.PI / 180);
@@ -31,7 +31,7 @@ export async function createHero(host, o) {
   const gl = h('canvas.ah-gl', { 'aria-hidden': 'true' }), ov = h('canvas.ah-ov', { tabindex: 0, role: 'img', 'aria-label': 'Aerial film. Drag to move the view.' });
   host.append(gl, ov);
   const renderer = new THREE.WebGLRenderer({ canvas: gl, antialias: true, powerPreference: 'high-performance' });
-  renderer.setClearColor(0x06080a, 1); renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.25;   // act 2 only: acts 1 and 3 grade in their own shaders
+  renderer.setClearColor(0x06080a, 1); renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.7;   // act 2 only: acts 1 and 3 grade in their own shaders
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.shadowMap.autoUpdate = false;
   const g = ov.getContext('2d');
   const aniso = renderer.capabilities.getMaxAnisotropy();
@@ -147,7 +147,7 @@ export async function createHero(host, o) {
 
   // ---------------------------------------------------------------- act 2: the site in relief
   const site = { ready: false, building: false, pins: [] };
-  const s2 = new THREE.Scene(); s2.background = new THREE.Color(0x191e23); s2.fog = new THREE.Fog(0x191e23, 52, 132);
+  const s2 = new THREE.Scene(); s2.background = new THREE.Color(0x191e23); s2.fog = new THREE.Fog(0x191e23, 50, 118);
   const cam2 = new THREE.PerspectiveCamera(FOV, 1, 1, 900);
   const V = (x, y, z = 0) => new THREE.Vector3(x, z, -y);
   const u2 = { uHeat: { value: null }, uHeatK: { value: 0 }, uTime: { value: 0 } };
@@ -184,7 +184,7 @@ export async function createHero(host, o) {
     const landT = rub.clone(); landT.repeat.set(62, 62); landT.needsUpdate = true;
     const lg0 = new THREE.PlaneGeometry(760, 760, 190, 190); lg0.rotateX(-Math.PI / 2); lg0.translate(60, 0, -45); const lp = lg0.attributes.position, lc = new Float32Array(lp.count * 3);
     for (let i = 0; i < lp.count; i++) { const x = lp.getX(i), y = -lp.getZ(i), d = Math.hypot(Math.max(0, -x, x - 120), Math.max(0, -y, y - 90)), in_ = x > 1 && x < 119 && y > 1 && y < 89; lp.setY(i, in_ ? -2.5 : hgt(x, y) * 0.8 - 0.35 + Math.pow(Math.max(0, d - 14) / 60, 1.7) * 16 * (0.5 + N(x * 0.035 + 7, y * 0.035 + 3)) + Math.min(d / 8, 3) * (N(x * 0.11, y * 0.11) - 0.5) * 2.2); const s = 0.72 + 0.5 * N(x * 0.09 + 2, y * 0.09); lc[i * 3] = s; lc[i * 3 + 1] = s * (0.98 + 0.1 * N(x * 0.05, y * 0.05 + 4)); lc[i * 3 + 2] = s * 0.96; }
-    lg0.setAttribute('color', new THREE.BufferAttribute(lc, 3)); lg0.computeVertexNormals(); rel.add(new THREE.Mesh(lg0, new THREE.MeshStandardMaterial({ map: landT, roughness: 1, vertexColors: true, color: 0x6d675e })));
+    lg0.setAttribute('color', new THREE.BufferAttribute(lc, 3)); lg0.computeVertexNormals(); rel.add(new THREE.Mesh(lg0, new THREE.MeshStandardMaterial({ map: landT, roughness: 1, vertexColors: true, color: 0x55514b })));
     // light: low overcast sun from the south-east, cool sky
     const sun = new THREE.DirectionalLight(0xfff0dc, 4.4); sun.target.position.set(93, 0, -62); sun.position.set(93 + 46, 40, -62 + 34); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, near: 10, far: 130 }); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.04; s2.add(sun, sun.target); s2.add(new THREE.HemisphereLight(0x9fb6d2, 0x241f1a, 1.15)); ground.receiveShadow = true;
     // walls
@@ -215,7 +215,7 @@ export async function createHero(host, o) {
     const m4 = new THREE.Matrix4(), qt = new THREE.Quaternion(), eu = new THREE.Euler(), col = new THREE.Color();
     const inst = (geo, mat, list, f) => { const m = new THREE.InstancedMesh(geo, mat, list.length); list.forEach((s, i) => { f(s, i); m.setMatrixAt(i, m4); m.setColorAt(i, col); }); m.castShadow = m.receiveShadow = true; rel.add(m); m.frustumCulled = false; };
     const grey = (c, k) => { const l = (c[0] + c[1] + c[2]) / 3; col.setRGB(lerp(l, c[0], 0.6) * k, lerp(l, c[1], 0.6) * k, lerp(l, c[2], 0.6) * k, THREE.SRGBColorSpace); };
-    inst(new THREE.BoxGeometry(1.5, 0.2, 1), new THREE.MeshStandardMaterial({ roughness: 0.95, map: conc, bumpMap: conc, bumpScale: 2 }), spots.filter((_, i) => i % 6 === 1), ([x, y]) => { const s = 0.45 + R() * R() * 1.5; eu.set((R() - 0.5) * 1.1, R() * 6, (R() - 0.5) * 1.1); m4.compose(V(x, y, hgt(x, y) + s * 0.12), qt.setFromEuler(eu), new THREE.Vector3(s, 1, s)); const l = 0.55 + R() * 0.3; col.setRGB(l, l * 0.98, l * 0.95, THREE.SRGBColorSpace); });
+    inst(new THREE.BoxGeometry(1.5, 0.2, 1), new THREE.MeshStandardMaterial({ roughness: 0.95, map: conc, bumpMap: conc, bumpScale: 2 }), spots.filter((_, i) => i % 6 === 1), ([x, y]) => { const s = 0.45 + R() * R() * 1.5; eu.set((R() - 0.5) * 1.1, R() * 6, (R() - 0.5) * 1.1); m4.compose(V(x, y, hgt(x, y) + s * 0.12), qt.setFromEuler(eu), new THREE.Vector3(s, 1, s)); const l = 1.1 + R() * 0.7; col.setRGB(l, l * 0.98, l * 0.94); });
     inst(rock, new THREE.MeshStandardMaterial({ roughness: 1, flatShading: true }), spots, ([x, y]) => { const s = 0.07 + Math.pow(R(), 4) * 0.55, c = at(x, y); eu.set(R() * 6, R() * 6, R() * 6); m4.compose(V(x, y, hgt(x, y) + s * 0.2), qt.setFromEuler(eu), new THREE.Vector3(s, s, s)); grey(c, 0.85 + R() * 0.35); });
     inst(new THREE.BoxGeometry(1, 0.1, 0.16), new THREE.MeshStandardMaterial({ roughness: 0.95 }), spots.filter((_, i) => i % 11 === 0), ([x, y]) => { eu.set((R() - 0.5) * 0.5, R() * 6, (R() - 0.5) * 0.7); m4.compose(V(x, y, hgt(x, y) + 0.22), qt.setFromEuler(eu), new THREE.Vector3(1.2 + R() * 2.6, 1, 1)); col.setRGB(0.42 + R() * 0.12, 0.34 + R() * 0.08, 0.25, THREE.SRGBColorSpace); });
     const puff = new THREE.IcosahedronGeometry(1, 1), pp = puff.attributes.position; for (let i = 0; i < pp.count; i++) { const k = 0.7 + 0.65 * N(pp.getX(i) * 5 + 9, pp.getY(i) * 5 + pp.getZ(i) * 4); pp.setXYZ(i, pp.getX(i) * k, pp.getY(i) * k, pp.getZ(i) * k); } puff.computeVertexNormals();
@@ -399,7 +399,7 @@ export async function createHero(host, o) {
   const ready = () => (act === 0 ? strip.ready : act === 1 ? site.ready : cmp.ready);
   function frame(ts) {
     raf = 0; if (!running) return; const raw = last ? (ts - last) / 1000 : 0.016, dt = Math.min(0.05, raw); last = ts; time += dt;
-    if (ready() && !(act === 0 && strip.live)) t += dt; if (strip.live) strip.live.t += dt;
+    if (ready() && !(act === 0 && strip.live)) t += dt; if (strip.live) { strip.live.t += dt; if (strip.live.frontTo) strip.live.front += (strip.live.frontTo - strip.live.front) * Math.min(1, dt * 2.5); }
     // adaptive resolution: drop a step after a run of slow frames, never below 1:1 of CSS pixels times 0.8
     if (raw > 0.021) { if (++slow > 45 && ratio > 0.85) { ratio = Math.max(0.85, ratio * 0.85); slow = 0; renderer.setPixelRatio(ratio); } } else if (slow > 0) slow -= 0.5;
     render(dt); caption();
@@ -446,22 +446,24 @@ export async function createHero(host, o) {
     // the real thing: run the network on the strip's frames here and now
     async live(detectTile, load) {
       if (act !== 0) { go(0); await new Promise((r) => setTimeout(r, 600)); }
-      let stop = false; const L = strip.live = { t: 0, k: 0, x0: camX(t), x: FW / 2 + 60, front: -300, msg: 'Loading the detector…', cancel: () => { stop = true; }, over: 0 };
-      L.x = Math.max(halfW() * 1.24 - 40, 600); const keep = strip.boxes; strip.boxes = []; for (const x of strip.tiles) delete x.done; schedule();
+      let stop = false; const K = clamp(Math.round((camX(t) - FW / 2) / STEP), 0, STRIP.length - 1), mine = strip.tiles.filter((q) => q.k === K);   // one frame: the one under the camera
+      const L = strip.live = { t: 0, k: 0, x0: camX(t), x: K * STEP + FW / 2, front: -300, msg: 'Loading the detector…', cancel: () => { stop = true; }, over: 0 };
+      L.x = clamp(L.x, halfW() * 1.24 - 40, SW - halfW() * 1.24 + 40); L.front = K * STEP - 60; const keep = strip.boxes; strip.boxes = keep.filter((b) => b.id !== STRIP[K]); for (const b of strip.boxes) b.at = b.x1 < K * STEP ? -9 : 1e9; for (const x of strip.tiles) x.done = x.k < K ? -9 : undefined; schedule(); onState({ kind: 'live' });
       const at = () => tileMesh.geometry.attributes.aAt;
       try {
         await load((m) => { L.msg = m; }); if (stop) return false;
-        let sum = 0, n = 0; const all = [];
-        for (let i = 0; i < strip.tiles.length; i++) {
-          const q = strip.tiles[i], src = strip.bmps[q.k], r = await detectTile(src, q); if (stop) { return false; }
-          sum += r.ms; n++; q.done = q.at = L.t; at().array[i] = L.t; at().needsUpdate = true; L.front = Math.max(L.front, q.x + q.w * 0.8);
-          const want = clamp(q.x + 200, Math.max(halfW() * 1.24 - 40, 600), SW - Math.max(halfW() * 1.24 - 40, 600)); L.x += (want - L.x) * 0.12;
-          for (const p of r.people) { if (p.score < o.minScore) continue; const b = { id: q.id, score: p.score, x0: p.box[0] + q.k * STEP, y0: p.box[1], x1: p.box[2] + q.k * STEP, y1: p.box[3], at: L.t }; const dup = strip.boxes.findIndex((z) => iouOf([z.x0, z.y0, z.x1, z.y1], [b.x0, b.y0, b.x1, b.y1]) > 0.4); if (dup < 0) strip.boxes.push(b); else if (strip.boxes[dup].score < b.score) { b.at = strip.boxes[dup].at; strip.boxes[dup] = b; } }
-          L.msg = 'Live on this computer: ' + (sum / n / 1000).toFixed(2) + ' s a tile';
+        let sum = 0, n = 0; let all = [];
+        for (let i = 0; i < mine.length; i++) {
+          const q = mine[i], idx = strip.tiles.indexOf(q), src = strip.bmps[q.k], r = await detectTile(src, q); if (stop) { return false; }
+          sum += r.ms; n++; q.done = q.at = L.t; at().array[idx] = L.t; at().needsUpdate = true; L.frontTo = K * STEP + FW * (i + 1) / mine.length;
+          const tx = q.x - q.k * STEP;
+          for (const p of r.people) { const b = p.box; if (p.score < o.minScore || (tx > 0 && b[0] < tx + 4) || (q.y > 0 && b[1] < q.y + 4) || (tx + q.w < FW && b[2] > tx + q.w - 4) || (q.y + q.w < FW && b[3] > q.y + q.w - 4)) continue; all.push({ score: p.score, box: b, at: L.t }); }
+          all = nms(all); strip.boxes = [...strip.boxes.filter((b) => b.id !== STRIP[K]), ...all.map((z) => ({ id: STRIP[K], score: z.score, x0: z.box[0] + K * STEP, y0: z.box[1], x1: z.box[2] + K * STEP, y1: z.box[3], at: z.at }))];
+          L.msg = 'Live: tile ' + (i + 1) + ' of ' + mine.length + ', ' + (sum / n / 1000).toFixed(2) + ' s each, on this computer';
         }
-        L.over = L.t; L.front = SW + 300; strip.isLive = { n, ms: sum / n }; L.msg = 'Done: ' + n + ' tiles, ' + (sum / n / 1000).toFixed(2) + ' s each, on this computer.'; await new Promise((r) => setTimeout(r, 3200)); return true;
+        L.over = L.t; L.front = Math.max(L.front, K * STEP + FW); strip.isLive = { n, ms: sum / n }; L.msg = 'Done: ' + n + ' tiles, ' + (sum / n / 1000).toFixed(2) + ' s each, on this computer.'; await new Promise((r) => setTimeout(r, 3200)); return true;
       } catch (e) { strip.boxes = keep; throw e; }
-      finally { if (stop || !strip.boxes.length) strip.boxes = keep; strip.live = null; schedule(); }
+      finally { if (stop) strip.boxes = keep; strip.live = null; for (const x of strip.tiles) delete x.done; schedule(); }
     },
     dispose() { this.stop(); ro.disconnect(); renderer.dispose(); },
   };

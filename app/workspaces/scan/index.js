@@ -12,9 +12,9 @@ import { pointInPoly } from '../../core/geometry.js';
 
 const STEPS = [
   { id: 'capture', n: 1, title: 'Capture', say: 'Fly the scanner. Watch the cloud build.' },
-  { id: 'classify', n: 2, title: 'Classify', say: 'Ground, structure, rubble, vegetation.' },
-  { id: 'voids', n: 3, title: 'Find voids', say: 'Spaces where someone could be alive.' },
-  { id: 'map', n: 4, title: 'Make the map', say: 'A grid the route planner can use.' },
+  { id: 'classify', n: 2, title: 'Classify', say: 'Four kinds of surface.' },
+  { id: 'voids', n: 3, title: 'Find voids', say: 'Spaces to search.' },
+  { id: 'map', n: 4, title: 'Make the map', say: 'For the route planner.' },
 ];
 const CLASS_SAY = ['Within 18 cm of the fitted ground surface.', 'Flat or upright planes: walls, roofs, ceilings.', 'Rough, tilted or low loose material, including overturned furniture.', 'Scattered returns high above ground with nothing flat nearby.'];
 const TRUTH_ROWS = ['Ground', 'Structure', 'Rubble', 'Vegetation', 'Furniture, vehicles'];
@@ -53,7 +53,7 @@ export default {
     const btnShot = h('button.btn.btn-sm', { title: 'Save a picture of this view', onclick: screenshot }, icon('download'), 'Screenshot');
     const btnPly = h('button.btn.btn-sm.btn-ghost', { title: 'Download the cloud as a binary .ply with intensity and class per point', onclick: exportPly }, 'Export .ply');
     const head = h('header.scan-head.adv-only', null,
-      h('div.scan-title', null, h('h1', null, '3-D scan'), h('p.muted', null, 'Turns a scan into a map the mission can use, and finds spaces someone could survive in.')),
+      h('div.scan-title', null, h('h1', null, '3-D scan'), h('p.muted', null, 'A map for the mission, and spaces to search.')),
       h('div.scan-tags', null, realityTag('live-algo'), tagSource), h('div.grow'), srcSeg, btnShot, btnPly);
     const steps = h('nav.scan-steps.adv-only', { 'aria-label': 'From scan to map' });
     const stage = h('div.scan-stage'), dock = h('aside.scan-dock.adv-only', { 'aria-label': 'Step details' });
@@ -82,15 +82,16 @@ export default {
     for (const el of [hudTL, statLine, tools, sectionBar, scale, compassEl, transport, measureTip, planHost]) el.classList.add('adv-only');
 
     // ------------------------------------------------------------------ Demo: one film, full bleed, over the same view
-    const film = { hero: null, title: h('h1'), say: h('p'), act: h('button.btn.btn-primary', { onclick: () => filmAction() }), dots: h('div.scan-film-dots', { role: 'group', 'aria-label': 'Chapters of the film' }), fig: [0, 1, 2].map(() => h('b.num')), last: '' };
+    const film = { hero: null, title: h('h1'), say: h('p'), act: h('button.btn.btn-primary', { onclick: () => filmAction() }), dots: h('div.scan-film-dots', { role: 'group', 'aria-label': 'Chapters of the film' }), fig: [0, 1, 2].map(() => h('b.num')), cap: [], last: '' };
     film.title.append('Room to ', h('em', null, 'survive'));
     const filmBox = h('section.scan-film.demo-only', { 'aria-label': 'Void finder film' },
-      h('div.scan-film-text', null, film.title, film.say, h('div.row', null, film.act, realityTag('live-algo'), h('span.tag.tag-sim', { title: 'The scan is simulated. The search that runs on it is real and ran just now, on this device.' }, 'Simulated scan'))),
-      h('div.scan-film-right', null, h('div.scan-film-figs', null, [['points', 0], ['voids found', 1], ['m³ of possible space', 2]].map(([t, i]) => h('div', null, film.fig[i], h('span', null, t)))), film.dots));
+      h('div.scan-film-text', null, film.title, film.say, h('div.row', null, film.act, realityTag('live-algo'), film.src = h('span.tag.tag-sim', { title: 'The scan is simulated. The search that runs on it is real and ran just now, on this device.' }, 'Simulated scan'))),
+      h('div.scan-film-right', null, h('div.scan-film-figs', null, [['points', 0], ['voids found', 1], ['m³ of possible space', 2]].map(([t, i]) => h('div', null, film.fig[i], film.cap[i] = h('span', null, t)))), film.dots));
     stage.append(filmBox);
-    const PASS_SAY = { aerial: 'A drone sweeps the site. Every beam that returns becomes a point.', orbit: 'It circles the collapse and looks in from the side.', close: 'Closer, for the cables, bars and bent roof sheets.', interior: 'Then inside, through every open door.', survey: 'A drone sweeps the building.', all: 'Every point measured, none drawn by hand.' };
+    const PASS_SAY = { aerial: 'A drone sweeps the site. Every beam that returns becomes a point.', orbit: 'It circles the collapse and looks in from the side.', close: 'Closer, for the cables, bars and bent roof sheets.', interior: 'Then inside, through every open door.', survey: 'A drone sweeps the building.', all: 'A simulated scan: every point is one beam that came back.' };
     function filmSay() {
       const s = film.hero.S, d = S.data, v = s.cur && s.cur.v;
+      if (s.act === 'scan' && d.kind === 'file') return (S.file && S.file.sample ? 'The simulated sample scan, ' : d.name + ', ') + N(d.n) + ' points.';
       if (s.act === 'scan') return PASS_SAY[s.cpt] || PASS_SAY.aerial;
       if (s.act === 'open') return 'The roof lifts away. Now the search runs: free space, flooded inward from open air.';
       if (!v) return 'No space in this scan is big enough for a person.';
@@ -116,7 +117,7 @@ export default {
       if (view.section.on) { view.setSection({ on: false }); }
       for (const g of ['frame', 'leads', 'routes', 'zones', 'occ', 'section', 'measure', 'access']) view.setLayer(g, false);
       view.setLayer('flight', true);
-      filmBox.classList.remove('loading'); film.hero = createHero(view, S.data, { reduced: reduced(), html: filmHtml }); film.hero.begin(); film.last = ''; tickFilm(true); for (let i = 0; i < 4; i++) view.setClassVisible(i, true);
+      filmBox.classList.remove('loading'); film.hero = createHero(view, S.data, { reduced: reduced(), html: filmHtml }); film.hero.begin(); film.last = ''; film.src.hidden = S.source === 'file' && !(S.file && S.file.sample); { const L = S.data.voids.list, K = film.hero.list.length; film.cap[1].textContent = K < L.length ? 'largest of ' + L.length + ' voids' : 'voids found'; film.cap[2].textContent = K < L.length ? 'm³, of ' + L.reduce((s, q) => s + q.volume, 0).toFixed(0) + ' possible' : 'm³ of possible space'; } tickFilm(true); for (let i = 0; i < 4; i++) view.setClassVisible(i, true);
     }
     function stopFilm() { if (!film.hero) return; film.hero.end(); film.hero = null; }
     function onMode() {
@@ -369,7 +370,7 @@ export default {
 
     // ------------------------------------------------------------------ the dock: one panel set per step
     const panel = (title, opts, ...body) => ctx.kit.panel(title, opts || {}, ...body);
-    const simTag = () => (S.source === 'file' ? realityTag('device') : h('span.tag.tag-sim', { title: 'The scan is simulated: a virtual scanner flown through a model of the exercise site.' }, 'Simulated scan'));
+    const simTag = () => (S.source === 'file' && !(S.file && S.file.sample) ? realityTag('device') : h('span.tag.tag-sim', { title: 'The scan is simulated: a virtual scanner flown through a model of the exercise site.' }, 'Simulated scan'));
     function drawDock(opts = {}) {
       const d = S.data, keep = opts.keepSliders && dock.querySelector('.scan-voidparams');
       mapCanvas = null; mapStop?.(); mapStop = null;
@@ -396,7 +397,7 @@ export default {
     }
     function display() {
       return panel('Display', null,
-        slider('Point size', 0.6, 3.2, 0.05, view.pointSize, (v) => v.toFixed(2) + ' × spacing', (v) => view.setPointSize(v), 'Each point is drawn this many times wider than the local gap between points, so sparse and dense areas both close up. Points shrink with distance.'),
+        slider('Point size', 0.6, 3.2, 0.05, view.pointSize, (v) => v.toFixed(2) + ' × spacing', (v) => view.setPointSize(v), 'Each point is drawn this many times wider than the local gap between points, so sparse and dense areas both close up. Points shrink with distance; close up, one point is drawn as up to eight grains.'),
         slider('Sun and shadow', 0, 1, 0.05, lit, (v) => (v * 100).toFixed(0) + ' %', (v) => { lit = v; view.setLit(v); }, 'Light, shadow and openness to the sky, worked out from the points themselves. At zero you see the raw colours.'),
         slider('Depth shading', 0, 2.5, 0.05, shading, (v) => v.toFixed(2), (v) => { shading = v; view.setShading(v); }, 'Eye-dome lighting: darkens a point by how far it sits behind its neighbours on screen'),
         slider('Height scale', 2, 14, 0.5, view.heightMax, (v) => '0 to ' + v.toFixed(1) + ' m', (v) => { view.setHeightRange(v); drawLegend(); }, 'Top of the height colour scale'));
@@ -477,7 +478,7 @@ export default {
             h('div', null, h('i.dash'), h('span', null, 'On the planner’s own map'), h('b.num', null, R.planner.ok ? R.planner.length.toFixed(1) + ' m' : 'no way'), h('em', null, R.planner.ok ? (R.planner.reached ? 'reaches the opening' : 'stops ' + R.planner.gap.toFixed(1) + ' m short of the opening') : R.planner.reason)),
             h('p.dim.scan-small', null, 'From staging. The mission’s own route planner (A*), run on both maps in ' + R.ms.toFixed(0) + ' ms. Hazard costs are the mission’s; walls and obstacles come from the scan.')) : null));
       }
-      if (S.source === 'site') out.push(h('div.note.quiet', null, icon('info'), h('span', null, 'The search limits were adjusted by hand while looking at this site, which was also built by hand. The list shows the method working, not how often it would be right elsewhere.')));
+      if (S.source === 'site') out.push(h('div.note.quiet', null, icon('info'), h('span', null, 'The search limits were adjusted by hand while looking at this site, which was also built by hand. The 0.6 m limit was added after comparing the list with the model, so the share that is really empty flatters it. The list shows the method working, not how often it would be right elsewhere.')));
       out.push(h('div.note.warn', null, icon('alert'), h('span', null, 'A void is a place worth checking, not a finding. A scan cannot see into a sealed pocket, cannot tell an empty space from one it never saw into, and cannot tell whether anyone is there.')));
       return out;
     }
@@ -519,7 +520,7 @@ export default {
       await load('file', { name: f.name, buffer, up: S.up === 'auto' ? undefined : S.up }, [buffer]);
     }
     async function openSample() {
-      try { const url = new URL('./samples/fallen-slab-room.ply', import.meta.url), r = await fetch(url); if (!r.ok) throw new Error('missing'); const buffer = await r.arrayBuffer(); openFile({ name: 'fallen-slab-room.ply', size: buffer.byteLength, arrayBuffer: async () => buffer.slice(0) }); }
+      try { const url = new URL('./samples/fallen-slab-room.ply', import.meta.url), r = await fetch(url); if (!r.ok) throw new Error('missing'); const buffer = await r.arrayBuffer(); openFile({ sample: true, name: 'fallen-slab-room.ply', size: buffer.byteLength, arrayBuffer: async () => buffer.slice(0) }); }
       catch { fail('The sample scan could not be downloaded. Check the connection and try again.'); }
     }
     function dockFile() {
@@ -619,7 +620,7 @@ export default {
     function refreshAll() { drawSources(); drawSteps(); drawModeSeg(); drawLegend(); drawTools(); drawSectionBar(); drawStat(); applyLayers(); drawDock(); drawTransport(); btnPly.disabled = !S.data; }
     function drawSources() {
       seg(srcSeg, SOURCES.map(([v, l]) => [v, l, v === 'site' ? 'The simulated scan of the exercise site' : v === 'file' ? 'Load a .ply or .xyz file from this computer' : 'Draw walls and scan your own building']), () => S.source, (v) => setSource(v));
-      tagSource.replaceChildren(S.source === 'file' ? h('span.tag.tag-ok', { title: 'The points come from a file on this computer.' }, 'on your file') : h('span.tag.tag-sim', { title: 'The scan itself is simulated. The algorithms that read it are real and run now.' }, S.source === 'plan' ? 'on a simulated scan of your plan' : 'on a simulated scan'));
+      tagSource.replaceChildren(S.source === 'file' && !(S.file && S.file.sample) ? h('span.tag.tag-ok', { title: 'The points come from a file on this computer.' }, 'on your file') : h('span.tag.tag-sim', { title: 'The scan itself is simulated. The algorithms that read it are real and run now.' }, S.source === 'plan' ? 'on a simulated scan of your plan' : 'on a simulated scan'));
     }
     function setSource(src) {
       job++; veil.hidden = true; S.source = src; S.data = null; S.compare = null; S.sel = -1; S.route = null; S.error = null; S.planScanned = false; S.auto = S.auto && src === 'site';
@@ -638,7 +639,7 @@ export default {
       const cv = document.createElement('canvas'), bar = Math.round(src.height * 0.045) + 18; cv.width = src.width; cv.height = src.height + bar;
       const c = cv.getContext('2d'); c.fillStyle = cssVar('--bg-0'); c.fillRect(0, 0, cv.width, cv.height); c.drawImage(src, 0, 0);
       c.fillStyle = cssVar('--bg-1'); c.fillRect(0, src.height, cv.width, bar); c.fillStyle = cssVar('--text-2'); c.font = Math.round(bar * 0.4) + 'px ' + cssVar('--font'); c.textBaseline = 'middle';
-      const d = S.data, what = planEdit ? 'Floor plan drawing' : (S.source === 'file' ? d.name : S.source === 'plan' ? 'Simulated scan of a drawn floor plan' : 'Simulated scan, training exercise, Timure') + ' · ' + N(d.n) + ' points · ' + STEPS.find((s) => s.id === S.step).title;
+      const d = S.data, what = planEdit ? 'Floor plan drawing' : (S.source === 'file' ? (S.file && S.file.sample ? 'Simulated sample scan ' : '') + d.name : S.source === 'plan' ? 'Simulated scan of a drawn floor plan' : 'Simulated scan, training exercise, Timure') + ' · ' + N(d.n) + ' points · ' + STEPS.find((s) => s.id === S.step).title;
       c.fillText('HOUND Command · 3-D scan · ' + what, bar * 0.4, src.height + bar / 2); c.textAlign = 'right'; c.fillText(new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC', cv.width - bar * 0.4, src.height + bar / 2);
       cv.toBlob((b) => { if (!b) { ctx.shell.toast('The picture could not be made.', { level: 'alert' }); return; } download(b, 'hound-scan-' + S.step + '.png'); ctx.shell.toast('Screenshot saved as hound-scan-' + S.step + '.png.', { level: 'ok' }); }, 'image/png');
     }

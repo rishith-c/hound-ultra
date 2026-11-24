@@ -215,6 +215,7 @@ export async function createWall(host, { nn, ctx, css, reduced = () => false, on
     },
     reset() { state.fill(0); tState.needsUpdate = true; U.uCount.value.fill(0); U.uRun.value.fill(0); done.clear(); nextFree = 0; story = 0; drawLabels(); },
     lit() { let n = 0; for (const [id, r] of done) n += Math.round(U.uCount.value[rowOf(id)] * Math.min(1, Math.max(0, (T - r.t0) / r.dur))); return n; },
+    part(id) { const r = done.get(id); return r ? Math.min(1, Math.max(0, (T - r.t0) / r.dur)) : 0; },
     settled() { for (const [, r] of done) if (T < r.t0 + r.dur + 0.4) return false; return true; },
     // What is under the pointer: { test } for a strip, { window } for one of the thirty panes, or null.
     pick(cx, cy) {

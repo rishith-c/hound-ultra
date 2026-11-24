@@ -78,7 +78,7 @@ export const GROUND = {
     // outdoors: worn asphalt, patched, with damp hollows
     float patchy = smoothstep(0.42, 0.6, nA.r), crack = nB.g * 0.8 + nC.g * 0.35;
     vec3 asph = uGroundC * (0.62 + 0.5 * nC.b + 0.35 * nB.r) * mix(0.8, 1.12, patchy) * (1.0 - 0.55 * crack);
-    gPud = smoothstep(0.60, 0.74, nA.a + (nB.a - 0.5) * 0.16) * (1.0 - indoor);
+    gPud = smoothstep(0.60, 0.74, nA.a + (nB.a - 0.5) * 0.16) * (1.0 - indoor) * mix(0.2, 1.0, seen);
     asph *= mix(1.0, 0.55, gPud);
     // indoors: a poured slab with joints, dust and grit
     vec2 jt = abs(fract(m / 3.0 - 0.5) - 0.5) * 3.0; float joint = 1.0 - smoothstep(0.012, 0.05, min(jt.x, jt.y));

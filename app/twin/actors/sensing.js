@@ -47,11 +47,11 @@ void main() {
     vec2 c = vP - uDet[i].xy; float r = length(c), D = length(uDet[i].xy - uMast);
     float tear = 0.75 + 0.25 * sin(atan(c.y, c.x) * 9.0 + sin(w * 0.35) * 2.0 + r * 4.0);
     float cs = pow(0.5 + 0.5 * cos(k * 1.15 * r - w) + 1e-4, 16.0) * tear * mix(1.0, 0.25, far < 0.2 ? 1.0 : 0.0);
-    warm += sA * smoothstep(D - 0.5, D + 0.5, uFront - 0.6) * exp(-r / 1.1) * smoothstep(0.2, 0.7, r) * (cs * 0.42 * far + 0.03);
+    warm += sA * smoothstep(D - 0.5, D + 0.5, uFront - 0.6) * exp(-r / 1.1) * smoothstep(0.2, 0.7, r) * (cs * 0.34 * far + 0.02);
   }
   float front = gs((d - uFront) * 6.0) * step(d, uRange) * (0.35 + 0.65 * att) * smoothstep(uRange + 0.4, uRange * 0.5, uFront);
   float a = cool + warm + front * 0.3;
-  gl_FragColor = vec4((uColor * 0.8 * (cool + front * 0.3) + uWarm * warm) / max(a, 1e-4), clamp(a, 0.0, 0.6) * uVis);
+  gl_FragColor = vec4((uColor * 0.8 * (cool + front * 0.3) + mix(uColor * 0.8, uWarm, 0.55) * warm) / max(a, 1e-4), clamp(a, 0.0, 0.6) * uVis);
 }`;
 
 // The same waves where they meet the walls of block B. (twin-core turns the walls near a listening rover to glass;

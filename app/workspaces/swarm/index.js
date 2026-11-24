@@ -74,7 +74,7 @@ export default {
     // ---------- demo overlay ----------
     const dCap = h('p.swarm-dcap', { role: 'status' }), dFig = ['mapped', 'search time', 'searching'].map((t) => { const b = h('b.num', null, '–'); return { el: h('div', null, b, h('span', null, t)), b }; });
     const btnDemo = h('button.btn.btn-primary', { title: 'Kills the beacon that carries the most machines. You can also click any beacon.', onclick: () => failRelay('busiest') }, icon('alert', 14), 'Fail a beacon');
-    const btnHold = h('button.btn', { 'aria-label': 'Pause', onclick: () => { paused = !paused; btnHold.replaceChildren(icon(paused ? 'play' : 'pause', 14)); btnHold.setAttribute('aria-label', paused ? 'Play' : 'Pause'); } }, icon('pause', 14));
+    const btnHold = h('button.btn', { 'aria-label': 'Pause', onclick: () => { paused = !paused; btnHold.replaceChildren(icon(paused ? 'play' : 'pause', 14)); btnHold.setAttribute('aria-label', paused ? 'Play' : 'Pause'); }, hidden: ctx.kit.reducedMotion() }, icon('pause', 14));
     const demoBox = h('div.swarm-demo.demo-only', null,
       h('div.swarm-dtitle', null, h('div.swarm-dtags', null, realityTag('concept'), h('span.tag.tag-ok', null, 'Live algorithm')), h('h1', null, 'One search, eight machines'), dCap, h('div.row', null, btnDemo, btnHold)),
       h('div.swarm-dfig', null, ...dFig.map((f) => f.el)));
@@ -162,8 +162,10 @@ export default {
       const dt = Math.max(0, Math.min(0.05, (now - last) / 1000 || 0.016)); last = now; let speed = 0;
       if (playing && !(demo && paused)) {
         if (demo && scene && !ctx.kit.reducedMotion()) { if (!director) makeDirector(); speed = director.update(dt); } else speed = demo ? 6 : cfg.speed;
+        const still = demo && ctx.kit.reducedMotion();      // reduced motion: jump to a still of the search
+        if (still) { speed = 0; if (runs[0].swarm.state.t < 250) runs[0].swarm.advance(2, 30); else { paused = true; setCap('Motion is reduced. This is the search after four minutes.'); } }
         let adv = dt * speed; if (runs.length > 1) for (const r of runs) if (!r.swarm.state.done) adv = Math.min(adv, Math.max(0, r.swarm.buffered()));   // keep a race in step
-        for (const r of runs) r.swarm.advance(adv, Math.max(3, speed * (demo ? 0.7 : 0.4)));
+        if (!still) for (const r of runs) r.swarm.advance(adv, Math.max(3, speed * (demo ? 0.7 : 0.4)));
         if (runs.every((r) => r.swarm.state.done)) { playing = false; drawPlay(); if (!demo) announceEnd(); uiAcc = 1; }
       }
       try { scene?.frame(dt, speed); } catch (e) { console.error('[swarm] scene', e); scene = null; }
@@ -434,7 +436,7 @@ export default {
     const offEsc = ctx.bus.on('escape', () => { if (!demo && camMode === 'follow') { camMode = 'overview'; segCam.redraw(); scene?.setCamera('overview'); scene?.select(null); drawFleet(true); } });
     let firstShow = true, resumeOnShow = false;
     return {
-      onShow() { visible = true; scene?.resize(); last = performance.now(); cancelAnimationFrame(raf); raf = requestAnimationFrame(tick); if (firstShow) { firstShow = false; play(); } else if (demo && resumeOnShow) play(); },
+      onShow() { visible = true; scene?.resize(); last = performance.now(); cancelAnimationFrame(raf); raf = requestAnimationFrame(tick); if (firstShow) { firstShow = false; if (demo || !ctx.kit.reducedMotion()) play(); } else if (demo && resumeOnShow) play(); },
       onHide() { resumeOnShow = playing; visible = false; cancelAnimationFrame(raf); raf = 0; if (playing) pause(); },
       onParams(p) { if (!p || !Object.keys(p).length) return; Object.assign(cfg, p); segSpeed.redraw(); build(); play(); },
     };

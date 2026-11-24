@@ -28,6 +28,7 @@ export function createPlanEditor(host, kit, onChange = () => {}) {
   function draw(c = canvas.getContext('2d')) {
     const v = kit.cssVar, cs = { bg: v('--bg-0'), line: v('--line'), line2: v('--line-2'), text: v('--text'), text2: v('--text-2'), text3: v('--text-3'), accent: v('--accent'), warn: v('--warn'), danger: v('--danger') };
     c.clearRect(0, 0, W, H);
+    if (W < 160 || H < 190) return; // hidden or not laid out yet
     sc = Math.min((W - 120) / plan.size[0], (H - 150) / plan.size[1]); ox = (W - plan.size[0] * sc) / 2; oy = (H + plan.size[1] * sc) / 2 - 8;
     const [x0, y1] = toPx([0, 0]), [x1, y0] = toPx(plan.size);
     c.fillStyle = v('--bg-1'); c.fillRect(x0, y0, x1 - x0, y1 - y0);

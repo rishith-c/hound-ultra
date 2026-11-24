@@ -78,7 +78,7 @@ function groundMaterial(env, macro) {
           c = mix(c, mud * vec3(1.15, 1.08, 1.0), 0.45 * inside);
           if (mask.r > 0.05) { mat2 m4 = gM(0.35, 1.4); vec4 n4 = GT(tRubN, m4); road = smoothstep(0.35, 0.75, mask.r + (n4.a - hgt) * 0.3 - smoothstep(0.5, 0.75, nFine.a) * 0.55); c = mix(c, vec3(0.052, 0.053, 0.055) * GT(tRub, m4).rgb / uRubAvg, road); nx = mix(nx, (n4.rg * 2.0 - 1.0) * 0.35, road); hh = mix(hh, n4.a, road); }
           // water fills the low parts of the relief, only where the ground is level
-          float flat_ = smoothstep(0.03, 0.006, slope), lvl = wetM * 1.05 + (nMid.r * 0.6 + nFine.r * 0.4 - 0.5) * 0.85 - (hh - 0.5) * 0.28 - 0.46 - rub * 0.1 - road * 0.02;
+          float flat_ = smoothstep(0.03, 0.006, slope), lvl = wetM * (0.62 + 0.6 * nFine.r) + (nMid.r * 0.6 + nFine.r * 0.4 - 0.5) * 1.0 - (hh - 0.5) * 0.28 - 0.46 - rub * 0.1 - road * 0.02;
           gWater = smoothstep(0.0, 0.11, lvl) * flat_ * inside * uWet; damp = smoothstep(-0.34, 0.02, lvl) * uWet * mix(0.4, 1.0, inside);
         } else { c *= 0.75 + 0.5 * nFine.g; hh = nFine.r; }
         c *= 0.82 + 0.36 * nBig.b;
@@ -94,7 +94,7 @@ function groundMaterial(env, macro) {
         }
         c *= mix(1.0, 0.52, damp); gRough = mix(mix(0.93, 0.8, rub), 0.75, road) - hh * 0.06; gRough = mix(gRough, 0.6 + (1.0 - hh) * 0.14 + 0.14 * smoothstep(15.0, 110.0, camD), damp * 0.85);
         nx *= 0.9;
-        if (gWater > 0.0) { c = mix(c, c * 0.4 + vec3(0.013, 0.011, 0.008), gWater); gRough = mix(gRough, 0.05, gWater); vec2 rip = (texture2D(tNoise, gp / 13.0 + uTime * 0.02).rg + texture2D(tNoise, gp.yx / 11.0 - uTime * 0.017).ba - 1.0) * 0.025; nx = mix(nx, rip, gWater); }
+        if (gWater > 0.0) { float ws = smoothstep(0.0, 0.45, gWater); c = mix(c, c * 0.35 + vec3(0.042, 0.035, 0.027), ws); gRough = mix(gRough, 0.05, ws); vec2 rip = (texture2D(tNoise, gp / 13.0 + uTime * 0.02).rg + texture2D(tNoise, gp.yx / 11.0 - uTime * 0.017).ba - 1.0) * 0.025; nx = mix(nx, rip, ws); }
         nx *= 0.12 + 0.75 * smoothstep(95.0, 9.0, camD); gNrm = normalize(vec3(wn.x + nx.x * wn.y, wn.y, wn.z + nx.y * wn.y));
         diffuseColor.rgb = c;`)
       .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = gRough;')

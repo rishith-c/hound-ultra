@@ -32,6 +32,6 @@ export function conceptPanel({ h, realityTag }) {
   return h('section.aerial-card.aerial-concepts', { 'aria-label': 'Two ideas not built yet' },
     h('div.aerial-card-head', null, h('h3', null, 'Two more uses of the same drone'), realityTag('concept')),
     h('div.aerial-concepts-body', null,
-      card(thermal, 'A heat camera beside the colour one', 'Colour fails on earth-tone clothing and in shadow. A warm body against cold, wet mud does not care what it wears. It fails the other way round: on sun-warmed rubble at midday, and under more than a thin cover. Not built; HOUND\'s only thermal sensor is the rover\'s 32 by 24 pixel MLX90640.'),
-      card(wifi, 'The drone as a flying Wi-Fi transmitter', 'HOUND\'s Wi-Fi sensing needs its transmitter on the far side of what it looks through. A drone could set it down beyond rubble nobody can cross, so the signal passes through the void. Not built, and it must land first: breathing changes the signal by under half a percent, and a hovering transmitter moves far more than that.')));
+      card(thermal, 'A heat camera beside the colour one', 'Colour fails on earth-tone clothing and in shadow; warmth does not. It fails on sun-warmed rubble and under thick cover. Not built.'),
+      card(wifi, 'The drone as a flying Wi-Fi transmitter', 'Set down past rubble nobody can cross, it sends Wi-Fi through the void to HOUND. Not built, and it must land: hovering moves far more than breathing does.')));
 }

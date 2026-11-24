@@ -31,7 +31,7 @@ export function createViewer(host, { h, onPick, onHover, grab, reduced }) {
   const kick = () => { dirty = true; if (running && !raf) raf = requestAnimationFrame(frame); };
   const ro = new ResizeObserver(() => {
     const r = canvas.getBoundingClientRect(); if (!r.width || !r.height) return;
-    const was = iw && fitted ? null : { cx: (W / 2 - view.x) / view.s, cy: (H / 2 - view.y) / view.s };
+    const was = (iw && fitted) || !W ? null : { cx: (W / 2 - view.x) / view.s, cy: (H / 2 - view.y) / view.s };
     dpr = Math.min(2, window.devicePixelRatio || 1); W = r.width; H = r.height;
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     if (iw) { if (fitted || !was) Object.assign(view, fitView()); else { view.x = W / 2 - was.cx * view.s; view.y = H / 2 - was.cy * view.s; } }

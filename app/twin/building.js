@@ -132,7 +132,7 @@ export function build(env) {
         .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n' + (kind === 'roof'
           ? 'float rvD = uS - ((vRW.x - 44.0) / 40.0 * 0.8 + (-vRW.z - 30.0) / 28.0 * 0.2) - (bn(vRW.xz * 0.9) - 0.5) * 0.10 - (bn(vRW.xz * 5.0) - 0.5) * 0.025; if (rvD < 0.0) discard; rvD *= 40.0;'
           : 'float rvD = length(vRW.xz - uC) - uR + (bn(vec2(vRW.x + vRW.z, vRW.y) * 2.2) - 0.5) * 0.22 - vRW.y * 0.12; if (uR > 0.01 && rvD < 0.0) discard; if (uR < 0.01) rvD = 9.0;'))
-        .replace('#include <opaque_fragment>', 'outgoingLight += vec3(0.55, 0.8, 1.0) * (exp(-rvD * 34.0) * 1.5 + exp(-rvD * 6.0) * 0.07) * uRimK;\n#include <opaque_fragment>'); };
+        .replace('#include <opaque_fragment>', 'float rvG = fwidth(rvD) / max(length(fwidth(vRW)), 1e-4); rvD /= clamp(rvG, 0.12, 1.5); outgoingLight += vec3(0.55, 0.8, 1.0) * (exp(-rvD * 34.0) * 1.1 + exp(-rvD * 6.0) * 0.07) * uRimK;\n#include <opaque_fragment>'); };
     m.customProgramCacheKey = () => 'rv-' + kind + (pk ? pk.call(m) : ''); m.side = THREE.DoubleSide; return m;
   }
   const depthRoof = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side: THREE.DoubleSide });

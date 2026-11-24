@@ -153,7 +153,7 @@ export default {
         }
         if (dirty) aAttr.needsUpdate = true;
       },
-      setLayer(id, on) { if (id === 'coverage') { layerOn = !!on; group.visible = layerOn; if (layerOn) { settled = false; acc = TICK; } } },
+      setLayer(id, on) { if (id === 'coverage') { layerOn = !!on; if (layerOn) { settled = false; acc = TICK; } } },
       onSelect() {},
       dispose() { fogMat.uniforms.uWave.value = []; tex.dispose(); ct.texture.dispose(); disposeTree(group); },
     };

@@ -87,8 +87,8 @@ export default {
     const toolSeg = h('div.aerial-toolseg', { role: 'tablist', 'aria-label': 'Method' }, ...TOOLS.map((t) => h('button', { role: 'tab', id: 'aerial-tab-' + t.id, 'aria-selected': 'false', onclick: () => setTool(t.id) }, h('b', null, t.label), h('span', null, t.sub), realityTag(t.reality))));
     const viewHost = h('div.aerial-view');
     const hudMeta = h('div.aerial-hud-meta');
-    const hudCoord = h('div.aerial-hud.aerial-hud-coord.glass.num', { 'aria-hidden': 'true' });
-    const hudScale = h('div.aerial-hud.aerial-hud-scale', { 'aria-hidden': 'true' }, h('i'), h('span.num'));
+    const hudCoord = h('div.aerial-hud.aerial-hud-coord.glass.num', { hidden: true, 'aria-hidden': 'true' });
+    const hudScale = h('div.aerial-hud.aerial-hud-scale', { hidden: true, 'aria-hidden': 'true' }, h('i'), h('span.num'));
     const hudRun = h('div.aerial-hud.aerial-hud-run.glass', { role: 'status', hidden: true });
     const hudZoom = h('div.aerial-hud-zoom', null,
       h('button.btn.btn-ghost.btn-sm.btn-icon', { 'aria-label': 'Zoom in', title: 'Zoom in (+)', onclick: () => viewer.zoom(1.5) }, '+'),
@@ -323,9 +323,10 @@ export default {
     }
     const shownPeople = (f, which = st.det.show) => (f.res.people?.[which]?.boxes || []).filter((b) => b.score >= st.det.minScore);
     function bracket(g, x0, y0, x1, y1, L) {
+      const dark = () => { const c = g.strokeStyle, w = g.lineWidth; g.strokeStyle = 'rgba(6,8,10,0.7)'; g.lineWidth = w + 2; g.stroke(); g.strokeStyle = c; g.lineWidth = w; };   // a dark edge keeps thin lines readable on bright ground
       g.beginPath();
       g.moveTo(x0, y0 + L); g.lineTo(x0, y0); g.lineTo(x0 + L, y0); g.moveTo(x1 - L, y0); g.lineTo(x1, y0); g.lineTo(x1, y0 + L);
-      g.moveTo(x1, y1 - L); g.lineTo(x1, y1); g.lineTo(x1 - L, y1); g.moveTo(x0 + L, y1); g.lineTo(x0, y1); g.lineTo(x0, y1 - L); g.stroke();
+      g.moveTo(x1, y1 - L); g.lineTo(x1, y1); g.lineTo(x1 - L, y1); g.moveTo(x0 + L, y1); g.lineTo(x0, y1); g.lineTo(x0, y1 - L); dark(); g.stroke();
     }
     function label(g, text, x, y, bg, fg) {
       g.font = '600 11px ' + css('--font'); const w = g.measureText(text).width + 10;
@@ -335,7 +336,7 @@ export default {
       const f = cur(); if (!f || f.status !== 'ready') return;
       const C = { warn: css('--warn'), accent: css('--accent'), sim: css('--sim'), person: css('--person'), text: css('--text'), ink: css('--bg-0'), ok: css('--ok') };
       const X = (x) => v.x + x * v.s, Y = (y) => v.y + y * v.s;
-      const chg = st.tool === 'change' ? f.res.change : null;
+      const chg = st.tool === 'change' && f.res.change?.aligned ? f.res.change : null;
       g.save(); g.translate(v.x, v.y); g.scale(v.s, v.s); g.imageSmoothingEnabled = v.s < 2.5; g.imageSmoothingQuality = 'high';
       if (chg) {
         const sx = f.w * st.chg.swipe, early = f.pair.earlier === 'A' ? f.canvas : chg.aligned, late = f.pair.earlier === 'A' ? chg.aligned : f.canvas;
@@ -377,8 +378,8 @@ export default {
         g.lineWidth = 1.5;
         list.forEach((b, i) => {
           const x0 = X(b.box[0]), y0 = Y(b.box[1]), w = (b.box[2] - b.box[0]) * v.s, hh = (b.box[3] - b.box[1]) * v.s, isSel = sel?.kind === 'people' && sel.ref === b;
-          g.strokeStyle = isSel ? C.accent : C.warn; g.lineWidth = isSel ? 2.2 : 1.5; g.beginPath(); g.roundRect(x0, y0, w, hh, 3); g.stroke();
-          if (isSel || w > 26) label(g, Math.round(b.score * 100) + ' %', x0 - 1, y0 - 2, isSel ? C.accent : 'rgba(255,178,36,0.94)', C.ink);
+          g.strokeStyle = isSel ? C.accent : C.person; g.lineWidth = isSel ? 2.4 : 1.75; bracket(g, x0 - 3, y0 - 3, x0 + w + 3, y0 + hh + 3, Math.max(5, Math.min(12, w / 3)));
+          if (isSel || w > 26) label(g, Math.round(b.score * 100) + ' %', x0 - 3, y0 - 6, isSel ? C.accent : C.person, C.ink);
           if (st.det.show === 'tiled' && !other.some((o) => iouOf(o.box, b.box) > 0.3) && ppl.whole) { g.fillStyle = C.warn; g.beginPath(); g.arc(x0 + w, y0, 3, 0, 7); g.fill(); }
         });
       }
@@ -501,7 +502,7 @@ export default {
       let r = f.res.rx[mode];
       if (!r || force || r.sig !== sig) {
         f.res.rx[mode] = r = { busy: true, sig }; renderSide();
-        try { const win = rxWindow(f); Object.assign(r, await cv('rx', { key: f.work.key, mode, rects: f.kind === 'site' ? scaleRects(siteRects(), 1) : null, ...win }), { win, busy: false }); }
+        try { const win = rxWindow(f); Object.assign(r, await cv('rx', { key: f.work.key, mode, rects: f.kind === 'site' ? scaleRects(siteRects(), 1) : null, ...win }), { win, busy: false }); if (cur() === f && st.tool === 'rx') renderSide(); }
         catch (e) { f.res.rx[mode] = { error: String(e.message || e), sig }; if (cur() === f) renderSide(); return; }
       }
       await rxRegions(f);
@@ -540,7 +541,7 @@ export default {
           const A = f.work.key, r = await cv('change', { before: A, after: bKey, rects: f.kind === 'site' ? siteRects() : null });
           const img = new ImageData(new Uint8ClampedArray(r.aligned), r.w, r.h), al = document.createElement('canvas'); al.width = r.w; al.height = r.h; al.getContext('2d').putImageData(img, 0, 0);
           Object.assign(c, { busy: false, aligned: al, shift: r.shift, ncc: r.score, surface: r.surface, surfaceR: r.surfaceR, gains: r.gains, ms: r.ms, msReg: r.msReg, levels: r.levels });
-          st.chg.current = f.id;
+          st.chg.current = f.id; if (cur() === f && st.tool === 'change') renderSide();
         } catch (e) { f.res.change = { error: String(e.message || e), sig }; if (cur() === f) renderSide(); return; }
       }
       await changeRegions(f);
@@ -601,11 +602,11 @@ export default {
 
     function renderModelCard() {
       if (!el.model) return; const d = st.det;
-      const name = h('div.aerial-model-name', null, h('b', null, 'D-FINE nano'), h('span.dim', null, 'trained on COCO photographs, about 3.8 million weights'));
+      const name = h('div.aerial-model-name', null, h('b', null, 'D-FINE nano'), h('span.dim', null, 'trained on COCO photographs'));
       let body;
       if (d.status === 'idle') body = [h('p.muted', null, 'The network is not loaded yet.'), h('button.btn', { onclick: loadDetector }, icon('download'), 'Load the detector (15 MB)')];
       else if (d.status === 'loading') { const pct = d.total ? d.loaded / d.total : 0; body = [h('div.row', null, h('span.grow', null, d.stage + '…'), h('span.num.dim', null, d.total ? (d.loaded / 1e6).toFixed(1) + ' of ' + (d.total / 1e6).toFixed(1) + ' MB' : '')), h('div.bar', { role: 'progressbar', 'aria-valuenow': Math.round(pct * 100), 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-label': 'Model download' }, h('i', { style: { width: (pct * 100).toFixed(1) + '%' } })), h('span.dim', null, 'First visit downloads the weights. After that the browser keeps them.')]; }
-      else if (d.status === 'ready') body = [h('div.aerial-model-ok', null, h('span.tag.tag-ok', null, 'Ready'), h('span', null, d.backend === 'webgpu' ? 'Running on the graphics card (WebGPU)' : 'Running on this computer\'s processor (WebAssembly)'), h('span.num.dim', null, (d.bytes / 1e6).toFixed(1) + ' MB, ' + (d.fromNetwork ? 'downloaded' : 'from this browser\'s cache') + ' in ' + sec(d.loadMs / 1000))), d.note && d.backend !== 'webgpu' ? h('span.dim.aerial-small', null, d.note) : null];
+      else if (d.status === 'ready') body = [h('div.aerial-model-ok', null, h('span.tag.tag-ok', null, 'Ready'), h('span', { title: d.note || '' }, d.backend === 'webgpu' ? 'Running on the graphics card (WebGPU)' : 'Running on this computer\'s processor (WebAssembly)'), h('span.num.dim', null, (d.bytes / 1e6).toFixed(1) + ' MB, ' + (d.fromNetwork ? 'downloaded' : 'from this browser\'s cache') + ' in ' + sec(d.loadMs / 1000))), null];
       else body = [h('div.note.danger', null, icon('alert'), h('span', null, h('b', null, 'The detector did not load. '), d.error + ' The colour and before/after methods do not need it and still work.')), h('button.btn', { onclick: () => { st.det.status = 'idle'; loadDetector(); } }, icon('reset'), 'Try again')];
       el.model.replaceChildren(name, ...body.filter(Boolean));
     }
@@ -753,7 +754,7 @@ export default {
       }
       kids.push(h('div.aerial-pair', null, h('span', null, h('b', null, 'Left'), ' ' + f.pair.label[0]), h('span', null, h('b', null, 'Right'), ' ' + f.pair.label[1])));
       const methodSeg = h('div.seg', { role: 'group', 'aria-label': 'Comparison method' },
-        h('button', { 'aria-pressed': String(st.chg.method === 'robust'), onclick: () => { st.chg.method = 'robust'; st.chg.thr = CHG_DEFAULT; renderSide(); changeRegions(f); } }, 'Aligned and exposure-matched'),
+        h('button', { 'aria-pressed': String(st.chg.method === 'robust'), onclick: () => { st.chg.method = 'robust'; st.chg.thr = CHG_DEFAULT; renderSide(); changeRegions(f); } }, 'Aligned and matched'),
         h('button', { 'aria-pressed': String(st.chg.method === 'naive'), title: 'What you get by subtracting one photo from the other with no alignment. Shown for comparison.', onclick: () => { st.chg.method = 'naive'; st.chg.thr = CHG_DEFAULT; renderSide(); changeRegions(f); } }, 'Plain subtraction'));
       el.chgThr = h('b.num'); el.list = h('div.aerial-list'); el.count = h('span.num'); el.chgStats = h('div.aerial-stats'); el.surface = h('canvas.aerial-surface', { role: 'img', 'aria-label': 'Match quality for every trial shift; the bright cell is the shift that was chosen' }); el.align = h('div.aerial-align');
       const slider = range(0.2, 1.6, 0.05, st.chg.thr, 'How different a place must be to count as changed', (v) => { st.chg.thr = v; el.chgThr.textContent = v.toFixed(2); changeRegions(f); });
@@ -813,10 +814,10 @@ export default {
       const mkRow = (id, name, sub, hits, falseC, time, pending) => h('tr', { 'aria-selected': String(b.row === id), tabindex: 0, onclick: () => { b.row = id; renderScore(); }, onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.row = id; renderScore(); } } },
         h('th', { scope: 'row' }, h('b', null, name), h('span.dim', null, sub)),
         ...(hits ? [...DIFFS.map((d) => cellBar(hits[d.id], total[d.id])), cellBar(DIFFS.reduce((a, d) => a + hits[d.id], 0), all), h('td.num', null, falseC.toFixed(1)), h('td.num', null, time)] : [h('td.dim', { colspan: 7 }, pending)]));
-      for (const mode of ['global', 'local']) rows.push(mkRow('rx-' + mode, 'Colour anomaly', mode === 'global' ? 'whole-frame model' : 'local window', rx ? rx.res[mode][ti].hit : null, rx ? rx.res[mode][ti].falseC / rx.frames : 0, rx ? sec(rx.ms[mode] / 1000) : '', b.rxState === 'error' ? 'Could not run: ' + b.rxError : 'Measuring… ' + (b.rxProgress || '')));
+      for (const mode of ['global', 'local']) rows.push(mkRow('rx-' + mode, mode === 'global' ? 'Colour, whole frame' : 'Colour, local window', '', rx ? rx.res[mode][ti].hit : null, rx ? rx.res[mode][ti].falseC / rx.frames : 0, rx ? sec(rx.ms[mode] / 1000) : '', b.rxState === 'error' ? 'Could not run: ' + b.rxError : 'Measuring… ' + (b.rxProgress || '')));
       const dt = b.det;
       const detBtn = h('button.btn.btn-sm', { disabled: b.detState === 'running', title: 'Runs the network on all 12 test frames: a minute or two.', onclick: runDetBench }, b.detState === 'running' ? 'Scoring ' + (b.detProgress || '') : dt ? 'Score the detector live' : 'Score the detector (a few minutes)');
-      for (const which of ['whole', 'tiled']) rows.push(mkRow('det-' + which, 'Neural detector', which === 'whole' ? 'whole frame' : 'plus 448 px tiles', dt ? dt[which].hit : null, dt ? dt[which].falseC / dt.frames : 0, dt ? sec(dt[which].ms / dt.frames / 1000) : '', which === 'whole' ? h('span', null, 'Not scored yet. ', detBtn) : b.detState === 'running' ? 'Running…' : 'Same button.'));
+      for (const which of ['whole', 'tiled']) rows.push(mkRow('det-' + which, which === 'whole' ? 'Network, one pass' : 'Network, plus tiles', '', dt ? dt[which].hit : null, dt ? dt[which].falseC / dt.frames : 0, dt ? sec(dt[which].ms / dt.frames / 1000) : '', which === 'whole' ? h('span', null, 'Not scored yet. ', detBtn) : b.detState === 'running' ? 'Running…' : 'Same button.'));
       const head = h('div.aerial-card-head', null, h('h3', { title: all + ' drawn figures in ' + BENCH.seeds.length + ' synthetic frames. Found means: one of the method\'s boxes overlaps the figure.' }, 'Measured: ' + all + ' drawn figures'), realityTag('live-algo'), h('span.tag.tag-sim', { title: 'The frames are drawn by this page. These are not results on real people or real photographs.' }, 'Synthetic test set'),
         h('div.grow'), dt ? detBtn : null, h('button.btn.btn-sm.btn-ghost', { disabled: b.rxState === 'running', onclick: runBench }, icon('reset'), 'Measure again'));
       const table = h('table.aerial-table', null, h('thead', null, h('tr', null, h('th', null, 'Method'), ...DIFFS.map((d, i) => h('th', { title: d.hint }, ['Bright', 'Shadow', 'Covered', 'Earth-tone'][i])), h('th', null, 'All'), h('th', { title: 'Candidates per frame, among the top ' + BENCH.topK + ', that are neither a figure nor a known bright object.' }, 'False / frame'), h('th', null, 'Time'))), h('tbody', null, ...rows));
@@ -879,7 +880,7 @@ export default {
         const px = sitePx(d.pos), sw = M.map.swaths.findIndex((s) => Math.abs(s.y - d.pos[1]) <= s.half), on = ctx.selection?.type === 'detection' && ctx.selection.id === d.id;
         body.append(h('div.aerial-link' + (on ? '.is-on' : ''), null,
           h('div.aerial-link-top', null, h('span.tag.' + (d.status === 'confirmed' ? 'tag-person' : d.status === 'rejected' ? 'tag-ok' : 'tag-warn'), null, d.status === 'confirmed' ? 'Person' : d.status === 'rejected' ? 'Closed' : 'Possible person'), h('b', null, d.id), h('span.num.dim', null, 'p ' + Math.round(d.p * 100) + ' %'), h('span.dim', null, 'seen ' + fmt.clock(d.t))),
-          h('div.aerial-link-map', null, h('span', null, h('span.dim', null, 'Mission'), h('b.num', null, d.pos[0].toFixed(1) + ' m E, ' + d.pos[1].toFixed(1) + ' m N')), h('i', { 'aria-hidden': 'true' }), h('span', null, h('span.dim', null, 'This mosaic'), h('b.num', null, 'pixel ' + Math.round(px[0]) + ', ' + Math.round(px[1]) + (sw >= 0 ? ', flight line ' + (sw + 1) : '')))),
+          h('div.aerial-link-map', null, h('span', null, h('span.dim', null, 'Mission'), h('b.num', null, d.pos[0].toFixed(1) + ' m E, ' + d.pos[1].toFixed(1) + ' m N')), h('i', { 'aria-hidden': 'true' }), h('span', null, h('span.dim', null, 'This mosaic'), h('b.num', null, 'pixel ' + Math.round(px[0]) + ', ' + Math.round(px[1])))),
           h('div.row', null, h('button.btn.btn-sm', { onclick: () => showLead(d) }, icon('eye'), 'Show in the frame'), h('button.btn.btn-sm.btn-ghost', { onclick: () => { ctx.select({ type: 'detection', id: d.id }); shell.open('mission'); } }, 'Open in Mission'))));
       }
       if (M.map.scan > 0 && !dets.length) body.append(h('p.dim', null, M.map.ready ? 'The drone flagged nobody outdoors on this flight.' : 'Nothing flagged yet on the strips flown so far.'));
@@ -954,7 +955,7 @@ export default {
       heroState = 'loading'; paintAct(0); dCap.textContent = 'Loading the frames';
       await Promise.all([recReady, genReady]);
       try {
-        const onState = (m) => { if (m.kind === 'act') paintAct(m.act); else if (m.kind === 'caption') { if (dCap.textContent !== m.text) { dCap.textContent = m.text; dCap.classList.remove('is-in'); void dCap.offsetWidth; dCap.classList.add('is-in'); } const same = dFig.children.length === m.figures.length; if (same) m.figures.forEach(([v, l], i) => { const b = dFig.children[i]; if (b.firstChild.textContent !== v) b.firstChild.textContent = v; if (b.lastChild.textContent !== l) b.lastChild.textContent = l; }); else dFig.replaceChildren(...m.figures.map(([v, l]) => h('div.ah-fig', null, h('b.num', null, v), h('span', null, l)))); } };
+        const onState = (m) => { if (m.kind === 'act') paintAct(m.act); else if (m.kind === 'live') { const t = dTags.querySelector('.ah-mode'); if (t) t.textContent = 'Live run'; } else if (m.kind === 'caption') { if (dCap.textContent !== m.text) { dCap.textContent = m.text; dCap.classList.remove('is-in'); void dCap.offsetWidth; dCap.classList.add('is-in'); } const same = dFig.children.length === m.figures.length; if (same) m.figures.forEach(([v, l], i) => { const b = dFig.children[i]; if (b.firstChild.textContent !== v) b.firstChild.textContent = v; if (b.lastChild.textContent !== l) b.lastChild.textContent = l; }); else dFig.replaceChildren(...m.figures.map(([v, l]) => h('div.ah-fig', null, h('b.num', null, v), h('span', null, l)))); } };
         onState.progress = (i, k) => { dSteps[i].querySelector('b').style.transform = 'scaleX(' + k.toFixed(3) + ')'; };
         hero = await createHero(demo.querySelector('.ah-stage'), { h, css, world, reduced: kit.reducedMotion(), recorded, minScore: DET_DEFAULT, rxThr: RX_DEFAULT, chgThr: CHG_DEFAULT, siteSpec, outdoorLeads, onState,
           missed: { x: 690, y: 655, r: 34 }, warn: (m) => shell.toast(m, { level: 'alert' }),

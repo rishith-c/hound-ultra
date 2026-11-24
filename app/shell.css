@@ -146,17 +146,7 @@
 .dock-note { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; justify-content: center; font-size: var(--fs-11); color: var(--text-3); min-width: 0; line-height: 1.35; }
 .dock-note span { white-space: nowrap; }
 .dock-note a { color: var(--text-2); white-space: nowrap; text-underline-offset: 3px; }
-.dock-chapters { display: flex; gap: 0; }
-.dock-item { position: relative; display: flex; flex-direction: column; justify-content: center; gap: 4px; height: 60px; padding: 0 15px; color: var(--text-3); text-decoration: none; white-space: nowrap; transition: color var(--t-fast) var(--ease); }
-.dock-item .num { font-size: 10px; line-height: 1; color: var(--text-3); opacity: 0.75; }
-.dock-item b { font: 500 var(--fs-13)/1 var(--font); }
-.dock-item::before { content: ""; position: absolute; left: 15px; right: 15px; top: 0; height: 2px; background: var(--line-2); transform-origin: left; transition: background-color var(--t-med) var(--ease); }
-.dock-item:hover { color: var(--text); } .dock-item:hover::before { background: var(--line-3); }
-.dock-item[aria-current="page"] { color: var(--text); } .dock-item[aria-current="page"]::before { background: var(--accent); }
-.dock-item[aria-current="page"] b { font-weight: 600; }
-.dock-item:focus-visible { outline-offset: -4px; }
 .dock-step { display: flex; gap: 6px; justify-content: flex-end; }
-@media (max-width: 1500px) { .dock-item { padding: 0 11px; } .dock-item::before { left: 11px; right: 11px; } .dock-item b { font-size: var(--fs-12); } .dock-item.first:not(:first-child) { margin-left: 12px; } }
 
 /* ---------- boot and hand-over ---------- */
 #boot { z-index: 6; transition: opacity 480ms var(--ease-in-out); }
@@ -179,7 +169,22 @@
 .tb-promise { order: 2; flex: 1; min-width: 0; margin: 0; padding-left: 14px; border-left: 1px solid var(--line-2); font-size: var(--fs-14); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 :root[data-mode="demo"]:not([data-ws="mission"]) #topbar > .tb-group, :root[data-mode="demo"]:not([data-ws="mission"]) .tb-mission, :root[data-mode="demo"]:not([data-ws="mission"]) #tb-stop { display: none; }
 :root[data-mode="demo"][data-ws="mission"] .tb-promise { display: none; }
-.dock-item { justify-content: flex-start; padding-top: 12px; gap: 6px; }
-.dock-item .dock-part { height: 11px; font: 400 11px/1 var(--font); color: var(--text-3); overflow: visible; }
-.dock-item.first:not(:first-child) { margin-left: 26px; }
 #dock-next { min-width: 148px; justify-content: space-between; }
+
+/* the chapter strip: the current part is spelled out, the other part waits as ticks */
+.dock-chapters { display: flex; gap: 30px; align-items: stretch; height: 100%; min-width: 0; }
+.dock-group { display: flex; flex-direction: column; justify-content: center; gap: 9px; min-width: 0; }
+.dock-part { font: 400 11px/1 var(--font); color: var(--text-3); white-space: nowrap; transition: color var(--t-med) var(--ease); }
+.dock-group.open .dock-part { color: var(--text-2); }
+.dock-items { display: flex; gap: 5px; }
+.dock-item { position: relative; display: block; width: 26px; height: 24px; color: var(--text-3); text-decoration: none; white-space: nowrap; transition: width var(--t-slow) var(--ease), color var(--t-med) var(--ease); }
+.dock-item::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--line-2); transition: background-color var(--t-med) var(--ease); }
+.dock-item b { position: absolute; left: 0; top: 10px; font: 500 var(--fs-13)/1 var(--font); opacity: 0; transition: opacity var(--t-med) var(--ease); pointer-events: none; }
+.dock-group.open .dock-items { gap: 18px; }
+.dock-group.open .dock-item { width: auto; }
+.dock-group.open .dock-item b { position: static; display: block; padding-top: 10px; opacity: 1; pointer-events: auto; }
+.dock-item.done::before { background: var(--line-3); }
+.dock-item:hover { color: var(--text); } .dock-item:hover::before { background: var(--text-3); }
+.dock-item[aria-current="page"] { color: var(--text); } .dock-item[aria-current="page"]::before { background: var(--accent); }
+.dock-item[aria-current="page"] b { font-weight: 600; }
+@media (max-width: 1500px) { .dock-group.open .dock-items { gap: 13px; } .dock-item b { font-size: var(--fs-12); } .dock-chapters { gap: 22px; } }

@@ -250,7 +250,9 @@ function changeDetect(A, B, w, h, { align = true } = {}) {
     raw[i] = sC > sS ? sC : sS;
   }
   const score = boxBlur(raw, w, h, 2);
-  for (let i = 0; i < n; i++) if (!valid[i]) score[i] = 0;
+  // the comparison windows reach past the edge of the overlap, so a 10 px rim along it is not judged
+  const rx0 = Math.max(0, -dx) + 10, rx1 = Math.min(w, w - dx) - 10, ry0 = Math.max(0, -dy) + 10, ry1 = Math.min(h, h - dy) - 10;
+  for (let y = 0, i = 0; y < h; y++) for (let x = 0; x < w; x++, i++) if (!valid[i] || x < rx0 || x >= rx1 || y < ry0 || y >= ry1) score[i] = 0;
   return { score, naive, valid, Bs, reg, gains, ms: performance.now() - t0, msReg: tReg - t0 };
 }
 

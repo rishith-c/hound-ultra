@@ -36,6 +36,7 @@
 /* exhibits 02 to 07 in Demo: the one figure, edge to edge, over one line of text */
 :root[data-mode="demo"] .radio-exhibit { grid-template-columns: minmax(0, 1fr); }
 :root[data-mode="demo"] .radio-stage { position: absolute; inset: 60px 0 128px 0; }
+:root[data-mode="demo"] .radio-exhibit[data-exhibit="fresnel"] .radio-stage { top: 0; }
 :root[data-mode="demo"] .radio-exhibit .radio-grid { padding: 0; gap: 0; grid-template: minmax(0, 1fr) / minmax(0, 1fr); grid-template-areas: none; }
 :root[data-mode="demo"] .radio-exhibit .radio-fig { border: 0; border-radius: 0; background: none; grid-area: auto; }
 :root[data-mode="demo"] .radio-exhibit .radio-fig-head, :root[data-mode="demo"] .radio-exhibit .radio-fig-cap, :root[data-mode="demo"] .radio-sar-bar, :root[data-mode="demo"] .radio-bf-note { display: none; }

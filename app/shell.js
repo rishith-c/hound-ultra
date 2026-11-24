@@ -129,7 +129,9 @@ function buildChrome() {
   );
   $('dock').append(
     h('div.dock-note', { title: 'Training exercise. The people, damage and readings are simulated.' }, h('span', null, 'Training exercise, simulated'), h('a', { href: '#/status' }, 'What is real?')),
-    h('div.dock-chapters', { role: 'group', 'aria-label': 'Chapters' }, ...CHAPTERS.map((c) => h('a.dock-item' + (c.part ? '.first' : ''), { href: '#/' + c.id, id: 'dock-' + c.id, title: MANIFEST.find((x) => x.id === c.id).blurb }, h('span.dock-part', null, c.part || ''), h('b', null, c.label)))),
+    h('div.dock-chapters', { role: 'group', 'aria-label': 'Chapters' }, ...CHAPTERS.reduce((g, c) => { if (c.part) g.push({ part: c.part, items: [] }); g[g.length - 1].items.push(c); return g; }, []).map((g) => h('div.dock-group', null,
+      h('span.dock-part', null, g.part),
+      h('div.dock-items', null, ...g.items.map((c) => h('a.dock-item', { href: '#/' + c.id, id: 'dock-' + c.id, 'data-tip': c.label }, h('b', null, c.label))))))),
     h('div.dock-step', null,
       h('button.btn.btn-icon.btn-ghost', { 'aria-label': 'Previous chapter', onclick: () => stepChapter(-1) }, icon('chevron-left')),
       h('button.btn.btn-primary', { id: 'dock-next', onclick: () => stepChapter(1) }, h('span', { id: 'dock-next-label' }, 'Next'), icon('chevron'))));
@@ -176,10 +178,12 @@ async function openWorkspace(id, params = {}) {
   if (current === m.id && mounted.has(m.id)) { mounted.get(m.id).api?.onParams?.(params); return; }
   const token = ++opening, first = !current;
   document.querySelectorAll('.rail-item').forEach((a) => a.setAttribute('aria-current', a.id === 'rail-' + m.id ? 'page' : 'false'));
-  document.querySelectorAll('.dock-item').forEach((a) => a.setAttribute('aria-current', a.id === 'dock-' + m.id ? 'page' : 'false'));
+  const at = CHAPTERS.findIndex((c) => c.id === m.id);
+  document.querySelectorAll('.dock-item').forEach((a, i) => { a.setAttribute('aria-current', i === at ? 'page' : 'false'); a.classList.toggle('done', at >= 0 && i < at); });
+  document.querySelectorAll('.dock-group').forEach((g, i) => g.classList.toggle('open', at < 0 ? i === 0 : g.contains($('dock-' + m.id))));
   document.documentElement.dataset.ws = m.id;
-  const ci = CHAPTERS.findIndex((c) => c.id === m.id), nx = CHAPTERS[(ci + 1) % CHAPTERS.length];
-  $('dock-next-label').textContent = ci < 0 ? 'Back to the story' : ci === CHAPTERS.length - 1 ? 'Start again' : nx.label;
+  const nx = CHAPTERS[(at + 1) % CHAPTERS.length];
+  $('dock-next-label').textContent = at < 0 ? 'Back to the story' : at === CHAPTERS.length - 1 ? 'Start again' : nx.label;
   document.title = `${m.title} · HOUND`;
   if (location.hash !== '#/' + m.id) history.replaceState(null, '', '#/' + m.id);
   const label = $('veil-label'); label.textContent = CHAPTERS.find((c) => c.id === m.id)?.label || m.title;

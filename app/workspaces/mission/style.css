@@ -256,7 +256,7 @@
 /* ---------- Demo mode: the film ---------- */
 :root[data-mode="demo"] .mission-hud, :root[data-mode="demo"] .mission-pop { display: none; }
 .mission-twin { transition: opacity 900ms var(--ease-in-out); }
-.mission-film { position: absolute; inset: 0; pointer-events: none; overflow: hidden; color: var(--text); }
+.mission-film { position: absolute; inset: 0; pointer-events: none; overflow: clip; /* clip, not hidden: a hidden box still scrolls when something in it takes focus */ color: var(--text); }
 .film-shade { position: absolute; inset: 0; background:
   radial-gradient(120% 90% at 50% 42%, transparent 52%, color-mix(in srgb, var(--bg-0) 62%, transparent) 100%),
   linear-gradient(0deg, color-mix(in srgb, var(--bg-0) 92%, transparent) 0, color-mix(in srgb, var(--bg-0) 66%, transparent) 150px, transparent 360px); }

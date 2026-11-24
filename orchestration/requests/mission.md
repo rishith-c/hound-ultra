@@ -42,3 +42,6 @@ may want the same.
    coverage after a second look. roomCover() in mission/map2d.js shows the fix.
 8. **Simulator (foundation).** The planned rescue route enters "Unstable slope above the block" with avoid.slope on (2 of 18 path points). Mission
    says so in the approval dialog and the film.
+9. **Shell at 1440x900.** Demo: the chapter row runs under the Next button and "Training exercise, simulated" touches the first chapter. Advanced: the
+   "Simulation" tag covers the phase bar (screenshots /tmp/mission_z1.png, /tmp/mission_z4.png).
+10. **Find shot (twin-core).** At room 112 a wall near the camera can fill the right half of the frame (screenshot /tmp/mission_z1.png).

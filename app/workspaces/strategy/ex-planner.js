@@ -50,16 +50,16 @@ export default async function (pane, ctx) {
   right.append(
     h('section.strategy-sec', null, h('h3', null, 'Three policies, the same fresh worlds'), status, h('div.strategy-actions', null, runBtn)),
     h('section.strategy-sec', null, point, forest, h('p.strategy-fine', null, 'Objective per world. Bars are 95 % confidence intervals.')),
-    h('section.strategy-sec', null, h('table.strategy-table', null, h('thead', null, h('tr', null, h('th', null, 'Policy'), h('th.num', null, 'People per min'), h('th.num', null, 'People found'), h('th.num', null, 'First find'), h('th.num', null, 'False chases'))), tbl), h('p.strategy-fine', null, 'People per min: mean over worlds of people found divided by the whole mission time, with the 95 % interval. First find: mean over the worlds where the policy found someone, so the three means cover different worlds. Policies that stop early score well per minute and find fewer people.')),
+    h('section.strategy-sec', null, h('table.strategy-table.stacked', null, h('thead', null, h('tr', null, h('th', null, 'Policy'), h('th.num', null, 'People per min'), h('th.num', null, 'People found'), h('th.num', null, 'First find'), h('th.num', null, 'False chases'))), tbl), h('p.strategy-fine', null, 'People per min: mean over worlds of people found divided by the whole mission time, with the 95 % interval. First find: mean over the worlds where the policy found someone, so the three means cover different worlds. Policies that stop early score well per minute and find fewer people.')),
     h('section.strategy-sec', null, h('h3', null, 'Paired differences in the objective'), h('table.strategy-table', null, diff), h('p.strategy-fine', null, 'Seeds 50001 onward were never used for tuning. Before this run I tried 8 greedy thresholds, 5 rollout thresholds and 14 tree settings on other seeds, and added the time penalty after the first results. No tree setting beat greedy by more than the noise, and more imagined searches made the tree worse.')));
-  const pm = (c, d) => (c.n > 1 ? c.mean.toFixed(d) + ' ± ' + c.half.toFixed(d) : '–');
+  const pm = (c, d) => (c.n > 1 ? c.mean.toFixed(d) + ' ± ' + c.half.toFixed(d) : '–'), two = (c, d, u = '') => (c.n > 1 ? [c.mean.toFixed(d) + u, h('small', null, '± ' + c.half.toFixed(d))] : ['–']);
   function stats(id) { const R = rows[id], ff = R.filter((r) => r.first != null); return { R, n: R.length, reward: ci(R.map((r) => r.reward)), perMin: ci(R.map((r) => r.perMin)), found: R.reduce((s, r) => s + r.found, 0), people: R.reduce((s, r) => s + r.people, 0), first: ci(ff.map((r) => r.first)), fc: ci(R.map((r) => r.falseChases)) }; }
   let drawn = 0;
   function drawTrial(force) {
     const now = performance.now(); if (!force && now - drawn < 220) return; drawn = now;
     const st = IDS.map(stats), n = Math.min(...st.map((s) => s.n));
     status.textContent = tErr || (pool ? n + ' of ' + N + ' worlds' : n ? n + ' worlds, seeds ' + FIRST + ' to ' + (FIRST + n - 1) + '.' : 'Not run yet.'); runBtn.textContent = pool ? 'Stop' : 'Run again';
-    tbl.replaceChildren(...IDS.map((id, i) => h('tr', null, h('td', null, h('span.strategy-key', { style: { background: tok(POLICIES[id].color) } }), POLICIES[id].label), h('td.num', null, pm(st[i].perMin, 3)), h('td.num', null, st[i].people ? fmtPct(st[i].found / st[i].people) : '–'), h('td.num', null, st[i].first.n > 1 ? Math.round(st[i].first.mean) + ' ± ' + Math.round(st[i].first.half) + ' s' : '–'), h('td.num', null, pm(st[i].fc, 2)))));
+    tbl.replaceChildren(...IDS.map((id, i) => h('tr', null, h('td', null, h('span.strategy-key', { style: { background: tok(POLICIES[id].color) } }), POLICIES[id].label), h('td.num', null, ...two(st[i].perMin, 3)), h('td.num', null, st[i].people ? fmtPct(st[i].found / st[i].people) : '–'), h('td.num', null, ...two(st[i].first, 0, ' s')), h('td.num', null, ...two(st[i].fc, 2)))));
     const sorted = {}; for (const id of IDS) sorted[id] = new Map(rows[id].map((r) => [r.seed, r.reward]));
     const pd = (a, b) => { const A = [], B = []; for (const [s, v] of sorted[a]) if (sorted[b].has(s)) { A.push(v); B.push(sorted[b].get(s)); } return paired(A, B); };
     const D = [['greedy', 'scripted'], ['tree', 'scripted'], ['tree', 'greedy']].map(([a, b]) => ({ a, b, d: pd(a, b) }));
@@ -107,7 +107,7 @@ export default async function (pane, ctx) {
     for (const a of ts.root.actions) if (!a.handoff) { const p = world.stops[a.stop].pos, on = a === chosen, r = 3 + 9 * Math.sqrt(a.N / Math.max(1, ts.sims) * 4); c.strokeStyle = on ? tok('--text') : rgba('--accent', 0.9); c.lineWidth = on ? 2 : 1; c.beginPath(); c.arc(px(p[0]), py(p[1]), on ? 9 : Math.min(8, r * 0.6), 0, 7); c.stroke(); if (!d || on) { c.fillStyle = tok('--text'); c.fillText(short(a), px(p[0]) + 10, py(p[1]) - 5); } }
     for (const p of truth.people) { c.setLineDash([2, 2]); c.strokeStyle = tok('--sim'); c.lineWidth = 1.2; c.beginPath(); c.arc(px(p.pos[0]), py(p.pos[1]), 6, 0, 7); c.stroke(); c.setLineDash([]); }
     c.fillStyle = tok('--text'); c.save(); c.translate(px(here[0]), py(here[1])); c.rotate(Math.PI / 4); c.fillRect(-4.5, -4.5, 9, 9); c.restore();
-    c.font = '400 11px ' + tok('--font'); c.fillStyle = tok('--text-3'); c.textBaseline = 'top'; c.fillText('Diamond: rover. Dashed ring: a simulated person, hidden from the planner.', plan.x + 10, oy + (d ? 4 : 2) - 4 * k * 0);
+    c.font = '400 11px ' + tok('--font'); c.fillStyle = tok('--text-3'); c.textBaseline = 'top'; c.fillText('Dashed ring: a simulated person the planner cannot see', plan.x + 10, oy + (d ? 4 : 2) - 4 * k * 0);
     // the tree
     if (layoutKey !== ts.nodes + '|' + ts.sims) { layoutKey = ts.nodes + '|' + ts.sims; layoutTree(box); }
     const ease = 1 - Math.exp(-dt * 9), R = rowsT.root, q0 = Math.min(...rowsT.map((i) => i.a.Q), 0), q1 = Math.max(...rowsT.map((i) => i.a.Q), 0.1), tone = (q) => clamp((q - q0) / (q1 - q0 || 1), 0, 1);
@@ -120,7 +120,7 @@ export default async function (pane, ctx) {
     for (const it of rowsT) if (it.lvl === 0) { const on = it.a === chosen; c.font = (on ? '600' : '500') + ' 12px ' + tok('--font'); c.fillStyle = on ? tok('--text') : tok('--text-2'); c.textAlign = 'right'; const lab = short(it.a) + '  ' + it.a.Q.toFixed(2), lw = c.measureText(lab).width; c.save(); c.fillStyle = rgba('--bg-0', 0.75); c.fillRect(it.a._x - 14 - lw - 3, it.a._y - 20, lw + 6, 16); c.restore(); c.fillText(lab, it.a._x - 14, it.a._y - 12); }
     c.fillStyle = tok('--text'); c.beginPath(); c.arc(R.x, R.y, 5, 0, 7); c.fill();
     c.font = '400 11px ' + tok('--font'); c.fillStyle = tok('--text-3'); c.textAlign = 'left'; c.textBaseline = 'top';
-    const ty = box.y + box.h + 12; c.fillText('now', R.x - 8, ty); const cw = box.w / 4.6; ['first move', 'what is heard', 'second move', 'heard', 'third', 'heard', 'fourth'].forEach((s, i) => { if (!d || i < 3) c.fillText(s, box.x + cw * (1 + i * 0.5) - 20, ty); });
+    const ty = box.y + box.h + 12; c.fillText('now', R.x - 8, ty); const cw = box.w / 4.6; ['first move', 'heard', 'second', 'heard', 'third', 'heard', 'fourth'].forEach((s, i) => { if (!d || i < 3) c.fillText(s, box.x + cw * (1 + i * 0.5) - 20, ty); });
     c.textAlign = 'right'; c.font = '500 11px ' + tok('--mono'); c.fillStyle = tok('--text-2'); c.fillText(ts.sims + ' imagined searches, ' + ts.nodes + ' nodes', box.x + box.w, d ? ty + 0 : box.y - 22);
   }
   const loop = makeLoop((dt) => { if (playing) stepTime(dt); paint(dt); });

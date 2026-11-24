@@ -231,6 +231,13 @@ export async function startCommand() {
   const rooms = world.ROOMS.filter((r) => !r.corridor);
   const roomEls = Object.fromEntries(rooms.map((r) => [r.id, el('div', null, el('b', null, r.id), el('span', null, 'to search'))]));
   ui.rooms.replaceChildren(...rooms.map((r) => roomEls[r.id]));
+  // Which sensors raised the odds. A sensor that only lowered them is named as such.
+  const SN = { csi: 'Wi-Fi', radar: 'radar', micro: 'radar', thermal: 'thermal', aerial: 'drone image', human: 'rescue team' };
+  function support(d) {
+    const st = (d.steps || []).filter((s) => s.sensor), up = new Set(st.filter((s) => s.lr > 1.001).map((s) => SN[s.sensor] || s.sensor));
+    const csiNo = !up.has('Wi-Fi') && st.some((s) => s.sensor === 'csi' && s.lr < 0.999);
+    return [...up].join(', ') + (csiNo ? '. Wi-Fi said no one.' : '');
+  }
   let lastUi = 0, sig = '';
   function panels(force) {
     const now = performance.now(); if (!force && now - lastUi < 110) return; lastUi = now;
@@ -242,7 +249,7 @@ export async function startCommand() {
     const at = SHOWN.indexOf(S.phase); [...ui.phases.children].forEach((li, i) => { li.className = S.phase === 'complete' || i < at ? 'done' : i === at ? 'now' : ''; });
     const dets = S.detections.filter((d) => !d.dismissed);
     ui.count.textContent = String(dets.filter((d) => d.status === 'confirmed').length) + ' confirmed';
-    ui.finds.replaceChildren(...(dets.length ? dets.map((d) => el('li.' + d.status, null, el('i'), el('div', null, el('b', null, findTitle(d)), el('small', null, d.status === 'rejected' ? d.reason : [...new Set(d.evidence.map((e) => ({ csi: 'Wi-Fi', radar: 'radar', micro: 'radar', thermal: 'thermal', aerial: 'drone image', human: 'rescue team' }[e.sensor] || e.sensor)))].join(', '))), el('span.num', null, (d.p * 100).toFixed(0) + ' %'))) : [el('li.cmd-empty', null, 'Nothing found yet.')]));
+    ui.finds.replaceChildren(...(dets.length ? dets.map((d) => el('li.' + d.status, null, el('i'), el('div', null, el('b', null, findTitle(d)), el('small', null, d.status === 'rejected' ? d.reason : support(d))), el('span.num', null, (d.p * 100).toFixed(0) + ' %'))) : [el('li.cmd-empty', null, 'Nothing found yet.')]));
     let left = 0;
     for (const r of rooms) { const c = S.coverage[r.id], n = roomEls[r.id]; n.className = c.status; if (c.status === 'unsearched') left++; n.lastChild.textContent = { unsearched: 'to search', clear: 'clear, ' + (c.residual * 100).toFixed(0) + ' % risk', lead: 'lead open', person: 'person', blocked: 'blocked' }[c.status] || c.status; n.title = c.note || ''; }
     ui.coverNote.textContent = left ? left + ' to search' : 'all checked or blocked';

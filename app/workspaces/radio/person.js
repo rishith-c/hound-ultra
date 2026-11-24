@@ -219,7 +219,7 @@ export async function create(stage, side, ctx, lab) {
       if (cur && cur.excess) lab.label(c, 'echo travels ' + cur.excess.toFixed(2) + ' m further: ' + (cur.excess / LAMBDA).toFixed(1) + ' wavelengths', (chestPt[0] + T[0]) / 2 + 8, (chestPt[1] + T[1]) / 2, { color: lab.tok('--text-2'), bg: true });
       // the chest, magnified
       if (st.who === 'still' && cur) {
-        const bx = w - 190, by = wy + th / 2 + 12, mm = cur.chest[i] * 1000, half = Math.max(1, st.depthMm / 2);
+        const bx = w - 190, by = Math.min(wy + th / 2 + 12, hh - 56), mm = cur.chest[i] * 1000, half = Math.max(1, st.depthMm / 2);
         c.fillStyle = lab.rgba('--bg-0', 0.82); c.fillRect(bx - 8, by - 6, 190, 50); c.strokeStyle = lab.tok('--line-2'); c.strokeRect(bx - 7.5, by - 5.5, 189, 49);
         lab.label(c, 'Chest wall, drawn 12×', bx, by + 5, { color: lab.tok('--text-2') }); lab.label(c, lab.sgn(mm, 1) + ' mm', bx + 174, by + 5, { align: 'right', font: '500 11px ' + lab.tok('--mono'), color: lab.tok('--text') });
         const pxmm = 12 * (S / 1000), mid = bx + 87; c.strokeStyle = lab.tok('--line-3'); c.beginPath(); c.moveTo(mid - half * pxmm, by + 17); c.lineTo(mid - half * pxmm, by + 37); c.moveTo(mid + half * pxmm, by + 17); c.lineTo(mid + half * pxmm, by + 37); c.stroke();
@@ -258,7 +258,7 @@ export async function create(stage, side, ctx, lab) {
     winImg = lab.heatImage(d, N_T, 51, -ext, ext, winImg); motImg = lab.heatImage(Float32Array.from(x[51]), N_T, 1, -1, Math.max(3, ...x[51]), motImg);
   }
   const cvWin = lab.canvas(figWin.body, (c, w, hh) => {
-    if (!winImg) return; const x0 = 44, x1 = w - 62, y0 = 12, y1 = hh - 58, my = hh - 48;
+    if (!winImg) return; const x0 = 44, x1 = w - 78, y0 = 12, y1 = hh - 58, my = hh - 48;
     c.imageSmoothingEnabled = false; c.drawImage(winImg, x0, y0, x1 - x0, y1 - y0); c.drawImage(motImg, x0, my, x1 - x0, 12);
     c.strokeStyle = lab.tok('--line-2'); c.strokeRect(x0 - 0.5, y0 - 0.5, x1 - x0 + 1, y1 - y0 + 1); c.strokeRect(x0 - 0.5, my - 0.5, x1 - x0 + 1, 13);
     const f = '500 10.5px ' + lab.tok('--mono');
@@ -266,7 +266,7 @@ export async function create(stage, side, ctx, lab) {
     for (const t of [0, 2, 4, 6, 8, 10]) lab.label(c, String(t), x0 + ((x1 - x0) * t) / 10, my + 22, { align: 'center', font: f, color: lab.tok('--text-3') });
     lab.label(c, 'time, s', x1, my + 36, { align: 'right', color: lab.tok('--text-3') }); lab.label(c, 'subcarrier', x0, my + 36, { color: lab.tok('--text-3') });
     // colour key
-    const kx = w - 44, lut = lab.rampLut(); for (let j = 0; j < y1 - y0; j++) { const i = Math.round((1 - j / (y1 - y0)) * 255) * 3; c.fillStyle = 'rgb(' + lut[i] + ',' + lut[i + 1] + ',' + lut[i + 2] + ')'; c.fillRect(kx, y0 + j, 8, 1.5); }
+    const kx = w - 60, lut = lab.rampLut(); for (let j = 0; j < y1 - y0; j++) { const i = Math.round((1 - j / (y1 - y0)) * 255) * 3; c.fillStyle = 'rgb(' + lut[i] + ',' + lut[i + 1] + ',' + lut[i + 2] + ')'; c.fillRect(kx, y0 + j, 8, 1.5); }
     lab.label(c, '+' + winExt.toFixed(1) + ' %', kx + 12, y0 + 5, { font: f, color: lab.tok('--text-3') }); lab.label(c, '−' + winExt.toFixed(1) + ' %', kx + 12, y1 - 5, { font: f, color: lab.tok('--text-3') });
     const xp = x0 + ((x1 - x0) * Math.min(10, Math.max(0, playT - cur.t0))) / 10; lab.line(c, [[xp, y0], [xp, my + 12]], lab.rgba('--text', 0.7), 1);
   }, { label: 'The normalised window given to the network' });

@@ -23,7 +23,7 @@ export function createHero(view, d, { reduced = false, html }) {
   const K = [];
   const key = (t, tgt, dist, az, el) => { const a = (az * Math.PI) / 180, e = (el * Math.PI) / 180, D = dist * k; K.push([t, tgt[0] + D * Math.sin(a) * Math.cos(e), tgt[1] + D * Math.cos(a) * Math.cos(e), tgt[2] + D * Math.sin(e), tgt[0], tgt[1], tgt[2]]); };
   const at = (x, y, z) => K.push([x[0], ...y, ...z]);
-  key(0, [F[0] - 4 * k, F[1] - 2 * k, z0 + 8], 88, 316, 13); key(5.5, [F[0] + 2 * k, F[1], z0 + 5], 72, 334, 24);
+  key(0, [F[0] - 4 * k, F[1] - 2 * k, z0 + 14], 90, 316, 10); key(5.5, [F[0] + 2 * k, F[1], z0 + 5], 72, 334, 24);
   if (d.traj) { key(8.6, [F[0] + 10 * k, F[1] + 6 * k, z0 + 1], 42, 356, 27); key(tScan - 0.5, [F[0] + 8 * k, F[1] + 4 * k, z0 + 1], 46, 366, 30); }
   key(tOpen - 2.6, [F[0] + 4 * k, F[1] + 2 * k, z0 + 0.6], 46, 382, 38); key(tOpen, [F[0] + 6 * k, F[1] + 2 * k, z0 + 0.4], 45, 390, 42);
   list.forEach(({ v }, q) => { const t = tOpen + 0.9 + q * EACH, az = v.access && v.access.from !== 'above' ? (Math.atan2(v.access.pos[0] - v.centre[0], v.access.pos[1] - v.centre[1]) * 180) / Math.PI : 160; const A = site ? (v.centre[0] > 88 ? 342 : 396) : az; const size = Math.max(v.length, v.width, 2) / k; key(t + 0.5, v.centre, 17 + size * 1.9 * Math.min(1, k * 2), A + 6, 35); key(t + EACH - 0.6, v.centre, 15 + size * 1.8 * Math.min(1, k * 2), A - 4, 32); });
@@ -35,7 +35,7 @@ export function createHero(view, d, { reduced = false, html }) {
     const p1 = P(l + 9, c[2] + 4.6), p2 = P(l + 3.2, c[2] + 1.2);
     const inn = (s, h) => [c[0] - dx * s, c[1] - dy * s, c[2] + h], px = -dy, py = dx;
     const hold = (s, h, side) => { const x = c[0] + dx * s + px * side, y = c[1] + dy * s + py * side; return [x, y, Math.max(gz(x, y) + 0.5, c[2] + h)]; };
-    at([tVoid + 2.6], p1, [c[0], c[1], c[2] + 0.1]); at([tVoid + 4.8], p2, inn(0.2, 0.05)); at([tVoid + 7.6], hold(l + 2.3, 0.5, -0.3), inn(0.4, 0)); at([tDive - 1.5], hold(l + 1.5, 0.35, 0.8), inn(0.7, 0)); at([tDive], hold(l + 1.4, 0.35, 0.95), inn(0.7, 0));
+    at([tVoid + 2.6], p1, [c[0], c[1], c[2] + 0.1]); at([tVoid + 4.8], p2, inn(0.2, 0.05)); at([tVoid + 7.6], hold(l + 3.6, 0.8, -0.3), inn(0.4, 0)); at([tDive - 1.5], hold(l + 2.9, 0.6, 0.7), inn(0.7, 0)); at([tDive], hold(l + 2.8, 0.6, 0.85), inn(0.7, 0));
   } else key(total, [F[0], F[1], z0], 60, 150, 40);
   const C6 = new Float64Array(6);
   function sample(t) { // non-uniform Catmull-Rom, so the camera never stops or jerks at a key

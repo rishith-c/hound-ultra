@@ -373,8 +373,8 @@ export function createScene(host, { kit, onPick }) {
   // Frame the site: push the camera back along a fixed direction until it fits, for any viewport shape.
   function frameSite(kind) {
     const r = rs[0], aspect = r.w / r.h; camera.aspect = aspect; camera.updateProjectionMatrix();
-    const el = THREE.MathUtils.degToRad(kind === 'plan' ? 89.5 : aspect < 1.15 ? 60 : 50), az = kind === 'plan' ? 0 : -0.22, dir = new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).normalize();
-    const pad = kind === 'plan' ? { l: 0.02, r: 0.02, t: 0.02, b: 0.02 } : { l: -0.01, r: -0.01, t: 0.0, b: 0.0 };
+    const el = THREE.MathUtils.degToRad(kind === 'plan' ? 89.5 : aspect < 1.15 ? 60 : 50), az = kind === 'plan' || aspect < 1.15 ? 0 : -0.22, dir = new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).normalize();
+    const pad = kind === 'plan' ? { l: 0.02, r: 0.02, t: 0.02, b: 0.02 } : aspect < 1.15 ? { l: 0.02, r: 0.02, t: 0.12, b: 0.1 } : { l: -0.01, r: -0.01, t: 0.0, b: 0.0 };
     const tgt = centre.clone(), p = new THREE.Vector3(), right = new THREE.Vector3(), fwd = new THREE.Vector3(); let d = 160; probe.fov = camera.fov; probe.aspect = aspect; probe.updateProjectionMatrix();
     const vf = THREE.MathUtils.degToRad(camera.fov), hf = 2 * Math.atan(Math.tan(vf / 2) * aspect);
     for (let it = 0; it < 28; it++) {

@@ -95,13 +95,15 @@ void main() {
         got = true; vec3 h = p - rd * st * 0.5; for (int s = 0; s < 3; s++) { h += rd * body(h) * 0.85; }
         vec2 ee = vec2(0.006, -0.006);
         vec3 N = normalize(ee.xyy * body(h + ee.xyy) + ee.yyx * body(h + ee.yyx) + ee.yxy * body(h + ee.yxy) + ee.xxx * body(h + ee.xxx));
+        vec3 fq = h * vec3(15.0, 7.0, 15.0); float f0 = noise(fq) + 0.5 * noise(fq * 2.7);                                           // creases of cloth
+        N = normalize(N - 0.42 * (vec3(noise(fq + vec3(0.25, 0.0, 0.0)) + 0.5 * noise((fq + vec3(0.25, 0.0, 0.0)) * 2.7), noise(fq + vec3(0.0, 0.25, 0.0)) + 0.5 * noise((fq + vec3(0.0, 0.25, 0.0)) * 2.7), noise(fq + vec3(0.0, 0.0, 0.25)) + 0.5 * noise((fq + vec3(0.0, 0.0, 0.25)) * 2.7)) - f0));
         float ndv = clamp(-dot(N, rd), 0.0, 1.0), rim = pow(1.0 - ndv, 2.5);
         float trunk = smoothstep(0.42, 0.1, abs(h.x)) * smoothstep(0.75, 1.1, h.y) * smoothstep(1.75, 1.62, h.y), face = smoothstep(1.46, 1.56, h.y);
         float cloth = 0.82 + 0.18 * noise(h * vec3(22.0, 9.0, 22.0)) ;
         float T = (0.2 + 0.5 * max(trunk, face)) * pow(ndv, 1.3) * cloth + 0.1 * noise(h * 11.0 + vec3(0.0, uTime * 0.15, 0.0));
         vec3 ember = vec3(uPerson.r * 0.42, uPerson.g * 0.22, uPerson.b * 0.16);
-        vec3 sk = mix(ember, uPerson, smoothstep(0.02, 0.36, T)); sk = mix(sk, uHot, smoothstep(0.3, 0.72, T) * 0.75 * (1.0 - 0.35 * uCalm));
-        sk += uPerson * rim * 0.55; sk += uPerson * 0.05 * step(0.92, fract(h.y * 46.0 - uTime * 0.5));
+        vec3 sk = mix(ember * 0.8, uPerson * 0.92, smoothstep(0.04, 0.52, T)); sk = mix(sk, uHot, smoothstep(0.4, 0.85, T) * 0.7 * (1.0 - 0.35 * uCalm));
+        sk += uPerson * rim * 0.3; sk += uPerson * 0.05 * step(0.92, fract(h.y * 46.0 - uTime * 0.5));
         sum += tr * lockK * sk; tr *= 1.0 - 0.94 * lockK;
       }
       float heat = smoothstep(0.06, -0.06, d), halo = exp(-max(d, 0.0) * mix(9.0, 26.0, uK)) * mix(0.1, 0.05, uK);
