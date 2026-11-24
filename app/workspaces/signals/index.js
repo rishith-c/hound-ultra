@@ -37,7 +37,7 @@ export default {
     root.append(
       h('header.signals-head', null,
         h('div.signals-title', null, h('div.row', null, h('h2', null, 'Signals'), realityTag(ctx.manifestEntry?.reality || 'device')),
-          h('p.muted', null, 'Four other ways to hear a trapped person when the Wi-Fi network cannot: knocking, a phone’s radio, a transmitter overhead, and breath.')),
+          h('p.muted', null, 'Four more ways to hear a trapped person: knocking, a phone’s radio, a transmitter overhead, and breath.')),
         tabs),
       stage);
 

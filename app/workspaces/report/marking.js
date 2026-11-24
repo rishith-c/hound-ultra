@@ -73,8 +73,8 @@ export function markingKey(M) {
     ['3', 'ASR level reached', M.asrText, M.asrWhy + '. Mapped by us to the nearest assessment, search and rescue level; a rover search is not an INSARAG-classified activity.'],
     ['4', 'Date', M.date, 'Today\'s date on this computer. The mission clock has no calendar date.'],
     ['5', 'Hazards, above the box', M.hazards.length ? M.hazards.join(', ').toLowerCase() : 'none recorded', 'From the hazard list in section 5, limited to those at the block.'],
-    ['6', 'Triage category, below the box', '–', 'Not assessed. The mission data cannot set a worksite triage category.'],
-    ['7', 'Victim marking', 'L-' + M.located + ', D –', 'L: people located by the sensors (' + M.reached + ' reached by the simulated team' + (M.possible ? '; ' + M.possible + ' more possible, not counted' : '') + '). Nobody\'s condition was assessed. D, deceased: not assessed, so a dash.'],
+    ['6', 'Triage category, below the box', '–', 'Set by the team on site.'],
+    ['7', 'Victim marking', 'L-' + M.located + ', D –', 'L: people located by the sensors (' + M.reached + ' reached by the simulated team' + (M.possible ? '; ' + M.possible + ' more possible, not counted' : '') + '). Nobody\'s condition was assessed. D: left blank.'],
     ['8', 'Arrow', 'to the entrance', 'Points to the worksite entrance on the south side.'],
     ['9', 'Line through the marking', M.complete ? 'drawn' : 'not drawn', M.complete ? 'The mission is complete, so the marking is struck through.' : 'Drawn only when work at the worksite is finished. The mission is still in progress.'],
   ];

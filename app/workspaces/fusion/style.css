@@ -238,3 +238,13 @@
 .fusion-weight-vals { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: var(--fs-11); color: var(--text); }
 .fusion-weight-vals i { font: 400 var(--fs-11) var(--font); color: var(--text-3); }
 .fusion-weight-vals .is-mod { color: var(--accent); }
+
+/* narrow: the lead chips keep id and chance, the 5 % tick gives way to 15 % */
+.fusion-inst-cap { height: 92px; }
+@media (max-width: 1500px) {
+  .fusion-leads-list > .dim:first-child:not(:last-child) { display: none; }
+  .fusion-lead { padding: 0 6px; gap: 5px; } .fusion-lead > span:not(.num):not(.sr-only) { display: none; }
+  .fusion-axis-chart .fusion-tick:nth-child(1) { display: none; }
+  .fusion-inst-cap { height: 100px; }
+  .fusion-verdict > div { font-size: var(--fs-12); }
+}

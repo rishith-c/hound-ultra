@@ -24,6 +24,7 @@ export const PARAMS = {
   cue: { radarRange: 6, radarWalls: 1, thermalRange: 7, droneRange: 8 },
   bid: { time: 0.5, battery: 0.2, fit: 0.3 },
   listenS: 20,
+  bearing: { thermalDeg: 2, radarDeg: 4 },          // assumed spread of one bearing
 };
 
 export const STRATEGIES = {
@@ -344,7 +345,7 @@ export function hungarian(cost, n, m) {
 // ------------------------------------------------------------------------------------------------------------
 export function fleetMix(n) { const drones = n >= 8 ? 2 : n >= 4 ? 1 : 0; return { rovers: n - drones, drones }; }
 
-export function createSwarm(world, { n = 6, strategy = 'hungarian', startCharge = 1, track = false } = {}) {
+export function createSwarm(world, { n = 6, strategy = 'hungarian', startCharge = 1, track = false, pair = false } = {}) {
   const { solid, indoor, reach } = world;
   const rngS = mulberry32((world.seed * 7919 + 17) >>> 0);        // sensor noise
   const known = new Uint8Array(W * H);
@@ -499,8 +500,20 @@ export function createSwarm(world, { n = 6, strategy = 'hungarian', startCharge 
     S.relays.push(rel); r.relaysLeft--; S.m.relays++; staticDirty = true;
     log('info', r.id + ' dropped beacon ' + relaySeq + ' (its link was down to ' + r.link.best.toFixed(0) + ' dBm).', { robot: r.id, relay: rel.id });
   }
+  // the beacon whose loss cuts off one or two machines that can reach the rest of the mesh again by driving back a little
+  function criticalRelay() {
+    updateMesh(); let best = null, bs = 1e9;
+    const hears = (r, x, y) => backbone.some((nd) => nd.connected && Math.hypot(nd.x - x, nd.y - y) < 75 && rssi(x, y, nd.x, nd.y, r.kind === 'drone' || !!nd.high) >= P.radio.rxMin);
+    for (const b of S.relays.filter((o) => o.alive && o.connected && o.load >= 2)) {
+      const load = b.load; b.alive = false; backbone = staticTree(); let cut = 0, far = 0, wheels = 0;
+      for (const r of robots) { if (r.mode === 'swap' || r.mode === 'done' || r.mode === 'dead' || r.mode === 'lead' || r.mode === 'listen' || !r.link.ok || hears(r, r.x, r.y)) continue; cut++; let k = cellOf(r.x, r.y), d = r.kind === 'drone' ? 4 : 99; if (r.kind === 'rover') wheels = 1; if (r.kind === 'rover') for (let q = 0; q < 40 && homeDist[k] < INF; q++) { k = homePrev[k]; if (k < 0 || k === world.baseCell) break; if (hears(r, cx(k % W), cx((k / W) | 0))) { d = q * RES; break; } } far = Math.max(far, d); }
+      b.alive = true; if (cut >= 1 && cut <= 3 && far <= 9) { const s = Math.abs(far - 4) + cut - load * 1.5 - wheels * 4; if (s < bs) { bs = s; best = b; } }
+    }
+    staticDirty = true; updateMesh(); return best;
+  }
   function failRelay(id) {
     let rel = id && id !== 'busiest' ? S.relays.find((r) => r.id === id && r.alive) : null;
+    if (id === 'critical') { rel = criticalRelay(); if (!rel) return null; }
     if (!rel) { updateMesh(); rel = S.relays.filter((r) => r.alive && r.connected).sort((a, b) => (b.load - a.load) || (a.hops - b.hops))[0]; }
     if (!rel) return null;
     rel.alive = false; rel.failedAt = S.t; S.m.relayFails++; staticDirty = true;
@@ -732,17 +745,39 @@ export function createSwarm(world, { n = 6, strategy = 'hungarian', startCharge 
       r.mode = 'lead'; r.lead = lead.id; r.why = 'Second look at lead ' + lead.id.slice(1);
       r.goal = { x: r.kind === 'drone' ? lead.pos[0] : vx, y: r.kind === 'drone' ? lead.pos[1] : vy, cell: vant, lead: lead.id };
       if (r.kind === 'rover') { r.path = tracePath(scratchP, cellOf(r.x, r.y)); r.pi = 0; }
+      if (pair && r.kind === 'rover') sendSecond(lead, r, bids);
       log('info', 'Lead ' + lead.id.slice(1) + ' goes to ' + r.id + ' (bid ' + win.score.toFixed(2) + ', ' + Math.round(win.eta) + ' s away). ' + (bids.filter((b) => b.eligible).length - 1) + ' other bidder' + (bids.filter((b) => b.eligible).length === 2 ? '' : 's') + ' keep searching.', { lead: lead.id, robot: r.id });
     }
   }
+  // Two-sided second look (an option, off in every benchmark): the runner-up in the auction goes to a spot with another
+  // angle on the lead, both listen, and where both get a bearing the lead moves to the point where the bearings cross.
+  function sendSecond(lead, r, bids) {
+    const li = lead.cell % W, lj = (lead.cell / W) | 0, a1 = Math.atan2(lead.vantage[1] - lead.pos[1], lead.vantage[0] - lead.pos[0]); let best = -1, bs = 1e9;
+    for (let dj = -10; dj <= 10; dj++) for (let di = -10; di <= 10; di++) {
+      const i = li + di, j = lj + dj; if (i < 1 || j < 1 || i >= W - 1 || j >= H - 1) continue; const k = j * W + i;
+      if (known[k] !== K.FREE || homeDist[k] >= INF) continue;
+      const d = Math.hypot(di, dj) * RES; if (d < 1.5) continue; let da = Math.abs(Math.atan2(dj, di) - a1); if (da > Math.PI) da = 2 * Math.PI - da;
+      if (da < 0.7 || da > 2.6) continue; if (trace(cx(i), cx(j), lead.pos[0], lead.pos[1], false).blocked) continue;
+      const s = Math.abs(d - 3) + Math.abs(da - 1.75) * 1.5; if (s < bs) { bs = s; best = k; }
+    }
+    if (best < 0) return;
+    const b = bids.filter((o) => o.eligible && o.kind === 'rover' && o.robot !== r.id).sort((a, c) => c.score - a.score)[0]; if (!b) return;
+    const r2 = robots.find((o) => o.id === b.robot); dijkstra(known, best, scratchD, scratchP); if (!(scratchD[cellOf(r2.x, r2.y)] < INF)) return;
+    lead.second = r2.id; r2.mode = 'lead'; r2.lead = lead.id; r2.why = 'Second bearing on lead ' + lead.id.slice(1); r2.goal = { x: cx(best % W), y: cx((best / W) | 0), cell: best, lead: lead.id }; r2.path = tracePath(scratchP, cellOf(r2.x, r2.y)); r2.pi = 0;
+    log('info', r2.id + ' goes too, for a second bearing from another side.', { lead: lead.id, robot: r2.id });
+  }
+  const partnerOf = (r) => { const l = S.leads.find((o) => o.id === r.lead); if (!l || !l.second) return null; const p = robots.find((o) => o.id === (l.winner === r.id ? l.second : l.winner)); return p && p !== r && p.lead === l.id && (p.mode === 'lead' || p.mode === 'listen') ? p : null; };
+  const freeUp = (r) => { r.lead = null; r.mode = 'explore'; r.why = ''; r.goal = null; r.path = null; };
   function releaseLead(r, why) {
+    const mate = partnerOf(r), held = S.leads.find((l) => l.id === r.lead);
+    if (held && held.second === r.id) { held.second = null; r.lead = null; return; }
+    if (held && held.second) { held.second = null; if (mate) freeUp(mate); }
     const lead = S.leads.find((l) => l.id === r.lead); r.lead = null;
     if (lead && (lead.status === 'assigned' || lead.status === 'listening')) { lead.status = 'auction'; lead.winner = null; log('info', 'Lead ' + lead.id.slice(1) + ' is back in the auction: ' + why + '.', { lead: lead.id }); }
   }
-  function secondLook(r) {
-    const lead = S.leads.find((l) => l.id === r.lead), tg = world.targets.find((t) => t.id === lead.target);
+  function lookFrom(r, tg, vantage) {
     const d = Math.hypot(tg.pos[0] - r.x, tg.pos[1] - r.y), tr = trace(r.x, r.y, tg.pos[0], tg.pos[1], false);
-    const ev = [], say = (sensor, result, note) => ev.push({ sensor, result, note, vantage: 'v2', unit: r.id, t: S.t });
+    const ev = [], say = (sensor, result, note) => ev.push({ sensor, result, note, vantage, unit: r.id, t: S.t });
     const isP = tg.kind === 'person', moving = tg.motion === 'moving';
     if (r.kind === 'drone') {
       say('aerial', rngS() < (isP ? 0.8 : 0.1) ? 'pos' : 'neg', 'Second pass, lower and slower');
@@ -764,14 +799,24 @@ export function createSwarm(world, { n = 6, strategy = 'hungarian', startCharge 
       say('thermal', th ? (tooHot ? 'hot' : hot ? 'pos' : 'neg') : 'blind', th ? (tooHot ? 'Hot object in view' : hot ? 'Warm shape in view' : 'Nothing warm in view') : 'No line of sight for the thermal camera');
       if (tooHot) say('temperature', 'tooHot', 'Far above skin temperature');
     }
-    lead.evidence.push(...ev);
+    return ev;
+  }
+  function secondLook(one) {
+    const lead = S.leads.find((l) => l.id === one.lead), mate = partnerOf(one), r = mate && lead.winner === mate.id ? mate : one, r2 = mate ? (r === one ? mate : one) : null;
+    const tg = world.targets.find((t) => t.id === lead.target), ev = lookFrom(r, tg, 'v2'); lead.evidence.push(...ev);
+    if (r2) {
+      const ev2 = lookFrom(r2, tg, 'v3'), bearing = (u, e) => { const s = e.find((x) => x.sensor === 'thermal' && x.result === 'pos') ? P.bearing.thermalDeg : e.find((x) => x.sensor === 'radar' && x.result === 'pos') ? P.bearing.radarDeg : 0; if (!s) return null; const g = Math.sqrt(-2 * Math.log(1 - rngS())) * Math.cos(2 * Math.PI * rngS()); return { unit: u.id, x: u.x, y: u.y, az: Math.atan2(tg.pos[1] - u.y, tg.pos[0] - u.x) + (g * s * Math.PI) / 180 }; };
+      lead.evidence.push(...ev2); const A = bearing(r, ev), B = bearing(r2, ev2), cr = A && B ? Math.sin(B.az - A.az) : 0;
+      if (Math.abs(cr) > 0.4) { const s = ((B.x - A.x) * Math.sin(B.az) - (B.y - A.y) * Math.cos(B.az)) / cr, u = ((B.x - A.x) * Math.sin(A.az) - (B.y - A.y) * Math.cos(A.az)) / cr; if (s > 0.3 && u > 0.3 && s < 12 && u < 12) { lead.pos = [A.x + Math.cos(A.az) * s, A.y + Math.sin(A.az) * s]; lead.cell = cellOf(lead.pos[0], lead.pos[1]); lead.fix = { a: A, b: B }; } }
+    }
     const f = fuse(lead.evidence); lead.p = f.p; lead.steps = f.steps; lead.checkedAt = S.t; lead.checkedBy = r.id;
     const c = classify(f.p);
     lead.status = c === 'confirmed' ? 'confirmed' : c === 'unlikely' ? 'rejected' : 'open';
-    if (lead.status === 'confirmed') { S.m.confirmed++; log('alert', 'Lead ' + lead.id.slice(1) + ' confirmed by ' + r.id + ': person, ' + (f.p * 100).toFixed(0) + ' %. Marked for the rescue team.', { lead: lead.id, robot: r.id }); }
+    if (lead.status === 'confirmed') { S.m.confirmed++; log('alert', 'Lead ' + lead.id.slice(1) + ' confirmed by ' + r.id + ': person, ' + (f.p > 0.99 ? 'over 99' : (f.p * 100).toFixed(0)) + ' %. Marked for the rescue team.', { lead: lead.id, robot: r.id }); }
     else if (lead.status === 'rejected') { S.m.rejected++; log('ok', 'Lead ' + lead.id.slice(1) + ' ruled out by ' + r.id + ' (' + (f.p * 100).toFixed(0) + ' %): ' + (ev.find((e) => e.sensor === 'signature' || e.sensor === 'temperature')?.note || 'the second look found nothing') + '.', { lead: lead.id, robot: r.id }); }
     else { S.m.open++; log('warn', 'Lead ' + lead.id.slice(1) + ' is still only possible after the second look (' + (f.p * 100).toFixed(0) + ' %). Left for a person to decide.', { lead: lead.id, robot: r.id }); }
-    r.lead = null; r.mode = 'explore'; r.why = ''; r.goal = null; r.path = null;
+    if (lead.fix && lead.status === 'confirmed') log('ok', 'Bearings from ' + lead.fix.a.unit + ' and ' + lead.fix.b.unit + ' cross on lead ' + lead.id.slice(1) + '.', { lead: lead.id });
+    freeUp(r); if (r2) freeUp(r2);
   }
 
   // ---- one step ----
@@ -810,10 +855,10 @@ export function createSwarm(world, { n = 6, strategy = 'hungarian', startCharge 
         case 'lead': {
           if (r.link.ok && r.link.best < P.radio.drop && r.relaysLeft > 0 && !S.relays.some((b) => b.alive && Math.hypot(b.x - r.x, b.y - r.y) < 3)) dropRelay(r, 'weak link');
           const arrived = move(r, dt); sense(r);
-          if (arrived) { r.mode = 'listen'; r.timer = r.kind === 'drone' ? 10 : P.listenS; const lead = S.leads.find((l) => l.id === r.lead); if (lead) lead.status = 'listening'; }
+          if (arrived) { r.mode = 'listen'; r.timer = r.kind === 'drone' ? 10 : P.listenS; const lead = S.leads.find((l) => l.id === r.lead), mate = partnerOf(r); if (lead && !(mate && mate.mode === 'lead')) lead.status = 'listening'; }
           break;
         }
-        case 'listen': r.timer -= dt; if (r.timer <= 0) { secondLook(r); need = true; } break;
+        case 'listen': r.timer -= dt; if (r.timer <= 0) { const mate = partnerOf(r); if (mate && (mate.mode === 'lead' ? r.timer > -120 : mate.timer > 0)) break; if (mate && mate.mode === 'lead') releaseLead(mate, 'it was too far away'), freeUp(mate); secondLook(r); need = true; } break;
         case 'return': case 'home': case 'regroup': {
           const arrived = move(r, dt); sense(r); if (r.mode !== 'regroup') cueCheck(r, dt);
           if (arrived) {

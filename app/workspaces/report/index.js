@@ -41,7 +41,7 @@ export default {
     root.classList.add('report');
     const stamp = h('span.report-stamp', { role: 'status', title: 'Mission clock at the last rewrite of the report' }, 'Updated at ', h('b.num', null, '00:00'));
     const head = h('header.ws-head.adv-only', null,
-      h('div', null, h('h1', null, 'Hand-over report'), h('p', null, 'What the incoming rescue team needs on one document: who was found and where, what was not searched, the way in, and how far to trust the sensors. Rewritten live from the mission log.')),
+      h('div', null, h('h1', null, 'Hand-over report'), h('p', null, 'What the incoming rescue team needs on one document: who was found and where, what is left to search, the way in, and every test result. Rewritten live from the mission log.')),
       realityTag('live-algo'), stamp);
     const outlineList = h('ol.list.report-ol');
     const pageNow = h('span.num', null, '1');
@@ -65,7 +65,7 @@ export default {
       h('dl.kv.report-kv', null, h('dt', null, 'Status'), st.status, h('dt', null, 'Print'), st.pages, h('dt', null, 'Text'), st.words, h('dt', null, 'File name'), st.file),
       h('div.report-exp-group', null, h('h4', null, 'Markdown'), h('div.row.wrap', null, copyBtn, mdDl, mdToggle), h('dl.kv.report-kv', null, h('dt', null, 'Size'), st.md)),
       h('div.report-exp-group', null, h('h4', null, 'Full mission log'), h('div.row.wrap', null, jsonBtn), h('dl.kv.report-kv', null, h('dt', null, 'Size'), st.json),
-        h('p.dim.report-exp-note', null, 'Detections with every fusion step, coverage, routes, hazards, all events, faults, the command log and the limits. Ground truth is not in it.')));
+        h('p.dim.report-exp-note', null, 'Detections with every fusion step, coverage, routes, hazards, all events, faults, the command log and the test results. Ground truth is not in it.')));
     exportPanel.classList.add('report-export');
     const reassure = createReassurance(ctx);
     const side = h('aside.report-side', { 'aria-label': 'Export and reassurance message' }, exportPanel, reassure.el);

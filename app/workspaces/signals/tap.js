@@ -12,15 +12,15 @@ export function create(root, ctx) {
   root.classList.add('signals-tap');
   let det = null, scene = null, source = 'demo', raf = 0, lastTs = 0, fed = 0, shown = false, lastDraw = 0;
   let spec = null, specCtx = null, colImg = null, tmpDb = null, specHi = -60, wavePk = 0.02;
-  let mic = null, sound = null, selected = null, leadSel = 'new', leadSig = '', lastSlow = 0, shownConf = 0;
-  let worker = null, testRun = 0, test = savedTest ? { res: savedTest, frac: 1, running: false } : { res: null, frac: 0, running: false }, testSeed = savedTest?.seed || 1;
+  let mic = null, micAsk = 0, sound = null, selected = null, leadSel = 'new', leadSig = '', lastSlow = 0, shownConf = 0;
+  let worker = null, testRun = 0, test = savedTest ? { res: savedTest, frac: 1, running: false } : { res: null, frac: 0, running: false }, testSeed = savedTest?.seed || 3; // the detector was tuned while looking at seeds 1 and 2, so the test shown starts at 3
 
   // ---------- left rail: what it is, the source, the log ----------
   const srcSeg = seg([{ id: 'demo', label: 'Built-in recording' }, { id: 'mic', label: 'Microphone' }], 'demo', (v) => (v === 'mic' ? askMic() : useDemo()), 'Sound source');
   const srcBox = h('div.col');
   const logEl = h('ul.signals-log', { 'aria-label': 'Knock patterns heard', 'aria-live': 'polite' });
-  const rail = h('section.panel.signals-rail', { 'aria-label': 'Tap detector' }, h('div.panel-body', null,
-    intro('Tap detector', realityTag('device'), 'Rescuers call “knock three times” and listen. This listens with them: it finds sharp knocks in the sound, then looks for the even rhythm of a hand, and ignores steady noise, voices and machines.', realityTag('live-algo')),
+  const rail = h('section.panel.signals-rail', { 'aria-label': 'Tap detector', style: { flex: '1' } }, h('div.panel-body', null,
+    intro(realityTag('device'), 'Rescuers call “knock three times” and listen. This listens with them: it finds sharp knocks in the sound, then looks for the even rhythm of a hand, and ignores steady noise, voices and machines.', realityTag('live-algo')),
     h('div.signals-group', null, h('h4', null, 'Sound source'), srcSeg.el, srcBox),
     h('div.signals-group', { style: { flex: '1', minHeight: '0' } }, h('h4', null, 'Knock patterns heard'), logEl)));
 
@@ -58,11 +58,11 @@ export function create(root, ctx) {
   const track = h('div.signals-track', { 'aria-hidden': 'true' }, h('div.signals-track-bg'), trFill, trB, trA, trBl, trAl,
     h('div.signals-track-lab.bot', { style: { left: THRESHOLDS.possible * 100 + '%' } }, 'possible ' + THRESHOLDS.possible * 100 + ' %'), h('div.signals-track-lab.bot', { style: { left: THRESHOLDS.confirmed * 100 + '%' } }, 'confirmed ' + THRESHOLDS.confirmed * 100 + ' %'));
   const verdict = h('p.signals-verdict'), stepsEl = h('div.signals-steps');
-  const fusePanel = h('section.panel.signals-tap-fuse', { 'aria-label': 'Effect on a lead' },
-    h('header.panel-head', null, h('h3', null, 'If this knocking were sent to the mission'), h('span.tag.tag-sim', { title: 'This shows the calculation only. Nothing is written to the mission.' }, 'Preview')),
+  const fusePanel = h('section.panel', { style: { flex: 'none' }, 'aria-label': 'Effect on a lead' },
+    h('header.panel-head', null, h('h3', null, 'If sent to the mission'), h('span.tag.tag-sim', { title: 'This shows the calculation only. Nothing is written to the mission.' }, 'Preview')),
     h('div.panel-body', null, leadSelEl, track, verdict, stepsEl));
 
-  root.append(rail, scopePanel, side, testPanel, fusePanel);
+  root.append(h('div.signals-col.signals-tap-left', null, rail, fusePanel), scopePanel, side, testPanel);
 
   // ---------- detector and sources ----------
   function newDetector(fs) {
@@ -91,8 +91,8 @@ export function create(root, ctx) {
     logEl.querySelector('.signals-empty')?.remove();
     const li = h('li', { 'data-id': p.id },
       h('span.num', null, fmt.clock(p.t0)), h('b', null, p.count + ' knocks, ' + p.period.toFixed(2) + ' s apart'),
-      h('small', null, 'evenness ' + Math.round((1 - p.cv) * 100) + ' %  ·  score ' + Math.round(p.conf * 100) + (p.repeatOf ? '  ·  repeat' : '')),
-      h('button.btn.btn-sm', { type: 'button', title: 'Show what this would do to a lead. Nothing is written to the mission.', onclick: () => pick(p) }, 'Preview on a lead'));
+      h('small', null, 'even to ' + Math.round((1 - p.cv) * 100) + ' %  ·  score ' + Math.round(p.conf * 100) + (p.repeatOf ? '  ·  repeat' : '')),
+      h('button.btn.btn-sm', { type: 'button', title: 'Show what this would do to a lead. Nothing is written to the mission.', 'aria-label': 'Preview on a lead', onclick: () => pick(p) }, 'Preview'));
     logEl.prepend(li);
     while (logEl.children.length > 30) logEl.lastChild.remove();
     if (!selected) pick(p, true);
@@ -108,10 +108,10 @@ export function create(root, ctx) {
   function showDemoLine(note) {
     const btn = h('button.btn.btn-sm', { type: 'button', 'aria-pressed': String(!!sound), onclick: () => (sound ? stopSound() : startSound()), title: 'Play the recording through the speakers' }, sound ? 'Mute' : 'Play it aloud');
     srcLine(h('div.signals-srcline', null, h('span.signals-live'), h('span.grow', null, 'Synthetic, 48 s, looping'), btn),
-      h('p.signals-hint', null, note || 'Made by a sound generator, not recorded. Its script is the strip above the waveform, so you can check the detector against what is really there.'));
+      h('p.signals-hint', null, note || 'Made by a sound generator. The script above the waveform shows what is really there.'));
   }
   function useDemo(note) {
-    stopMic(); source = 'demo'; srcSeg.set('demo');
+    micAsk++; stopMic(); source = 'demo'; srcSeg.set('demo');
     if (!scene) scene = buildScene(7);
     newDetector(FS); fed = 0; showDemoLine(note);
   }
@@ -124,14 +124,17 @@ export function create(root, ctx) {
     srcBox.querySelector('.btn-primary')?.focus();
   }
   async function startMic() {
+    const my = ++micAsk;
     srcLine(h('div.signals-srcline', null, h('div.spinner'), 'Waiting for the browser’s permission…'));
     let stream;
     try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } }); }
     catch (e) {
+      if (my !== micAsk) return;
       const denied = e?.name === 'NotAllowedError' || e?.name === 'SecurityError';
       useDemo(denied ? 'The microphone was not allowed, so the built-in recording is playing. To try again, allow the microphone for this site in the address bar.' : 'No microphone was found (' + (e?.name || 'error') + '). The built-in recording is playing instead.');
       return;
     }
+    if (my !== micAsk || !shown) { stream.getTracks().forEach((t) => t.stop()); if (my === micAsk) useDemo(); return; } // they left, or changed their mind, while the browser was asking
     try {
       stopSound();
       const actx = new AudioContext();
@@ -211,7 +214,7 @@ export function create(root, ctx) {
     // onset strength and its threshold
     c.fillStyle = C.bg1; c.fillRect(padL, yFlux, pw, hFlux);
     let fmax = 0.4; for (let f = fr0; f < det.frame; f++) fmax = Math.max(fmax, det.flux[f % Hn]);
-    const FY = (v) => yFlux + hFlux - 3 - (v / (fmax * 1.1)) * (hFlux - 8);
+    const FY = (v) => yFlux + hFlux - 3 - (v / (fmax * 1.1)) * (hFlux - 24); // the top strip is the key
     c.beginPath(); c.moveTo(X(fr0 * dt), yFlux + hFlux);
     for (let f = fr0; f < det.frame; f++) c.lineTo(X(f * dt), FY(det.flux[f % Hn]));
     c.lineTo(X((det.frame - 1) * dt), yFlux + hFlux); c.closePath(); c.fillStyle = rgba(C.accent, 0.28); c.fill();
@@ -252,7 +255,7 @@ export function create(root, ctx) {
     for (const f of [1000, 2000, 3000, 4000]) { if (f > top) continue; const y = ySpec + hSpec * (1 - f / top); text(c, f / 1000 + ' kHz', padL - 8, clamp(y, ySpec + 6, ySpec + hSpec), { align: 'right', base: 'middle', color: C.text3 }); c.fillStyle = C.line2; c.fillRect(padL - 4, Math.round(y), 4, 1); }
     const yb = ySpec + hSpec * (1 - BAND[0] / top); c.fillStyle = C.accent; c.fillRect(padL + pw + 3, ySpec + 1, 2, yb - ySpec - 1);
     text(c, 'onset', padL - 8, yFlux + hFlux / 2 - 6, { align: 'right', base: 'middle', color: C.accent }); text(c, 'strength', padL - 8, yFlux + hFlux / 2 + 7, { align: 'right', base: 'middle', color: C.accent });
-    text(c, 'listening band 150 Hz to 4 kHz', padL + pw - 6, ySpec + hSpec - 7, { color: rgba(C.text, 0.75), align: 'right' });
+    { const lab = 'listening band 150 Hz to 4 kHz'; c.font = '400 11px ' + C.font; const tw = c.measureText(lab).width; c.fillStyle = rgba(C.bg0, 0.82); c.beginPath(); c.roundRect(padL + pw - tw - 18, ySpec + hSpec - 24, tw + 12, 18, 4); c.fill(); text(c, lab, padL + pw - 12, ySpec + hSpec - 11, { color: C.text, align: 'right' }); }
     for (let s = 0; s <= T; s += 2) { const x = padL + pw * (1 - s / T); c.fillStyle = C.line2; c.fillRect(Math.round(x), yFlux + hFlux, 1, 4); text(c, s === 0 ? 'now' : '−' + s + ' s', x, yFlux + hFlux + 15, { align: s === 0 ? 'right' : 'center', color: C.text3, mono: s !== 0 }); }
     // what the marks mean
     let lx = padL + 8; const ly = yFlux + 13;
@@ -286,7 +289,8 @@ export function create(root, ctx) {
       for (const m of [1, 2]) { const x = X(P * m); if (x < padL + pw) { c.globalAlpha = m === 1 ? 1 : 0.45; c.beginPath(); c.moveTo(x, m === 1 ? y1 : y2); c.lineTo(x, y2 + hA); c.stroke(); } }
       c.globalAlpha = 1; c.setLineDash([]);
       const lab = P.toFixed(2) + ' s apart'; c.font = '600 11px ' + C.mono; const tw = c.measureText(lab).width, lx = clamp(X(P) + 6, padL, padL + pw - tw - 4);
-      text(c, lab, lx, y1 + 13, { color: hot, weight: 600, mono: true });
+      c.fillStyle = rgba(C.bg0, 0.85); c.beginPath(); c.roundRect(lx - 3, y1 + 2, tw + 8, 16, 3); c.fill();
+      text(c, lab, lx, y1 + 14, { color: hot, weight: 600, mono: true });
       if (X(P * 2) < padL + pw - 80) text(c, 'and twice that', X(P * 2) + 6, y2 + 13, { color: C.text3 });
     } else if (!v.n) text(c, 'No knock-like sounds in the last 9 seconds.', padL + pw / 2, y1 + hA / 2 + 4, { align: 'center', color: C.text3 });
     c.strokeStyle = C.line2; c.lineWidth = 1; c.strokeRect(padL + 0.5, y1 + 0.5, pw - 1, hA - 1); c.strokeRect(padL + 0.5, y2 + 0.5, pw - 1, hA - 1);
@@ -335,7 +339,7 @@ export function create(root, ctx) {
     const st = after.steps, skip = Math.max(0, st.length - 4);
     if (skip) chips.push(h('span', null, '→ ' + skip + ' earlier reading' + (skip > 1 ? 's' : '')));
     st.slice(skip).forEach((s) => chips.push(h('span' + (s.sensor === 'acoustic' ? '.now' : ''), { title: (LR[s.sensor]?.label || s.sensor) + (s.assumed ? ' (assumed value)' : ' (measured on the test set)') + (s.repeat ? ', repeat reading at half weight' : '') }, '→ ' + (s.sensor === 'acoustic' ? 'tapping' : s.sensor === 'csi' ? 'Wi-Fi' : s.sensor) + ' ×' + s.lr.toFixed(s.lr < 10 ? 2 : 0))));
-    chips.push(h('span', { style: { flexBasis: '100%', marginTop: '4px', whiteSpace: 'normal' } }, 'Tapping counts ×' + LR.acoustic.pos + ' towards a person: an assumed value, not measured. Preview only; nothing is written to the mission.'));
+    chips.push(h('span', { style: { flexBasis: '100%', marginTop: '4px', whiteSpace: 'normal' } }, 'Tapping counts ×' + LR.acoustic.pos + ' towards a person: a design value. Preview only; nothing is written to the mission.'));
     stepsEl.replaceChildren(...chips);
   }
 
@@ -343,7 +347,7 @@ export function create(root, ctx) {
   function renderTest() {
     const r = test.res, rows = [];
     for (const k of [...TEST.kinds, 'tick']) {
-      const tds = [h('td', null, NOISE_KINDS[k].label, h('small', null, NOISE_KINDS[k].sub))];
+      const tds = [h('td', null, NOISE_KINDS[k].label, ' ', h('small', null, NOISE_KINDS[k].sub))];
       for (const s of TEST.snrs) {
         const cell = r?.cells[k]?.[s];
         if (k === 'tick') { if (s === TEST.snrs[0]) tds.push(h('td.wait', { colSpan: TEST.snrs.length, style: { textAlign: 'center' } }, 'no knocks in these clips: the detector should stay silent')); continue; }
@@ -351,7 +355,7 @@ export function create(root, ctx) {
         else { const f = cell.hit / cell.n, bar = h('i.signals-cellbar'); bar.style.setProperty('--v', f); tds.push(h('td' + (f < 0.7 ? '.low' : ''), { title: cell.hit + ' of ' + cell.n + ' clips' }, h('span.num', null, cell.n < TEST.trials ? cell.hit + '/' + cell.n : Math.round(f * 100) + ' %'), bar)); }
       }
       const fa = r?.fa[k];
-      tds.push(h('td.fa' + (fa && fa.minutes ? '' : '.wait'), null, !fa || !fa.minutes ? '·' : [h('span.num', null, fa.count ? (fa.count / fa.minutes).toFixed(2) + ' / min' : 'none'), h('small', null, fa.count + ' in ' + fa.minutes.toFixed(0) + ' min')]));
+      tds.push(h('td.fa' + (fa && fa.minutes ? '' : '.wait'), null, !fa || !fa.minutes ? '·' : [h('span.num', null, fa.count ? (fa.count / fa.minutes).toFixed(2) + ' / min' : 'none'), ' ', h('small', null, fa.count + ' in ' + fa.minutes.toFixed(0) + ' min')]));
       rows.push(h('tr', null, tds));
     }
     testBody.replaceChildren(...rows);

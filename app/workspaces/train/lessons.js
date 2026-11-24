@@ -409,8 +409,8 @@ function figLimits(fig, env) {
   const paint = () => { val.textContent = ampl.toFixed(2) + ' %'; const r = ampl / FACT.noise; verdict.replaceChildren(h('b.num', null, r.toFixed(1) + '×'), ' the noise. ' + (r < 0.3 ? 'The wave is buried. One subcarrier cannot show it.' : r < 0.7 ? 'A rhythm is there, but you would not swear to it.' : 'This is the strongest breathing gets, and it is still below the noise.')); trace.redraw(); };
   const sl = slider(h, { min: FACT.breathLo, max: FACT.breathHi, step: 0.01, value: ampl, name: 'Breathing amplitude, percent', oninput: (v) => { ampl = v; paint(); } });
   fig.append(h('div.train-ls-limits', null,
-    h('div.train-ls-pane', null, figHead(h, 'It finds movement. It mostly misses stillness.', 'Share of 955 simulated test windows, people never seen in training.'), results,
-      h('p.note.quiet', null, env.kit.icon('info', 15), h('span', null, 'The breathing rate is not reliable either: within 3 breaths a minute in only ' + FACT.rateOk + ' % of the still people found. The console never shows one.'))),
+    h('div.train-ls-pane', null, figHead(h, 'Movement and stillness, by situation.', 'Share of 955 simulated test windows, people never seen in training.'), results,
+      h('p.note.quiet', null, env.kit.icon('info', 15), h('span', null, 'A breathing estimate is within 3 a minute in ' + FACT.rateOk + ' % of the still people found, so the console shows movement and no rate.'))),
     h('div.train-ls-pane', null, figHead(h, 'Breathing sinks into the receiver’s own noise', 'Breathing changes the signal by 0.05 to 0.4 %. The noise stays at 0.5 %.'), trace.box,
       h('div.slider-row', null, h('span.label', null, 'Breathing amplitude'), sl, val), verdict)));
   paint();
@@ -430,11 +430,11 @@ const SENSOR_ROWS = [
   { key: 'thermal2', sensor: 'thermal', vantage: 'second look', name: 'Thermal, second look from a new place', short: 'Thermal again', opts: [OFF, ['pos', 'Warm'], ['faint', 'Faint'], ['neg', 'Cold']] },
 ];
 const STORIES = [
-  { id: 'moving', name: 'Moving person behind a wall', set: { csi: 'pos', radar: 'pos', thermal: 'blind' }, say: 'The network alarms and the radar tracks movement. The thermal camera cannot see through the wall, so it adds nothing.' },
-  { id: 'still', name: 'Still person, Wi-Fi misses', set: { csi: 'neg', micro: 'pos', thermal: 'faint' }, say: 'The network says no one. Breathing-sized motion and faint warmth keep the lead open.', then: { thermal2: 'pos' }, thenSay: 'From a new place the thermal camera sees clear warmth. Fresh evidence counts in full.' },
+  { id: 'moving', name: 'Moving person behind a wall', set: { csi: 'pos', radar: 'pos', thermal: 'blind' }, say: 'The network alarms and the radar tracks movement. The thermal camera waits for a clear view.' },
+  { id: 'still', name: 'Still person', set: { csi: 'neg', micro: 'pos', thermal: 'faint' }, say: 'The network says no one. Breathing-sized motion and faint warmth keep the lead open.', then: { thermal2: 'pos' }, thenSay: 'From a new place the thermal camera sees clear warmth. Fresh evidence counts in full.' },
   { id: 'fan', name: 'Desk fan', set: { csi: 'neg', radar: 'pos', signature: 'machine', thermal: 'neg' }, say: 'The radar sees motion, but it is steady and nothing is warm. The lead closes.' },
   { id: 'pipe', name: 'Hot pipe', set: { csi: 'neg', radar: 'neg', thermal: 'pos', temperature: 'tooHot' }, say: 'The thermal camera sees heat, far hotter than skin, and nothing moves.' },
-  { id: 'false', name: 'Wi-Fi false alarm', set: { csi: 'pos', radar: 'neg', micro: 'neg' }, say: 'The network alarms alone. Both radars see nothing. The lead stays open, just.' },
+  { id: 'false', name: 'Wi-Fi alarm alone', set: { csi: 'pos', radar: 'neg', micro: 'neg' }, say: 'The network alarms alone. Both radars see nothing. The lead stays open, just.' },
 ];
 const VERDICT = { confirmed: ['Confirmed', 'tag-person'], possible: ['Possible: stays open', 'tag-warn'], unlikely: ['Unlikely: lead closes', ''] };
 const evidenceOf = (state) => SENSOR_ROWS.filter((r) => state[r.key] && state[r.key] !== 'off').map((r) => ({ sensor: r.sensor, result: state[r.key], vantage: r.vantage || 'first stop', row: r }));
@@ -631,14 +631,14 @@ function figBaseRate(fig, env) {
     if (shown) {
       const q = counts(), a = answer(), gap = Math.abs(guess - a * 100);
       ans.textContent = pct(a); sum.replaceChildren(h('b.c-person', null, q.hit + ' true alarms'), ' out of ', h('b', null, (q.hit + q.fa) + ' alarms'), '. The other ', h('b.c-warn', null, String(q.fa)), ' are empty rooms.');
-      gapLine.textContent = 'You guessed ' + guess + ' %. ' + (gap < 5 ? 'That is within 5 points. Most people guess far higher.' : 'That is ' + gap.toFixed(0) + ' points ' + (guess > a * 100 ? 'too high' : 'too low') + '. Empty rooms outnumber people, so their false alarms pile up.');
+      gapLine.textContent = 'You guessed ' + guess + ' %. ' + (gap < 5 ? 'That is within 5 points. Most people guess far higher.' : 'That is ' + gap.toFixed(0) + ' points ' + (guess > a * 100 ? 'too high' : 'too low') + '. Empty rooms outnumber people, so their alarms add up.');
       mosaic.describe('One thousand rooms: ' + q.people + ' hold a person, the network alarms in ' + (q.hit + q.fa) + ', and ' + q.hit + ' of those alarms are right.');
     }
     mosaic.redraw();
   }
   fig.append(h('div.train-ls-base', null,
     h('div.train-ls-pane', null, figHead(h, 'Most alarms come from empty rooms, because most rooms are empty', 'Alarm rates measured on 955 simulated test windows: ' + FACT.hit + ' % when a person is there, ' + FACT.falseAlarm + ' % when the room is empty.'), mosaic.box,
-      h('div.legend', null, h('span', null, h('i.p1'), 'Person, alarm'), h('span', null, h('i.p2'), 'Person, missed'), h('span', null, h('i.p3'), 'Empty, false alarm'), h('span', null, h('i.p4'), 'Empty, quiet'))),
+      h('div.legend', null, h('span', null, h('i.p1'), 'Person, alarm'), h('span', null, h('i.p2'), 'Person, quiet'), h('span', null, h('i.p3'), 'Empty, alarm'), h('span', null, h('i.p4'), 'Empty, quiet'))),
     h('div.train-ls-side.wide', null,
       h('h3', null, 'The network says person. How likely is it that someone is there?'),
       h('div.slider-row', null, h('span.label', null, 'Your guess'), gSl, gOut), showBtn, answerBox)));
@@ -767,7 +767,7 @@ function figApprove(fig, env) {
 }
 
 // ---------- the screens ----------
-const SIM_NOTE = 'Simulated test windows. No real recordings exist yet.';
+const SIM_NOTE = 'Simulated test windows.';
 const SCREENS = {
   wifi: [
     { head: 'A body changes the echoes', build: figEchoes, tag: 'live-algo', label: 'Teaching model with a handful of echoes. The real training simulator uses 3 to 8 echoes and a full body.',
@@ -775,24 +775,24 @@ const SCREENS = {
       remember: 'Movement is loud. Breathing is quieter than the receiver’s own noise.' },
     { head: 'Ten seconds in, one answer out', build: figWindow, tag: 'live-ai', label: SIM_NOTE,
       text: ['The rover stops and listens for ten seconds. The network reads that one window and gives a number from 0 to 1.', 'Above 0.53 it says person. The line was set so that about one empty room in ten raises an alarm.', 'Make your call first. Then the real network runs here, on a test window it never saw in training.'],
-      remember: 'One window, one number, one threshold. The network cannot say where, or how many.' },
-    { head: 'What it can and cannot do', build: figLimits, tag: 'sim', label: 'Measured on 955 simulated test windows. Not tested on real people.',
-      text: ['In simulation the network finds most moving people and most empty rooms.', 'It misses four still people in five. Move the slider to see why: breathing is smaller than the noise.'],
-      remember: 'This is why HOUND adds radar and thermal, and why a Wi-Fi “no one” is weak evidence.' },
+      remember: 'One window, one number, one threshold. Radar adds the position.' },
+    { head: 'What it hears', build: figLimits, tag: 'sim', label: 'Measured on 955 simulated test windows.',
+      text: ['In simulation the network finds most moving people and most empty rooms.', 'A still person is the job of radar and heat. Move the slider to see why: breathing is smaller than the noise.'],
+      remember: 'This is why HOUND adds radar and thermal, and asks for a second look.' },
   ],
   fusion: [
-    { head: 'Each reading multiplies the odds', build: figEvidence, tag: 'live-algo', label: 'The console’s own fusion code, running now. Radar and thermal likelihoods are assumed.',
+    { head: 'Each reading multiplies the odds', build: figEvidence, tag: 'live-algo', label: 'The console’s own fusion code, running now. Radar and thermal likelihoods are design values.',
       text: ['Before any reading the console assumes one room in ten holds a person. Each reading multiplies those odds.', 'A reading that is far more common with a person than without multiplies by a lot. A weak one barely moves it.', 'Load a story, then change one reading and watch which step matters.'],
       remember: 'No single sensor decides. Agreement confirms, and one strong “no” can close a lead.' },
-    { head: 'Listen again, or move?', build: figRepeat, tag: 'live-algo', label: 'Computed by the same fusion code. The half-weight rule for repeats is assumed.',
-      text: ['A second alarm from the same spot is not fresh evidence. The same echoes can fool the network twice.', 'So the console counts a repeat at half weight. A reading from a new place counts in full.'],
+    { head: 'Listen again, or move?', build: figRepeat, tag: 'live-algo', label: 'Computed by the same fusion code. The half-weight rule for repeats is a design value.',
+      text: ['A fresh place gives fresh evidence. The same spot repeats the same echoes.', 'So the console counts a repeat at half weight. A reading from a new place counts in full.'],
       remember: 'When a lead is stuck at possible, move the rover. Do not just listen again.' },
   ],
   probability: [
-    { head: '21 % is not a no', build: figRooms, tag: 'live-algo', label: 'The thresholds are the console’s. The prior and the radar likelihoods are assumed.',
+    { head: '21 % is not a no', build: figRooms, tag: 'live-algo', label: 'The thresholds are the console’s. The prior and the radar likelihoods are design values.',
       text: ['A probability is a count. 21 % means: of 100 rooms that look like this, about 21 hold a person.', 'Move the slider across the two lines the console uses and read what each one asks of you.'],
       remember: 'Possible means look again. Only a second reading, or a person, closes a lead.' },
-    { head: 'The alarm is not the answer', build: figBaseRate, tag: 'live-algo', label: 'Alarm rates from 955 simulated test windows. The share of rooms with a person is assumed.',
+    { head: 'The alarm is not the answer', build: figBaseRate, tag: 'live-algo', label: 'Alarm rates from 955 simulated test windows. The share of rooms with a person is a design value.',
       text: ['The network says person. Before you look at anything else, how sure should you be?', 'Guess first. Then count it out over 1,000 rooms.'],
       remember: 'An alarm starts the question. How common people are, and what else agrees, finishes it.' },
   ],

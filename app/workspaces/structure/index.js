@@ -49,9 +49,9 @@ export default {
     const dock = h('aside.structure-dock.adv-only', { 'aria-label': 'Structure worksheet' });
     root.append(
       h('header.ws-head.structure-head.adv-only', null,
-        h('div', null, h('h1', null, 'Structure', realityTag('live-algo'), h('span.tag.tag-sim', { title: 'The crane, shores and robots are not HOUND hardware. They are drawn to show the idea.' }, 'Concept hardware')),
+        h('div', null, h('h1', null, 'Structure', realityTag('live-algo'), h('span.tag.tag-sim', { title: 'The crane, shores and robots are concepts, drawn to show the idea.' }, 'Concept hardware')),
           h('p', null, 'The pile is a physics problem. Collapse a building bay with real rigid-body physics, then test every lift, tremor and shore in a copy of that world before anyone touches a slab.')),
-        h('p.structure-disclaimer', null, 'The physics engine and every measurement on this pile are real computation. The pile is not a real building, and this is not an engineering assessment.')),
+        h('p.structure-disclaimer', null, 'The physics engine and every measurement on this pile are real computation. The pile is simulated; a structures specialist decides on site.')),
       h('div.structure-main', null, stage, dock));
     stage.append(loading);
 
@@ -117,7 +117,7 @@ export default {
     // ------------------------------------------------------------ build, collapse, settle
     function rebuild() {
       view.clearFx(); view.setClock(0, 0);
-      S.epoch++; jobs.clear(); S.live = null; S.liveQueue = [];
+      S.fxT = 0; S.epoch++; jobs.clear(); S.live = null; S.liveQueue = [];
       if (S.pile) S.pile.world.free();
       S.pile = P.buildPile({ seed: S.seed, scenario: S.scenario }); S.poses = P.readPoses(S.pile); S.phase = 'intact'; S.ke = []; S.peakKE = 0; S.acc = 0; S.quiet = 0;
       S.pe0 = S.pile.pieces.reduce((a, p) => a + (p.fixed ? 0 : p.mass * P.G * p.home[1]), 0);
@@ -168,7 +168,7 @@ export default {
       });
       jobs.add('Counting voids with topology', function* () {
         const radii = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5]; const gen = bettiCurve(S.grid, radii); let r, k = 0;
-        while (!(r = gen.next()).done) { S.betti = r.value.slice(); k++; if (S.tab === 'voids') renderVoids(); yield k / radii.length; }
+        while (!(r = gen.next()).done) { if (!r.value) { yield null; continue; } S.betti = r.value.slice(); k++; if (S.tab === 'voids') renderVoids(); yield k / radii.length; }
         markTabs();
       });
     }
@@ -190,10 +190,10 @@ export default {
       if (moving && !(reducedMotion() && S.phase === 'collapsing')) {
         S.acc = Math.min(S.acc + dt, 3 * P.DT); dust.length = 0;
         while (S.acc >= P.DT && (S.phase === 'collapsing' || S.phase === 'moving')) { stepLive(dust); S.acc -= P.DT; }
-        for (const d of dust) view.puff(d, S.pile.t); view.setClock(0, S.pile.t);
+        for (const d of dust) view.puff(d, S.pile.t); view.setClock(0, S.fxT = S.pile.t);
         if (S.phase !== 'settled') { S.poses = P.readPoses(S.pile, S.pile.world, S.poses); view.sync(S.pile, S.poses); }
         jobs.tick(2);
-      } else jobs.tick(reducedMotion() ? 14 : 9);
+      } else { if (S.pile && S.fxT && S.fxT < S.pile.t + 12) view.setClock(0, S.fxT += dt); jobs.tick(reducedMotion() ? 14 : 7); }
       if (frameN % 8 === 0) hudNow();
     }
     function hudNow() {
@@ -228,7 +228,7 @@ export default {
 
     // ------------------------------------------------------------ picking and hover
     function onHover(hit, ev) {
-      if (S.shoreMode && S.phase === 'settled') { if (!hit) { view.showShorePreview(null); return; } const pr = P.probeShore(S.pile, hit.point, S.shoreType); if (pr.ok) view.showShorePreview(pr, P.SHORES[S.shoreType].half, true); else view.showShorePreview({ x: hit.point[0], z: hit.point[2], bottom: hit.point[1], h: 0.4 }, 0.12, false); tip.hidden = false; tip.replaceChildren(h('b', null, pr.ok ? 'Shore here: ' + pr.h.toFixed(2) + ' m tall' : 'Cannot shore here'), h('span', null, pr.ok ? 'click to place' : pr.why)); moveTip(ev); return; }
+      if (S.shoreMode && S.phase === 'settled') { if (!hit) { view.showShorePreview(null); return; } const pr = P.probeShore(S.pile, hit.point, S.shoreType); if (pr.ok) view.showShorePreview(pr, P.SHORES[S.shoreType].half, true); else view.showShorePreview({ x: hit.point[0], z: hit.point[2], bottom: hit.point[1], h: 0.4 }, 0.12, false); tip.hidden = false; tip.replaceChildren(h('b', null, pr.ok ? 'Shore here: ' + pr.h.toFixed(2) + ' m tall' : 'Choose another spot'), h('span', null, pr.ok ? 'click to place' : pr.why)); moveTip(ev); return; }
       const idx = hit ? hit.idx : -1; view.setHovered(idx);
       if (idx < 0 || !ev) { tip.hidden = true; return; }
       const p = S.pile.pieces[idx]; tip.hidden = false;
@@ -263,7 +263,7 @@ export default {
     const render = (id) => ({ collapse: renderCollapse, voids: renderVoids, lift: renderLift, shake: renderShake, shore: renderShore, robots: renderRobots }[id])();
     function renderAll() { render(S.tab); markTabs(); }
     const sources = (...keys) => h('div.structure-src', null, h('b', { style: { color: 'var(--text-3)', fontWeight: 500 } }, 'Sources'), keys.map((k) => h('span', null, h('a', { href: SRC[k][1], target: '_blank', rel: 'noopener' }, SRC[k][0]))));
-    const real = (works, unknown) => h('div.structure-real', null, h('div', null, h('b', null, 'For this to work in the field: '), works), h('div', null, h('b', null, 'Unknown: '), unknown));
+    const real = (works, unknown) => h('div.structure-real', null, h('div', null, h('b', null, 'What it needs: '), works), h('div', null, h('b', null, 'Open questions: '), unknown));
     const head = (title, ...tags) => h('h2', null, title, ...tags);
     const sec = (title, small, ...kids) => h('section.structure-sec', null, h('h3', null, title, small ? h('small', null, small) : null), ...kids);
     const waiting = (text) => h('div.structure-empty', null, text);
@@ -275,7 +275,7 @@ export default {
       const kids = [head('The collapse, simulated', realityTag('live-algo')),
         h('p.structure-what', null, 'A two-storey precast bay: ' + S.pile.pieces.filter((p) => p.kind === 'column').length + ' column pieces, 12 ledger beams, 36 hollow-core planks, infill walls and furniture, ' + ft(S.pile.pieces.reduce((a, p) => a + p.mass, 0)) + ' in all. Fail a line of supports and rigid-body physics decides where every piece lands.')];
       const wait = needPile();
-      if (wait) kids.push(wait, sec('What is about to fail', null, h('p.structure-what', null, sc.fail), h('dl.kv', null, h('dt', null, 'Columns'), h('dd.num', null, '0.40 × 0.40 × 2.55 m, 0.98 t'), h('dt', null, 'Ledger beams'), h('dd.num', null, '4.78 m long, 4.5 t'), h('dt', null, 'Hollow-core planks'), h('dd.num', null, '1.10 × 0.20 × 3.78 m, 1.2 t'), h('dt', null, 'Friction, concrete on concrete'), h('dd.num', null, P.FRICTION + ' (assumed)'), h('dt', null, 'Plank ties'), h('dd.num', null, 'pins that break on a hard impact (assumed)'))));
+      if (wait) kids.push(wait, sec('What is about to fail', null, h('p.structure-what', null, sc.fail), h('dl.kv', null, h('dt', null, 'Columns'), h('dd.num', null, '0.40 × 0.40 × 2.55 m, 0.98 t'), h('dt', null, 'Ledger beams'), h('dd.num', null, '4.78 m long, 4.5 t'), h('dt', null, 'Hollow-core planks'), h('dd.num', null, '1.10 × 0.20 × 3.78 m, 1.2 t'), h('dt', null, 'Friction, concrete on concrete'), h('dd.num', null, P.FRICTION + ' (design value)'), h('dt', null, 'Plank ties'), h('dd.num', null, 'pins that break on a hard impact (design value)'))));
       else {
         const c = S.cls, ev = c.evidence, pat = PATTERNS[c.verdict], top = Object.entries(c.scores).sort((a, b) => b[1] - a[1]);
         const match = c.verdict === S.scenario;
@@ -283,7 +283,7 @@ export default {
           h('span', { class: match ? 'structure-ok' : 'structure-warn' }, c.verdict === 'mixed' ? 'no textbook pattern fits' : match ? 'agrees with the failure that was set' : 'the failure set was “' + sc.label + '”')),
           h('div.structure-match', null, top.map(([k, v], i) => [h('span', { class: i === 0 ? 'is-top' : '' }, PATTERNS[k].label), h('div.bar' + (i === 0 ? '.ok' : ''), null, h('i', { style: { width: (clamp01(v) * 100).toFixed(0) + '%' } })), h('span.num', null, (v * 100).toFixed(0) + ' %')])),
           sec('What the classifier measured', ev.n + ' floor planks',
-            h('dl.kv', null, h('dt', null, 'Leaning (15° to 72°)'), h('dd.num', null, ev.inclined + (ev.inclined ? '   ' + ev.tiltMin.toFixed(0) + '° to ' + ev.tiltMax.toFixed(0) + '°' : '')), h('dt', null, 'Hanging (steeper than 72°)'), h('dd.num', null, ev.hanging),
+            h('dl.kv', null, h('dt', null, 'Leaning (15° to 72°)'), h('dd.num', null, ev.inclined), h('dt', null, 'Hanging (steeper than 72°)'), h('dd.num', null, ev.hanging), h('dt', null, 'Tilt of those planks'), h('dd.num', null, ev.inclined + ev.hanging ? ev.tiltMin.toFixed(0) + '° to ' + ev.tiltMax.toFixed(0) + '°' : 'none'),
               h('dt', null, 'Flat and dropped over 1.2 m'), h('dd.num', null, ev.flatLow), h('dt', null, 'Level, one end unsupported'), h('dd.num', null, ev.cantilevered), h('dt', null, 'Still in place'), h('dd.num', null, ev.standing),
               h('dt', { title: '1 means every leaning plank dips the same way; 0 means they dip in opposite directions' }, 'Dip agreement'), h('dd.num', null, ev.R.toFixed(2) + (ev.twoSided ? (ev.toward ? '   two sides, toward each other' : '   two sides, apart') : '')))),
           pat ? sec('Where the voids usually are', 'FEMA', h('div.structure-fema', null, pat.voids, h('cite', null, 'FEMA module 2a: “' + pat.fema + '”')),
@@ -292,7 +292,8 @@ export default {
             h('dt', null, 'Height lost by the centre of mass'), h('dd.num', null, (() => { let pe = 0, m = 0; for (const p of S.pile.pieces) if (p.alive && !p.fixed && p.kind !== 'shore') { pe += p.mass * (p.home[1] - S.poses[p.idx * 7 + 1]); m += p.mass; } return (pe / m).toFixed(2) + ' m'; })()),
             h('dt', null, 'Plank ties broken on impact'), h('dd.num', null, (S.pile.tiesBroken || 0) + ' of ' + S.pile.ties.length), h('dt', null, 'Furniture crushed'), h('dd.num', null, (S.pile.crushed || 0) + ' of 14'), h('dt', null, 'Contacts carrying load'), h('dd.num', null, S.con.edges.length))));
       }
-      kids.push(real('a scan good enough to rebuild the pile piece by piece, and the mass and friction of each piece.', 'how far a rigid-body model can be trusted when real concrete cracks, crushes and hangs on its reinforcing bars. This model does none of that.'), sources('fema', 'fema2a', 'schweier', 'rapier'));
+      kids.push(sec('About the demo film', null, h('p.caption', null, 'The film plays a chosen example: a V-shape pile whose ties are a quarter as strong as here, with a seed found by search. With ties at full strength, the pocket stayed open in every lift tried (V-shape, lean-to and cantilever, seeds 2 to 4, four spaces each, up to 30 jack sites). In the film’s aftershocks the pocket stayed open in 15 of 16 at 0.35 g and 13 of 16 at 0.50 g, the same with the shore and without it.')));
+      kids.push(real('a scan good enough to rebuild the pile piece by piece, and the mass and friction of each piece.', 'cracking, crushing and reinforcing bars, which this rigid-body model leaves out.'), sources('fema', 'fema2a', 'schweier', 'rapier'));
       el.replaceChildren(...kids);
     }
 
@@ -318,9 +319,9 @@ export default {
           h('td', null, h('b', null, v.id), v.id === S.boxVoid ? h('span.c-person', { title: 'The believed position is in this void' }, '  ●') : null), h('td.num', null, v.volume.toFixed(2)), h('td.num', null, (v.inscribed * 200).toFixed(0)), h('td.num', null, v.sealed ? 'sealed' : (v.throat * 200).toFixed(0)), h('td', null, v.person ? h('span.c-person', null, 'person-sized') : h('span.muted', null, 'small'))));
         kids.push(sec('Voids on this pile', vr.chambers ? vr.chambers + ' side chambers merged' : null,
           vr.voids.length ? h('div.structure-tablewrap', null, h('table.table.dense', null, h('thead', null, h('tr', null, h('th', null, 'Void'), h('th.num', null, 'm³'), h('th.num', { title: 'Diameter of the largest sphere that fits inside' }, 'sphere, cm'), h('th.num', { title: 'Diameter of the widest opening that leads out' }, 'way in, cm'), h('th', null, 'Size'))), h('tbody', null, rows))) : waiting('No roofed pocket wider than 40 cm was found in this pile.'),
-          (() => { const v = vr.voids.find((q) => q.id === S.selVoid); return v ? h('div.row', null, h('button.btn', { disabled: v.id === S.boxVoid && S.box?.user, onclick: () => { placeBox(v, true); refreshBase(); S.rank = null; S.plan = null; ctx.shell.toast('Believed position moved to ' + v.id + '. Lift and shake results now refer to it.', { level: 'ok' }); renderAll(); applyOverlays(); } }, icon('person'), 'Believe a person is in ' + v.id), h('span.caption', null, 'person-sized: a 50 cm sphere fits and the pocket is over 0.3 m³ (assumed)')) : null; })()));
+          (() => { const v = vr.voids.find((q) => q.id === S.selVoid); return v ? h('div.row', null, h('button.btn', { disabled: v.id === S.boxVoid && S.box?.user, onclick: () => { placeBox(v, true); refreshBase(); S.rank = null; S.plan = null; ctx.shell.toast('Believed position moved to ' + v.id + '. Lift and shake results now refer to it.', { level: 'ok' }); renderAll(); applyOverlays(); } }, icon('person'), 'Believe a person is in ' + v.id), h('span.caption', null, 'person-sized: a 50 cm sphere fits and the pocket is over 0.3 m³')) : null; })()));
       }
-      kids.push(real('a 3-D scan that sees inside the pile, from several sides or from within, at about the 10 cm used here.', 'whether any sensor can deliver that through concrete. A drone scan sees only the outside surface; this exhibit is handed the true geometry.'), sources('robins'));
+      kids.push(real('a 3-D scan that sees inside the pile, from several sides or from within, at about the 10 cm used here.', 'a sensor that delivers that through concrete. A drone scan sees the outside surface; this exhibit is handed the true geometry.'), sources('robins'));
       el.replaceChildren(...kids);
     }
 
@@ -357,7 +358,7 @@ export default {
         for (let s = 0; s < 8; s++) {
           const w = P.restoreWorld(snap), over = P.overhead(pile, w, S.box, snap.alive), pm = P.protectedMetrics(pile, w, S.box); w.free();
           if (pm.open >= 0.8) { plan.done = true; plan.note = 'After these lifts the believed position is open to the sky.'; break; }
-          if (!over.length) { plan.note = 'What is still overhead is standing frame. It cannot be lifted off; go in from the side.'; break; }
+          if (!over.length) { plan.note = 'What is still overhead is standing frame. Go in from the side.'; break; }
           const tried = [];
           for (const idx of over) { yield 'Step ' + (s + 1) + ': testing ' + pile.pieces[idx].id + ' (' + (tried.length + 1) + ' of ' + over.length + ')'; const r = yield* P.liftTrial(pile, snap, idx, { box: S.box, base, keep: true }); r.j = judge(r, control, base); tried.push(r); }
           tried.sort((a, b) => a.j.score - b.j.score);
@@ -420,7 +421,7 @@ export default {
               ...(r ? [h('dt', null, 'Pieces that move'), h('dd.num', null, r.j.moved.length + (r.j.moved.length ? ', largest ' + fcm(r.j.maxShift) : '')), h('dt', null, 'Energy released by the others'), h('dd.num', null, (r.energy / 1000).toFixed(2) + ' kJ'),
                 ...(r.prot && b ? [h('dt', null, 'Headroom over the person'), h('dd.num', { class: r.j.head > 0.1 ? 'structure-bad' : '' }, (b.headroom >= 7.9 ? 'open' : fcm(b.headroom)) + ' → ' + (r.prot.headroom >= 7.9 ? 'open sky' : fcm(r.prot.headroom))), h('dt', null, 'Protected volume entered'), h('dd.num', { class: r.j.intr > 0.02 ? 'structure-bad' : '' }, (r.j.intr * 100).toFixed(0) + ' %'), h('dt', null, 'Load on the void’s roof'), h('dd.num', { class: r.j.dLoad > 5000 ? 'structure-warn' : '' }, fkN(b.roofLoad) + ' → ' + fkN(r.roofLoad))] : [])] : [])),
             r && r.j.moved.length ? h('div.structure-moves', null, r.j.moved.slice(0, 5).map((m) => h('div', null, h('span', null, S.pile.pieces[m.idx].name), h('span.num', null, fcm(m.d)))), r.j.moved.length > 5 ? h('div', null, h('span.muted', null, 'and ' + (r.j.moved.length - 5) + ' more'), h('span')) : null) : null,
-            p.fixed ? h('p.caption', null, 'Part of the frame that is assumed to stand. It is held fixed in this model and cannot be lifted.') :
+            p.fixed ? h('p.caption', null, 'Part of the standing frame. It is held fixed in this model.') :
               h('div.row', null, h('button.btn', { onclick: () => testOne(idx) }, icon('flask'), r ? 'Test again' : 'Test this lift'), h('button.btn' + (r?.j.verdict === 'no' ? '.btn-danger' : ''), { onclick: () => liveLift(idx) }, icon('arrow-up'), 'Lift it for real'))));
         } else kids.push(h('p.caption', null, 'Click a piece in the 3-D view, or a row above, to see what its lift would disturb.'));
         // extraction order
@@ -481,7 +482,7 @@ export default {
         if (S.frag) { fragChart = makeChart(ctx.kit, c2, drawFragility); fragChart.update({ points: S.frag.points, mark: sh.pga }); }
         if (S.runs.length) kids.push(sec('Runs on this pile', 'newest first', h('div.structure-runs', null, S.runs.slice(0, 6).map((r) => h('div', null, h('span', null, r.label + (r.shores ? ' · ' + r.shores + ' shore' + (r.shores > 1 ? 's' : '') : ' · no shores') + (r.lifted ? ' · ' + r.lifted + ' lifted' : '')), h('span.num', null, 'stable ' + (100 * r.stable / r.n).toFixed(0) + ' %'), h('span.num', { class: r.comp ? 'structure-bad' : 'structure-ok' }, 'void hit ' + r.comp + '/' + r.n))))));
       }
-      kids.push(real('the pile model above, and a forecast of the aftershock: its strength at this site and its direction.', 'almost all of it. Aftershock ground motion at one address cannot be predicted, so this is a what-if, and the tremor here is two sine waves, not a recorded earthquake.'), sources('rapier'));
+      kids.push(real('the pile model above, and a forecast of the aftershock: its strength at this site and its direction.', 'almost all of it. This is a what-if: the tremor here is two sine waves.'), sources('rapier'));
       el.replaceChildren(...kids);
     }
 
@@ -508,14 +509,14 @@ export default {
         kids.push(h('div.row', null, h('div.seg', { role: 'radiogroup', 'aria-label': 'Kind of shore' }, Object.entries(P.SHORES).map(([id, s]) => h('button', { role: 'radio', 'aria-checked': String(S.shoreType === id), title: s.note, onclick: () => { S.shoreType = id; renderShore(); } }, id === 'post' ? 'Post shore' : 'Box crib'))), h('span.caption', null, T.note)),
           h('div.row', null, h('button.btn' + (S.shoreMode ? '' : '.btn-primary'), { 'aria-pressed': String(S.shoreMode), onclick: () => { S.shoreMode = !S.shoreMode; stage.dataset.mode = S.shoreMode ? 'shore' : ''; if (!S.shoreMode) view.showShorePreview(null); renderShore(); } }, icon('pin'), S.shoreMode ? 'Placing: click the pile (press again to stop)' : 'Place a shore by clicking'),
             h('button.btn', { disabled: !S.box, onclick: suggestShores }, icon('target'), 'Suggest two beside the void')),
-          S.shoreMode ? h('p.caption', null, 'Click the top of a slab to shore the gap under it, or a point inside the pile to shore the gap above it. Turn on “See through the pile” to reach inside.') : null);
+          S.shoreMode ? h('p.caption', null, 'Click the top of a slab to shore the gap under it, or a point inside the pile to shore the gap above it. Turn on “See through the pile” to reach inside.') : '');
         kids.push(sec('Shores in place', placed.length ? placed.length + ' placed' : null, placed.length ? h('div.structure-tablewrap', null, h('table.table.dense', null, h('thead', null, h('tr', null, h('th', null, 'Shore'), h('th.num', null, 'height'), h('th.num', { title: 'Downward contact force on the shore now. A solver estimate.' }, 'carrying'), h('th.num', null, 'rated'), h('th', null, ''))),
           h('tbody', null, placed.map((p) => { const load = S.con.loadAbove[p.idx] || 0, over = load > p.rated; return h('tr', { onclick: () => selectPiece(p.idx, true) }, h('td', null, h('b', null, p.id), ' ', p.sub === 'post' ? 'post' : 'crib'), h('td.num', null, p.height.toFixed(2) + ' m'), h('td.num', { class: over ? 'structure-bad' : load > 0 ? 'structure-ok' : '' }, fkN(load) + (over ? '  over' : '')), h('td.num', null, fkN(p.rated)),
             h('td', null, h('button.btn.btn-ghost.btn-sm', { 'aria-label': 'Remove shore ' + p.id, onclick: (e) => { e.stopPropagation(); S.history.push(P.snapshot(S.pile)); P.removePiece(S.pile, p.idx); S.phase = 'moving'; S.live = { type: 'settle', t0: S.pile.t }; S.quiet = 0; renderAll(); } }, icon('trash', 14)))); })))) : waiting('No shores yet. A shore that carries nothing now is still doing its job: it is there for when the pile moves.'),
           h('div.row', null, h('button.btn', { disabled: !S.history.length, onclick: undo }, icon('undo'), 'Undo last change'), h('button.btn', { onclick: () => setTab('shake') }, icon('waves'), 'Go to the shake test'))));
         if (S.runs.length > 1) { const a = S.runs.find((r) => r.shores > 0), b = S.runs.find((r) => r.shores === 0); if (a && b) kids.push(h('div.note' + (a.stable / a.n > b.stable / b.n ? '.ok' : '.warn'), null, icon('info'), h('span', null, h('b', null, 'Before and after shoring. '), b.label + ': stable in ' + b.stable + ' of ' + b.n + ', void hit in ' + b.comp + '. With ' + a.shores + ' shore' + (a.shores > 1 ? 's' : '') + ' (' + a.label + '): stable in ' + a.stable + ' of ' + a.n + ', void hit in ' + a.comp + '.'))); }
       }
-      kids.push(real('a way to get the timber to that spot, and a surface under it that can take the load.', 'here each shore is rigid and anchored and never fails; the page only compares the load it carries with the guide’s rated working load. Real shores are built to a pattern by trained crews and are checked by a structures specialist.'), sources('sog', 'mod4'));
+      kids.push(real('a way to get the timber to that spot, and a surface under it that can take the load.', 'here each shore is rigid and anchored; the page compares the load it carries with the guide’s rated working load. Real shores are built to a pattern by trained crews and are checked by a structures specialist.'), sources('sog', 'mod4'));
       el.replaceChildren(...kids);
     }
 
@@ -541,7 +542,8 @@ export default {
       if (wait) kids.push(wait);
       else {
         kids.push(h('div.row', null, h('button.btn' + (S.bots ? '' : '.btn-primary'), { disabled: !!S.botsRunning, onclick: planRoutes }, icon('route'), S.botsRunning ? 'Planning…' : S.bots ? 'Plan again' : 'Plan the routes'), S.bots ? h('span.caption', null, ROBOTS.map((b) => (S.bots.fields[b.id].expanded / 1000).toFixed(0) + 'k').join(' + ') + ' voxels searched in ' + (S.bots.ms / 1000).toFixed(1) + ' s') : null));
-        if (S.bots) {
+        if (S.bots && !S.bots.table.length) kids.push(waiting('No enclosed void is left on this pile, so there is nothing to route to. Undo the last change, or rebuild the bay.'));
+        else if (S.bots) {
           const cell = (r, b) => r ? h('td.num', { class: 'structure-ok', title: 'Path ' + r.length.toFixed(2) + ' m, tightest gap ' + (r.minClear * 200).toFixed(0) + ' cm' }, r.length.toFixed(1) + ' m') : h('td.num.structure-no', { title: b.label + ' cannot reach this void within its limits' }, 'no way in');
           kids.push(sec('Which voids each can reach', 'path length from open air',
             h('div.structure-tablewrap', null, h('table.table.dense', null, h('thead', null, h('tr', null, h('th', null, 'Void'), h('th.num', null, 'way in, cm'), ROBOTS.map((b) => h('th.num', null, b.label.replace(' robot', '').replace('HOUND ', ''))))),
@@ -553,7 +555,7 @@ export default {
         }
         kids.push(h('div.structure-bots', null, ROBOTS.map((b) => h('div.structure-bot', null, h('header', null, h('i', { style: { background: 'var(--' + b.color + ')' } }), b.label, h('div.grow'), b.id === 'rover' ? h('span.tag.plain', null, 'Exists') : realityTag('concept')), h('ul', null, b.spec.map((s) => h('li', null, s)))))));
       }
-      kids.push(real('the inside map again, and for the vine a pump, a reel and a tip camera that survive concrete edges; for the snake, grip on dust and a tether that does not snag.', 'whether either could follow a planned path without that map. In the field the map is exactly what the robot is being sent in to make. Carnegie Mellon’s team reported limited success in Mexico City in 2017, and SPROUT has so far been tried at a training site.'), sources('hawkes', 'sprout', 'snake', 'usnake'));
+      kids.push(real('the inside map again, and for the vine a pump, a reel and a tip camera that survive concrete edges; for the snake, grip on dust and a tether that does not snag.', 'following a planned path while the map is being made. Carnegie Mellon’s team took a snake robot into the 2017 Mexico City search, and SPROUT has been tried at a training site.'), sources('hawkes', 'sprout', 'snake', 'usnake'));
       el.replaceChildren(...kids);
     }
 

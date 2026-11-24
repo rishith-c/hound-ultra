@@ -77,7 +77,7 @@ export default function create(env) {
     let mx = 0, mn = 1; for (const q of best) if (q > 0) { mx = Math.max(mx, q); mn = Math.min(mn, q); } for (let q = 0; q < field.length; q++) field[q] = best[q] > 0 ? Math.pow((best[q] - mn) / (mx - mn || 1), 4) : 0;
     cv = L.gridImage(cv, field, CNX, CNZ, 'scan', 0.15, 1);
     M = { x, z, v, score: bs, cov: [H[0] * s2, H[1] * s2, H[2] * s2], sig: Math.sqrt(s2), err: Math.hypot(x - tap.x, z - tap.z), good: rs.filter((r) => Math.abs(r.e) < 0.001).length, dt: Math.sqrt(pairs.reduce((a, p) => a + (p[2] - p[3]) ** 2, 0) / pairs.length) };
-    M.ok = M.err < 1.5 && M.score > 0.42;
+    M.ok = M.err < 1;
   }
   function controls() {
     const go = ui.button({ label: 'Tap', ico: 'play', primary: true, title: 'Send one knock through the pile and watch it reach each sensor', onclick: () => { P.t = 0; P.playing = true; } });
@@ -129,9 +129,9 @@ export default function create(env) {
   }
   return {
     title: 'Seismic tap location', hardware: 'Rescue teams already carry listening sets. Solving for a position in the rubble is the concept part.',
-    lede: 'A knock on a slab travels through the rubble and reaches each sensor a few thousandths of a second apart. Lining the recordings up two at a time gives the delays, and only one place in the pile fits all of them.',
-    honest: 'someone has to be awake and knocking, the site has to go quiet, and the solver has to know how fast the pile carries sound. Switch to one average speed to see how much that costs. With six sensors and five knocks, three of the six piles we tried were misplaced by more than 4 m. The search stays above the floor slab, so a tap from the cellar would be misplaced. Surface waves, sensor coupling and people walking on the pile are not modelled.',
-    assumed: 'Assumed: wave speed 900 m/s in loose rubble, 3,800 in slab, 500 in soil; a 600 Hz knock; scattering coda of about 30 ms; noise levels. First arrivals bend through the true pile.',
+    lede: 'A knock on a slab travels through the rubble and reaches each sensor a few thousandths of a second apart. Lining the recordings up two at a time gives the delays, and the place that fits them best is the answer.',
+    honest: 'someone has to be awake and knocking, the site has to go quiet, and the solver has to know how fast the pile carries sound. Switch to one average speed to see how much that costs. With six sensors and five knocks, three of the six piles we tried were misplaced by more than 4 m, and on two of those the ellipse was far too small to warn of it. The search stays above the floor slab, so a tap from the cellar would be misplaced. Surface waves, sensor coupling and people walking on the pile are not modelled.',
+    assumed: 'Design values: wave speed 900 m/s in loose rubble, 3,800 in slab, 500 in soil; a 600 Hz knock; scattering coda of about 30 ms; noise levels. First arrivals bend through the true pile.',
     sources: [
       { who: 'Delsar Life Detector, Firehouse product page.', what: 'A fielded set: sensors that turn the collapsed structure “into a large sensitive microphone”; used by FEMA and UKSAR teams.', url: 'https://www.firehouse.com/rescue/technical-rescue/structural-collapse/product/10181928/con-space-communications-delsar-life-detector' },
       { who: 'Knapp and Carter, IEEE Trans. ASSP 24 (1976).', what: 'The generalised correlation method, the source of the PHAT weighting used here.', url: 'https://doi.org/10.1109/TASSP.1976.1162830' },
@@ -146,7 +146,7 @@ export default function create(env) {
       { k: 'Speed model', v: P.speed === 'plan' ? 'floor slab' : M.v.toFixed(0) + ' m/s', sub: P.speed === 'plan' ? 'rubble 900 m/s, slab 3,800 (assumed)' : 'one average, from hammer blows' },
       { k: 'Delay error', v: (M.dt * 1000).toFixed(1) + ' ms', sub: 'RMS over ' + pairs.length + ' pairs' },
     ],
-    row: { sees: 'A person who knocks. Not a silent person, not an empty void.', range: 'Metres to tens of metres, less with engines running', time: 'Minutes, after a call for silence', cost: 'Medium', costNote: 'commercial listening sets', ready: 5, readyNote: 'Listening sets are fielded. Automatic positioning is not part of the product cited.' },
+    row: { sees: 'A person who knocks. Not a silent person, not an empty void.', range: 'Metres to tens of metres, less with engines running', time: 'Minutes, after a call for silence', cost: 'Medium', costNote: 'commercial listening sets', ready: 4, readyNote: 'Listening sets are fielded. Automatic positioning is not part of the product cited.' },
     summary: () => (M.ok ? 'the tap, ' + M.err.toFixed(1) + ' m off' : 'the tap is misplaced by ' + M.err.toFixed(1) + ' m'),
   };
 }

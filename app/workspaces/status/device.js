@@ -10,7 +10,7 @@ export async function deviceReport() {
   const media = !!navigator.mediaDevices?.getUserMedia, mic = media ? await perm('microphone') : null, cam = media ? await perm('camera') : null, say = { granted: 'Allowed', denied: 'Blocked in this browser', prompt: 'Asks first' };
   add('Microphone', !media || mic === 'denied' ? 'no' : mic === 'granted' ? 'yes' : 'ask', media ? say[mic] || 'Asks first' : 'Not available', 'Tap detector, voice commands, voice lab', 'A generated knock can be played instead; commands can be typed.');
   add('Camera', !media || cam === 'denied' ? 'no' : cam === 'granted' ? 'yes' : 'ask', media ? say[cam] || 'Asks first' : 'Not available', 'Pulse from pixels', 'A generated clip is used.');
-  add('Bluetooth', navigator.bluetooth ? 'ask' : 'no', navigator.bluetooth ? 'Asks first' : 'Not in this browser', 'The link to a real rover', 'The console stays a simulation. The rover’s firmware has no Bluetooth yet either way.');
+  add('Bluetooth', navigator.bluetooth ? 'ask' : 'no', navigator.bluetooth ? 'Asks first' : 'Not in this browser', 'Nothing yet: a link to the rover is not built', 'No difference. The rover’s firmware has no Bluetooth either.');
   const voices = window.speechSynthesis?.getVoices?.().length || 0;
   add('Speech out', window.speechSynthesis ? 'yes' : 'no', window.speechSynthesis ? (voices ? voices + ' voices' : 'Available') : 'Not available', 'Spoken alerts, the reassurance message', 'Alerts stay on screen and reach screen readers.');
   add('Speech in', window.SpeechRecognition || window.webkitSpeechRecognition ? 'ask' : 'no', window.SpeechRecognition || window.webkitSpeechRecognition ? 'Asks first' : 'Not in this browser', 'Talking to the copilot', 'Type instead.');

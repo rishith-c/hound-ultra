@@ -155,7 +155,7 @@ export function createInspector(app) {
     const st = { unsearched: ['plain', 'Not searched'], clear: ['tag-ok', 'Clear'], lead: ['tag-warn', 'Lead open'], person: ['tag-person', 'Person found'], blocked: ['plain', 'Not reached'] }[cv.status];
     title.textContent = r.name; tagSlot.replaceChildren(h('span.tag.' + st[0], null, st[1]));
     const leads = S.detections.filter((d) => d.room === r.id);
-    const words = cv.status === 'clear' ? [h('b.num', null, pct(cv.residual)), h('div', null, h('span', null, 'chance left to check'), h('p', null, cv.note))]
+    const words = cv.status === 'clear' ? [h('b.num', null, pct(cv.residual)), h('div', null, h('span', null, 'chance a person is still here'), h('p', null, cv.note))]
       : cv.status === 'person' || cv.status === 'lead' ? [h('b.num', null, pct(cv.residual)), h('div', null, h('span', null, 'chance a person is here'), h('p', null, cv.note))]
       : [h('b.num', null, pct(cv.residual)), h('div', null, h('span', null, 'chance a person is here (start value)'), h('p', null, cv.note))];
     put(

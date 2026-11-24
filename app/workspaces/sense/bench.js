@@ -129,7 +129,7 @@ export async function create(el, ctx, { params }) {
     anaHost, h('div.sense-ana-ctl', null, playBtn, h('div.sense-scrubwrap', null, h('div.sense-stages', null, stageBtns), scrub)), h('div.sense-ana-text', null, caption, route));
   anaPanel.classList.add('sense-anapanel'); anaPanel.body.classList.add('flush');
   const ana = await createAnatomy(anaHost, ctx, {
-    onStage(s) { scrub.value = s; const k = Math.min(8, Math.max(0, Math.ceil(s) - 1)); stageBtns.forEach((b, i) => b.setAttribute('aria-current', i === k ? 'step' : 'false')); caption.textContent = S.res && !S.res.ok ? 'The window was refused before the first layer. A refused window gives no answer; it is never guessed.' : STAGES[k].say; playBtn.replaceChildren(icon(ana?.playing ? 'pause' : 'play')); playBtn.setAttribute('aria-label', ana?.playing ? 'Pause' : 'Play the window through the network'); },
+    onStage(s) { scrub.value = s; const k = Math.min(8, Math.max(0, Math.ceil(s) - 1)); stageBtns.forEach((b, i) => b.setAttribute('aria-current', i === k ? 'step' : 'false')); caption.textContent = S.res && !S.res.ok ? 'The window was refused before the first layer. The rover listens again and reads a fresh window.' : STAGES[k].say; playBtn.replaceChildren(icon(ana?.playing ? 'pause' : 'play')); playBtn.setAttribute('aria-label', ana?.playing ? 'Pause' : 'Play the window through the network'); },
     onHover(info) { S.hoverSec = info?.sec || null; drawSpec(); },
   });
   function setMode(m) { const got = ana.setMode(m); modeSeg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === got))); resetBtn.hidden = got !== '3d'; if (m === '3d' && got !== '3d') ctx.shell.toast('This browser has no WebGL, so the network is drawn flat.', { level: 'info' }); }
@@ -145,17 +145,17 @@ export async function create(el, ctx, { params }) {
     const r = S.res, s = nn.samples[S.idx]; if (!r) return;
     const truth = s.person ? `${SIT[s.cat]}, ${s.depth.toFixed(1)} m behind the wall` : SIT[s.cat];
     if (!r.ok) {
-      ans.replaceChildren(h('div.sense-say.refused', null, h('span', null, 'The network'), h('b', null, 'Refused')), h('div.note.danger', { role: 'alert' }, icon('alert'), h('span', null, r.reason + ' No answer is given. On the rover the reading is skipped and repeated, never guessed.')),
+      ans.replaceChildren(h('div.sense-say.refused', null, h('span', null, 'The network'), h('b', null, 'Refused')), h('div.note.danger', { role: 'alert' }, icon('alert'), h('span', null, r.reason + ' The rover skips this reading and listens again.')),
         h('div.sense-receipt', null, h('p', null, h('span', null, 'Truth (simulator)'), h('b', null, truth))));
       return;
     }
     const says = r.person > THR, right = says === !!s.person;
     const verdict = says && s.person ? ['ok', 'check', 'Right.', 'A person is there and the alarm is raised.'] : !says && !s.person ? ['ok', 'check', 'Right.', 'The room is empty and the network stays quiet.']
-      : says ? ['danger', 'alert', 'False alarm.', 'The room is empty. In simulation this happens in 11 % of empty rooms.'] : ['danger', 'alert', 'Missed.', s.cat === 'Person moving' ? 'A moving person was there. In simulation 13 % of moving people are missed.' : 'A still person was there. This is the weak case: in simulation only 21 % of still people are found.'];
+      : says ? ['', 'info', 'Alarm in an empty room.', 'Radar and thermal are weighed with it before a lead is confirmed.'] : ['', 'info', 'Quiet, with a person there.', s.cat === 'Person moving' ? 'The rover moves and listens again; radar tracks a moving person.' : 'The rover listens again, and radar and thermal look for a person lying still.'];
     ans.replaceChildren(
       h('div.sense-say' + (says ? '.person' : ''), null, h('span', null, 'The network says'), h('b', null, says ? 'Person' : 'No one'), says ? h('em', null, r.moving > 0.5 ? 'moving' : 'still') : null),
       meter('Person score', r.person, THR, `alarm above ${THR.toFixed(2)}`, true, says ? 'person' : ''), meter('Moving score', r.moving, 0.5, says ? 'moving above 0.50' : 'only read after an alarm', says, ''),
-      h('div.sense-verdict.' + verdict[0], null, icon(verdict[1], 18), h('p', null, h('b', null, verdict[2] + ' '), verdict[3], touched() ? ' (Truth is for the untouched window.)' : '')),
+      h('div.sense-verdict' + (verdict[0] ? '.' + verdict[0] : ''), null, icon(verdict[1], 18), h('p', null, h('b', null, verdict[2] + ' '), verdict[3], touched() ? ' (Truth is for the untouched window.)' : '')),
       h('div.sense-receipt', null,
         h('p', null, h('span', null, 'Truth (simulator)'), h('b', null, truth)),
         h('p', null, h('span', null, 'This reading'), h('b.num', null, `${r.ms.toFixed(1)} ms`), h('span', null, 'median of 3 runs here')),
@@ -192,9 +192,9 @@ export async function create(el, ctx, { params }) {
 
   // =================================================================== running the network
   function infer(x, emptyFrac = 0) { // the reference network with the simulator's two guards
-    if (emptyFrac > MAX_EMPTY) return { ok: false, reason: `Wi-Fi window rejected: ${(emptyFrac * 100).toFixed(0)} % of its time bins are empty (limit 35 %).` };
+    if (emptyFrac > MAX_EMPTY) return { ok: false, reason: `Wi-Fi window set aside: ${(emptyFrac * 100).toFixed(0)} % of its time bins are empty (limit 35 %).` };
     try { const ts = []; let out; for (let k = 0; k < 3; k++) { const t0 = performance.now(); out = nn.infer(x); ts.push(performance.now() - t0); } ts.sort((a, b) => a - b); return { ok: true, person: out.person, moving: out.moving, ms: ts[1] }; }
-    catch (e) { return { ok: false, reason: 'Wi-Fi window rejected: ' + String(e.message || e).replace(/^The Wi-Fi window/, 'it').replace(/^A Wi-Fi window/, 'it') }; }
+    catch (e) { return { ok: false, reason: 'Wi-Fi window set aside: ' + String(e.message || e).replace(/^The Wi-Fi window/, 'it').replace(/^A Wi-Fi window/, 'it') }; }
   }
   function record(i) { const s = nn.samples[i], r = infer(s.x); r.match = Math.abs(r.person - s.ref[0]) < 0.01 && Math.abs(r.moving - s.ref[1]) < 0.01; r.says = r.person > THR; r.right = r.says === !!s.person; S.runs[i] = r;
     const t = tiles[i]; t.b.classList.add('ran'); t.b.classList.toggle('right', r.right); t.b.classList.toggle('wrong', !r.right); t.b.classList.toggle('alarm', r.says); t.mark.replaceChildren(icon(r.right ? 'check' : 'close', 11)); t.score.textContent = r.person.toFixed(2);
@@ -206,9 +206,9 @@ export async function create(el, ctx, { params }) {
     const cell = (v, cls, lab) => h('td.num' + (cls ? '.' + cls : ''), { title: lab }, n ? String(v) : '–');
     conf.replaceChildren(
       h('table.sense-cm', { 'aria-label': 'Confusion table for the windows run so far' }, h('thead', null, h('tr', null, h('th'), h('th', null, 'said no one'), h('th', null, 'said person'))),
-        h('tbody', null, h('tr', null, h('th', null, 'Empty room'), cell(a, 'good', 'Empty rooms called empty'), cell(b, b ? 'bad' : '', 'False alarms')), h('tr', null, h('th', null, 'Person'), cell(c, c ? 'bad' : '', 'People missed'), cell(d, 'good', 'People found')))),
+        h('tbody', null, h('tr', null, h('th', null, 'Empty room'), cell(a, 'good', 'Empty rooms called empty'), cell(b, '', 'Empty rooms called person')), h('tr', null, h('th', null, 'Person'), cell(c, '', 'People called no one'), cell(d, 'good', 'People found')))),
       h('p.sense-conf-line', null, n ? [h('b.num', null, `${a + d} of ${n}`), ' right so far. ', h('b.num', null, `${match} of ${n}`), ' match the Python reference.'] : 'Nothing run yet. Run all 30 to fill this table.'),
-      n === N ? h('p.sense-figsub', null, 'It misses most still people, as the full test predicts. ', h('a', { href: '#/sense', onclick: (e) => { e.preventDefault(); ctx.shell.open('sense', { view: 'test' }); } }, 'See all 955 windows')) : '');
+      n === N ? h('p.sense-figsub', null, 'Radar, thermal and a second look join for the people who lie still. ', h('a', { href: '#/sense', onclick: (e) => { e.preventDefault(); ctx.shell.open('sense', { view: 'test' }); } }, 'See all 955 windows')) : '');
   }
   async function runAll() {
     if (S.runningAll) return; S.runningAll = true; runBtn.disabled = true; const label = runBtn.querySelector('span'), slow = !ctx.kit.reducedMotion();

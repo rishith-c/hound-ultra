@@ -22,9 +22,8 @@
   <section class="login-panel" aria-labelledby="login-title">
     <a class="nav-brand" href="./" aria-label="HOUND Command, back to the front page"><i aria-hidden="true"></i><b>HOUND</b><span>Command</span></a>
     <div class="login-form-wrap">
-      <div class="sec-no"><span class="num" id="login-clock">--:--</span><span id="login-date">Operator station</span><span class="rl rl-sim">Demo sign-in</span></div>
       <h1 id="login-title">Who is running this search?</h1>
-      <p class="login-lede">Your name goes on the mission log and on the hand-over report. Nothing else is asked for.</p>
+      <p class="login-lede"><span class="rl rl-sim">Demo sign-in</span>Your name goes on the mission log and on the hand-over report. Nothing else is asked for.</p>
       <form id="login-form" novalidate>
         <label for="login-name">Operator name</label>
         <div class="login-field">
@@ -65,8 +64,6 @@
     try { localStorage.removeItem(KEY); } catch { /* nothing stored */ }
     input.value = ''; forget.hidden = true; skip.textContent = 'Skip, and continue as Demo operator'; msg.textContent = 'Forgotten. This browser no longer holds a name.'; input.focus();
   });
-  const tick = () => { const d = new Date(); $('login-clock').textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); $('login-date').textContent = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + ', local time'; };
-  tick(); setInterval(tick, 15000);
 })();
 </script>
 </body>

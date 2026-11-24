@@ -37,6 +37,8 @@ export function createPlan(canvas, { scene, onPick, view = 'building', interacti
   const line = (pts) => { c.beginPath(); pts.forEach((p, i) => (i ? c.lineTo(sx(p[0]), sy(p[1])) : c.moveTo(sx(p[0]), sy(p[1])))); };
   function text(s, x, y, { size = 11, color = T.text2, align = 'left', base = 'alphabetic', weight = 500, mono = false, halo = true } = {}) {
     c.font = weight + ' ' + size + 'px ' + (mono ? T.mono : T.font); c.textAlign = align; c.textBaseline = base;
+    const tw = c.measureText(s).width, l = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;      // never run off the sheet
+    if (l + tw > W - 5 && l < W) x -= l + tw - W + 5; else if (l < 5 && l + tw > 0) x += 5 - l;
     if (halo) { c.lineWidth = 3; c.strokeStyle = alpha(T.bg0, 0.85); c.lineJoin = 'round'; c.strokeText(s, x, y); }
     c.fillStyle = color; c.fillText(s, x, y);
   }
@@ -117,6 +119,7 @@ export function createPlan(canvas, { scene, onPick, view = 'building', interacti
     if (sc.hazardLabels !== false) {
       const placed = [];
       for (const m of sc.markers || []) { const [mx, my] = P(m.pos); placed.push([mx - 16, my - 24, mx + 28 + (m.label ? m.label.length * 6.2 : 0), my + 14]); }
+      for (const r of ROOMS) if (!r.corridor) { const x = sx(r.rect[0]), y = sy(r.rect[3]); placed.push([x + 6, y + 7, x + 30, y + 22]); }
       if (sc.breach) { const st = P(sc.breach.stand); placed.push([st[0] - 60, st[1] - 24, st[0] + 60, st[1] + 24]); }
       for (const hz of [...(sc.hazards || []), ...HAZARDS].sort((a, b) => (b.block ? 1 : 0) - (a.block ? 1 : 0))) {
         const ys = hz.poly.map((p) => p[1]), xs = hz.poly.map((p) => p[0]); const x0 = sx(Math.min(...xs)), x1 = sx(Math.max(...xs)), y0 = sy(Math.max(...ys)), y1 = sy(Math.min(...ys));

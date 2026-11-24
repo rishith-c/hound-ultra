@@ -31,15 +31,22 @@ export async function startCommand() {
   let twin = null, showPlan = false;
   let twinOn = false;
   const q = new URLSearchParams(location.search).get('twin');
-  // Loaded beside the running mission, so the plan view plays while the 3-D site is being built.
+  // Loaded beside the running mission, so the plan view plays while the 3-D site is being built. Building it holds the
+  // page for moments at a time, so it waits until the reader is near and has stopped scrolling.
+  const still = (ms) => new Promise((done) => { let t = 0; const arm = () => { clearTimeout(t); t = setTimeout(() => { removeEventListener('scroll', arm); done(); }, ms); }; addEventListener('scroll', arm, { passive: true }); arm(); });
+  const near = () => { const r = stage.getBoundingClientRect(); return r.top < innerHeight * 1.6 && r.bottom > -innerHeight * 0.4; };
   async function loadTwin() {
     if (q === '1' || (CONFIG.twin && q !== '0')) {
       try {
+        do await still(800); while (!near());
         const mod = await import('../app/twin/index.js');
         twin = await mod.createTwin(twinHost, ctx, { interactive: false, quality: 'high', camera: 'cinematic', caption: false, autostart: false });
         if (!twin || twin.ok === false) { try { twin?.dispose?.(); } catch { /* nothing to release */ } throw new Error('the twin reported that it could not start'); }
         twin.setLayer?.('labels', false);
-        stage.classList.add('has-twin');
+        // hand the stage over between frames, with the plan hidden, so nothing is seen to jump
+        const frame = () => new Promise((r) => requestAnimationFrame(r));
+        plan.style.visibility = 'hidden'; await frame(); await frame();
+        stage.classList.add('has-twin'); await frame(); await frame(); plan.style.visibility = '';
         const mk = (label, plan_) => el('button', { type: 'button', 'aria-pressed': String(showPlan === plan_), onclick: () => { showPlan = plan_; stage.classList.toggle('show-plan', plan_); [...seg.children].forEach((b, i) => b.setAttribute('aria-pressed', String((i === 1) === plan_))); sizePlan(); syncTwin(); } }, label);
         const seg = el('div.lseg', { role: 'group', 'aria-label': 'Picture' }, mk('3-D twin', false), mk('Plan view', true));
         ui.view.replaceChildren(seg); ui.view.hidden = false;
@@ -223,7 +230,7 @@ export async function startCommand() {
   const findTitle = (d) => {
     const where = d.outdoor ? 'debris field' : d.room ? 'room ' + d.room : 'site';
     if (d.status === 'confirmed') return 'Person, ' + where;
-    if (d.status === 'rejected') return `Not a person, ${where}`;
+    if (d.status === 'rejected') return `Ruled out, ${where}`;
     return 'Possible person, ' + where;
   };
   const SHOWN = PHASES.filter((p) => p !== 'standby');
@@ -231,12 +238,11 @@ export async function startCommand() {
   const rooms = world.ROOMS.filter((r) => !r.corridor);
   const roomEls = Object.fromEntries(rooms.map((r) => [r.id, el('div', null, el('b', null, r.id), el('span', null, 'to search'))]));
   ui.rooms.replaceChildren(...rooms.map((r) => roomEls[r.id]));
-  // Which sensors raised the odds. A sensor that only lowered them is named as such.
+  // Which sensors raised the odds.
   const SN = { csi: 'Wi-Fi', radar: 'radar', micro: 'radar', thermal: 'thermal', aerial: 'drone image', human: 'rescue team' };
   function support(d) {
     const st = (d.steps || []).filter((s) => s.sensor), up = new Set(st.filter((s) => s.lr > 1.001).map((s) => SN[s.sensor] || s.sensor));
-    const csiNo = !up.has('Wi-Fi') && st.some((s) => s.sensor === 'csi' && s.lr < 0.999);
-    return [...up].join(', ') + (csiNo ? '. Wi-Fi said no one.' : '');
+    return [...up].join(', ');
   }
   let lastUi = 0, sig = '';
   function panels(force) {

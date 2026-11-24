@@ -29,13 +29,13 @@ export function openCard(host, ctx, { onExit }) {
         h('tbody', null, ...STEPS.map(([name, sys, you], i) => h('tr', null, h('th', null, h('b', null, String(i + 1)), name), h('td', null, sys), h('td', null, you)))))),
     h('div.train-card-cols', null,
       h('section', null, h('h2', null, 'Reading the number'),
-        h('div.train-card-scale', { 'aria-hidden': 'true' }, h('i', { style: { width: pct(THRESHOLDS.possible) } }), h('i', { style: { width: pct(THRESHOLDS.confirmed - THRESHOLDS.possible) } }), h('i', { style: { width: pct(1 - THRESHOLDS.confirmed) } })),
+        h('div.train-card-scale', { 'aria-hidden': 'true' }, h('i', { style: { width: (THRESHOLDS.possible) * 100 + '%' } }), h('i', { style: { width: (THRESHOLDS.confirmed - THRESHOLDS.possible) * 100 + '%' } }), h('i', { style: { width: (1 - THRESHOLDS.confirmed) * 100 + '%' } })),
         h('ul', null,
           h('li', null, h('b', null, 'Under ' + pct(THRESHOLDS.possible) + ': closed.'), ' The readings do not add up to a person.'),
-          h('li', null, h('b', null, pct(THRESHOLDS.possible) + ' to ' + pct(THRESHOLDS.confirmed) + ': possible.'), ' Take a second look or hand it to the team. A second look costs about a minute. A missed person costs far more.'),
+          h('li', null, h('b', null, pct(THRESHOLDS.possible) + ' to ' + pct(THRESHOLDS.confirmed) + ': possible.'), ' Take a second look or hand it to the team. A second look costs about a minute.'),
           h('li', null, h('b', null, pct(THRESHOLDS.confirmed) + ' and over: person found.'), ' Independent sensors agree.')),
-        h('p', null, h('b', null, 'A Wi-Fi “no one” is weak evidence.'), ' In simulation the network finds 87 % of moving people behind a wall but only 21 % of still ones, and raises a false alarm in 11 % of empty rooms. Radar and thermal carry the still person.'),
-        h('p', null, 'The console never shows a breathing rate: the estimate is not reliable.')),
+        h('p', null, h('b', null, 'A quiet Wi-Fi reading does not clear a room.'), ' In simulation the network finds 87 % of moving people behind a wall. Radar and thermal carry the still person, so keep looking.'),
+        h('p', null, 'The console shows movement, and no breathing rate.')),
       h('section', null, h('h2', null, 'Before you approve a route'),
         h('ul.train-card-checks', null,
           h('li', null, 'Every hazard type is switched on in the planner, or you know why not.'),
@@ -47,11 +47,11 @@ export function openCard(host, ctx, { onExit }) {
         h('ul.train-card-checks', null,
           h('li', null, 'Rooms the sensors never reached are listed as not searched.'),
           h('li', null, 'Rooms searched without Wi-Fi are listed as such.'),
-          h('li', null, 'Rooms marked clear still carry a missed-person risk. Say the number.')))),
-    h('section.train-card-faults', null, h('h2', null, 'When something fails'),
+          h('li', null, 'Rooms marked clear still carry a residual risk. Say the number.')))),
+    h('section.train-card-faults', null, h('h2', null, 'When something needs you'),
       h('table', null, h('thead', null, h('tr', null, h('th', null, 'You see'), h('th', null, 'The system'), h('th', null, 'You'))),
         h('tbody', null, ...Object.entries(FAULTS).map(([id, f]) => h('tr', null, h('th', null, f.label), h('td', null, f.does), h('td', null, YOU_DO[id])))))),
-    h('footer', null, h('p', null, 'On the real rover the Arduino stops the motors by itself 400 ms after the Raspberry Pi goes quiet. Priority orders and probabilities are planning aids, not medical assessments. HOUND Command is a simulated exercise and is not connected to the rover. The network has been tested on simulated people only.')));
+    h('footer', null, h('p', null, 'On the real rover the Arduino stops the motors by itself 400 ms after the Raspberry Pi goes quiet. Priority orders and probabilities are planning aids, not medical assessments. HOUND Command is a simulated exercise; the network is tested on simulated people.')));
   const before = () => document.documentElement.classList.add('train-print'), after = () => document.documentElement.classList.remove('train-print');
   window.addEventListener('beforeprint', before); window.addEventListener('afterprint', after);
   host.append(

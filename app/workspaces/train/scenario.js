@@ -18,7 +18,7 @@ export const LEVELS = [
     sub: 'The scripted building, no faults. A coach explains each decision as it comes.',
     facts: ['Scripted Wi-Fi windows', 'No faults', 'Coach on'] },
   { id: 2, name: 'Noisy sensors', windows: 'random', faults: 1, preset: { slope: false }, slide: false, coach: false,
-    sub: 'Random Wi-Fi windows, so the network misses and false-alarms at its measured rates. One fault. The planner was left on a shortcut.',
+    sub: 'Random Wi-Fi windows from the 30 stored test windows, so the network can miss people and raise false alarms. One fault. The planner was left on a shortcut.',
     facts: ['Random Wi-Fi windows', 'One fault', 'Planner preset to check'] },
   { id: 3, name: 'Bad day', windows: 'random', faults: 2, preset: { slope: false }, slide: true, coach: false,
     sub: 'Random windows, two faults, a planner preset to catch, and a second slide after you plan.',

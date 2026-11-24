@@ -40,21 +40,25 @@ export default {
     }
     let estAt = -99;
     // grid posterior for each phone: position from signal strengths, depth unknown and averaged over
-    function estimate(now) {
-      estAt = now; est = D.ph.map((p, i) => {
-        const obs = D.heard[i].filter((o) => o[0] <= now); if (obs.length < 3) return { n: obs.length };
+    let gen = null;
+    function estimate(now, atOnce) { estAt = now; gen = solver(now, D); if (atOnce) { while (!gen.next(Infinity).done); gen = null; } }
+    function advance() { if (gen && gen.next(4).done) gen = null; }          // about 4 ms of work a frame, so the page never stalls
+    function* solver(now, D) {
+      const out = []; let budget = 4, t0 = performance.now(); for (let i = 0; i < D.ph.length; i++) { const p = D.ph[i];
+        const obs = D.heard[i].filter((o) => o[0] <= now); if (obs.length < 3) { out.push({ n: obs.length }); continue; }
         const st = Math.max(1, Math.floor(obs.length / 60)), use = obs.filter((_, k) => k % st === 0), lp = new Float32Array(GX * GY).fill(-1e9);
-        for (const z of DEPTHS) for (let j = 0; j < GY; j++) for (let q = 0; q < GX; q++) { const x = (q + 0.5) * W / GX, y = (j + 0.5) * H / GY; let m = 0; const e = []; for (const o of use) { const v = o[3] - (TXP - loss(Math.hypot(o[1] - x, o[2] - y), z, P.att)); e.push(v); m += v; } m = clamp(m / e.length, -8, 8); let s = -m * m / 18; for (const v of e) s -= ((v - m) ** 2) / 72; const k = j * GX + q; if (s > lp[k]) lp[k] = s; }
+        for (const z of DEPTHS) for (let j = 0; j < GY; j++) { if (performance.now() - t0 > budget) { budget = (yield) ?? 4; t0 = performance.now(); } for (let q = 0; q < GX; q++) { const x = (q + 0.5) * W / GX, y = (j + 0.5) * H / GY; let m = 0; const e = []; for (const o of use) { const v = o[3] - (TXP - loss(Math.hypot(o[1] - x, o[2] - y), z, P.att)); e.push(v); m += v; } m = clamp(m / e.length, -8, 8); let s = -m * m / 18; for (const v of e) s -= ((v - m) ** 2) / 72; const k = j * GX + q; if (s > lp[k]) lp[k] = s; } }
         let mx = -1e9; for (const v of lp) if (v > mx) mx = v; let sx = 0, sy = 0, sw = 0; for (let k = 0; k < lp.length; k++) { const w = Math.exp(lp[k] - mx); lp[k] = w; sw += w; sx += w * ((k % GX) + 0.5) * W / GX; sy += w * (Math.floor(k / GX) + 0.5) * H / GY; }
-        const x = sx / sw, y = sy / sw; return { n: obs.length, x, y, err: Math.hypot(x - p.x, y - p.y), lp };
-      });
+        const x = sx / sw, y = sy / sw; out.push({ n: obs.length, x, y, err: Math.hypot(x - p.x, y - p.y), lp });
+      }
+      est = out;
       const post = L.raster(GX, GY), tk = L.tokens().rgb.accent; post.paint((k) => { const j = GY - 1 - Math.floor(k / GX), q = k % GX; let v = 0; for (const e of est) if (e.lp) v = Math.max(v, e.lp[j * GX + q]); return [tk[0], tk[1], tk[2], 150 * v]; }); D.post = post; paint();
     }
     function trials() {                              // repeated searches: chance that a phone at each depth is heard three times
-      const id = ++job, ns = [1, 2, 4, 8, 16, 32], zs = [1, 2, 4], T = 24; curve = { ns, zs, p: zs.map(() => []) }; let a = 0;
-      const step = () => { if (id !== job) return; const n = ns[a], R = L.rng(700 + a); const c = zs.map(() => 0);
-        for (let k = 0; k < T; k++) { const tr = walkers(n, P.mins * 60, R); zs.forEach((z, zi) => { const x = 5 + 50 * R(), y = 5 + 30 * R(), sh = 3 * R.n(); let m = 0; for (let s = 0; s <= P.mins * 60 && m < 3; s++) for (const w of tr) { const d = Math.hypot(w[2 * s] - x, w[2 * s + 1] - y); if (TXP - loss(d, z, P.att) + sh + 4 * R.n() > SENS) m++; } if (m >= 3) c[zi]++; }); }
-        zs.forEach((_, zi) => curve.p[zi].push(c[zi] / T)); fPr.redraw(); if (++a < ns.length) setTimeout(step, 30); else paint(); };
+      const id = ++job, ns = [1, 2, 4, 8, 16, 32], zs = [1, 2, 4], T = 24; curve = { ns, zs, p: zs.map(() => []) }; let a = 0, k = 0, R = L.rng(700), c = zs.map(() => 0);
+      const step = () => { if (id !== job) return; const n = ns[a], t0 = performance.now();   // a few milliseconds at a time, so the page never stalls
+        for (; k < T; k++) { if (performance.now() - t0 > 5) { setTimeout(step, 16); return; } const tr = walkers(n, P.mins * 60, R); zs.forEach((z, zi) => { const x = 5 + 50 * R(), y = 5 + 30 * R(), sh = 3 * R.n(); let m = 0; for (let s = 0; s <= P.mins * 60 && m < 3; s++) for (const w of tr) { const d = Math.hypot(w[2 * s] - x, w[2 * s + 1] - y); if (TXP - loss(d, z, P.att) + sh + 4 * R.n() > SENS) m++; } if (m >= 3) c[zi]++; }); }
+        zs.forEach((_, zi) => curve.p[zi].push(c[zi] / T)); fPr.redraw(); if (++a < ns.length) { k = 0; R = L.rng(700 + a); c = zs.map(() => 0); setTimeout(step, 30); } else paint(); };
       setTimeout(step, 30);
     }
     const rubble = (() => { const R = L.rng(31); return Array.from({ length: 420 }, () => { const x = R() * W, y = R() * H, s = 0.4 + 2.2 * R() ** 2, a = R() * 3; return { p: Array.from({ length: 5 }, (_, k) => [x + Math.cos(a + k * 1.256) * s * (0.6 + 0.5 * R()), y + Math.sin(a + k * 1.256) * s * (0.5 + 0.5 * R())]), l: R() }; }); })();
@@ -78,16 +82,16 @@ export default {
     fRs.draw = (g, w, h) => { const Pl = L.plot(g, L.pad(w, h, { t: 18 }), { xd: [0, 24], yd: [-100, -40], xlabel: 'distance along the ground, m' }); L.text(g, 'signal strength, dBm', 46, 11, { color: 'text3', size: 11 }); D.heard.forEach((a, i) => { const p = D.ph[i]; g.fillStyle = L.rgba(i < 2 ? 'accent' : 'sim', 0.45); for (let k = 0; k < a.length; k += 2) { const o = a[k], tr = D.tr[o[4]]; if (o[0] > t) break; const d = Math.hypot(tr[2 * o[0]] - p.x, tr[2 * o[0] + 1] - p.y); if (d < 24) g.fillRect(Pl.X(d) - 1, Pl.Y(o[3]) - 1, 2, 2); } }); const xs = Array.from({ length: 50 }, (_, i) => i * 0.48); for (const z of [0.5, 2, 4]) L.trace(g, Pl, xs, xs.map((x) => TXP - loss(x, z, P.att)), { color: 'text2', dash: [4, 3], width: 1 }); L.rule(g, Pl, { y: SENS, label: 'too faint to hear (assumed)', color: 'warn' }); };
     const sN = L.stat('phones located'), sE = L.stat('median position error', { unit: 'm' }), sW = L.stat('worst position error', { unit: 'm' }), sM = L.stat('messages heard');
     function paint() { const ok = est.filter((e) => e.err != null), er = ok.map((e) => e.err).sort((a, b) => a - b); sN.set(ok.length + ' of ' + D.ph.length); sN.tone(ok.length === D.ph.length ? 'ok' : 'warn'); sE.set(L.fix(er.length ? er[er.length >> 1] : NaN)); sW.set(L.fix(er.length ? er[er.length - 1] : NaN)); sM.set(est.reduce((s, e) => s + (e.n || 0), 0).toLocaleString('en-US'));
-      fMap.setTitle(ok.length + ' of ' + D.ph.length + ' buried phones located after ' + (t / 60).toFixed(1) + ' minutes' + (er.length ? ', median error ' + er[er.length >> 1].toFixed(1) + ' m' : '')); fMap.setNote('A simulated pile, 60 by 40 m. Each message must beat the rubble (' + P.att + ' dB a metre, assumed). Blue glow: where the estimate puts a phone. The estimate is told the true loss rate, which a real search would not know.');
-      fPr.setNote('Chance that a phone is heard three times in ' + P.mins + ' minutes: 24 simulated searches each.'); fRs.setTitle('One metre of rubble costs as much signal as stepping back from 1 to ' + (10 ** (P.att / 20)).toFixed(P.att < 20 ? 1 : 0) + ' m in open air'); fRs.setNote('Dashed: the assumed loss for 0.5, 2 and 4 m of cover.'); fRs.redraw(); }
+      fMap.setTitle(ok.length + ' of ' + D.ph.length + ' buried phones located after ' + (t / 60).toFixed(1) + ' minutes' + (er.length ? ', median error ' + er[er.length >> 1].toFixed(1) + ' m' : '')); fMap.setNote('A simulated pile, 60 by 40 m. Each message must beat the rubble (' + P.att + ' dB a metre). Blue glow: where the estimate puts a phone. The estimate is told the true loss rate, which a real search would not know.');
+      fPr.setNote('Chance that a phone is heard three times in ' + P.mins + ' minutes: 24 simulated searches each.'); fRs.setTitle('One metre of rubble costs as much signal as stepping back from 1 to ' + (10 ** (P.att / 20)).toFixed(P.att < 20 ? 1 : 0) + ' m in open air'); fRs.setNote('Dashed: the modelled loss for 0.5, 2 and 4 m of cover.'); fRs.redraw(); }
     const re = L.soon(() => { build(); estimate(t); fMap.redraw(); trials(); });
     readout.append(L.h('h4', null, 'Measured against the simulated truth'), sN.el, sM.el, sE.el, sW.el);
     controls.append(
       L.slider({ label: 'Phones passing over the pile', min: 1, max: 32, step: 1, value: P.n, onInput: (v) => { P.n = v; re(); } }).el,
-      L.slider({ label: 'Rubble loss (assumed)', min: 2, max: 40, step: 1, value: P.att, unit: 'dB/m', onInput: (v) => { P.att = v; re(); } }).el,
+      L.slider({ label: 'Rubble loss', min: 2, max: 40, step: 1, value: P.att, unit: 'dB/m', onInput: (v) => { P.att = v; re(); } }).el,
       L.row(L.button({ label: 'Start over', icon: 'reset', onClick: () => { t = 0; P.seed++; build(); est = []; D.post = null; estimate(0); } })));
-    build(); t = 30; estimate(t); trials();
-    const loop = L.loop((dt) => { if (t < D.secs) { t = Math.min(D.secs, t + dt * 20); if (t - estAt > 30 || t === D.secs) estimate(t); } fMap.redraw(); });
-    return { start() { if (L.reduced()) { t = D.secs; estimate(t); } loop.start(); }, stop() { loop.stop(); } };
+    build(); t = 30; estimate(t, L.reduced()); trials();
+    const loop = L.loop((dt) => { if (t < D.secs) { t = Math.min(D.secs, t + dt * 20); if (!gen && t - estAt > 30 || t === D.secs) estimate(t); } advance(); fMap.redraw(); });
+    return { start() { if (L.reduced()) { t = D.secs; estimate(t, true); } loop.start(); }, stop() { loop.stop(); } };
   },
 };

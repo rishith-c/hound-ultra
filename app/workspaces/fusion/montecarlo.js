@@ -55,16 +55,8 @@ export function createMonteCarlo(host, ctx) {
   function conclusion(res) {
     const n = res.runs, pc = (k) => ((k / n) * 100).toFixed(0) + ' %';
     const ppl = TRUTH.people.map((p) => ({ d: describe(p), r: res.people[p.id] }));
-    const missed = ppl.filter((x) => x.r.missed > 0);
-    const say = (x) => x.d.short + (x.r.confirmed === n ? ' was confirmed by the sensors every time'
-      : x.r.flagged === n ? ' always needed the team’s eyes'
-        : !x.r.missed ? ' was confirmed by the sensors in ' + pc(x.r.confirmed) + ' of runs and handed to the team in the rest'
-          : ' was confirmed in ' + pc(x.r.confirmed) + ', handed to the team in ' + pc(x.r.flagged) + ' and missed in ' + pc(x.r.missed));
-    const head = missed.length ? 'In ' + n + ' simulated missions someone was missed ' + missed.reduce((s, x) => s + x.r.missed, 0) + ' time' + (missed.reduce((s, x) => s + x.r.missed, 0) > 1 ? 's' : '') + '. ' : 'In ' + n + ' simulated missions nobody was missed. ';
-    const body = ppl.map(say).join('; ') + '. ';
-    const fc = res.outcomes.filter((o) => o.falseConfirmed > 0).length;
-    const tail = res.falseConfirmed ? 'But a lead with no person behind it was wrongly confirmed in ' + fc + ' of the ' + n + ' missions.' : 'No lead without a person behind it was ever confirmed.';
-    return head + body.charAt(0).toUpperCase() + body.slice(1) + tail;
+    const sum = (k) => ppl.reduce((s, x) => s + x.r[k], 0), fc = res.outcomes.filter((o) => o.falseConfirmed > 0).length, w = res.wastedVisits || 0, m = sum('missed'), of = n * ppl.length;
+    return 'In ' + n + ' simulated missions ' + (m ? m + ' of ' + of + ' people were missed' : 'nobody was missed') + (fc ? ', a place with no one in it was confirmed in ' + fc + ' of them' : ', no empty place was ever confirmed as a person') + ', and the sensors alone confirmed ' + sum('confirmed') + ' of ' + of + ' people while the rescue team’s eyes settled ' + sum('flagged') + ' more' + (w ? ', at the cost of ' + w + ' visits that found no one.' : '.');
   }
 
   const emptyRows = () => h('div.fusion-mc-rows.is-empty', { 'aria-hidden': 'true' }, ...TRUTH.people.map((p) => { const d = describe(p); return h('div.fusion-mc-row', null, h('div.fusion-mc-who', null, h('b', null, d.who), h('span.dim', null, d.where)), h('div.fusion-mc-barwrap', null, h('div.fusion-mc-bar.is-empty')), h('div.fusion-mc-sum', null, h('span.dim', null, state === 'running' ? 'counting' : 'not run yet'))); }));
@@ -85,12 +77,12 @@ export function createMonteCarlo(host, ctx) {
     if (!result) {
       stage.replaceChildren(h('div.fusion-mc-idle', null,
         error ? h('div.note.danger', null, 'The run stopped: ' + error + '. Try again.') : null,
-        h('p', null, 'One mission is one story. The Wi-Fi network misses most still people, so the same search can go differently each time. This runs the whole mission again and again, each time drawing a random held-out test window at every stop, and counts what happened to each of the three people.'),
+        h('p', null, 'One mission is one story. Each run meets different Wi-Fi signals. This runs the whole mission again and again, each time drawing a random held-out test window at every stop, and counts what happened to each of the three people.'),
         h('ul.fusion-mc-list', null,
           h('li', null, h('i', { 'data-c': 'person' }), h('span', null, h('b', null, 'Confirmed by sensors: '), 'reached 85 % from the rover or the drone alone.')),
           h('li', null, h('i', { 'data-c': 'warn' }), h('span', null, h('b', null, 'Flagged for a team check: '), 'stayed between 15 % and 85 %, so people were sent to look.')),
-          h('li', null, h('i', { 'data-c': 'danger' }), h('span', null, h('b', null, 'Missed: '), 'never raised, or wrongly closed. This is the failure that matters.'))),
-        h('p.dim', null, 'People and decoys stay where they are in every run; radar and thermal likelihoods are assumed. So this measures how the fusion logic copes with an unreliable network in this scenario, not how the rover would do in a real building.'),
+          h('li', null, h('i', { 'data-c': 'danger' }), h('span', null, h('b', null, 'Missed: '), 'never raised, or closed with a person there. The number to keep at zero.'))),
+        h('p.dim', null, 'People and decoys stay where they are in every run; radar and thermal likelihoods are design values. This measures the fusion logic, in this simulated scenario.'),
         emptyRows()));
       return;
     }
@@ -108,13 +100,13 @@ export function createMonteCarlo(host, ctx) {
     });
     const fcRuns = res.outcomes.filter((o) => o.falseConfirmed > 0).length, fcCi = wilson(fcRuns, n), fcStrip = h('canvas.fusion-mc-strip', { 'aria-hidden': 'true' }); strips.set('fc', fcStrip);
     rows.push(h('div.fusion-mc-row.is-fc', null,
-      h('div.fusion-mc-who', null, h('b', null, 'No one there'), h('span.dim', null, 'the fan, the hot pipe, or a false alarm')),
+      h('div.fusion-mc-who', null, h('b', null, 'No one there'), h('span.dim', null, 'the fan, the hot pipe, or an empty room')),
       h('div.fusion-mc-barwrap', null,
-        h('div.fusion-mc-bar', { role: 'img', 'aria-label': 'Missions with a false confirmation: ' + fcRuns + ' of ' + n },
+        h('div.fusion-mc-bar', { role: 'img', 'aria-label': 'Missions that confirmed an empty place: ' + fcRuns + ' of ' + n },
           fcRuns ? h('i', { 'data-c': 'danger', style: { flex: fcRuns + ' 0 0' }, title: 'A lead with no person behind it reached 85 %: ' + fcRuns + ' of ' + n + ' missions' }, h('span.num', null, ((fcRuns / n) * 100).toFixed(0) + ' %')) : null,
           n - fcRuns ? h('i', { 'data-c': 'quiet', style: { flex: n - fcRuns + ' 0 0' }, title: 'Never confirmed: ' + (n - fcRuns) + ' of ' + n + ' missions' }, h('span.num', null, (((n - fcRuns) / n) * 100).toFixed(0) + ' % never confirmed')) : null),
         fcStrip),
-      h('div.fusion-mc-sum.num', null, h('b', null, fcRuns + ' of ' + n + ' wrong'), h('span.dim', null, 'wrongly confirmed: ' + (fcCi[0] * 100).toFixed(1).replace('.0', '') + ' to ' + (fcCi[1] * 100).toFixed(1) + ' %, 95 % interval'))));
+      h('div.fusion-mc-sum.num', null, h('b', null, fcRuns + ' of ' + n + ' confirmed'), h('span.dim', null, 'confirmed with no one there: ' + (fcCi[0] * 100).toFixed(1).replace('.0', '') + ' to ' + (fcCi[1] * 100).toFixed(1) + ' %, 95 % interval'))));
     const hist = h('canvas.fusion-mc-hist', { role: 'img', 'aria-label': 'Histogram of simulated mission time, from ' + fmt.clock(tmin) + ' to ' + fmt.clock(tmax) });
     strips.set('hist', hist);
     stage.replaceChildren(
@@ -123,9 +115,9 @@ export function createMonteCarlo(host, ctx) {
       h('div.fusion-mc-rows', null, ...rows),
       h('div.fusion-mc-stats', null,
         h('div.stat', null, h('b', null, fmt.clock(res.meanTime)), h('span', null, 'mean mission time, in simulated minutes and seconds')),
-        h('div.stat', null, h('b', null, String(res.falseConfirmed)), h('span', null, 'false confirmations in all, across ' + n + ' missions')),
+        h('div.stat', null, h('b', null, String(res.wastedVisits || 0)), h('span', null, 'team visits that found no one, across ' + n + ' missions')),
         h('figure.fusion-mc-histfig', null, h('figcaption', null, h('b', null, 'How long a mission takes: '), 'a second look or a longer walk adds minutes'), hist)),
-      h('p.dim.fusion-mc-foot', null, n + ' missions simulated in ' + (res.ms / 1000).toFixed(1) + ' s in a background thread. Random held-out Wi-Fi windows; the same building, people and decoys each time; radar and thermal likelihoods are assumed. Scored against the simulation’s ground truth, which the console itself never sees. A result about this scenario, not about a real building.'));
+      h('p.dim.fusion-mc-foot', null, n + ' missions simulated in ' + (res.ms / 1000).toFixed(1) + ' s in a background thread. Random held-out Wi-Fi windows; the same building, people and decoys each time; radar and thermal likelihoods are design values. Scored against the simulation’s ground truth, which the console itself never sees. A result about this simulated scenario.'));
     requestAnimationFrame(paintCanvases);
   }
   function fit(cv) { const r = cv.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1); if (!r.width) return null; cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); return { c, w: r.width, h: r.height }; }
@@ -147,7 +139,7 @@ export function createMonteCarlo(host, ctx) {
       c.fillStyle = T.line2; c.fillRect(l, top + ph, pw, 1);
       cnt.forEach((k, i) => { if (!k) return; const bh = Math.max(2, (k / m) * ph); c.fillStyle = rgba(T.text2, 0.85); c.fillRect(l + i * bw + 1, top + ph - bh, Math.max(1, bw - 2), bh); });
       c.font = '500 10px ' + T.mono; c.fillStyle = T.text3; c.textBaseline = 'top';
-      for (let t = lo; t <= hi; t += 60) { const x = l + ((t - lo) / (hi - lo)) * pw; c.fillStyle = T.line2; c.fillRect(Math.round(x), top + ph, 1, 4); c.fillStyle = T.text3; c.textAlign = t === lo ? 'left' : t === hi ? 'right' : 'center'; c.fillText(fmt.clock(t), x, top + ph + 6); }
+      const every = Math.max(1, Math.ceil(((hi - lo) / 60) * 44 / pw)) * 60; for (let t = lo; t <= hi; t += 60) { const x = l + ((t - lo) / (hi - lo)) * pw; c.fillStyle = T.line2; c.fillRect(Math.round(x), top + ph, 1, 4); c.fillStyle = T.text3; c.textAlign = t === lo ? 'left' : t === hi ? 'right' : 'center'; if ((t - lo) % every === 0 && (t === lo || hi - t >= every || t === hi)) c.fillText(fmt.clock(t), x, top + ph + 6); }
       const mx = l + ((result.meanTime - lo) / (hi - lo)) * pw; c.fillStyle = T.accent; c.fillRect(mx - 0.75, top - 2, 1.5, ph + 2);
       c.font = '600 10px ' + T.font; c.textBaseline = 'bottom'; c.textAlign = mx > f.w - 70 ? 'right' : 'left'; c.fillText('mean ' + fmt.clock(result.meanTime), mx + (mx > f.w - 70 ? -5 : 5), top - 1);
     }

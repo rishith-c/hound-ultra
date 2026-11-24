@@ -16,8 +16,8 @@ export async function create(el, env) {
   let img = null;
   const settleCv = h('canvas.forge-plot'), settle = plotter(settleCv, { l: 40 }), agreeCv = h('canvas.forge-plot'), agree = plotter(agreeCv, { l: 40 }), workCv = h('canvas.forge-plot'), work = plotter(workCv, { l: 46 });
   const verdict = h('div.forge-live-sum', { role: 'status', 'aria-live': 'polite' });
-  const rateEls = ['conv 1', 'conv 2', 'conv 3', 'hidden'].map((n) => { const b = h('b.num', null, '–'); return { el: h('div', null, b, h('span', null, n + ', spikes per neuron per step')), b }; });
-  const sFig = fig('–', '', 'synaptic events so far, this window', null, 'page', 'sm'), stepFig = fig('0', '', 'time step', null, 'page', 'sm');
+  const rateEls = ['conv 1', 'conv 2', 'conv 3', 'hidden'].map((n) => { const b = h('b.num', null, '…'); return { el: h('div', null, b, h('span', null, n + ', spikes per neuron per step')), b }; });
+  const sFig = fig('…', '', 'synaptic events so far, this window', null, 'page', 'sm'), stepFig = fig('0', '', 'time step', null, 'page', 'sm');
   const kSeg = seg('Kind of window', KIND.map((k, i) => [i, k]), kind, (v) => { kind = +v; pos = 0; load(); });
   const tSeg = seg('Time steps', [[64, '64'], [128, '128'], [256, '256']], Tmax, (v) => { Tmax = +v; load(); });
   const label = h('span.forge-win-cap');
@@ -52,16 +52,16 @@ export async function create(el, env) {
   function staticPlots() {
     agree.set({ x: { min: 1, max: 512, log: true, ticks: S.rows.map((r) => r.T), label: 'time steps' }, y: { min: 0.4, max: 1, ticks: [0.4, 0.6, 0.8, 1], fmt: (v) => Math.round(v * 100) + '', label: '% of windows' },
       vlines: [{ at: Tmax, color: '--accent', dash: [] }], hlines: [{ at: doc.repro.test.accuracy, color: '--text-3', label: 'ordinary network’s accuracy ' + pct(doc.repro.test.accuracy), align: 'left' }],
-      series: [{ pts: S.rows.map((r) => [r.T, r.agree]), color: '--text', dots: 2.6, label: 'same answer as the ordinary network', labelAt: [S.rows[3].T, S.rows[3].agree], dy: -6 }, { pts: S.rows.map((r) => [r.T, r.accuracy]), color: '--accent', dots: 2.6, label: 'right answer', labelAt: 'start', dy: 16 }] });
+      series: [{ pts: S.rows.map((r) => [r.T, r.agree]), color: '--text', dots: 2.6, label: 'same answer as the ordinary network', labelAt: [S.rows[3].T, S.rows[3].agree], dy: -6 }, { pts: S.rows.map((r) => [r.T, r.accuracy]), color: '--accent', dots: 2.6, label: 'right answer', labelAt: [S.rows[6].T, S.rows[6].accuracy], dy: 20 }] });
     const ys = [4, 5, 6, 7, 8].filter((e) => e <= Math.ceil(lg(S.rows[S.rows.length - 1].synops)) + 0.01);
     work.set({ x: { min: 1, max: 512, log: true, ticks: S.rows.map((r) => r.T), label: 'time steps' }, y: { min: 3.5, max: ys[ys.length - 1] + 0.2, ticks: ys, fmt: (v) => (v >= 6 ? Math.pow(10, v - 6) + ' M' : Math.pow(10, v - 3) + ' k'), label: 'operations per reading' },
       vlines: [{ at: Tmax, color: '--accent', dash: [] }], hlines: [{ at: lg(rest), color: '--ok', label: 'ordinary network, layers after conv 1: ' + fmtInt(rest) + ' multiply-adds', align: 'left' }],
-      series: [{ pts: S.rows.map((r) => [r.T, lg(r.synops)]), color: '--person', dots: 2.6, label: 'spiking: synaptic events', labelAt: [S.rows[4].T, lg(S.rows[4].synops)], dy: -6 }],
+      series: [{ pts: S.rows.map((r) => [r.T, lg(r.synops)]), color: '--person', dots: 2.6, label: 'spiking: synaptic events', labelAt: [S.rows[4].T, lg(S.rows[4].synops)], dy: 26 }],
       points: t ? [{ x: Math.max(1, t), y: lg(snn.synops), color: '--accent', r: 4.5, ring: true, label: 'this window' }] : [] });
   }
   function drawSettle() {
     const last = trace[trace.length - 1];
-    settle.set({ x: { min: 0, max: Tmax, ticks: [0, Tmax / 4, Tmax / 2, 3 * Tmax / 4, Tmax], label: 'time step' }, y: { min: 0, max: 1, ticks: [0, 0.5, 1], fmt: (v) => v.toFixed(1), label: 'P(person)' },
+    settle.set({ x: { min: 0, max: Tmax, ticks: [0, Tmax / 4, Tmax / 2, 3 * Tmax / 4, Tmax], label: 'time step' }, y: { min: 0, max: 1.18, ticks: [0, 0.5, 1], fmt: (v) => v.toFixed(1), label: 'P(person)' },
       hlines: [{ at: thr, color: '--text-3', label: 'threshold ' + thr.toFixed(2), align: 'left' }, { at: annP, color: '--text', dash: [5, 3], label: 'ordinary network ' + annP.toFixed(2) }],
       series: [{ pts: trace, color: '--person', width: 1.8 }], points: last ? [{ x: last[0], y: last[1], color: '--person', r: 3.5 }] : [] });
   }
@@ -76,7 +76,7 @@ export async function create(el, env) {
   function stepOnce() { snn.step(); t = snn.t; paintColumn(); trace.push([t, snn.read().person]); }
   function finishFrame() {
     raster.getContext('2d').putImageData(img, 0, 0); drawSettle();
-    stepFig.set(String(t)); sFig.set(fmtInt(snn.synops)); rateEls.forEach((r, i) => { r.b.textContent = t ? (snn.spikes[i] / (snn.neurons[i] * t)).toFixed(3) : '–'; });
+    stepFig.set(String(t)); sFig.set(fmtInt(snn.synops)); rateEls.forEach((r, i) => { r.b.textContent = t ? (snn.spikes[i] / (snn.neurons[i] * t)).toFixed(3) : '…'; });
     if (t >= Tmax) {
       const p = trace[trace.length - 1][1], same = (p > thr) === (annP > thr), truth = bte.kind[byK[kind][pos]] > 0;
       verdict.className = 'forge-live-sum ' + (same ? 'ok' : 'bad');

@@ -33,21 +33,25 @@ export function inkOrder(sheet, press, scale = 0.9) {
   const svg = [...clone.querySelectorAll('svg')].sort((a, b) => b.getBoundingClientRect().width * b.getBoundingClientRect().height - a.getBoundingClientRect().width * a.getBoundingClientRect().height)[0];
   if (!svg) { press.replaceChildren(); return c; }
   const sr = svg.getBoundingClientRect(), bx = (sr.left - R0.left) * k, by = (sr.top - R0.top) * k, bw = sr.width * k, bh = sr.height * k;
-  const gr = g.createLinearGradient(bx, by, bx + bw, by + bh); gr.addColorStop(0, '#080808'); gr.addColorStop(1, '#d0d0d0'); g.fillStyle = gr; g.fillRect(bx, by, bw, bh);
-  const els = [...svg.querySelectorAll('path,line,polyline,polygon,rect,circle,ellipse,text')].filter((e) => !e.closest('defs,marker,pattern,clipPath'));
-  const info = els.map((e) => { let L = 0; try { L = e.tagName === 'text' ? e.getBBox().width * 1.5 : e.getTotalLength(); } catch { L = 30; } return { e, L: Math.max(8, Math.min(900, L || 8)) }; });
-  let tot = 0; for (const o of info) { o.w = Math.sqrt(o.L) + 2; tot += o.w; }
-  let acc = 0; const col = (v) => { const n = Math.round(8 + Math.min(1, Math.max(0, v)) * 244); return 'rgb(' + n + ',' + n + ',' + n + ')'; };
-  for (const o of info) {
-    const a = acc / tot, d = Math.max(0.035, (o.w / tot) * 3); acc += o.w; const m = o.e.getScreenCTM(); if (!m) continue;
-    const X = (p) => (m.a * p.x + m.c * p.y + m.e - R0.left) * k, Y = (p) => (m.b * p.x + m.d * p.y + m.f - R0.top) * k, r = o.e.getBoundingClientRect();
-    const st = getComputedStyle(o.e), filled = o.e.tagName === 'text' || (st.fill && st.fill !== 'none');
-    if (r.width * r.height * k * k < bw * bh * 0.5 && filled) { const x = (r.left - R0.left) * k, y = (r.top - R0.top) * k; const fg = g.createLinearGradient(x, 0, x + r.width * k, 0); fg.addColorStop(0, col(a * 0.94)); fg.addColorStop(1, col((a + d) * 0.94)); g.fillStyle = fg; g.fillRect(x - 2, y - 2, r.width * k + 4, r.height * k + 4); }
-    if (o.e.tagName === 'text') continue;
-    let L = 0; try { L = o.e.getTotalLength(); } catch { continue; } const n = Math.max(2, Math.min(60, Math.round(L / 5))), w = Math.max(3.5, (parseFloat(st.strokeWidth) || 1) * Math.hypot(m.a, m.b) * k + 2.5);
-    g.lineCap = 'round'; g.lineWidth = w; let p = o.e.getPointAtLength(0);
-    for (let i = 1; i <= n; i++) { const q = o.e.getPointAtLength((L * i) / n); if (Math.hypot(q.x - p.x, q.y - p.y) < (L / n) * 1.5) { g.strokeStyle = col((a + d * (i / n)) * 0.94); g.beginPath(); g.moveTo(X(p), Y(p)); g.lineTo(X(q), Y(q)); g.stroke(); } p = q; }
-  }
+  // Four passes, like a draughtsman: walls line by line (0 to 0.36), one wash of tone and lettering across the sheet
+  // (0.36 to 0.6), the route along its length (0.62 to 0.9), then the people.
+  const col = (v) => { const n = Math.round(6 + Math.min(1, Math.max(0, v)) * 244); return 'rgb(' + n + ',' + n + ',' + n + ')'; };
+  const gr = g.createLinearGradient(bx, by + bh * 0.2, bx + bw, by + bh * 0.8); gr.addColorStop(0, col(0.36)); gr.addColorStop(1, col(0.6)); g.fillStyle = gr; g.fillRect(bx, by, bw, bh);
+  const els = [...svg.querySelectorAll('path,line,polyline,polygon,rect,circle,ellipse')].filter((e) => !e.closest('defs,marker,pattern,clipPath')).map((e) => { const st = getComputedStyle(e), m = /(\d+)\D+(\d+)\D+(\d+)/.exec(st.stroke || ''), cls = (e.getAttribute('class') || '') + ' ' + (e.parentNode.getAttribute?.('class') || ''); let L = 0; try { L = e.getTotalLength(); } catch { L = 0; } return { e, st, L, cls, dark: !!m && +m[1] + +m[2] + +m[3] < 150, sw: parseFloat(st.strokeWidth) || 0 }; });
+  const route = els.filter((o) => /route/.test(o.cls) && o.L > 20 && o.st.stroke !== 'none'), walls = els.filter((o) => o.dark && o.sw >= 1.2 && o.L > 6 && !route.includes(o) && !/trail|stop|arrow/.test(o.cls)), people = els.filter((o) => /circle|ellipse/.test(o.e.tagName) && o.st.fill !== 'none' && o.e.getBoundingClientRect().width * k > 7);
+  const pen = (list, v0, v1) => {
+    const tot = list.reduce((s, o) => s + Math.sqrt(o.L) + 1, 0) || 1; let acc = 0;
+    for (const o of list) {
+      const a = v0 + ((v1 - v0) * acc) / tot, w = Math.sqrt(o.L) + 1, d = ((v1 - v0) * w) / tot; acc += w; const m = o.e.getScreenCTM(); if (!m) continue;
+      const X = (p) => (m.a * p.x + m.c * p.y + m.e - R0.left) * k, Y = (p) => (m.b * p.x + m.d * p.y + m.f - R0.top) * k, n = Math.max(2, Math.min(90, Math.round(o.L / 4))); g.lineCap = 'butt'; g.lineWidth = Math.max(2.6, o.sw * Math.hypot(m.a, m.b) * k + 2.6); let p = o.e.getPointAtLength(0);
+      for (let i = 1; i <= n; i++) { const q = o.e.getPointAtLength((o.L * i) / n); if (Math.hypot(q.x - p.x, q.y - p.y) < (o.L / n) * 1.5) { g.strokeStyle = col(a + (d * i) / n); g.beginPath(); g.moveTo(X(p), Y(p)); g.lineTo(X(q), Y(q)); g.stroke(); } p = q; }
+    }
+  };
+  g.save(); g.beginPath(); g.rect(bx, by, bw, bh); g.clip();
+  pen(walls, 0.01, 0.36); pen(route, 0.62, 0.9);
+  people.forEach((o, i) => { const r = o.e.getBoundingClientRect(); g.fillStyle = col(0.92 + 0.06 * (i / Math.max(1, people.length))); g.beginPath(); g.ellipse((r.left - R0.left + r.width / 2) * k, (r.top - R0.top + r.height / 2) * k, (r.width * k) / 2 + 1, (r.height * k) / 2 + 1, 0, 0, 7); g.fill(); });
+  g.restore();
+  c.dataset.ink = walls.length + ' walls, ' + route.length + ' route, ' + people.length + ' people';
   press.replaceChildren();
   return c;
 }

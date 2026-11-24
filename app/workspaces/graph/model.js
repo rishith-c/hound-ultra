@@ -79,7 +79,10 @@ export function buildGraph(S, world, { commandLog = [] } = {}) {
   // Rooms
   for (const r of world.ROOMS) {
     if (r.corridor) continue;
-    const c = S.coverage[r.id] || { status: 'unsearched', residual: PRIOR, reach: 0, note: '' };
+    let c = S.coverage[r.id] || { status: 'unsearched', residual: PRIOR, reach: 0, note: '' };
+    // A second look updates the lead but not state.coverage (see orchestration/requests), so a confirmed lead wins here.
+    const found = S.detections.find((d) => d.room === r.id && d.status === 'confirmed');
+    if (found && c.status !== 'person') c = { ...c, status: 'person', residual: found.p, note: 'Person confirmed at ' + pct(found.p) + '.' };
     node('RM:' + r.id, 'room', { label: r.id, long: r.name, sub: ({ unsearched: 'Not searched yet', clear: 'Searched, no one detected', lead: 'Possible person', person: 'Person found', blocked: 'Could not be searched' })[c.status] || c.status, status: c.status, t: c.t ?? null, lane: r.id, ref: { type: 'room', id: r.id }, pos: [(r.rect[0] + r.rect[2]) / 2, (r.rect[1] + r.rect[3]) / 2], data: { room: r, cov: c } });
   }
 
@@ -144,7 +147,7 @@ export function buildGraph(S, world, { commandLog = [] } = {}) {
   }
   for (const [s, v] of sensorSeen) {
     const info = SENSOR_INFO[s] || { short: s, name: LR[s]?.label || s, real: 'sim', what: '' };
-    node('SN:' + s, 'sensor', { label: info.name, sub: v.n + (v.n === 1 ? ' reading' : ' readings') + (LR[s] ? LR[s].assumed ? ' · weight assumed' : ' · weight measured' : ''), sensor: s, t: null, status: info.real, data: { id: s, info, lr: LR[s], n: v.n } });
+    node('SN:' + s, 'sensor', { label: info.name, sub: v.n + (v.n === 1 ? ' reading' : ' readings') + (LR[s] ? LR[s].assumed ? ' · design-value weight' : ' · weight measured' : ''), sensor: s, t: null, status: info.real, data: { id: s, info, lr: LR[s], n: v.n } });
     edge('U:' + v.unit, 'SN:' + s, 'carries');
   }
   for (const n of [...nodes.values()]) if (n.type === 'reading') edge(n.id, 'SN:' + n.sensor, 'by');

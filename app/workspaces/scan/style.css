@@ -183,18 +183,25 @@
 :root[data-mode="demo"] .scan-veil { background: transparent; place-items: center; }
 :root[data-mode="demo"] .scan-veilbox { background: transparent; border: 0; box-shadow: none; }
 .scan-film { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
-.scan-film::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 46%; background: linear-gradient(to top, color-mix(in srgb, var(--bg-0) 88%, transparent), transparent); }
-.scan-film-text { position: absolute; left: 40px; bottom: 34px; width: min(520px, 42vw); display: flex; flex-direction: column; gap: 10px; }
+.scan-film::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 62%; background: radial-gradient(52% 78% at 0% 100%, color-mix(in srgb, var(--bg-0) 96%, transparent) 30%, transparent), radial-gradient(48% 92% at 100% 100%, color-mix(in srgb, var(--bg-0) 96%, transparent) 34%, transparent), linear-gradient(to top, color-mix(in srgb, var(--bg-0) 70%, transparent), transparent 46%); }
+.scan-film-text { position: absolute; left: 40px; bottom: 32px; width: min(900px, 62vw); display: flex; flex-direction: column; gap: 12px; }
+.scan-film-tags { display: flex; gap: 6px; }
+.scan-film-tags > span:empty { display: none; }
 .scan-film-text h1 { font: var(--type-display); font-size: 46px; }
-.scan-film-text p { font-size: var(--fs-16); line-height: 1.4; color: var(--text-2); min-height: 2.8em; max-width: 46ch; }
+.scan-film-text p { font-size: var(--fs-16); line-height: 1.4; color: var(--text-2); min-height: 1.4em; }
 .scan-film-text p.in { animation: scan-in var(--t-slow) var(--ease); }
 @keyframes scan-in { from { opacity: 0; transform: translateY(6px); } }
 .scan-film-text .btn { pointer-events: auto; }
-.scan-film-text .row { gap: 10px; }
-.scan-film-right { position: absolute; right: 40px; bottom: 34px; display: flex; flex-direction: column; align-items: flex-end; gap: 22px; }
-.scan-film-figs { display: flex; gap: 34px; text-align: right; }
-.scan-film-figs b { display: block; font-size: 26px; font-weight: 500; letter-spacing: -0.03em; color: var(--text); }
-.scan-film-figs span { font-size: var(--fs-12); color: var(--text-2); }
+.scan-film-text .row { gap: 28px; align-items: center; margin-top: 4px; }
+.scan-film-right { position: absolute; right: 40px; bottom: 32px; display: flex; flex-direction: column; align-items: flex-end; gap: 20px; }
+.scan-film-figs { display: flex; gap: 40px; text-align: right; }
+.scan-film-figs div { min-width: 104px; }
+.scan-film-figs b { display: block; font: 400 var(--fs-40)/1 var(--font-display); font-variant-numeric: lining-nums tabular-nums; letter-spacing: 0; color: var(--text); white-space: nowrap; margin-bottom: 6px; }
+.scan-film-figs span { font-size: var(--fs-12); color: var(--text-2); white-space: nowrap; }
+.scan-strip { width: 420px; transition: opacity 600ms var(--ease); }
+.scan-strip.is-off { opacity: 0; }
+.scan-strip canvas { display: block; width: 420px; height: 172px; }
+.scan-strip div { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 6px; font-size: var(--fs-12); color: var(--text-2); }
 .scan-film-dots { display: flex; gap: 8px; pointer-events: auto; }
 .scan-film-dots button { width: 84px; padding: 6px 0 0; border: 0; background: none; color: var(--text-3); font-size: var(--fs-12); text-align: left; cursor: pointer; transition: color var(--t-fast) var(--ease); }
 .scan-film-dots button:hover, .scan-film-dots button[aria-current] { color: var(--text); }

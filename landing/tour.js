@@ -7,9 +7,9 @@ const FALLBACK = [
   { id: 'area', title: 'Valley', group: 'Operate', reality: 'real-data', blurb: 'The real valley in 3-D: terrain, satellite imagery, the flood, and where the search is.' },
   { id: 'mission', title: 'Mission', group: 'Operate', reality: 'sim', blurb: 'Run the search in the 3-D twin, from drone survey to rescue.' },
   { id: 'triage', title: 'Triage', group: 'Operate', reality: 'live-algo', blurb: 'Who to reach first, and where to break through. A planning aid, not a medical assessment.' },
-  { id: 'swarm', title: 'Swarm', group: 'Operate', reality: 'concept', blurb: 'Several rovers and drones sharing one search. Only one rover exists.' },
-  { id: 'sense', title: 'Wi-Fi AI', group: 'Sense', reality: 'live-ai', blurb: 'The neural network that senses people through walls, running live, with its explanation and its limits.' },
-  { id: 'fusion', title: 'Fusion', group: 'Sense', reality: 'live-algo', blurb: 'How several weak sensors add up to one confident answer, step by step.' },
+  { id: 'swarm', title: 'Swarm', group: 'Operate', reality: 'concept', blurb: 'Several rovers and drones sharing one search.' },
+  { id: 'sense', title: 'Wi-Fi AI', group: 'Sense', reality: 'live-ai', blurb: 'The neural network that senses people through walls, running live, with its explanation.' },
+  { id: 'fusion', title: 'Fusion', group: 'Sense', reality: 'live-algo', blurb: 'How Wi-Fi, radar and heat add up to one confident answer, step by step.' },
   { id: 'aerial', title: 'Drone imagery', group: 'Sense', reality: 'live-ai', blurb: 'Find people in aerial pictures with a detector that runs in the browser.' },
   { id: 'scan', title: '3-D scan', group: 'Sense', reality: 'live-algo', blurb: 'Turn a drone scan into a map and look for survivable spaces.' },
   { id: 'signals', title: 'Signals', group: 'Sense', reality: 'device', blurb: 'Listen for tapping with your microphone; locate phones by signal strength.' },
@@ -20,7 +20,7 @@ const FALLBACK = [
   { id: 'copilot', title: 'Copilot', group: 'System', reality: 'live-ai', blurb: 'Ask in plain words. A language model on this computer turns it into actions.' },
   { id: 'status', title: 'System check', group: 'System', reality: 'live-algo', blurb: 'Self-tests, fault drills and the full list of what is real.' },
 ];
-const REALITY = { 'live-ai': ['Live AI', 'rl-live-ai'], 'live-algo': ['Live algorithm', 'rl-live-algo'], 'real-data': ['Real data', 'rl-real'], device: ['Your device', 'rl-real'], sim: ['Simulated', 'rl-sim'], concept: ['Concept', 'rl-concept'] };
+const REALITY = { 'live-ai': ['Live AI', 'rl-live-ai'], 'live-algo': ['Live algorithm', 'rl-live-algo'], 'real-data': ['Real data', 'rl-real'], device: ['Your device', 'rl-real'], sim: ['Simulated', 'rl-sim'], concept: ['Concept', 'rl-concept'], built: ['Built', 'rl-real'] };
 const tag = (kind) => el('span.rl.' + REALITY[kind][1], null, REALITY[kind][0]);
 
 // The console's own list, read from app/shell.js as text, so this page cannot fall out of step with it.
@@ -35,7 +35,7 @@ async function readManifest() {
 }
 const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty', 'twenty-one', 'twenty-two', 'twenty-three', 'twenty-four', 'twenty-five', 'twenty-six', 'twenty-seven', 'twenty-eight', 'twenty-nine', 'thirty'];
 
-export async function startTour({ assignReveals }) {
+export async function startTour() {
   const list = document.querySelector('#tour-list'), frame = document.querySelector('#tour-frame');
   let WORKSPACES = (await readManifest()) || FALLBACK;
   let caps = {};
@@ -51,7 +51,7 @@ export async function startTour({ assignReveals }) {
   const shot = el('div.tf-shot'), cap = el('div.tf-cap');
   frame.append(shot, cap);
   const imgs = {}, items = {};
-  let current = null, hoverUntil = 0;
+  let current = null;
   function show(id) {
     if (id === current) return; current = id;
     const w = WORKSPACES.find((x) => x.id === id), c = caps[id];
@@ -63,19 +63,10 @@ export async function startTour({ assignReveals }) {
       const on = () => { if (current === id) im.classList.add('on'); };
       im.complete ? requestAnimationFrame(on) : im.addEventListener('load', on, { once: true });
     } else shot.append(el('div.tf-none', null, el('b', null, w.blurb), el('span', null, 'There was no capture of this workspace when the page was built. Open it in the console to see it.')));
-    cap.replaceChildren(el('span', null, c ? `${w.title}. A capture of the running console${c.note ? ', ' + c.note : ''}.` : w.title + '.'), tag(w.reality), el('a', { href: 'app/#/' + w.id }, 'Open ' + w.title));
+    cap.replaceChildren(tag(w.reality), el('span', null, w.blurb + (c?.note ? ' ' + c.note + '.' : '')), el('a', { href: 'app/#/' + w.id }, 'Open ' + w.title));
   }
-  const groups = [...new Set(WORKSPACES.map((w) => w.group))];
-  let n = 0;
-  list.append(...groups.map((gname) => el('div.tour-group', null, el('h3', null, gname),
-    WORKSPACES.filter((w) => w.group === gname).map((w) => {
-      const b = el('button.tour-item', { type: 'button', 'aria-pressed': 'false', onclick: () => { hoverUntil = performance.now() + 4000; show(w.id); }, onpointerenter: () => { hoverUntil = performance.now() + 1200; show(w.id); }, onfocus: () => show(w.id) },
-        el('span.n', null, String(++n).padStart(2, '0')), el('b', null, w.title), tag(w.reality), el('p', null, el('span', null, w.blurb)));
-      items[w.id] = b; return b;
-    }))));
-  assignReveals?.(list);
-  // While scrolling, the item crossing the middle of the screen is the one shown.
-  const io = new IntersectionObserver((es) => { if (performance.now() < hoverUntil) return; for (const e of es) if (e.isIntersecting) show(e.target.dataset.id); }, { rootMargin: '-46% 0px -46% 0px' });
-  Object.entries(items).forEach(([id, b]) => { b.dataset.id = id; io.observe(b); });
+  // Two columns of names; the one pointed at, focused or clicked is shown large.
+  list.style.gridTemplateRows = `repeat(${Math.ceil(WORKSPACES.length / 2)}, auto)`;
+  list.append(...WORKSPACES.map((w) => items[w.id] = el('button.tour-item', { type: 'button', 'aria-pressed': 'false', onclick: () => show(w.id), onpointerenter: () => show(w.id), onfocus: () => show(w.id) }, w.title)));
   show(caps.mission ? 'mission' : WORKSPACES.find((w) => caps[w.id])?.id || 'mission');
 }

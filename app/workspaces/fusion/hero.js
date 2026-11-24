@@ -3,6 +3,7 @@
 // sensor away with the chips fuses the same evidence again without it. Nothing here reads the truth.
 import { createEngine } from '../../core/sim.js';
 import { fuse, THRESHOLDS } from '../../core/fusion.js';
+import { SHAFT_M } from './util.js';
 
 const STORIES = [
   { det: 'D2', name: 'A machine', cam: { az: -0.5, el: 0.6, dist: 25, h: 2.5 }, glass: [[57.4, 41.2], 4.6], turn: 0.4 },
@@ -22,14 +23,15 @@ const ease = (x) => { x = clamp(x); return x * x * x * (x * (x * 6 - 15) + 10); 
 const word = (p) => (p >= THRESHOLDS.confirmed ? 'confirmed' : p >= THRESHOLDS.possible ? 'possible' : 'closed');
 
 async function record(nn) { // run the scripted mission once and keep every reading with where the rover stood
-  const e = createEngine({ nn, keep: { autoplay: true } }), got = {}, cov = {};
+  const e = createEngine({ nn, keep: { autoplay: true } }), got = {}, cov = {}; let was = {};
   for (let g = 0; !e.done && g < 40000; g++) {
     e.step(); const S = e.state, r = S.units['HOUND-01'];
     for (const d of S.detections) {
       const L = got[d.id] ||= []; if (L.length === d.evidence.length) continue;
-      if (!cov[d.id]) cov[d.id] = Object.fromEntries(Object.entries(S.coverage).map(([k, c]) => [k, typeof c.residual === 'number' && (c.seen || c.reach > 0 || c.residual !== 0.1) ? c.residual : 0.1]));
+      if (!cov[d.id]) cov[d.id] = was; // what each room stood at just before this lead's first reading
       while (L.length < d.evidence.length) L.push({ ev: { ...d.evidence[L.length] }, pos: d.pos.slice(), rover: r.pos.slice(), t: S.t, room: d.room });
     }
+    was = Object.fromEntries(Object.entries(S.coverage).map(([k, c]) => [k, c.residual ?? 0.1]));
     if (g % 1500 === 1499) await new Promise((r2) => setTimeout(r2));
   }
   return { got, cov };
@@ -44,10 +46,11 @@ export async function createHero(host, ctx, { openEvidence }) {
   const chips = CHIPS.map(([id, label]) => h('button.fusion-hero-chip', { type: 'button', 'aria-pressed': 'true', 'data-sensor': id, title: 'Take this sensor away, or put it back', onclick: () => toggle(id) }, h('i'), label));
   host.classList.add('fusion-hero');
   host.append(stage, h('div.fusion-hero-veil'), num, g85, g15,
-    h('div.fusion-hero-title', null, h('div.tags', null, realityTag('live-algo'), h('span.tag.tag-sim', null, 'Simulated readings')), h('h2', null, 'Weak signals, one answer'), h('p', null, 'Each sensor moves the odds. Height is the chance of a person.')),
+    h('div.fusion-hero-title', null, h('div.tags', null, realityTag('live-algo'), h('span.tag.tag-sim', null, 'Simulated readings')), h('h2', null, 'Three sensors, one answer'), h('p', null, 'Each sensor moves the odds. Height is the chance of a person.')),
     now,
     h('div.fusion-hero-side', null, h('div.fusion-hero-chips', { role: 'group', 'aria-label': 'Sensors in the sum' }, h('span', null, 'Take one away'), chips), h('div.fusion-hero-steps', { role: 'group', 'aria-label': 'Choose a lead' }, steps, hold)));
 
+  for (const r of ctx.world.ROOMS) if (!r.corridor) { const el = h('div.fusion-hero-prior', { 'aria-hidden': 'true' }, '10 %'); el.roomId = r.id; priors.push(el); host.insertBefore(el, num); }
   const rec = await record(ctx.nn);
   const off = new Set();
   const stories = STORIES.filter((s) => rec.got[s.det]).map((s) => {
@@ -99,7 +102,7 @@ export async function createHero(host, ctx, { openEvidence }) {
     closeCam(s, 0, c1); const o = stories[(si + stories.length - 1) % stories.length]; closeCam(o, 0, c0); c0.az += 0.16; c0.dist *= 0.72;
     if (T < INTRO) { if (firstRun) mix(WIDE, c1, span(T, 0.7, INTRO), cam); else if (T < 1.4) mix(c0, WIDE, ease(T / 1.4) , cam); else mix(WIDE, c1, span(T, 1.5, INTRO + 0.2), cam); if (!firstRun && T >= 1.4 && T < 1.5) mix(c0, WIDE, 1, cam); }
     else Object.assign(cam, c1);
-    const go2 = span(T, INTRO, s.len), push = span(T, s.end - 1.2, s.end + 2.6); cam.az += T < INTRO ? 0 : 0.16 * clamp((T - INTRO) / (s.len - INTRO)); cam.dist *= 1 - 0.10 * go2 * (T >= INTRO ? 1 : 0) - 0.2 * push; cam.h -= 0.35 * push;
+    const go2 = span(T, INTRO, s.len), push = span(T, s.end - 1.2, s.end + 2.6); cam.az += T < INTRO ? 0 : 0.16 * clamp((T - INTRO) / (s.len - INTRO)); cam.dist *= 1 - 0.10 * go2 * (T >= INTRO ? 1 : 0) - 0.08 * push; cam.h += 0.15 * push;
     P.dof = 0.85 * (1 - wideK);
   }
   let firstRun = true;
@@ -109,29 +112,32 @@ export async function createHero(host, ctx, { openEvidence }) {
   const pc = (p) => Math.round(p * 100) + ' %';
   function words() {
     const s = stories[si], ps = path(s), B = s.beats; let n = -1; for (let i = 0; i < B.length; i++) if (T >= B[i].t0) n = i;
-    if (n < 0) return say(T < INTRO - 1 ? 'Before any reading, every room is 10 %' : 'One room, one question', 'assumed');
-    if (T >= s.end - 0.1) { const p = finalP(s), w = word(p), neg = B.filter((x) => x.ev.sensor === 'csi' && x.ev.result === 'neg').length, gone = CHIPS.filter(([id]) => off.has(id) && B.some((x) => GROUP[x.ev.sensor] === id)).map(([, l]) => l);
-      if (gone.length) return say('Without ' + gone.join(' and ') + ': ' + pc(p), w === 'confirmed' ? 'still confirmed' : w === 'possible' ? 'possible, needs a second look' : 'closed');
-      return s.det === 'D2' ? say('Ruled out at ' + pc(p), 'the other sensors disagreed') : s.det === 'D4' ? say('Found at ' + pc(p), 'Wi-Fi alone missed it ' + (neg === 3 ? 'three times' : neg + ' times')) : say('Found at ' + pc(p), 'Wi-Fi and radar agree through the wall'); }
-    const b = B[n], gone = off.has(GROUP[b.ev.sensor]); const st = fuse([b.ev]).steps[0];
+    if (n < 0) return say(T >= INTRO - 1 ? 'Is someone here?' : si ? 'Searched rooms fall, the rest wait at 10 %' : 'Before any reading, every room is 10 %', '');
+    if (T >= s.end - 0.1) { const p = finalP(s), w = word(p), gone = CHIPS.filter(([id]) => off.has(id) && B.some((x) => GROUP[x.ev.sensor] === id)).map(([, l]) => l);
+      if (gone.length) return say('Without ' + gone.join(' and ') + ': ' + pc(p), w === 'confirmed' ? 'still confirmed' : w === 'possible' ? 'possible, so it looks again' : 'closed');
+      return s.det === 'D2' ? say('Ruled out at ' + pc(p), 'a machine, recognised') : s.det === 'D4' ? say('Found at ' + pc(p), 'it listened, moved and looked again') : say('Found at ' + pc(p), 'Wi-Fi and radar agree through the wall'); }
+    const b = B[n], gone = off.has(GROUP[b.ev.sensor]);
     if (gone) return say(CHIPS.find(([id]) => id === GROUP[b.ev.sensor])[1] + ' is switched off', 'no change');
-    say(SAYS[b.ev.sensor + ':' + b.ev.result] || b.ev.note, pc(n ? ps[n - 1] : 0.1) + ' to ' + pc(ps[n]) + ', weight ' + (st.assumed ? 'assumed' : 'measured'));
+    say(SAYS[b.ev.sensor + ':' + b.ev.result] || b.ev.note, pc(n ? ps[n - 1] : 0.1) + ' to ' + pc(ps[n]));
   }
-  const xy = { x: 0, y: 0 }; let ints = -1, stTxt = '';
+  const xy = { x: 0, y: 0 }; let ints = -1, stTxt = '', priorO = '';
   const place = (el, p, hh, dx, oy) => { three.project(p, hh, dx, xy); el.style.transform = 'translate3d(' + xy.x.toFixed(1) + 'px,' + (xy.y + oy).toFixed(1) + 'px,0)'; };
   function labels() {
     if (!three) return; const v = Math.round(P.p * 100); if (v !== ints) { ints = v; num.firstChild.textContent = v; num.classList.toggle('hot', P.p >= THRESHOLDS.confirmed); }
     const s = stories[si], w = T >= s.end ? word(finalP(s)) : ''; if (w !== stTxt) { stTxt = w; num.lastChild.textContent = w; }
     const o = P.pk.toFixed(2); if (num.style.opacity !== o) { num.style.opacity = o; g85.style.opacity = g15.style.opacity = o; }
-    if (P.pk > 0.01) { place(num, lead, P.p * 7, -0.95, 0); place(g85, lead, 0.85 * 7, 1.5, 0); place(g15, lead, 0.15 * 7, 1.5, 0); }
+    const po = clamp(P.rooms * 1.724 - 0.724).toFixed(2), seen = +po > 0.01; if (po !== priorO) { priorO = po; for (const el of priors) el.style.opacity = po; }
+    if (seen) priors.forEach((el, i) => { const L = P.levels[el.roomId], p = L ? L.p : 0.1, c = L && L.pos ? L.pos : three.roomC[i]; const tx = p > 0 ? pc(p) : ''; if (el.textContent !== tx) el.textContent = tx; el.classList.toggle('hot', !!(L && L.hot)); place(el, c, Math.max(p, 0.1) * SHAFT_M + 0.5, 0, 0); });
+    if (P.pk > 0.01) { place(num, lead, P.p * SHAFT_M, -1.15, 0); place(g85, lead, 0.85 * SHAFT_M, 1.5, 0); place(g15, lead, 0.15 * SHAFT_M, 1.5, 0); }
   }
   function bars() { for (let k = 0; k < stories.length; k++) { const v = 'scaleX(' + (k === si ? clamp(T / stories[k].len).toFixed(3) : 0) + ')'; const st = steps[k].lastChild.style; if (st.transform !== v) st.transform = v; } }
   const press = () => steps.forEach((b, k) => b.setAttribute('aria-pressed', String(k === si)));
 
   function go(i) { si = i; T = 0; firstRun = false; cut = true; press(); if (held) setHold(false); if (reduced()) still(); }
   function toggle(id) {
-    off.has(id) ? off.delete(id) : off.add(id); if (off.size === CHIPS.length) off.delete(id === 'wifi' ? 'radar' : 'wifi');
-    chips.forEach((c) => c.setAttribute('aria-pressed', String(!off.has(c.dataset.sensor))));
+    if (!off.has(id) && off.size === CHIPS.length - 1) return; // the last sensor stays: with none there is nothing to fuse
+    off.has(id) ? off.delete(id) : off.add(id);
+    chips.forEach((c) => { const on = !off.has(c.dataset.sensor), last = on && off.size === CHIPS.length - 1; c.setAttribute('aria-pressed', String(on)); c.setAttribute('aria-disabled', String(last)); c.title = last ? 'One sensor has to stay' : 'Take this sensor away, or put it back'; });
     const s = stories[si]; T = s.end + 0.6; if (reduced() || held) still(); // jump to the answer, so the change is seen at once; the shaft eases there
   }
   function setHold(x) { held = x; hold.setAttribute('aria-label', x ? 'Play' : 'Pause'); hold.replaceChildren(icon(x ? 'play' : 'pause', 14)); }
@@ -143,14 +149,18 @@ export async function createHero(host, ctx, { openEvidence }) {
     compute(dt); cut = false; words(); bars(); if (three && !three.lost) { three.pose(P, dt, time); three.render(dt, time); labels(); }
   }
 
-  try { const { createStage } = await import('./stage.js'); three = await createStage(stage, ctx, { reduced: reduced() }); }
-  catch (e) { console.warn('[fusion] the 3-D hero is unavailable:', e); for (const el of [num, g85, g15]) el.hidden = true; stage.append(h('div.fusion-hero-flat', null, h('p', null, 'This view needs WebGL. Every reading is in Advanced.'), h('button.btn', { type: 'button', onclick: openEvidence }, 'Open the evidence'))); }
+  now.firstChild.textContent = 'Raising block B'; await new Promise((r) => setTimeout(r));
+  try { const { createStage } = await import('./stage.js'); three = await createStage(stage, ctx, { reduced: reduced() }); await three.prime(); }
+  catch (e) { console.warn('[fusion] the 3-D hero is unavailable:', e); for (const el of [num, g85, g15]) el.hidden = true; stage.append(h('div.fusion-hero-flat', null, h('p', null, 'The 3-D view could not start. Every reading is in Advanced.'), h('button.btn', { type: 'button', onclick: openEvidence }, 'Open the evidence'))); }
+  if (three) three.onLook = () => { shown.still = null; }; // reduced motion draws only on change
   press(); compute(0); words();
   if (three) { three.pose(P, 0.016, 0); if (stage.clientWidth) three.render(0, 0); }
   ctx.bus.on('prefs', () => { three?.readTokens(); shown.still = null; });
-  return {
+  const api = {
     onShow() { if (running) return; running = true; last = performance.now(); raf = requestAnimationFrame(frame); },
     onHide() { running = false; cancelAnimationFrame(raf); raf = 0; },
     seek(i, t) { si = i; T = t; firstRun = false; cut = true; press(); compute(0.016); words(); }, hold: setHold, get stories() { return stories; }, get time() { return T; }, get story() { return si; }, get three() { return three; }, path, P,
   };
+  host.hero = api; // for the automated checks
+  return api;
 }

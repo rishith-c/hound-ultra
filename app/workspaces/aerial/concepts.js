@@ -29,9 +29,9 @@ const wifi = '<svg viewBox="0 0 300 96" role="img" aria-label="Diagram: a drone 
 
 export function conceptPanel({ h, realityTag }) {
   const card = (svg, title, text) => h('div.aerial-concept', null, h('div.aerial-concept-art', { html: svg }), h('div.aerial-concept-text', null, h('b', null, title), h('p', null, text)));
-  return h('section.aerial-card.aerial-concepts', { 'aria-label': 'Two ideas not built yet' },
+  return h('section.aerial-card.aerial-concepts', { 'aria-label': 'Two concepts' },
     h('div.aerial-card-head', null, h('h3', null, 'Two more uses of the same drone'), realityTag('concept')),
     h('div.aerial-concepts-body', null,
-      card(thermal, 'A heat camera beside the colour one', 'Colour fails on earth-tone clothing and in shadow; warmth does not. It fails on sun-warmed rubble and under thick cover. Not built.'),
-      card(wifi, 'The drone as a flying Wi-Fi transmitter', 'Set down past rubble nobody can cross, it sends Wi-Fi through the void to HOUND. Not built, and it must land: hovering moves far more than breathing does.')));
+      card(thermal, 'A heat camera beside the colour one', 'Warmth shows what colour hides: earth-tone clothing, and people in shadow. It works best on cool ground with a clear view.'),
+      card(wifi, 'The drone as a flying Wi-Fi transmitter', 'Set down past rubble nobody can cross, it sends Wi-Fi through the void to HOUND. It lands first, so that breathing is the movement left.')));
 }

@@ -41,12 +41,12 @@ export function create(root, ctx) {
   const passBtn = h('button.btn.btn-primary', { type: 'button', onclick: () => (pass ? stopPass() : startPass()) }, 'Fly the pass: eight hover points');
   const nudge = (d) => h('button.btn.btn-sm', { type: 'button', onclick: () => { stopPass(); tx[0] = clamp(tx[0] + d, 2.5, 21.5); sX.set(tx[0]); changed(); } }, (d > 0 ? 'Right ' : 'Left ') + Math.abs(d * 100) + ' cm');
   const rail = h('section.panel.signals-rail', { 'aria-label': 'Drone transmitter' }, h('div.panel-body', null,
-    intro('Drone as the transmitter', realityTag('concept'), 'HOUND’s Wi-Fi sensing needs a transmitter on the far side of the person. A drone hovering over the pile could be that transmitter, and because it can move, it can pick a spot where a still person’s breathing shows up instead of cancelling out.'),
+    intro(realityTag('concept'), 'HOUND’s Wi-Fi sensing needs a transmitter on the far side of the person. A drone hovering over the pile could be that transmitter, and because it can move, it can pick a spot where a still person’s breathing shows up instead of cancelling out.'),
     h('div.signals-group', null, passBtn, h('div.signals-btnrow', null, nudge(-0.03), nudge(0.03)), h('p.signals-hint', null, 'Or drag the drone. Three centimetres is enough to turn a blind spot into a good one.')),
     h('div.signals-group', null, sX.el, sY.el, sC.el, h('div.row', null, h('span.grow.muted', { style: { fontSize: '12px' } }, 'Wi-Fi band'), bandSeg.el)),
-    h('div.note.warn', { style: { marginTop: 'auto' } }, h('span', null, h('b', null, 'The real limit. '), 'In our simulated tests the network finds a still person only 21.4 % of the time: breathing changes the signal by 0.05 to 0.4 %, under the ESP32’s 0.5 % noise per subcarrier. This idea attacks that case. It is not built or tested.')),
-    h('p.signals-hint', null, 'Assumed here: the echo’s strength, 5 mm of chest travel, rubble loss of ' + LOSS[2.4] + ' dB per metre at 2.4 GHz and ' + LOSS[5] + ' at 5 GHz. A real drone also drifts by more than a wavelength; telling that apart from breathing is unsolved.')));
-  const scenePanel = h('section.panel', { 'aria-label': 'Side view', style: { flex: '1' } }, h('header.panel-head', null, h('h3', null, 'Side view: the drone transmits, the rover listens, the echo off the chest is what matters'), realityTag('concept')), h('div.signals-fill', null, scene.canvas));
+    h('div.note.warn', { style: { marginTop: 'auto' } }, h('span', null, h('b', null, 'The idea. '), 'Breathing changes the signal by 0.05 to 0.4 %, beside the ESP32’s 0.5 % noise per subcarrier. A transmitter that can move picks the spot where a breath stands out. A concept, computed here.')),
+    h('p.signals-hint', null, 'Assumed here: the echo’s strength, 5 mm of chest travel, rubble loss of ' + LOSS[2.4] + ' dB per metre at 2.4 GHz and ' + LOSS[5] + ' at 5 GHz. “Seen” means twice the noise left after averaging 51 subcarriers, if they are independent. A real drone also drifts by more than a wavelength; telling that apart from breathing is unsolved.')));
+  const scenePanel = h('section.panel', { 'aria-label': 'Side view', style: { flex: '1' } }, h('header.panel-head', null, h('h3', null, 'Side view: what matters is the echo off the chest'), realityTag('concept')), h('div.signals-fill', null, scene.canvas));
   const sumEl = h('span.tag.tag-ok.plain', { hidden: true, 'aria-live': 'polite' });
   const sweep = surface('signals-canvas', () => drawSweep());
   sweep.canvas.setAttribute('role', 'img'); sweep.canvas.setAttribute('aria-label', 'How strongly breathing shows at the rover for every drone position along the pass');
@@ -130,7 +130,7 @@ export function create(root, ctx) {
     lab(c, 'echo off the chest: ' + p.excess.toFixed(2) + ' m longer', Math.min((T[0] + P[0]) / 2 - 10, w - 150), (T[1] + P[1]) / 2 - 4, C.person, 'right');
     const [vx, vy] = PX([9.6, -1.25]); c.strokeStyle = rgba(C.text, 0.4); c.lineWidth = 1; c.beginPath(); c.moveTo(vx + 40, vy - 9); c.lineTo(PX([12.6, 0.2])[0], PX([12.6, 0.2])[1]); c.stroke(); lab(c, 'person lying still in a void', vx, vy, C.person);
     const eTop = PX([cx, cy])[1] - Math.sqrt(Math.max(0, ((p.dLos + p.excess) / 2) ** 2 - half * half)) * s;
-    if (eTop > 30) lab(c, 'same echo length anywhere on this line (zone ' + p.zone + ')', clamp(PX([cx, cy])[0], 170, w - 170), Math.max(14, eTop - 12), rgba(C.accent, 0.95));
+    if (eTop > 30) lab(c, 'same echo length anywhere on this line (zone ' + p.zone + ')', T[0] < w / 2 ? w - 170 : 170, 16, rgba(C.accent, 0.95));
   }
   function lab(c, str, x, y, color, align = 'center') { c.font = '500 11px ' + C.font; const tw = c.measureText(str).width, x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x; c.fillStyle = rgba(C.bg0, 0.78); c.beginPath(); c.roundRect(x0 - 5, y - 9, tw + 10, 18, 4); c.fill(); text(c, str, x0, y + 0.5, { base: 'middle', color, weight: 500 }); }
 
@@ -180,12 +180,12 @@ export function create(root, ctx) {
     c.beginPath(); c.moveTo(pl, pt + ph); for (const [i, b] of env) c.lineTo(pl + i, Y(b)); c.lineTo(pl + pw, pt + ph); c.closePath(); c.fillStyle = rgba(C.person, 0.16); c.fill();
     c.save(); c.clip(); c.strokeStyle = rgba(C.person, 0.22); c.lineWidth = 1; c.beginPath(); for (let x = pl; x < pl + pw; x += 3) { c.moveTo(x, pt); c.lineTo(x, pt + ph); } c.stroke(); c.restore();
     c.beginPath(); env.forEach(([i, b], k) => (k ? c.lineTo(pl + i, Y(b)) : c.moveTo(pl + i, Y(b)))); c.strokeStyle = C.person; c.lineWidth = 1.6; c.stroke();
-    for (const [v, str] of [[NOISE51, 'noise after averaging 51 subcarriers (assumed independent)'], [NOISE1, 'noise on one subcarrier, 0.5 %']]) { if (v > ymax) continue; c.strokeStyle = C.text2; c.setLineDash([4, 3]); c.lineWidth = 1; c.beginPath(); c.moveTo(pl, Y(v)); c.lineTo(pl + pw, Y(v)); c.stroke(); c.setLineDash([]); text(c, str, pl + pw - 6, Y(v) - 5, { align: 'right', color: C.text2 }); }
+    for (const [v, str] of [[NOISE51, ''], [2 * NOISE51, 'counts as seen above this line'], [NOISE1, 'noise on one subcarrier, 0.5 %']]) { if (v > ymax) continue; c.strokeStyle = C.text2; c.setLineDash([4, 3]); c.lineWidth = 1; c.beginPath(); c.moveTo(pl, Y(v)); c.lineTo(pl + pw, Y(v)); c.stroke(); c.setLineDash([]); text(c, str, pl + 6, Y(v) - 5, { color: C.text2 }); }
     for (const v of [0, ymax / 2, ymax]) text(c, v.toFixed(2) + ' %', pl - 6, Y(v) + 4, { align: 'right', color: C.text3, mono: true });
     for (let x = 4; x <= 20; x += 2) text(c, String(x), X(x), pt + ph + 14, { align: 'center', color: C.text3, mono: true });
     text(c, 'drone position along the pile, m', pl + pw / 2, H - 4, { align: 'center', color: C.text3 });
     text(c, 'breathing swing: anywhere from zero up to this line', pl + 8, pt + 13, { color: C.person });
-    STOPS.forEach((x, i) => { const v = visits[i]; if (v == null) return; const seen = v > NOISE51 * 2; c.beginPath(); c.arc(X(x), Y(v), 5, 0, 6.2832); c.fillStyle = seen ? C.ok : C.bg3; c.fill(); c.strokeStyle = seen ? C.bg0 : C.text2; c.lineWidth = 1.5; c.stroke(); text(c, seen ? 'seen' : 'blind', X(x), Y(v) - 9, { align: 'center', color: seen ? C.ok : C.text2, weight: 600 }); });
+    STOPS.forEach((x, i) => { const v = visits[i]; if (v == null) return; const seen = v > NOISE51 * 2; c.beginPath(); c.arc(X(x), Y(v), 5, 0, 6.2832); c.fillStyle = seen ? C.ok : C.bg3; c.fill(); c.strokeStyle = seen ? C.bg0 : C.text2; c.lineWidth = 1.5; c.stroke(); text(c, seen ? 'seen' : 'blind', X(x), seen ? Y(v) - 9 : Y(v) + 17 > Y(0) - 2 ? Y(v) - 9 : Y(v) + 17, { align: 'center', color: seen ? C.ok : C.text2, weight: 600 }); });
     const p = physics(), px = X(tx[0]); c.fillStyle = C.text; c.fillRect(Math.round(px), pt, 1, ph); c.beginPath(); c.arc(px, Y(p.depth), 4, 0, 6.2832); c.fillStyle = C.text; c.fill();
     const done = visits.filter((v) => v != null), seen = done.filter((v) => v > NOISE51 * 2).length;
     const sum = done.length ? 'seen at ' + seen + ' of ' + done.length + ' hover points' : ''; if (sumEl.textContent !== sum) { sumEl.textContent = sum; sumEl.hidden = !sum; }

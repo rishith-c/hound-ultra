@@ -71,7 +71,7 @@ export default async function (pane, ctx) {
       'Several rescue teams leave staging at once: who goes to whom, and in what order, so that people wait as little as possible in total?',
       'This page solves that routing problem three ways on the site\'s real walking paths, and measures each method honestly.',
     ],
-    field: 'Travel times through debris must be known, people\'s positions must be known, and the teams must be interchangeable. None of these is guaranteed.',
+    field: 'Travel times through debris must be known, people\'s positions must be known, and the teams must be interchangeable. A field plan would measure each.',
     unknown: 'Whether any quantum or quantum-inspired annealer beats classical solvers on routing at useful sizes is an open research question. At this size the exact solver wins in milliseconds.',
   });
 
@@ -397,7 +397,7 @@ export default async function (pane, ctx) {
     sweepNote.textContent = 'Simulated quantum annealing: ' + int(state.sweeps) + ' sweeps of ' + M_REPLICAS + ' replicas. Simulated annealing: ' + int(state.sweeps * M_REPLICAS) + ' sweeps of one copy. The same number of proposed bit flips.';
     mapTags.replaceChildren(
       h('span.tag.tag-sim', null, mission ? 'This mission, simulated' : 'Simulated drill, seed ' + state.seed),
-      h('span.tag.tag-sim', { title: 'Only one rover exists. The rescue teams are drawn to show the idea.' }, 'Rescue teams: concept'));
+      h('span.tag.tag-sim', { title: 'The rescue teams are drawn to show the idea.' }, 'Rescue teams: concept'));
     setStatus();
   }
 

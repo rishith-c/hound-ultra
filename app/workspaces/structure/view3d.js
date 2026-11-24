@@ -116,7 +116,7 @@ export function createView(host, ctx, hooks = {}) {
   function setHeat(idx, r, g, b, k) { const it = items[idx]; if (it) for (const m of it.mats) m.userData.u.uHeat.value.set(r, g, b, k); }
   function setGhost(idx, k) { const it = items[idx]; if (!it) return; const on = k > 0.002; for (const m of it.mats) { m.userData.u.uGhost.value = k; if (m.transparent !== on) { m.transparent = on; m.depthWrite = !on; m.needsUpdate = false; } } for (const s of it.soft) s.visible = k < 0.6; for (const mesh of it.meshes) mesh.castShadow = k < 0.5; }
   const refreshLooks = () => { for (let i = 0; i < items.length; i++) applyLook(i); };
-  function setXray(on) { xray = on; refreshLooks(); }
+  function setXray(on) { xray = on; refreshLooks(); setNight(on ? 1 : 0); }
   function setSelected(idx) { const old = selected; selected = idx; applyLook(old); applyLook(idx); }
   function setHovered(idx) { if (idx === hovered) return; const old = hovered; hovered = idx; applyLook(old); applyLook(idx); }
   function setTints(map) { tints.clear(); if (map) for (const [i, c] of map) tints.set(i, { color: new THREE.Color(c.color), k: c.k ?? 0.5 }); refreshLooks(); }
@@ -136,7 +136,7 @@ export function createView(host, ctx, hooks = {}) {
     clearLayer('voids'); if (!g || !voids?.length) return; const L = layer('voids');
     let count = 0; const member = new Uint8Array(g.n); const shells = [];
     for (const v of voids) { member.fill(0); for (const id of v.voxels) member[id] = 1; const sh = []; for (const id of v.voxels) { if (!member[id + 1] || !member[id - 1] || !member[id + g.nx] || !member[id - g.nx] || !member[id + g.sl] || !member[id - g.sl]) sh.push(id); } shells.push(sh); count += sh.length; }
-    const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(g.res * 0.9, g.res * 0.9, g.res * 0.9), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.4, depthWrite: false, blending: THREE.AdditiveBlending, clippingPlanes: [clip] }), count);
+    const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(g.res * 0.9, g.res * 0.9, g.res * 0.9), new THREE.MeshBasicMaterial({ transparent: true, opacity: Math.min(0.12, 2.2 / Math.sqrt(count || 1)), depthWrite: false, blending: THREE.AdditiveBlending, clippingPlanes: [clip] }), count);
     const m4 = new THREE.Matrix4(), c = new THREE.Color(); let k = 0;
     voids.forEach((v, vi) => { const dim = selectedId && v.id !== selectedId; for (const id of shells[vi]) { const p = g.pos(id); m4.makeTranslation(p[0], p[1], p[2]); mesh.setMatrixAt(k, m4); const cl = Math.sqrt(g.d2[id]) * g.res; rampAt(0.25 + cl / 0.9, c); if (v.person) c.lerp(new THREE.Color(0xffffff), 0.08); c.multiplyScalar(dim ? 0.18 : v.person ? 0.75 : 0.42); mesh.setColorAt(k, c); k++; } });
     mesh.instanceColor.needsUpdate = true; mesh.renderOrder = 5; L.add(mesh);
@@ -148,7 +148,7 @@ export function createView(host, ctx, hooks = {}) {
     const fill = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.16, depthWrite: false })); const edge = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: c, depthTest: false, transparent: true, opacity: 0.95 }));
     const body = new THREE.Mesh(new THREE.CapsuleGeometry(Math.min(box.h[1], box.h[2]) * 0.62, Math.max(0.1, 2 * box.h[0] - 0.75), 6, 12), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.55, depthTest: false })); body.rotation.z = Math.PI / 2;
     const grp = new THREE.Group(); grp.add(fill, edge, body); grp.position.set(box.c[0], box.c[1], box.c[2]); grp.rotation.y = box.yaw || 0; edge.renderOrder = 9; body.renderOrder = 8; L.add(grp);
-    setLabel('prot', 'Believed position', [box.c[0], box.c[1] + box.h[1] + 0.25, box.c[2]], { layer: 'prot', cls: 'is-person', anchor: box.c });
+    setLabel('prot', 'Believed position', [box.c[0], box.c[1] - box.h[1] - 0.3, box.c[2]], { layer: 'prot', cls: 'is-person', anchor: box.c });
   }
   // the load path: one bar per contact, from each piece's centre to the contact point, thicker and hotter with force
   function showForces(pile, poses, con) {
@@ -287,9 +287,10 @@ export function createView(host, ctx, hooks = {}) {
     camera.updateMatrixWorld(); post.render(scene, camera, sun, dustScene, dust.mat, time); projectLabels(W, H);
   }
   // Demo is lit for film; Advanced keeps the same place but with less haze and more fill, so it can be read.
-  function setLook(mode) { const d = mode === 'demo'; survey.visible = !d; post.uni.atm.uHaze.value = d ? 0.0115 : 0.004; post.uni.atm.uShaft.value = d ? 1.6 : 1.1; post.uni.fin.uVig.value = d ? 0.6 : 0.25; hemi.intensity = d ? 0.95 : 1.4; fill.intensity = d ? 0.75 : 1.5; sun.intensity = d ? 6.6 : 5.2; post.uni.fin.uExp.value = d ? 0.96 : 1.05; dust.mat.uniforms.uMul.value = d ? 1 : 0.7; }
+  let lookMode = 'demo';
+  function setLook(mode) { setNight(0); lookMode = mode; const d = mode === 'demo'; sun.color.set(d ? 0xffb877 : 0xffe6cc); survey.visible = !d; post.uni.atm.uHaze.value = d ? 0.0115 : 0.004; post.uni.atm.uShaft.value = d ? 1.6 : 1.1; post.uni.fin.uVig.value = d ? 0.6 : 0.25; hemi.intensity = d ? 0.95 : 1.4; fill.intensity = d ? 0.75 : 1.5; sun.intensity = d ? 6.6 : 4.4; post.uni.fin.uExp.value = d ? 0.96 : 1.05; dust.mat.uniforms.uMul.value = d ? 1 : 0.7; }
   // the x-ray chapters: the sun goes out and the pile turns to glass
-  function setNight(k) { if (Math.abs(L3.XR.value - k) < 0.003 && k) return; if (!k && !L3.XR.value) return; L3.XR.value = k; const mx = (a, b) => a + (b - a) * k, a = post.uni.atm; sun.intensity = mx(6.6, 0.0); hemi.intensity = mx(0.95, 0.10); scene.environmentIntensity = mx(0.95, 0.03); fill.intensity = mx(0.75, 0.12); sky.material.uniforms.uGain.value = a.uGain.value = mx(1, 0.035); a.uHaze.value = mx(0.0115, 0.0025); a.uShaft.value = mx(1.6, 0.0); dust.mat.uniforms.uMul.value = mx(1, 0.05); }
+  function setNight(k) { if (Math.abs(L3.XR.value - k) < 0.003 && k) return; if (!k && !L3.XR.value) return; L3.XR.value = k; const mx = (a, b) => a + (b - a) * k, a = post.uni.atm, d = lookMode === 'demo'; sun.intensity = mx(d ? 6.6 : 4.4, 0.0); hemi.intensity = mx(d ? 0.95 : 1.4, 0.10); scene.environmentIntensity = mx(0.95, 0.03); fill.intensity = mx(d ? 0.75 : 1.5, 0.12); sky.material.uniforms.uGain.value = a.uGain.value = mx(1, 0.035); a.uHaze.value = mx(d ? 0.0115 : 0.004, 0.0025); a.uShaft.value = mx(d ? 1.6 : 1.1, 0.0); dust.mat.uniforms.uMul.value = mx(d ? 1 : 0.7, 0.05); }
   function setFilm(fn) { film = fn; }
   function start() { if (!raf) { last = performance.now(); resize(); raf = requestAnimationFrame(frame); } }
   function stop() { cancelAnimationFrame(raf); raf = 0; }

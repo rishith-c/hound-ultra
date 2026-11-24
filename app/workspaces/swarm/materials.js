@@ -25,11 +25,11 @@ export function noiseTexture(N = 512) {
 const COMMON = /* glsl */ `
   varying vec3 vW; varying vec3 vWN;
   uniform sampler2D uField, uState, uLight, uNoise; uniform vec2 uSite; uniform float uTime, uBoost;
-  uniform vec3 uScan, uHead, uPerson, uTruth, uBeaconC; uniform vec3 uGroundC, uSlabC;
+  uniform vec3 uScan, uHead, uPerson, uTruth, uBeaconC; uniform vec3 uGroundC, uSlabC, uMoonD, uMoonC; uniform sampler2D uRefl; uniform mat4 uReflM; uniform float uReflOn;
   vec2 sUv(vec3 w) { return vec2(w.x, -w.z) / uSite; }
   float inSite(vec2 uv) { vec2 s = step(vec2(0.0), uv) * step(uv, vec2(1.0)); return s.x * s.y; }
   vec3 fieldLight(vec2 uv, float y) { vec4 L = texture2D(uLight, clamp(uv, 0.0, 1.0)) * inSite(uv); float hf = exp(-pow(max(0.0, y - 0.3) / 0.95, 2.0));
-    return uHead * L.r * hf * 1.2 + uScan * L.b * 0.34 * hf + uPerson * L.a * exp(-y * 0.5) * 2.2 + uBeaconC * L.g * 0.5 * hf; }
+    return uHead * L.r * hf * 0.62 + uScan * L.b * 0.17 * hf + uPerson * L.a * exp(-y * 0.5) * 1.25 + uBeaconC * L.g * 0.5 * hf; }
   vec4 tri(vec3 p, vec3 n, float s) { vec3 w = abs(n); w /= (w.x + w.y + w.z); return texture2D(uNoise, p.zy * s) * w.x + texture2D(uNoise, p.xz * s) * w.y + texture2D(uNoise, p.xy * s) * w.z; }
 `;
 const VWORLD = /* glsl */ `
@@ -78,25 +78,31 @@ export const GROUND = {
     // outdoors: worn asphalt, patched, with damp hollows
     float patchy = smoothstep(0.42, 0.6, nA.r), crack = nB.g * 0.8 + nC.g * 0.35;
     vec3 asph = uGroundC * (0.62 + 0.5 * nC.b + 0.35 * nB.r) * mix(0.8, 1.12, patchy) * (1.0 - 0.55 * crack);
-    gPud = smoothstep(0.60, 0.74, nA.a + (nB.a - 0.5) * 0.16) * (1.0 - indoor) * mix(0.2, 1.0, seen);
-    asph *= mix(1.0, 0.55, gPud);
+    gPud = smoothstep(0.60, 0.74, nA.a + (nB.a - 0.5) * 0.16) * (1.0 - indoor) * mix(0.7, 1.0, seen);
+    asph *= mix(1.0, 0.72, gPud);
     // indoors: a poured slab with joints, dust and grit
     vec2 jt = abs(fract(m / 3.0 - 0.5) - 0.5) * 3.0; float joint = 1.0 - smoothstep(0.012, 0.05, min(jt.x, jt.y));
     vec3 slab = uSlabC * (0.66 + 0.42 * nB.r + 0.3 * nC.b) * (1.0 - 0.4 * nB.g) * (1.0 - 0.45 * joint); slab *= 1.0 - 0.5 * smoothstep(0.62, 0.8, nC.a);
     vec3 known = mix(asph, slab, indoor); if (cls > 2.5) known = uGroundC * 0.45;
     // survey ticks every 10 m, only on ground that has been measured
     vec2 g10 = abs(fract(m / 10.0 - 0.5) - 0.5) * 10.0; float tick = (1.0 - smoothstep(0.015, 0.04, min(g10.x, g10.y))) * step(max(g10.x, g10.y), 0.32);
-    vec3 unk = uGroundC * vec3(0.40, 0.42, 0.45) * (0.5 + 0.55 * nB.r) * (1.0 - 0.3 * crack);
+    vec3 unk = uGroundC * vec3(0.50, 0.52, 0.56) * (0.55 + 0.6 * nB.r) * (1.0 - 0.3 * crack) * mix(1.0, 0.6, gPud);
     diffuseColor.rgb = mix(unk, known, seen);
     float rim = seen * (1.0 - seen) * 4.0, freshK = fd.b;
     gE += uScan * (rim * 0.10 + tick * 0.05 * seen);
     gE += uScan * fd.g * (0.16 + 0.16 * sin(uTime * 2.6 - (m.x + m.y) * 0.45)) * uBoost;
     vec2 sc = abs(fract(m * 2.0) - 0.5); float mesh = smoothstep(0.40, 0.5, max(sc.x, sc.y));
-    gE += uScan * freshK * (0.06 + 0.34 * mesh) * 0.42;
+    gE += uScan * freshK * (0.03 + 0.34 * mesh) * 0.24;
     gE += uTruth * st.b * (1.0 - seen) * 0.5;
+    vec3 vdir = normalize(cameraPosition - vW);
     gE += (diffuseColor.rgb * 1.25 + 0.012) * fieldLight(uv, 0.0) * (1.0 + 1.1 * gPud);
+    // wet ground: a mirrored pass of the buildings, the sky and the mesh, broken up by the surface
+    float wet = (0.16 + 0.84 * gPud) * (1.0 - indoor * 0.75) * (1.0 - 0.6 * step(2.5, cls));
+    if (uReflOn > 0.5) { vec4 rp = uReflM * vec4(vW, 1.0); vec2 ru = rp.xy / max(rp.w, 0.01) * 0.5 + 0.5; vec2 rip = (vec2(nC.b, nB.b) - 0.5) * mix(0.05, 0.012, gPud) + (vec2(nB.r, nB.a) - 0.5) * 0.01;
+      vec3 rc = texture2D(uRefl, ru + rip).rgb * 0.4 + texture2D(uRefl, ru + rip * 0.4 + vec2(0.0, 0.012)).rgb * 0.3 + texture2D(uRefl, ru + rip * 0.7 + vec2(0.0, -0.02)).rgb * 0.3;
+      float fr = 1.0 - clamp(vdir.y, 0.0, 1.0); fr *= fr; fr *= fr; gE += min(rc, vec3(3.0)) * wet * (0.24 + 1.1 * fr); }
   `,
-  rough: 'roughnessFactor = mix(0.93 - 0.14 * nB.b, 0.46, gPud * 0.85);',
+  rough: 'roughnessFactor = mix(0.88 - 0.16 * nB.b, 0.2, gPud * 0.85);',
   normal: /* glsl */ `
     { vec2 e = vec2(0.012, 0.0); vec2 q = m / 1.9; float hx = texture2D(uNoise, q + e.xy).b - texture2D(uNoise, q - e.xy).b, hy = texture2D(uNoise, q + e.yx).b - texture2D(uNoise, q - e.yx).b;
       normal = normalize(normal + (viewMatrix * vec4(-hx, 0.0, hy, 0.0)).xyz * 0.42 * (1.0 - gPud)); }
@@ -110,12 +116,13 @@ const SHELL_CUT = /* glsl */ `
   float rv = texture2D(uField, clamp(uvS, 0.0, 1.0)).a * vReal;
   float thr = mix(0.30, 0.62, clamp(1.0 - vW.y / max(1.0, vTopY), 0.0, 1.0)) + (nS.r - 0.5) * 0.5;
   float cutK = rv - thr;
-  float dmg = vTopY * (1.0 - 0.6 * smoothstep(0.70, 0.80, texture2D(uNoise, vW.xz * 0.028).a + vDmg * 0.7) * step(0.5, vReal));
-  if (cutK > 0.0 || vW.y > dmg + 0.4 * (nS.b - 0.5) + 0.3) discard;
+  float dmg = vTopY * (1.0 - 0.6 * smoothstep(0.66, 0.84, textureLod(uNoise, (floor(vW.xz * 1.1) + 0.5) * 0.02545, 0.0).a + vDmg * 0.7) * step(0.5, vReal));
+  float brk = dmg + 0.4 * (nS.b - 0.5) + 0.3 - vW.y;
+  if (cutK > 0.0 || brk < 0.0) discard;
 `;
-export const SHELL_V = { vDecl: 'attribute vec3 aShell; varying float vTopY; varying float vReal; varying float vDmg;', vBegin: 'vTopY = aShell.x; vReal = aShell.y; vDmg = aShell.z;' };
+export const SHELL_V = { vDecl: 'attribute vec4 aShell; varying float vTopY; varying float vReal; varying float vDmg; varying float vEdge;', vBegin: 'vTopY = aShell.x; vReal = aShell.y; vDmg = aShell.z; vEdge = aShell.w;' };
 export const SHELL = {
-  ...SHELL_V, fDecl: 'varying float vTopY; varying float vReal; varying float vDmg; float gWin; float wLit(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5); }',
+  ...SHELL_V, fDecl: 'varying float vTopY; varying float vReal; varying float vDmg; varying float vEdge; float gWin; float wLit(vec2 p) { return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5); }',
   color: SHELL_CUT + /* glsl */ `
     vec4 nT = tri(vW, vWN, 0.31), nF = tri(vW, vWN, 1.1);
     float roof = step(0.5, vWN.y); float along = abs(vWN.x) > 0.5 ? vW.z : vW.x;
@@ -123,24 +130,36 @@ export const SHELL = {
     vec3 wall = uSlabC * (0.40 + 0.35 * nT.r + 0.22 * nF.b) * (1.0 - 0.6 * nT.g) * mix(0.55, 1.1, streak);
     vec2 bay = vec2(along / 2.7, (vW.y - 0.35) / 3.05); vec2 id = floor(bay), f = fract(bay);
     float storeys = floor((vTopY - 0.6) / 3.05);
-    float inWin = step(0.2, f.x) * step(f.x, 0.8) * step(0.26, f.y) * step(f.y, 0.80) * step(id.y, storeys - 0.5) * (1.0 - roof);
+    float inWin = step(0.2, f.x) * step(f.x, 0.8) * step(0.26, f.y) * step(f.y, 0.80) * step(id.y, storeys - 0.5) * (1.0 - roof) * step(vEdge, 0.5);
     float frame = inWin * (1.0 - step(0.235, f.x) * step(f.x, 0.765) * step(0.30, f.y) * step(f.y, 0.765) * (1.0 - step(abs(f.x - 0.5), 0.016)));
     float band = (1.0 - roof) * smoothstep(0.93, 0.95, f.y); wall *= 1.0 - 0.35 * band;
     float r1 = wLit(id + floor(vTopY * 13.0)), glass = inWin * (1.0 - frame) * step(r1, 0.72); gWin = glass;
     wall *= mix(1.0, 0.16, inWin); wall = mix(wall, uSlabC * 0.28, frame);
     wall = mix(wall, vec3(0.02, 0.026, 0.034), glass);
     vec3 roofC = uGroundC * (0.42 + 0.5 * nT.r) * (1.0 - 0.5 * nT.g); vec2 rj = abs(fract(vW.xz / 4.2) - 0.5); roofC *= 1.0 - 0.3 * smoothstep(0.485, 0.495, max(rj.x, rj.y));
+    // sill and head courses, reveal shadow, pilasters between the bays
+    float sill = step(0.16, f.x) * step(f.x, 0.84) * step(0.215, f.y) * step(f.y, 0.26) * step(id.y, storeys - 0.5) * (1.0 - roof) * step(vEdge, 0.5); wall = mix(wall, uSlabC * 0.82, sill);
+    float pil = (1.0 - roof) * step(vEdge, 0.5) * (smoothstep(0.06, 0.04, f.x) + smoothstep(0.94, 0.96, f.x)); wall *= 1.0 + 0.28 * pil;
+    wall *= 1.0 - 0.55 * inWin * smoothstep(0.70, 0.78, f.y) * (1.0 - glass);
     diffuseColor.rgb = mix(wall, roofC, roof);
-    gE += vec3(0.5, 0.6, 0.72) * glass * (0.010 + 0.02 * wLit(id * 1.7 + 3.0)) * (0.3 + 0.7 * f.y);
+    float raw = smoothstep(0.55, 0.06, brk) * step(0.5, vReal) * step(vW.y, vTopY); diffuseColor.rgb = mix(diffuseColor.rgb, uSlabC * (0.75 + 0.5 * nF.b), raw * 0.8);   // raw concrete along the break
+    if (vEdge > 1.5) diffuseColor.rgb = uSlabC * (0.5 + 0.4 * nT.r + 0.2 * nF.b) * (1.0 - 0.5 * nT.g);
+    // moonlight catching the roof edges
+    float lit = 0.25 + 0.75 * clamp(dot(normalize(vWN.xz + vec2(1e-4)), normalize(uMoonD.xz)), 0.0, 1.0) * (1.0 - roof) + 0.45 * roof;
+    float capY = vEdge > 0.5 && vEdge < 1.5 ? (roof > 0.5 ? 0.8 : smoothstep(0.30, 0.0, vTopY - (vReal > 0.5 ? 0.75 : 1.5) - vW.y)) : smoothstep(0.10, 0.0, vTopY - vW.y) * (1.0 - roof) * step(vEdge, 0.5);
+    gE += uMoonC * capY * lit * 0.30 * (0.55 + 0.7 * nF.b);
+    gE += uMoonC * raw * lit * 0.05;
+    if (vReal < 0.5 && glass > 0.5 && wLit(id * 3.1 + floor(vTopY * 7.0)) > 0.965) gE += vec3(1.0, 0.72, 0.42) * 0.30;   // a few lit windows far off, outside the cordon
+    gE += vec3(0.5, 0.6, 0.72) * glass * (0.008 + 0.03 * wLit(id * 1.7 + 3.0)) * (0.3 + 0.7 * f.y);
     float stR = floor(texture2D(uState, clamp(sUv(vW), 0.0, 1.0)).r * 255.0 / 50.0 + 0.5);
     if (vReal > 0.5 && roof > 0.5 && stR > 3.5) { float hl = smoothstep(0.46, 0.5, abs(fract((vW.x - vW.z) / 2.4) - 0.5)); gE += uScan * (0.012 + 0.05 * hl); }
     float fw = max(fwidth(cutK), 1e-4); gE += uScan * (smoothstep(-fw * 3.0, -fw * 0.6, cutK) * 0.75 + smoothstep(-0.12, 0.0, cutK) * 0.05) * smoothstep(0.02, 0.10, rv) * smoothstep(0.10, 0.02, fw);
     vec2 uvO = sUv(vW + vWN * vec3(0.5, 0.0, 0.5)); gE += (diffuseColor.rgb * 1.3 + 0.008) * fieldLight(uvO, vW.y * 0.8) * vReal;
   `,
   rough: 'roughnessFactor = mix(0.9 - 0.15 * nF.b, 0.10, gWin);',
-  normal: 'normal = normalize(normal + (viewMatrix * vec4((tri(vW + vec3(0.03), vWN, 0.9).rba - tri(vW - vec3(0.03), vWN, 0.9).rba), 0.0)).xyz * 0.9 * (1.0 - gWin));',
+  normal: 'normal = normalize(normal + (viewMatrix * vec4(vec3(nF.b, nT.b, nF.r) - 0.5, 0.0)).xyz * 0.16 * (1.0 - gWin));',
 };
-export const SHELL_DEPTH = { ...SHELL_V, fDecl: 'varying float vTopY; varying float vReal; varying float vDmg;', frag: SHELL_CUT };
+export const SHELL_DEPTH = { ...SHELL_V, fDecl: 'varying float vTopY; varying float vReal; varying float vDmg; varying float vEdge;', frag: SHELL_CUT };
 
 export const GROW_V = { vDecl: 'attribute float aBirth; varying float vTop; varying float vGrow;', vBegin: 'float gq = clamp((uTime - aBirth) / 0.7, 0.0, 1.0); gq = 1.0 - pow(1.0 - gq, 3.0); transformed.y *= gq; vTop = step(0.5, normal.y); vGrow = gq;' };
 export const WALL = {
@@ -154,7 +173,7 @@ export const WALL = {
     gE += uScan * ((1.0 - vGrow) * 0.38 + vTop * 0.004);
   `,
   rough: 'roughnessFactor = 0.94 - 0.2 * nF.b;',
-  normal: 'normal = normalize(normal + (viewMatrix * vec4((tri(vW + vec3(0.02), vWN, 1.3).rba - tri(vW - vec3(0.02), vWN, 1.3).rba), 0.0)).xyz * 0.8);',
+  normal: 'normal = normalize(normal + (viewMatrix * vec4(vec3(nF.b, nT.b, nF.r) - 0.5, 0.0)).xyz * 0.2);',
 };
 export const GROW_DEPTH = { ...GROW_V, vDecl: 'attribute float aBirth; varying float vTop; varying float vGrow;', frag: '' };
 export const PROP = { color: 'gE += (diffuseColor.rgb * 1.2 + 0.01) * fieldLight(sUv(vW + vWN * vec3(0.4, 0.0, 0.4)), vW.y);' };
@@ -165,13 +184,13 @@ export const FOG_FRAG = /* glsl */ `
   void main() {
     vec2 m = vUv * uSite; vec3 fd = texture2D(uField, vUv).rgb;
     float n = texture2D(uNoise, m / 46.0 + vec2(uTime * 0.0021, uTime * 0.0013) + vL * 0.021).r, n2 = texture2D(uNoise, m / 15.0 - vec2(uTime * 0.006, uTime * 0.003) + vL * 0.05).a;
-    float body = smoothstep(0.30, 0.74, n * 0.62 + n2 * 0.46 - vL * 0.035);
+    float body = 0.05 + 0.95 * smoothstep(0.30, 0.74, n * 0.62 + n2 * 0.46 - vL * 0.035);
     float un = 1.0 - smoothstep(0.02, 0.55, fd.r + (n2 - 0.5) * 0.35);
     vec2 e = smoothstep(vec2(0.0), vec2(0.04), vUv) * smoothstep(vec2(0.0), vec2(0.04), 1.0 - vUv);
     float graze = smoothstep(0.03, 0.30, abs(normalize(cameraPosition - vP).y));
     float a = body * un * e.x * e.y * uDens * graze;
     vec4 L = texture2D(uLight, vUv); float beam = L.r * exp(-(vL - 0.45) * (vL - 0.45) / 0.64) * (0.55 + 0.9 * n2);
-    vec3 c = uFogC * (0.7 + 0.6 * n2) + uScan * fd.b * 0.3; beam *= graze;
+    vec3 c = uFogC * (0.8 + 0.7 * n2) + uScan * fd.b * 0.08; beam *= graze;
     gl_FragColor = vec4(c * a + uHead * beam * 0.022 + uScan * L.b * 0.006, a);
     #include <colorspace_fragment>
   }`;
@@ -183,7 +202,7 @@ export const THREAD_VERT = /* glsl */ `
   void main() {
     float t = position.x * iP.y; vec4 c0 = projectionMatrix * viewMatrix * vec4(at(t), 1.0), c1 = projectionMatrix * viewMatrix * vec4(at(min(1.0, t + 0.02)), 1.0), cm = projectionMatrix * viewMatrix * vec4(at(max(0.0, t - 0.02)), 1.0);
     vec2 d = (c1.xy / max(c1.w, 0.05) - cm.xy / max(cm.w, 0.05)) * uRes; d = normalize(d + vec2(1e-5)); vec2 nrm = vec2(-d.y, d.x);
-    c0.xy += nrm * position.y * uPx / uRes * 2.0 * c0.w; gl_Position = c0;
+    c0.xy += nrm * position.y * uPx * (iP.w < -1.5 ? 1.6 : 1.0) / uRes * 2.0 * c0.w; gl_Position = c0;
     vT = t; vS = position.y; vC = iC; vP4 = iP; vLen = distance(iA, iB);
   }`;
 export const THREAD_FRAG = /* glsl */ `
@@ -209,9 +228,9 @@ export const TRAIL_FRAG = /* glsl */ `varying float vS, vAge, vK, vU; uniform ve
 // Top-down light map: real line-of-sight fans for headlights, sensor sweeps and lead glows, drawn additively.
 export const LIGHT_VERT = /* glsl */ `attribute vec4 aL; attribute vec2 aM; varying vec4 vL; varying vec2 vM; void main() { vL = aL; vM = aM; gl_Position = projectionMatrix * modelViewMatrix * vec4(position.x, position.y, 0.0, 1.0); }`;
 export const LIGHT_FRAG = /* glsl */ `varying vec4 vL; varying vec2 vM; uniform float uTime;
-  void main() { float d = length(vL.xy), ty = vM.x; vec4 c = vec4(0.0);
-    if (ty < 0.5) { float a = abs(atan(vL.y, vL.x)); float cone = smoothstep(0.78, 0.25, a) * 0.75 + smoothstep(0.34, 0.08, a) * 0.8; c.r = min(1.1, cone) * vL.w * smoothstep(vL.z, vL.z * 0.35, d) / (1.0 + d * d * 0.014) * smoothstep(0.2, 2.2, d); }
-    else if (ty < 1.5) { float R = vL.z, ring = smoothstep(R - 0.5, R - 0.12, d) * smoothstep(R + 0.02, R - 0.1, d); float a = atan(vL.y, vL.x) + 3.14159; float sw = fract((a / 6.28318) - uTime * 0.42 + vM.y); c.b = (pow(sw, 5.0) * 0.85 + 0.06) * smoothstep(R, R * 0.2, d) * vL.w + ring * 0.2 * vL.w; }
+  void main() { float d = length(vL.xy), ty = vM.x; vec2 vq = d > 1e-3 ? vL.xy : vec2(1.0, 0.0); vec4 c = vec4(0.0);
+    if (ty < 0.5) { float a = abs(atan(vq.y, vq.x)); float cone = smoothstep(0.78, 0.25, a) * 0.75 + smoothstep(0.34, 0.08, a) * 0.8; c.r = min(1.1, cone) * vL.w * smoothstep(vL.z, vL.z * 0.35, d) / (1.0 + d * d * 0.014) * smoothstep(0.2, 2.2, d); }
+    else if (ty < 1.5) { float R = vL.z, ring = smoothstep(R - 0.5, R - 0.12, d) * smoothstep(R + 0.02, R - 0.1, d); float a = atan(vq.y, vq.x) + 3.14159; float sw = fract((a / 6.28318) - uTime * 0.42 + vM.y); c.b = (pow(sw, 5.0) * 0.85 + 0.06) * smoothstep(R, R * 0.2, d) * vL.w + ring * 0.2 * vL.w; }
     else if (ty < 2.5) { c.a = vL.w * smoothstep(vL.z, 0.0, d) / (1.0 + d * d * 0.05); }
     else if (ty < 3.5) { c.g = vL.w * smoothstep(vL.z, 0.0, d) * 0.7; }
     else { float R = vL.z; c.b = vL.w * (smoothstep(R, R * 0.75, d) * 0.22 + smoothstep(R - 0.6, R - 0.1, d) * smoothstep(R, R - 0.1, d) * 0.6); }
@@ -231,3 +250,8 @@ export const FINAL = {
 // one bad pixel would spread through the bloom and black out the frame, so anything that is not a number is dropped first
 export const CLEAN = { uniforms: { tDiffuse: { value: null } }, vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }', fragmentShader: 'varying vec2 vUv; uniform sampler2D tDiffuse; void main() { vec3 c = texture2D(tDiffuse, vUv).rgb; if (!(c.r >= 0.0 && c.r < 1e4 && c.g >= 0.0 && c.g < 1e4 && c.b >= 0.0 && c.b < 1e4)) c = vec3(0.0); gl_FragColor = vec4(min(c, vec3(24.0)), 1.0); }' };
 export const SKY_FRAG = /* glsl */ `varying vec3 vD; uniform vec3 uHor, uZen; void main() { float h = clamp(vD.y, -0.2, 1.0); vec3 c = mix(uHor, uZen, smoothstep(0.0, 0.42, h)); c += vec3(0.10, 0.075, 0.05) * exp(-max(0.0, h) * 18.0) * (0.5 + 0.5 * sin(atan(vD.z, vD.x) * 2.0 + 1.0)) * 0.55; gl_FragColor = vec4(c, 1.0); }`;
+
+// HOUND: metalness and roughness come from the baked CAD; vLit dims a machine that has lost its path to base
+export const HOUND = { vDecl: 'attribute vec2 aPbr; varying vec2 vPbr; varying vec3 vObj;', vBegin: 'vPbr = aPbr; vObj = position;', fDecl: 'varying vec2 vPbr; varying vec3 vObj;',
+  color: 'float hN = texture2D(uNoise, vObj.xz * 2.3 + vObj.y).r, hF = texture2D(uNoise, vObj.xy * 9.0 + vObj.z * 7.0).b; diffuseColor.rgb *= 0.75 + 0.45 * hF; diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.10, 0.085, 0.07), smoothstep(0.52, 0.75, hN) * smoothstep(0.12, 0.02, vObj.y) * 0.7); vec3 hV = normalize(cameraPosition - vW); float hR = 1.0 - clamp(dot(hV, normalize(vWN)), 0.0, 1.0); gE += (diffuseColor.rgb * 0.10 + vec3(0.02, 0.026, 0.034)) * (0.5 + 1.8 * hR * hR * hR); gE += diffuseColor.rgb * fieldLight(sUv(vW), vW.y) * 0.3; gE += uMoonC * 0.05 * max(0.0, dot(normalize(vWN), uMoonD));',
+  rough: 'roughnessFactor = clamp(vPbr.y + (hF - 0.5) * 0.15, 0.08, 1.0);', normal: 'metalnessFactor = vPbr.x * 0.75;' };

@@ -151,7 +151,7 @@ export const RIB_V = COMMON + /* glsl */ `
 attribute vec2 aU; attribute float iId; uniform sampler2D uPeople, uPat; uniform float uFlow, uDur, uGain, uSolo; uniform vec2 uPx; varying float vA; varying vec3 vP; varying float vS;
 vec3 bez(vec3 a, vec3 b, vec3 c, vec3 d, float t) { float s = 1.0 - t; return a * s * s * s + 3.0 * b * s * s * t + 3.0 * c * s * t * t + d * t * t * t; }
 vec3 path(float s, vec3 P0, vec4 r, float lane) { vec3 Q = vec3(lane, 3.2, -73.4); float far = length(P0 - Q);
-  vec3 c1 = P0 + vec3((r.x - 0.5) * 5.0 - P0.x * 0.15, 3.6 + 6.5 * r.y, -2.0 - 4.0 * r.z), c2 = vec3(mix(P0.x * 0.35, lane, 0.6) + (r.z - 0.5) * 9.0, 7.5 + 8.0 * r.x, mix(P0.z, -73.4, 0.72));
+  vec3 c1 = P0 + vec3((r.x - 0.5) * 5.0 - P0.x * 0.15, (uSolo >= 0.0 ? 1.0 : 3.6) + 6.5 * r.y, -2.0 - 4.0 * r.z), c2 = vec3(mix(P0.x * 0.35, lane, 0.6) + (r.z - 0.5) * 9.0, 7.5 + 8.0 * r.x, mix(P0.z, -73.4, 0.72));
   vec3 p = bez(P0, c1, c2, Q, s); float k = s * (1.0 - s) * 4.0; p.x += (sin(s * 11.0 + r.y * 6.3 + uTime * 0.35) * 1.5 + sin(s * 27.0 + r.z * 6.3 - uTime * 0.5) * 0.35) * k; p.y += (sin(s * 9.0 + r.x * 6.3 + uTime * 0.28) * 1.1 + sin(s * 23.0 + r.w * 6.3) * 0.3) * k; return p; }
 void main() {
   int id = int(iId + 0.5); vec4 A = texelFetch(uPeople, ivec2(id, 0), 0), X = texelFetch(uPeople, ivec2(id, 2), 0); vec4 r = texelFetch(uPeople, ivec2(id, 3), 0);

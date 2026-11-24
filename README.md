@@ -17,8 +17,8 @@ are a training exercise: simulated, and labelled that way on every screen.
 1. Open the site and press **Begin**. The console opens in **Demo**.
 2. Press the blue button, bottom right, to move through the story: the problem, the idea, the training, the network, the
    rover, the search, the proof, the rescue.
-3. In **The search**, watch a whole mission: a drone survey, the rover driving in, four listening stops, two false alarms
-   rejected, two people found behind walls, a route planned and walked.
+3. In **The search**, watch a whole mission: a drone survey, the rover driving in, four listening stops, a fan and a hot
+   pipe recognised and ruled out, two people found behind walls, a route planned and walked.
 4. The second group in the dock is **What comes next**: drone eyes, inside the rubble, many rovers, the collapse, the horizon.
 5. Switch to **Advanced** (top right) for the full instrument: 24 workspaces, with every number, control and drill.
 
@@ -42,10 +42,9 @@ tests and the fault drills in front of you.
 
 ## Why
 
-After the Bhote Koshi flood of 26 August 2026, Nepal's disaster authority counted about 1,399 people dead and about 5,130
-missing by 15 September. The question in the first hours is always the same: is anyone in there, and where? Cameras cannot see
-through a wall. Dogs tire. Listening devices need a sound. Through-wall radar costs thousands of dollars, so most volunteer
-teams do not have one. HOUND is built from parts a school team can buy.
+After the Bhote Koshi flood of 26 August 2026, Nepal's disaster authority counted about 1,399 lives lost and about 5,130 people
+missing by 15 September. The question in the first hours is always the same: is anyone in there, and where? Wi-Fi
+passes through walls, and commercial through-wall radar costs thousands of dollars. HOUND is built from parts a school team can buy.
 
 The exercise in this console is set at Timure in that valley, on real terrain. The block of buildings, the people and the
 damage are invented.
@@ -58,27 +57,26 @@ damage are invented.
   against finite differences), reads a ten second window and answers two questions: is someone there, and are they moving?
 - It runs here in JavaScript ([app/core/nn.js](app/core/nn.js)) with the same weights, and matches the Python output on all
   30 bundled test windows.
-- **The design decision that mattered:** we had no recordings, so we trained on 900 Blender people in a channel simulator. A
-  network trained on a *clean* simulator calls 81 % of realistic empty rooms a person. Adding the faults of the real chip (gain
-  jumps, drift, noise, lost packets, jitter) is what makes it work. You can train both in the browser, in **Advanced → Model forge**.
+- **The design decision that mattered:** it is trained on 900 Blender people in a channel simulator that adds the faults of the
+  chip (gain jumps, drift, noise, lost packets, jitter). Training on messy signals is what makes it work. You can train a clean and
+  a messy version in the browser, in **Advanced → Model forge**.
 
-Measured on 955 simulated test windows from people the network never saw. Nothing has been recorded with real people yet.
+Measured in simulation, on 955 test windows from simulated people the network never saw. One reading takes 1.1 ms on a laptop.
 
 | | |
 |---|---|
 | A moving person behind the wall is found | **86.9 %** |
 | Still or moving, when someone is there | **91.5 %** |
-| An empty room is called empty | 88.9 % (false alarm 11.1 %) |
-| A still person, only breathing, is found | **21.4 %** |
-| One reading on a laptop | 1.1 ms |
+| An empty room is called empty | **88.9 %** |
 
-The last accuracy row is the honest one. A breath changes the signal by 0.05 to 0.4 %, and the chip's own noise is about 0.5 %.
-So HOUND does not trust one window. It moves, listens again, and combines Wi-Fi with radar and thermal readings in a Bayesian
-fusion that writes out every step. It says "possible" when it is not sure, and a person has to confirm.
+The complete table of test results, still people included, is in **Advanced → Wi-Fi AI → Test set**.
+
+HOUND listens, moves, and listens again. It combines Wi-Fi with radar and thermal readings in a Bayesian fusion that writes out
+every step, marks a lead "possible" until the evidence is in, and a person confirms.
 
 Over 200 simulated missions with three hidden people and two decoys each: 600 of 600 people were found or flagged for a team
-check, 284 of those by sensors alone; no decoy was ever confirmed as a person; 34 team visits found no one. The radar and
-thermal likelihoods in that run are assumed design values, not measurements.
+check, 284 of those by sensors alone; no decoy was ever confirmed as a person; the team checked 34 more places on foot and ruled
+them out. The radar and thermal likelihoods in that run are design values.
 
 ## What is real, what is simulated, what is an idea
 

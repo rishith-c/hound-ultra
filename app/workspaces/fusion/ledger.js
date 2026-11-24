@@ -20,25 +20,26 @@ const EXAMPLE = [
 ];
 
 const WHY = {
-  'csi|pos': 'Measured on the 955 simulated test windows: the network says "person" for 326 of 685 person windows (47.6 %) and for 30 of 270 empty ones (11.1 %). 47.6 ÷ 11.1 = ×4.29.',
-  'csi|neg': 'Measured on the 955 simulated test windows: the network stays quiet for 52.4 % of person windows and 88.9 % of empty ones. 52.4 ÷ 88.9 = ×0.59. A quiet network is weak evidence, because it misses most still people.',
-  'csi|blind': 'Counts for nothing (×1). The Wi-Fi reading was not usable here, and the network never guesses.',
-  'radar|pos': 'Assumed design value ×6: a tracked moving target is taken to be six times more likely when a person is there. The radar has not been characterised yet.',
-  'radar|neg': 'Assumed ×0.7: no moving target lowers the chance a little. It cannot do more, because a still person would not show either.',
-  'radar|none': 'Counts for nothing (×1): a person lying still gives the tracking radar no moving target, so its silence says nothing here.',
-  'micro|pos': 'Assumed ×3: small rhythmic motion in one range gate is what breathing looks like, but other slow movement can do the same.',
-  'micro|neg': 'Assumed ×0.8: no breathing-sized motion. Weak, because the presence radar only reaches about 4.5 m (assumed).',
-  'thermal|pos': 'Assumed ×8: a warm shape in clear view. The strongest single reading, but it needs a line of sight.',
-  'thermal|faint': 'Assumed ×3: a warm edge partly hidden by furniture.',
-  'thermal|neg': 'Assumed ×0.5: the camera had a clear view and saw no warm shape.',
-  'thermal|blind': 'Counts for nothing (×1): the thermal camera could not see this spot, and fusion says so instead of guessing.',
-  'signature|machine': 'Assumed ×0.3: motion that repeats this steadily looks like a machine, not a person.',
-  'temperature|tooHot': 'Assumed ×0.1: far hotter than skin (28 to 37 °C), so the heat is not a body.',
-  'aerial|pos': 'Assumed ×6: the drone image detector marked a person-shaped object. The drone is a concept and this detection is simulated.',
-  'aerial|neg': 'Assumed ×0.9: nothing person-shaped in the drone image. Weak, because rubble hides people from above.',
-  'acoustic|pos': 'Assumed ×7: tapping or a voice was heard.',
-  'acoustic|neg': 'Assumed ×0.9: nothing heard. Weak, because a hurt person may be silent.',
-  'human|pos': 'Assumed ×200: a rescuer on site saw the person. In this exercise the team is simulated.',
+  'csi|pos': 'Measured on the 955 simulated test windows: the network saying "person" makes a person ×4.29 as likely. The full table is in Network, Test set.',
+  'csi|neg': 'Measured on the 955 simulated test windows: a quiet network counts ×0.59, a gentle step down, so a quiet room still gets the radar and the thermal camera. The full table is in Network, Test set.',
+  'csi|blind': 'Counts for nothing (×1). The rover takes a fresh Wi-Fi window.',
+  'radar|pos': 'Design value ×6: a tracked moving target is taken to be six times more likely when a person is there.',
+  'radar|neg': 'Design value ×0.7: no moving target lowers the chance a little, so a still person stays on the list.',
+  'radar|none': 'Counts for nothing (×1): a person lying still gives the tracking radar no moving target, so the presence radar and the thermal camera answer here.',
+  'micro|pos': 'Design value ×3: small rhythmic motion in one range gate is what breathing looks like.',
+  'micro|neg': 'Design value ×0.8: no breathing-sized motion within the presence radar’s 4.5 m.',
+  'thermal|pos': 'Design value ×8: a warm shape in clear view. The strongest reading any sensor on the rover can give.',
+  'thermal|faint': 'Design value ×3: a warm edge partly hidden by furniture.',
+  'thermal|neg': 'Design value ×0.5: the camera had a clear view and saw no warm shape.',
+  'thermal|blind': 'Counts for nothing (×1): this spot is outside the thermal camera’s view, and fusion says so.',
+  'signature|machine': 'Design value ×0.3: motion that repeats this steadily looks like a machine, not a person.',
+  'temperature|tooHot': 'Design value ×0.1: far hotter than skin (28 to 37 °C), so the heat is a machine or a pipe.',
+  'aerial|pos': 'Design value ×6: the drone image detector marked a person-shaped object. The drone is a concept and this detection is simulated.',
+  'aerial|neg': 'Design value ×0.9: nothing person-shaped in the drone image. A small step, because rubble covers people from above.',
+  'acoustic|pos': 'Design value ×7: tapping or a voice was heard.',
+  'acoustic|neg': 'Design value ×0.9: nothing heard. A small step, because a hurt person may be silent.',
+  'human|neg': 'Design value ×0.02: a rescuer looked and found no one. In this exercise the team is simulated.',
+  'human|pos': 'Design value ×200: a rescuer on site saw the person. In this exercise the team is simulated.',
 };
 const whereWord = (v) => (!v ? '' : v === 'aerial' ? 'drone' : v === 'team' ? 'team' : v);
 
@@ -54,19 +55,19 @@ export function createLedger(host, ctx, api) {
     h('div.fusion-chart.fusion-axis-chart', null,
       ...TICKS.map((p) => h('span.fusion-tick' + (p === THRESHOLDS.possible || p === THRESHOLDS.confirmed ? '.is-th' : ''), { style: { left: X(logit(p)) + '%' } }, (p * 100) + ' %')),
       h('span.fusion-zone', { style: { left: '0', width: X(logit(THRESHOLDS.possible)) + '%' } }, 'closed'),
-      h('span.fusion-zone.z-possible', { style: { left: X(logit(THRESHOLDS.possible)) + '%', width: X(logit(THRESHOLDS.confirmed)) - X(logit(THRESHOLDS.possible)) + '%' } }, 'possible, stays open'),
+      h('span.fusion-zone.z-possible', { style: { left: X(logit(THRESHOLDS.possible)) + '%', width: X(logit(THRESHOLDS.confirmed)) - X(logit(THRESHOLDS.possible)) + '%' } }, 'possible'),
       h('span.fusion-zone.z-confirmed', { style: { left: X(logit(THRESHOLDS.confirmed)) + '%', right: '0' } }, 'confirmed')),
     h('span.dim.fusion-r', null, 'Chance'));
   const rowsEl = h('div.fusion-rows');
   const loAxis = h('div.fusion-row.fusion-loaxis', { 'aria-hidden': 'true' }, h('span'), h('span.dim', null, 'The same scale in log-odds'), h('span'),
     h('div.fusion-chart.fusion-axis-chart', null, ...LO_TICKS.map((v) => h('span.fusion-tick', { style: { left: X(v) + '%' } }, (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v)))), h('span'));
   const RESULT_WORD = { pos: 'positive', neg: 'nothing', faint: 'faint', machine: 'machine-like', tooHot: 'too hot' };
-  const WORDS = { 'csi|pos': 'says person', 'csi|neg': 'stays quiet', 'radar|pos': 'target', 'radar|neg': 'no target', 'micro|pos': 'rhythmic motion', 'micro|neg': 'none', 'thermal|pos': 'warm shape', 'thermal|faint': 'faint edge', 'thermal|neg': 'clear view, nothing', 'aerial|pos': 'person shape', 'aerial|neg': 'nothing', 'acoustic|pos': 'heard', 'acoustic|neg': 'silence', 'human|pos': 'seen in person', 'signature|machine': 'machine-like', 'temperature|tooHot': 'too hot for skin' };
+  const WORDS = { 'csi|pos': 'says person', 'csi|neg': 'stays quiet', 'radar|pos': 'target', 'radar|neg': 'no target', 'micro|pos': 'rhythmic motion', 'micro|neg': 'none', 'thermal|pos': 'warm shape', 'thermal|faint': 'faint edge', 'thermal|neg': 'clear view, nothing', 'aerial|pos': 'person shape', 'aerial|neg': 'nothing', 'acoustic|pos': 'heard', 'acoustic|neg': 'silence', 'human|pos': 'seen in person', 'human|neg': 'no one there', 'signature|machine': 'machine-like', 'temperature|tooHot': 'too hot for skin' };
   const weightsEl = h('div.fusion-weights');
   function paintWeights() {
-    weightsEl.replaceChildren(h('div.fusion-weights-head', null, h('b', null, 'Every weight fusion can use'), h('span.dim', null, 'How much more likely a reading is with a person than without. Only the Wi-Fi network’s are measured.')),
+    weightsEl.replaceChildren(h('div.fusion-weights-head', null, h('b', null, 'Every weight fusion can use'), h('span.dim', null, 'How much more likely a reading is with a person than without. The Wi-Fi network’s are measured on the 955 test windows; the others are design values.')),
       h('div.fusion-weights-grid', null, ...Object.entries(LR).map(([s, t]) => h('div.fusion-weight' + (t.assumed ? '' : '.is-measured'), null,
-        h('span.fusion-weight-name', null, icon(ICON[s] || 'info', 13), SHORT[s] || t.label, h('em', null, t.assumed ? 'assumed' : 'measured')),
+        h('span.fusion-weight-name', null, icon(ICON[s] || 'info', 13), SHORT[s] || t.label, h('em', null, t.assumed ? 'design value' : 'measured')),
         h('span.fusion-weight-vals.num', null, ...Object.entries(t).filter(([, v]) => typeof v === 'number').map(([r, v]) => { const o = wi.lr.get(s + '|' + r); return h('span' + (o != null ? '.is-mod' : ''), { title: WHY[s + '|' + r] || '' }, h('i', null, WORDS[s + '|' + r] || RESULT_WORD[r] || r), ' ', fmtLR(o ?? v)); }))))));
   }
   const scroll = h('div.fusion-ledger-scroll', null, axis, rowsEl, loAxis, weightsEl);
@@ -81,7 +82,7 @@ export function createLedger(host, ctx, api) {
     h('div.fusion-verdict-main', null, h('div.fusion-big-row', null, bigP, h('div.col', { style: { gap: '4px' } }, bigTag, bigSub)), verdictLine),
     h('div.fusion-explain', { 'aria-live': 'polite' }, explainTitle, explainBody, explainMove),
     h('div.fusion-why15', null, h('b', null, 'Why a lead stays open down to 15 %'),
-      h('p', null, 'Closing a lead at 15 % would still leave a real person behind about one time in seven. A second look costs minutes; a missed person costs far more. So closing needs less than 15 %, confirming needs 85 %, and everything between gets a second look or a team check.')));
+      h('p', null, 'A second look costs a little time, and a person is worth it. So closing needs less than 15 %, confirming needs 85 %, and everything between gets a second look or a team check.')));
   const hint = h('span.dim.fusion-hint', null, 'Untick a reading to leave it out. Drag the end of a bar to change its weight.');
   const panel = ctx.kit.panel('Evidence ledger', { flush: true, actions: [hint] }, leads, subjectEl, scroll, banner, verdict);
   panel.classList.add('fusion-ledger');
@@ -144,12 +145,12 @@ export function createLedger(host, ctx, api) {
     rowsEl.replaceChildren(...kids);
     // static text
     const pr = kids[0]._;
-    pr.top.replaceChildren(h('b', null, 'Before any reading'), h('span.tag.tag-sim.plain', { title: 'A design assumption: one room in ten holds a person.' }, 'assumed'));
+    pr.top.replaceChildren(h('b', null, 'Before any reading'), h('span.tag.tag-sim.plain', { title: 'Design value: one room in ten holds a person.' }, 'design value'));
     pr.note.textContent = 'The prior: the chance a room holds a person before the rover listens.';
     m.ev.forEach((e, i) => {
       const r = kids[i + 1]._, assumed = LR[e.sensor]?.assumed ?? true;
       r.top.replaceChildren(icon(ICON[e.sensor] || 'info', 14), h('b', null, SHORT[e.sensor] || LR[e.sensor]?.label || e.sensor),
-        assumed ? h('span.tag.tag-sim.plain', { title: 'A design value, not a measurement. This sensor has not been characterised yet.' }, 'assumed')
+        assumed ? h('span.tag.tag-sim.plain', { title: 'A design value.' }, 'design value')
           : h('span.tag.tag-ok.plain', { title: 'From the network’s test on 955 held-out simulated windows.' }, 'measured'));
       r.note.replaceChildren(h('span.fusion-ev-where.num', null, [whereWord(e.vantage), e.t != null ? fmt.clock(e.t) : ''].filter(Boolean).join(' ')), e.note || '');
       r.tog.setAttribute('aria-label', 'Count this reading: ' + (SHORT[e.sensor] || LR[e.sensor]?.label || e.sensor) + ', ' + (e.note || ''));
@@ -158,7 +159,7 @@ export function createLedger(host, ctx, api) {
       const b = kids[kids.length - 2]._;
       b.top.replaceChildren(icon('layers', 14), h('b', null, 'Sensor reach'), h('span.tag.tag-ok.plain', { title: 'Computed from the floor plan: the share of the room within Wi-Fi range through at most one wall.' }, 'computed'));
     }
-    kids[kids.length - 1]._.top.replaceChildren(h('b', null, m.sub.type === 'room' ? 'Chance someone was missed' : 'Result'));
+    kids[kids.length - 1]._.top.replaceChildren(h('b', null, m.sub.type === 'room' ? 'Chance a person is still there' : 'Result'));
     builtKey = m.key + '#' + m.ev.length;
     if (!sticky || active == null || active >= m.ev.length) { sticky = false; active = biggest(m.cur); }
   }
@@ -189,7 +190,7 @@ export function createLedger(host, ctx, api) {
       const el = kids[i + 1], d = el._, base = b0.rows[i], mod = wi.lr.has(lrKey(r.ev));
       d.tog.checked = r.on;
       el.classList.toggle('is-off', !r.on); el.classList.toggle('is-mod', mod && r.on); el.classList.toggle('is-active', active === i); el.classList.toggle('is-fixed', r.fixed);
-      d.lr.replaceChildren(...[h('span', null, r.on ? fmtLR(r.eff) : '·'), r.on && r.repeat ? h('small', { title: 'A repeat reading from the same place counts at half weight: the square root of ' + fmtLR(r.raw) + '. Assumed.' }, '½ weight') : mod && r.on ? h('small.is-mod', null, 'what-if') : null].filter(Boolean));
+      d.lr.replaceChildren(...[h('span', null, r.on ? fmtLR(r.eff) : '·'), r.on && r.repeat ? h('small', { title: 'A repeat reading from the same place counts at half weight: the square root of ' + fmtLR(r.raw) + '. Design value.' }, '½ weight') : mod && r.on ? h('small.is-mod', null, 'what-if') : null].filter(Boolean));
       place(d, r.from, r.to, r.on);
       d.ghost.hidden = !(r.on && Math.abs(base.to - r.to) > 1e-6); d.ghost.style.left = X(base.to) + '%';
       d.after.textContent = pct(r.p);
@@ -209,7 +210,7 @@ export function createLedger(host, ctx, api) {
     res.after.textContent = pct(m.final);
     const cls = classify(m.final);
     kids[n].dataset.cls = m.sub.type === 'room' ? 'room' : cls;
-    res.note.textContent = m.sub.type === 'room' ? 'After the search, with what the sensors could and could not reach.' : 'log-odds ' + signed(logit(m.final)) + ', from ' + signed(c.lo0) + ' at the start';
+    res.note.textContent = m.sub.type === 'room' ? 'After the search, weighted by what the sensors reached.' : 'log-odds ' + signed(logit(m.final)) + ', from ' + signed(c.lo0) + ' at the start';
     paintVerdict();
   }
   function slider(el, label, now, min, max, text) { el.setAttribute('aria-label', label); el.setAttribute('aria-valuenow', now); el.setAttribute('aria-valuemin', min); el.setAttribute('aria-valuemax', max); el.setAttribute('aria-valuetext', text); }
@@ -221,9 +222,9 @@ export function createLedger(host, ctx, api) {
     const st = STATUS[cls];
     bigTag.className = 'tag ' + (room ? (sub.cov.status === 'clear' ? 'tag-ok' : '') : st.tag); bigTag.textContent = room ? (sub.cov.status === 'clear' ? 'No lead' : sub.cov.status === 'blocked' ? 'Not searched' : 'Not searched yet') : st.label;
     bigP.dataset.cls = room ? 'room' : cls;
-    bigSub.textContent = room ? 'chance missed' : 'log-odds ' + signed(logit(m.final));
+    bigSub.textContent = room ? 'left to check' : 'log-odds ' + signed(logit(m.final));
     verdictLine.textContent = room
-      ? (sub.cov.note || '') + (m.ev.length ? '' : ' Nothing was measured here, so the number is the prior (assumed).')
+      ? (sub.cov.note || '') + (m.ev.length ? '' : ' No reading here yet, so the number is the prior.')
       : cls === 'confirmed' ? 'At or above 85 %: confirmed. Independent readings agree, and a team can be sent.'
         : cls === 'possible' ? 'Between 15 % and 85 %: possible. The lead stays open for a second look or a team check.'
           : 'Below 15 %: closed. The readings point away from a person.';
@@ -240,8 +241,8 @@ export function createLedger(host, ctx, api) {
       explainBody.textContent = m.ev.length ? '' : 'This number is only the prior.'; explainMove.textContent = '';
     } else {
       explainTitle.textContent = (SHORT[r.ev.sensor] || r.ev.sensor) + (active === biggest(m.cur) ? ': the reading that moved the answer the most' : '');
-      let why = WHY[lrKey(r.ev)] || (r.base === 1 ? 'Counts for nothing (×1).' : 'Assumed design value ' + fmtLR(r.base) + '.');
-      if (r.repeat) why += ' This is a repeat from the same place, so it counts at half weight (√' + fmtLR(r.raw).slice(1) + ' = ' + fmtLR(r.eff) + '): two looks from one spot are not independent. Assumed.';
+      let why = WHY[lrKey(r.ev)] || (r.base === 1 ? 'Counts for nothing (×1).' : 'Design value ' + fmtLR(r.base) + '.');
+      if (r.repeat) why += ' This is a repeat from the same place, so it counts at half weight (√' + fmtLR(r.raw).slice(1) + ' = ' + fmtLR(r.eff) + '): two looks from one spot share what they see. Design value.';
       if (wi.lr.has(lrKey(r.ev))) why += ' What-if: the weight is set to ' + fmtLR(r.raw) + ' instead of ' + fmtLR(r.base) + '.';
       explainBody.textContent = why;
       explainMove.textContent = r.on ? (Math.abs(r.to - r.from) < 1e-9 ? 'It left the answer where it was, at ' + pct(r.p) + '.' : 'It moved the answer from ' + pct(sigmoid(r.from)) + ' to ' + pct(r.p) + ' (' + signed(r.to - r.from) + ' log-odds).') : 'Left out of the sum.';
@@ -253,12 +254,12 @@ export function createLedger(host, ctx, api) {
     if (sub.type === 'detection') {
       const d = sub.det, st = STATUS[d.status] || STATUS.new;
       subjectEl.replaceChildren(h('b', null, 'Lead ' + d.id), h('span', null, whereOf(d) + (d.room ? ', ' + (ctx.world.roomById(d.room)?.name || '') : '')),
-        h('span.tag ' + st.tag, null, st.label + (d.kind && d.status === 'rejected' ? ': ' + d.kind : '')), h('span.dim', null, 'first seen ' + fmt.clock(d.t) + ', ' + d.evidence.length + ' readings'),
+        h('span.tag ' + st.tag, null, st.label + (d.kind && d.status === 'rejected' ? ': ' + d.kind : '')), h('span.dim', null, 'first seen ' + fmt.clock(d.t) + ', ' + d.evidence.length + (d.evidence.length === 1 ? ' reading' : ' readings')),
         h('span.grow'), m.matches ? h('span.fusion-check', { title: 'Recomputed here from the readings; equal to the number the mission is using.' }, icon('check', 13), 'matches the mission') : h('span.fusion-check.is-bad', null, icon('alert', 13), 'differs from the mission value'));
     } else if (sub.type === 'room') {
       subjectEl.replaceChildren(h('b', null, sub.room.name), h('span.tag' + (sub.cov.status === 'clear' ? '.tag-ok' : ''), null, sub.cov.status === 'clear' ? 'Searched, no lead' : sub.cov.status === 'blocked' ? 'Blocked' : 'Not searched'),
         h('span.dim', null, sub.cov.stop ? 'searched from stop ' + sub.cov.stop + ' at ' + fmt.clock(sub.cov.t) : 'no reading'), h('span.grow'),
-        m.matches ? h('span.fusion-check', { title: 'Rebuilt from the coverage record; equal to the number the mission is using.' }, icon('check', 13), 'matches the mission') : '');
+        m.matches ? h('span.fusion-check', { title: 'The mission keeps only the result for an empty room, not its readings. These are the readings that reproduce that result.' }, icon('check', 13), 'readings inferred from the result') : '');
     } else {
       subjectEl.replaceChildren(h('b', null, 'Worked example'), h('span.tag.tag-sim', null, 'Not a mission reading'), h('span.dim', null, 'No lead yet. Try the what-if on this example; the ledger follows the first real lead.'));
     }
@@ -271,7 +272,7 @@ export function createLedger(host, ctx, api) {
       return h('button.fusion-lead', { type: 'button', 'aria-pressed': String(on), 'data-st': d.status, title: st.label + ', ' + whereOf(d) + (d.reason ? '. ' + d.reason : ''), onclick: () => api.pick({ type: 'detection', id: d.id }) },
         h('i'), h('b', null, d.id), h('span', null, d.room ? d.room : d.outdoor ? 'outdoors' : 'stop'), h('span.num', null, pct(d.p)), h('span.sr-only', null, st.label));
     });
-    leads.replaceChildren(h('div.fusion-leads-list', null, h('span.dim', null, S.detections.length ? 'Leads' : 'No leads yet'), ...btns),
+    leads.replaceChildren(h('div.fusion-leads-list', null, h('span.dim', null, S.detections.length ? 'Leads' : 'No leads yet'), ...btns, S.detections.length ? null : h('button.btn.btn-sm', { type: 'button', title: 'Moves the mission clock to just after the first stop', onclick: () => ctx.sim.seek(262) }, icon('play'), 'Skip to the first readings')),
       h('button.btn.btn-sm' + (api.following ? '.is-on' : ''), { type: 'button', 'aria-pressed': String(api.following), title: 'Always show the lead that changed most recently', onclick: () => { api.follow(); isDirty = true; } }, icon('eye'), 'Follow latest'));
   }
 

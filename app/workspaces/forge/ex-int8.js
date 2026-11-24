@@ -47,7 +47,7 @@ export async function create(el, env) {
       h('dt', null, 'Share spent in the first convolution'), h('dd.num', null, pct(mac.conv1 / q.macs_total)),
       h('dt', null, 'Time per reading on the chip'), h('dd', null, 'not measured'),
       h('dt', null, 'Price of the module'), h('dd', null, 'about 4 US dollars in quantity')),
-    h('p.forge-p.dim', null, 'Memory sizes: ', cite('esp32'), '. Price: distributor listings in November 2026 ran from 3.30 (400 or more) to 5.66 US dollars (one), so “4-dollar” is fair in quantity, not for a single part.'));
+    h('p.forge-p.dim', null, 'Memory sizes: ', cite('esp32'), '. Price: distributor listings in November 2026 showed about 3.30 US dollars each for 400 or more at one distributor and 5.66 or more for a single part at another, so “4-dollar” is fair in quantity, not for one part.'));
 
   // ---------- measured ----------
   const rowsDef = [['Moving person found', 'moving_found'], ['Still person found', 'still_found'], ['Empty room called empty', 'empty_ok'], ['Still or moving, right', 'moving_acc'], ['Area under the ROC curve', 'auc']];
@@ -57,13 +57,13 @@ export async function create(el, env) {
   const measured = block('Does it still give the same answers?', null,
     h('table.table.dense.forge-score', null, h('thead', null, h('tr', null, h('th', null, 'All ' + doc.repro.test.confusion.flat().reduce((a, b) => a + b, 0) + ' test windows'), h('th.num', null, 'int8'), h('th.num', null, '32-bit float'))),
       h('tbody', null, rowsDef.map((r) => h('tr', null, h('td', null, r[0]), h('td.num', null, r[1] === 'auc' ? ti.auc.toFixed(3) : pct(ti[r[1]])), h('td.num', null, r[1] === 'auc' ? tf.auc.toFixed(3) : pct(tf[r[1]])))),
-        h('tr', null, h('td', null, 'Answers that changed'), h('td.num', null, q.test.flips + ' of 955'), h('td.num', null, '–')),
-        h('tr', null, h('td', null, 'Mean shift in P(person)'), h('td.num', null, q.test.mean_abs_dp.toFixed(3)), h('td.num', null, '–')))),
+        h('tr', null, h('td', null, 'Answers that changed'), h('td.num', null, q.test.flips + ' of 955'), h('td.num', null, 'reference')),
+        h('tr', null, h('td', null, 'Mean shift in P(person)'), h('td.num', null, q.test.mean_abs_dp.toFixed(3)), h('td.num', null, 'reference')))),
     h('div.row', null, src('py', 'integer-only NumPy on the float16 windows'), h('span.grow')),
     h('div.forge-plot-wrap', { style: { height: '236px' } }, scatCv), liveSum, h('div.row', null, runBtn, h('span.grow'), src('page', bte.n + ' bundled test windows')));
 
   // ---------- how few bits ----------
-  const bitsCv = h('canvas.forge-plot'), bitsPlot = plotter(bitsCv, { r: 70 });
+  const bitsCv = h('canvas.forge-plot'), bitsPlot = plotter(bitsCv, { r: 132 });
   const B = q.bits, knee = B.find((b) => b.agree < 0.95);
   const bitsBlock = block('How few bits before it breaks?', src('py', '955 test windows, weights only'),
     h('div.forge-plot-wrap.short', { style: { height: '170px' } }, bitsCv),

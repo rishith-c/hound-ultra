@@ -244,7 +244,7 @@ export default {
         sweep.push({ w, frac: r.frac, ok }); sweepAt++; chartsDirty = true; return true; }
       while (mc.total < SIZES.length * RUNS && performance.now() - t0 < budget) { did = true;
         if (!mcJob) { const si = mc.total % SIZES.length; mcJob = { si, sw: makeSwarm(pile, vis, G, SIZES[si], 9001 + P.seed * 131 + mc.total * 17, P.steer, P.range, false) }; }
-        mcJob.sw.advance(mcJob.sw.t + 40);
+        mcJob.sw.advance(mcJob.sw.t + 4);
         if (mcJob.sw.done) { mc.runs[mcJob.si].push(Number.isFinite(mcJob.sw.allT) ? mcJob.sw.allT : Infinity); mc.first[mcJob.si].push(mcJob.sw.firstT); mc.total++; mcJob = null; chartsDirty = true; } }
       return did;
     }

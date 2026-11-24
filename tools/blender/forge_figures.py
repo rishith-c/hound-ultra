@@ -46,7 +46,7 @@ class Pose:
             sh = th @ rot("x", -getattr(self, s + "k")); B[s + "sh"] = sh
             an = J[s + "ank"] = kn + U(sh, 0, 0, -0.425)
             B[s + "ft"] = sh @ rot("x", getattr(self, s + "a")) @ rot("z", -sx * (8 + getattr(self, s + "t")))
-            fl, ab, tw = getattr(self, s + "s"); so = J[s + "sho"] = J["waist"] + U(ch, sx * 0.188, -0.016, 0.335)
+            fl, ab, tw = getattr(self, s + "s"); so = J[s + "sho"] = J["waist"] + U(ch, sx * 0.164, -0.016, 0.334)
             ua = ch @ rot("x", fl) @ rot("y", -sx * ab) @ rot("z", -sx * tw); B[s + "ua"] = ua
             el = J[s + "elb"] = so + U(ua, 0, 0, -0.300)
             fa = ua @ rot("x", getattr(self, s + "e")); B[s + "fa"] = fa
@@ -126,52 +126,51 @@ def build(pose, vox):
     # ---- body under the cloth (layer 'skin': head, neck, forearms, hands)
     s = "skin"
     sk = P["skull"]
-    f.ell(s, sk + hd @ [0, -0.008, 0.022], (0.074, 0.094, 0.092), hd, 0)                     # cranium
-    f.ell(s, sk + hd @ [0, 0.026, -0.048], (0.056, 0.068, 0.078), hd, 0.035)                 # face mass
+    f.ell(s, sk + hd @ [0, -0.008, 0.022], (0.0785, 0.095, 0.086), hd, 0)                     # cranium
+    f.ell(s, sk + hd @ [0, 0.026, -0.048], (0.060, 0.068, 0.076), hd, 0.04)                 # face mass
     f.ell(s, sk + hd @ [0, 0.052, -0.100], (0.030, 0.026, 0.024), hd, 0.034)                 # chin
     for sx in (1, -1):
         f.cone(s, sk + hd @ [sx * 0.056, -0.004, -0.062], sk + hd @ [sx * 0.020, 0.058, -0.104], 0.017, 0.015, 0.03)     # jaw
         f.ell(s, sk + hd @ [sx * 0.040, 0.062, -0.034], (0.021, 0.017, 0.016), hd, 0.028)    # cheekbone
-        f.ell(s, sk + hd @ [sx * 0.031, 0.094, -0.012], (0.020, 0.018, 0.011), hd, 0.016, sub=True)                   # orbit: a hollow, no eye
+        f.ell(s, sk + hd @ [sx * 0.031, 0.094, -0.012], (0.019, 0.014, 0.010), hd, 0.020, sub=True)                   # orbit: a hollow, no eye
         f.ell(s, sk + hd @ [sx * 0.076, -0.008, -0.030], (0.008, 0.021, 0.032), hd @ rot("z", sx * 20), 0.008)       # ear
         f.ell(s, sk + hd @ [sx * 0.083, -0.004, -0.030], (0.006, 0.010, 0.017), hd @ rot("z", sx * 20), 0.006, sub=True)
     f.cone(s, sk + hd @ [0, 0.082, 0.004], sk + hd @ [0, 0.076, 0.006], 0.012, 0.012, 0.03)
     f.cone(s, sk + hd @ [0, 0.085, 0.000], sk + hd @ [0, 0.101, -0.043], 0.008, 0.0125, 0.014)                        # nose
     f.ell(s, sk + hd @ [0, 0.084, -0.074], (0.023, 0.011, 0.0085), hd, 0.016)                # lips, one soft mass
-    f.ell(s, sk + hd @ [0, 0.097, -0.0745], (0.024, 0.008, 0.0022), hd, 0.006, sub=True)
     # hair: a close, sculpted cap
-    f.ell("hair", sk + hd @ [0, -0.016, 0.030], (0.081, 0.100, 0.094), hd, 0)
+    f.ell("hair", sk + hd @ [0, -0.016, 0.030], (0.0825, 0.100, 0.0885), hd, 0)
     f.ell("hair", sk + hd @ [0, -0.044, -0.030], (0.070, 0.068, 0.075), hd, 0.03)
     f.ell("hair", sk + hd @ [0, 0.100, -0.030], (0.085, 0.072, 0.092), hd, 0.02, sub=True)   # the face opening
     f.ell("hair", sk + hd @ [0, 0.02, -0.125], (0.12, 0.12, 0.062), hd, 0.015, sub=True)
     nk = P["neck"]
-    f.cone(s, nk + ch @ [0, -0.016, -0.030], sk + hd @ [0, -0.030, -0.040], 0.060, 0.053, 0.03)
+    f.cone(s, nk + ch @ [0, -0.016, -0.030], sk + hd @ [0, -0.030, -0.040], 0.057, 0.052, 0.04)
     for sx in (1, -1):
         f.cone(s, sk + hd @ [sx * 0.056, -0.024, -0.052], nk + ch @ [sx * 0.018, 0.048, -0.026], 0.017, 0.014, 0.022)  # sternomastoid
     f.ell(s, nk + ch @ [0, 0.042, 0.045], (0.014, 0.014, 0.020), ch, 0.02)
     # ---- torso volume (used for the shirt)
     t = "torso"; c = lambda x, y, z: P["waist"] + ch @ np.array([x, y, z])
-    f.ell(t, c(0, 0.0, 0.215), (0.150, 0.108, 0.190), ch, 0)
+    f.ell(t, c(0, 0.0, 0.215), (0.143, 0.104, 0.190), ch, 0)
     f.ell(t, c(0, 0.006, 0.075), (0.134, 0.097, 0.140), ch, 0.07)
-    f.ell(t, P["pelvis"] + pel @ [0, -0.004, 0.02], (0.156, 0.110, 0.120), pel, 0.07)
+    f.ell(t, P["pelvis"] + pel @ [0, -0.004, 0.02], (0.146, 0.106, 0.120), pel, 0.07)
     for sx in (1, -1):
         f.ell(t, c(sx * 0.072, 0.072, 0.232), (0.080, 0.042, 0.062), ch @ rot("z", -sx * 18), 0.05)                   # chest muscle
         f.ell(t, c(sx * 0.098, -0.062, 0.215), (0.066, 0.046, 0.115), ch, 0.05)              # shoulder blade, lat
-        f.cone(t, c(sx * 0.030, -0.030, 0.385), c(sx * 0.165, -0.020, 0.342), 0.044, 0.046, 0.055)                    # trapezius to shoulder
+        f.cone(t, c(sx * 0.030, -0.030, 0.385), c(sx * 0.150, -0.020, 0.330), 0.044, 0.038, 0.06)                    # trapezius to shoulder
         f.ell(t, P["pelvis"] + pel @ [sx * 0.072, -0.072, -0.030], (0.082, 0.078, 0.098), pel, 0.05)                  # seat
         f.ell(t, P["pelvis"] + pel @ [sx * 0.118, 0.0, 0.0], (0.050, 0.075, 0.095), pel, 0.05)
-    f.ell(t, c(0, 0.050, 0.035), (0.095, 0.062, 0.105), ch, 0.06)
+    f.ell(t, c(0, 0.050, 0.035), (0.095, 0.050, 0.105), ch, 0.06)
     f.cone(t, c(0, -0.070, 0.06), c(0, -0.092, 0.30), 0.010, 0.012, 0.03, sub=True)           # spine furrow
     # ---- arms
     for q, sx in (("l", 1), ("r", -1)):
         ua, fa, hn = B[q + "ua"], B[q + "fa"], B[q + "hd"]; so, el, wr = P[q + "sho"], P[q + "elb"], P[q + "wri"]
-        f.ell("arm" + q, so + ua @ [sx * 0.004, 0, -0.030], (0.058, 0.060, 0.078), ua, 0)
-        f.cone("arm" + q, so + ua @ [0, 0, -0.02], el, 0.050, 0.040, 0.04)
-        f.ell("arm" + q, so + ua @ [0, 0.016, -0.165], (0.038, 0.040, 0.085), ua, 0.03)
-        f.ell("arm" + q, so + ua @ [0, -0.020, -0.150], (0.038, 0.036, 0.095), ua, 0.03)
+        f.ell("arm" + q, so + ua @ [sx * 0.004, 0, -0.030], (0.047, 0.051, 0.068), ua, 0)
+        f.cone("arm" + q, so + ua @ [0, 0, -0.02], el, 0.043, 0.036, 0.04)
+        f.ell("arm" + q, so + ua @ [0, 0.016, -0.165], (0.034, 0.036, 0.085), ua, 0.03)
+        f.ell("arm" + q, so + ua @ [0, -0.020, -0.150], (0.034, 0.033, 0.095), ua, 0.03)
         f.cone(s, el + fa @ [0, 0, 0.04], el, 0.038, 0.038, 0.02)
-        f.cone(s, el, wr, 0.039, 0.026, 0.03, (1.0, 0.92), fa)
-        f.ell(s, el + fa @ [sx * 0.008, 0.008, -0.070], (0.037, 0.040, 0.082), fa, 0.03)
+        f.cone(s, el, wr, 0.034, 0.024, 0.03, (1.0, 0.92), fa)
+        f.ell(s, el + fa @ [sx * 0.008, 0.008, -0.070], (0.033, 0.036, 0.082), fa, 0.03)
         f.ell(s, el + fa @ [0, -0.030, 0.004], (0.017, 0.014, 0.022), fa, 0.02)
         # hand: palm, four fingers and a thumb, loosely curled. Local frame: -z along the hand, x across the palm, y palm normal
         h0 = wr
@@ -227,18 +226,18 @@ def build(pose, vox):
     smin = lambda a, b, k: np.minimum(a, b) - (np.maximum(k - np.abs(a - b), 0) / k) ** 2 * k * 0.25
     G = lambda v, w: np.exp(-(v / w) ** 2)
     # shirt = torso + sleeves, loose, hem below the hips
-    shirt = f.d["torso"] - 0.011
+    pz0, _ = proj(P["pelvis"], P["waist"]); shirt = f.d["torso"] - 0.009 - 0.018 * G(pz0 - 0.10, 0.16)
     for q, sx in (("l", 1), ("r", -1)):
         a, b = P[q + "sho"], P[q + "elb"]; s_, L = proj(a, b); an_ = ang(a, B[q + "ua"])
-        arm = f.d["arm" + q] - (0.010 + 0.011 * np.clip(s_ / L, 0, 1))
-        w = G(s_ - L * 0.15, 0.10) * 0.010 + G(s_ - L * 0.78, 0.07) * 0.008
-        arm = arm - w * ridge(s_ * 105 + np.cos(an_ - 0.6 * sx) * 3.4 + nz * 2.4)
+        arm = f.d["arm" + q] - (0.005 + 0.009 * np.clip(s_ / L, 0, 1) ** 1.5)
+        w = G(s_ - L * 0.22, 0.08) * 0.0042 + G(s_ - L * 0.72, 0.06) * 0.0052
+        arm = arm - w * ridge(s_ * 78 + np.cos(an_ - 0.6 * sx) * 4.4 + nz * 3.0)
         arm = np.maximum(arm, s_ - L * 0.80)                                              # sleeve end
         shirt = smin(shirt, arm, 0.050)
     cz, _ = proj(P["waist"], P["sternum"]); pz, _ = proj(P["pelvis"], P["waist"]); ca = ang(P["waist"], ch)
-    shirt = shirt - 0.0105 * G(cz - 0.02, 0.085) * ridge(cz * 78 + np.abs(np.sin(ca)) * 3.2 + nz * 2.6)          # blousing at the waist
-    shirt = shirt - 0.0085 * G(cz - 0.275, 0.07) * ridge(np.cos(ca) * 7 + np.abs(np.cos(ca)) * cz * 60 + nz * 2.2)   # drag lines from the armpits
-    shirt = shirt - 0.0060 * G(pz + 0.015, 0.09) * ridge(ca * 9 + nz * 2.4 + pz * 10)                                 # skirt of the shirt hangs in flutes
+    shirt = shirt - 0.0062 * G(cz - 0.03, 0.10) * ridge(cz * 52 + np.abs(np.sin(ca)) * 4.2 + nz * 3.2)          # blousing at the waist
+    shirt = shirt - 0.0050 * G(cz - 0.265, 0.06) * ridge(np.cos(ca) * 7 + np.abs(np.cos(ca)) * cz * 60 + nz * 2.2)   # drag lines from the armpits
+    shirt = shirt - 0.0072 * G(pz + 0.02, 0.12) * ridge(ca * 8 + nz * 2.8 + pz * 9)                                 # skirt of the shirt hangs in flutes
     shirt = shirt - 0.0030 * nz2
     hem = -(pz + 0.075 + 0.006 * np.sin(ca * 3 + nz))
     shirt = np.maximum(shirt, hem)
@@ -252,9 +251,9 @@ def build(pose, vox):
         hp, kn, an = P[q + "hip"], P[q + "knee"], P[q + "ank"]; st, Lt = proj(hp, kn); ss, Ls = proj(kn, an); at_ = ang(hp, B[q + "th"]); as_ = ang(kn, B[q + "sh"])
         leg = f.d["leg" + q] - (0.011 + 0.016 * np.clip(ss / Ls, 0, 1) * (st > Lt * 0.8))
         bend = getattr(pose, q + "k")
-        leg = leg - (0.006 + 0.0055 * min(bend, 60) / 40) * G(ss, 0.075) * ridge(ss * 88 + np.cos(as_ + 1.57) * 3.2 + nz * 2.2)       # behind and around the knee
-        leg = leg - 0.0075 * G(st - 0.07, 0.085) * ridge(st * 66 - np.sin(at_) * 3.6 + nz * 2.0)                                       # crotch and hip drag lines
-        leg = leg - 0.0105 * G(ss - Ls * 0.93, 0.060) * ridge(ss * 118 + np.sin(as_) * 2.6 + nz * 2.6)                                 # breaks over the shoe
+        leg = leg - (0.0042 + 0.0050 * min(bend, 60) / 40) * G(ss, 0.075) * ridge(ss * 88 + np.cos(as_ + 1.57) * 3.2 + nz * 2.2)       # behind and around the knee
+        leg = leg - 0.0056 * G(st - 0.08, 0.085) * ridge(st * 66 - np.sin(at_) * 3.6 + nz * 2.0)                                       # crotch and hip drag lines
+        leg = leg - 0.0082 * G(ss - Ls * 0.93, 0.060) * ridge(ss * 118 + np.sin(as_) * 2.6 + nz * 2.6)                                 # breaks over the shoe
         leg = leg - 0.0045 * ridge(np.cos(at_ * 1 + 0.4) * 5 + nz * 2.6 + st * 9) * G(st - Lt * 0.6, 0.16)                             # long soft flutes down the thigh
         leg = leg - 0.0022 * nz2
         leg = np.maximum(leg, np.where(st > Lt * 0.5, ss - Ls * 1.015, -1))

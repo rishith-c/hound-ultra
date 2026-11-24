@@ -44,7 +44,7 @@
 .sense-ev-glyph circle { fill: none; stroke-width: 1.6; }
 .sense-ev-g-dot-person circle { fill: var(--person); stroke: none; }
 .sense-ev-g-dot-warn circle { fill: var(--warn); stroke: none; }
-.sense-ev-g-ring-danger circle { stroke: var(--danger); }
+.sense-ev-g-ring-danger circle { stroke: var(--text-2); }
 .sense-ev-g-ring-ok circle { stroke: var(--ok); }
 .sense-ev-ctl { display: flex; align-items: baseline; gap: var(--s-3); min-height: 34px; flex-wrap: nowrap; }
 .sense-ev-ctl .btn { align-self: center; }
@@ -81,12 +81,12 @@
 .sense-ev-cell-top { display: flex; align-items: center; gap: 6px; }
 .sense-ev-cell-top b { font-size: var(--fs-28); font-weight: 600; line-height: 1.05; letter-spacing: -0.02em; color: var(--text); }
 .sense-ev-cell-name { font-size: var(--fs-12); font-weight: 600; margin-top: 3px; color: var(--text); }
-.sense-ev-cell-fn .sense-ev-cell-name { color: var(--danger); } .sense-ev-cell-fp .sense-ev-cell-name { color: var(--warn); }
+.sense-ev-cell-fn .sense-ev-cell-name, .sense-ev-cell-fp .sense-ev-cell-name { color: var(--text-2); }
 .sense-ev-cell-tp .sense-ev-cell-name { color: var(--person); } .sense-ev-cell-tn .sense-ev-cell-name { color: var(--ok); }
 .sense-ev-cell-means { font-size: var(--fs-11); color: var(--text-2); line-height: 1.3; min-height: 2.6em; }
 .sense-ev-share { height: 3px; border-radius: 2px; background: var(--bg-4); margin-top: 5px; overflow: hidden; }
 .sense-ev-share i { display: block; height: 100%; background: var(--text-3); border-radius: 2px; }
-.sense-ev-cell-fn .sense-ev-share i { background: var(--danger); } .sense-ev-cell-fp .sense-ev-share i { background: var(--warn); }
+.sense-ev-cell-fn .sense-ev-share i, .sense-ev-cell-fp .sense-ev-share i { background: var(--text-2); }
 .sense-ev-cell-tp .sense-ev-share i { background: var(--person); } .sense-ev-cell-tn .sense-ev-share i { background: var(--ok); }
 .sense-ev-delta { display: block; margin-top: 4px; font-size: var(--fs-11); color: var(--text-3); white-space: nowrap; }
 .sense-ev-acc { font-size: var(--fs-12); color: var(--text-2); margin-top: 2px; line-height: 1.45; min-height: 2.9em; }

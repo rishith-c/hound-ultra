@@ -283,7 +283,7 @@ export default {
       const a = cur.air, rowH = Math.min(40, (r.h - 96) / 8), lw = 100, vw = 66, x0 = r.x + lw, x1 = r.x + r.w - vw, LO = -1, HI = 8, sx = (ppb) => x0 + ((clamp(Math.log10(Math.max(ppb, 0.1)), LO, HI) - LO) / (HI - LO)) * (x1 - x0);
       L.text(g, 'In the air at the sensor head', r.x, r.y + 11, { color: 'text', size: 12, weight: 600 });
       const y0 = r.y + 24;
-      for (const [e, lab] of [[0, '1 ppb'], [3, '1 ppm'], [7, '1 %']]) { const px = Math.round(sx(10 ** e)) + 0.5; g.strokeStyle = T.line; g.lineWidth = 1; g.beginPath(); g.moveTo(px, y0); g.lineTo(px, y0 + rowH * 7); g.stroke(); L.text(g, lab, px, y0 + rowH * 7 + 12, { color: 'text3', size: 10.5, align: 'center', mono: true, weight: 400 }); }
+      for (const [e, lab] of [[0, '1 ppb'], [3, '1 ppm'], [7, '1 %']]) { const px = Math.round(sx(10 ** e)) + 0.5; g.strokeStyle = T.line; g.lineWidth = 1; g.beginPath(); g.moveTo(px, y0); g.lineTo(px, y0 + rowH * 7); g.stroke(); if (e !== 3 || sx(1e3) - sx(1) > 44) L.text(g, lab, px, y0 + rowH * 7 + 12, { color: 'text3', size: 10.5, align: sx(1e3) - sx(1) > 44 ? 'center' : e ? 'left' : 'right', mono: true, weight: 400 }); }
       for (let j = 0; j < NG; j++) { const y = y0 + j * rowH, mid = y + rowH / 2, c = a.c[j], seen = !GAS[j].lod || c >= GAS[j].lod;
         L.text(g, GAS[j].name, r.x, mid, { color: 'text2', size: 11, base: 'middle' });
         g.fillStyle = T.bg3; g.fillRect(x0, mid - 4, x1 - x0, 8); g.fillStyle = L.rgba('text3', 0.75); g.fillRect(x0, mid - 4, sx(Math.min(c, a.bg[j])) - x0, 8);
@@ -293,7 +293,7 @@ export default {
       const y = y0 + 7 * rowH + 22, c = a.c[RH];
       L.text(g, 'Humidity', r.x, y + 5, { color: 'text2', size: 11, base: 'middle' }); g.fillStyle = T.bg3; g.fillRect(x0, y + 1, x1 - x0, 8); g.fillStyle = L.rgba('text3', 0.75); g.fillRect(x0, y + 1, ((x1 - x0) * c) / 100, 8); L.text(g, Math.round(c) + ' %', r.x + r.w, y + 5, { color: 'text', size: 11, align: 'right', base: 'middle', mono: true });
       if (y + 34 < r.y + r.h) { g.fillStyle = L.rgba('text3', 0.75); g.fillRect(r.x, y + 24, 9, 7); L.text(g, 'clean air', r.x + 13, y + 31, { color: 'text3', size: 10.5 }); g.fillStyle = T.text; g.fillRect(r.x + 66, y + 24, 9, 7); L.text(g, 'added by the source', r.x + 79, y + 31, { color: 'text3', size: 10.5 }); }
-      if (y + 50 < r.y + r.h) { g.strokeStyle = T.accent; g.lineWidth = 1.5; g.beginPath(); g.moveTo(r.x + 4.5, y + 38); g.lineTo(r.x + 4.5, y + 50); g.stroke(); L.text(g, 'limit of comparable sensors (cited in Güntner 2018)', r.x + 13, y + 48, { color: 'text3', size: 10.5 }); }
+      if (y + 50 < r.y + r.h) { g.strokeStyle = T.accent; g.lineWidth = 1.5; g.beginPath(); g.moveTo(r.x + 4.5, y + 38); g.lineTo(r.x + 4.5, y + 50); g.stroke(); L.text(g, 'limit of such sensors (in Güntner 2018)', r.x + 13, y + 48, { color: 'text3', size: 10.5 }); }
     }
     // The fingerprint: seven sensor responses on seven spokes
     function drawNose(g, r, k) {
@@ -363,13 +363,13 @@ export default {
       for (let c = 0; c < NC; c++) { const px = Pl.X(D.cen[c][0]), py = Pl.Y(D.cen[c][1]), dx = px - mcx, dy = py - mcy, dl = Math.hypot(dx, dy) || 1, reach = Math.min(Bx.w, Bx.h) * 0.2; L.callout(g, CLASSES[c].name.toLowerCase(), px, py, clamp(px + (dx / dl) * reach, Bx.x + 70, Bx.x + Bx.w - 110), clamp(py + (dy / dl) * reach, Bx.y + 12, Bx.y + Bx.h - 12), { color: CLASSES[c].color === 'text3' ? 'text2' : CLASSES[c].color, size: 11 }); }
       if (cur?.mark) L.text(g, 'this sniff', cur.mark[0] + (cur.mark[0] > Bx.x + Bx.w - 70 ? -10 : 10), cur.mark[1] + (cur.mark[1] > Bx.y + Bx.h - 20 ? -10 : 14), { color: 'accent2', size: 10.5, halo: true, align: cur.mark[0] > Bx.x + Bx.w - 70 ? 'right' : 'left' });
       // training loss, bottom right
-      const lw = Math.min(120, Bx.w * 0.3), lh = 40, lx = Bx.x + Bx.w - lw - 8, ly = Bx.y + Bx.h - lh - 22; g.fillStyle = L.rgba('bg0', 0.82); g.fillRect(lx - 6, ly - 16, lw + 12, lh + 34); g.strokeStyle = T.line2; g.lineWidth = 1; g.strokeRect(lx - 5.5, ly - 15.5, lw + 11, lh + 33);
-      L.text(g, 'training loss', lx, ly - 4, { color: 'text3', size: 10.5 }); const n = A.loss.length; if (n > 1) { g.strokeStyle = T.text2; g.lineWidth = 1.25; g.beginPath(); const l0 = Math.log(NC); for (let i = 0; i < n; i++) { const px = lx + (i / (STEPS - 1)) * lw, py = ly + lh - (clamp(A.loss[i] / l0)) * lh; i ? g.lineTo(px, py) : g.moveTo(px, py); } g.stroke(); L.text(g, L.fix(A.loss[n - 1], 3) + ' after ' + n + ' steps', lx, ly + lh + 13, { color: 'text2', size: 10.5, mono: true }); }
+      const lw = Math.min(120, Bx.w * 0.3), lh = 40, lx = Bx.x + 14, ly = Bx.y + Bx.h - lh - 22; g.fillStyle = L.rgba('bg0', 0.82); g.fillRect(lx - 6, ly - 16, lw + 12, lh + 34); g.strokeStyle = T.line2; g.lineWidth = 1; g.strokeRect(lx - 5.5, ly - 15.5, lw + 11, lh + 33);
+      L.text(g, 'training loss', lx, ly - 4, { color: 'text3', size: 10.5 }); const n = A.loss.length; if (n > 1) { g.strokeStyle = T.text2; g.lineWidth = 1.25; g.beginPath(); const l0 = Math.log(NC); for (let i = 0; i < n; i++) { const px = lx + (i / (STEPS - 1)) * lw, py = ly + lh - (clamp(A.loss[i] / l0)) * lh; i ? g.lineTo(px, py) : g.moveTo(px, py); } g.stroke(); L.text(g, L.fix(A.loss[n - 1], 2) + ', ' + n + ' steps', lx, ly + lh + 13, { color: 'text2', size: 10.5, mono: true }); }
     };
 
     // ---- detection against distance ----
     fDet.draw = (g, w, hh) => {
-      const Bx = L.pad(w, hh, { l: 44, t: 24, b: 34, r: 14 }), Pl = L.plot(g, Bx, { xd: [0, 5], yd: [0, 1], xlabel: 'distance through the rubble, m', ylabel: 'people found at 5 % false alarms', yfmt: (v) => Math.round(v * 100) + ' %', yticks: [0, 0.25, 0.5, 0.75, 1] });
+      const Bx = L.pad(w, hh, { l: 44, t: 24, b: 34, r: 14 }), Pl = L.plot(g, Bx, { xd: [0, 5], yd: [0, 1], xlabel: 'distance through the rubble, m', ylabel: 'people found', yfmt: (v) => Math.round(v * 100) + ' %', yticks: [0, 0.25, 0.5, 0.75, 1] });
       if (!det) { L.text(g, 'Waiting for the classifier…', Bx.x + Bx.w / 2, Bx.y + Bx.h / 2, { color: 'text3', align: 'center', size: 12 }); return; }
       L.rule(g, Pl, { y: 0.05, color: 'text3', label: 'guessing: 5 %' });
       L.trace(g, Pl, DX, det.yB, { color: 'text2', width: 1.5, dash: [5, 3] }); L.trace(g, Pl, DX, det.yA, { color: 'accent', width: 2, fill: 0.14 });
@@ -391,11 +391,11 @@ export default {
       const here = det ? det.at(P.co2 ? det.yA : det.yB, P.d) : NaN; sHere.set(L.pct(here), 'people found at ' + d + ' m, 5 % false alarms'); sHere.tone(here > 0.8 ? 'ok' : here > 0.4 ? 'warn' : 'danger');
       const smoke = P.scene === 'both' ? ' beside a smouldering fire' : '';
       fHero.setTitle(isP ? (top === PERSON ? 'A person ' + d + ' m away through the rubble' + smoke + ': the nose says person, ' + p + ' % sure' : 'A person is ' + d + ' m away' + smoke + ', but the nose says ' + CLASSES[top].word + ' (' + p + ' %)')
-        : P.scene === 'animal' ? (top === PERSON ? 'An animal in the void, and the nose says person (' + p + ' %): the honest hard case' : 'An animal in the void: the nose says ' + CLASSES[top].word + ' (' + p + ' %), and gives person ' + L.pct(cur.mean[PERSON]) + ' %')
+        : P.scene === 'animal' ? (top === PERSON ? 'An animal in the void, and the nose says person (' + p + ' %): the hard case' : 'An animal in the void: the nose says ' + CLASSES[top].word + ' (' + p + ' %), and gives person ' + L.pct(cur.mean[PERSON]) + ' %')
         : top === tc ? cap(SCENE_WORD[P.scene].split(':')[0].split(',')[0]) + ' in the void: the nose says ' + CLASSES[top].word + ', ' + p + ' %, and gives person ' + L.pct(cur.mean[PERSON]) + ' %' : cap(SCENE_WORD[P.scene].split(':')[0].split(',')[0]) + ' in the void, but the nose says ' + CLASSES[top].word + ' (' + p + ' %)');
       fHero.setNote('A simulated void of ' + VOID_M3 + ' m³ (assumed) leaking along a crack. Emission rates follow published ranges; the sensor response matrix and the mixing along the crack are assumed. Bars are the mean of 48 sniffs; the blue tick is one sniff.');
-      fMap.setTitle('On ' + NTE.toLocaleString('en-US') + ' sniffs it never saw, the nose is right ' + L.pct(S.acc) + ' % of the time; it calls ' + L.pct(S.animalAsPerson) + ' % of animals a person');
-      fMap.setNote('Each dot is one held-out sniff, placed by the two strongest patterns in the seven readings; rings are the ones it got wrong. Shading is the answer on this plane.');
+      fMap.setTitle('On ' + NTE.toLocaleString('en-US') + ' sniffs it never saw, the nose is right ' + L.pct(S.acc) + '\u00a0% of the time; it calls ' + L.pct(S.animalAsPerson) + ' % of animals a person');
+      fMap.setNote('Each dot is one held-out sniff, placed by the two strongest patterns in the seven readings; rings are the ones to look at again. Shading is the answer on this plane.');
       const r = (v) => (v === Infinity ? 'past 5 m' : v <= 0 ? 'nowhere' : 'out to ' + v.toFixed(1) + ' m');
       if (det) fDet.setTitle(det.rA <= 0 ? 'At this airflow and noise a person is found less than half the time at any distance' : 'A person is found at least half the time ' + r(det.rA) + '; without the CO2 sensor, ' + r(det.rB));
       fDet.setNote('220 simulated people at each distance against 1,500 decoys and empty voids, at this airflow, time and noise. The threshold lets 5 % of the decoys through.');

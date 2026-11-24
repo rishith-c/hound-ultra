@@ -72,7 +72,7 @@ export function createHall(canvas, D, opts = {}) {
     const e = (2700 + i) * 4; P[e] = rnd(); P[e + 1] = rnd(); P[e + 2] = rnd(); P[e + 3] = rnd();
     pos.push(new THREE.Vector3(P[o], P[o + 1], P[o + 2]));
   }
-  P[(900 + hero) * 4 + 3] = 0.36; P.set([0.30, 0.42, 0.45, 0], (2700 + hero) * 4);
+  P[(900 + hero) * 4 + 3] = 0.36; P.set([0.10, 0.0, 0.45, 0], (2700 + hero) * 4);
   const tex = (d, w, h, f, t) => { const x = keep(new THREE.DataTexture(d, w, h, f, t)); x.magFilter = x.minFilter = THREE.NearestFilter; x.needsUpdate = true; return x; };
   const tPeople = tex(P, N, 4, THREE.RGBAFormat, THREE.FloatType), tHeat = tex(heat, N, 1, THREE.RGBAFormat, THREE.FloatType);
   const pat = new Uint8Array(52 * N); for (let i = 0; i < pat.length; i++) pat[i] = D.A.ribbon[i] + 128;
@@ -223,7 +223,7 @@ export function createHall(canvas, D, opts = {}) {
     const fo = D.A.found, k0 = Math.floor(ck), on = t > 6.9 ? 1 : 0; let sum = 0;
     for (let i = 0; i < N; i++) { const f = live ? live.found[i] : fo[Math.min(last, k0) * N + i] / 6; const tgt = on * Math.pow(f, 2.1); const o = i * 4, rate = (tgt > heat[o] ? 2.2 : 3.4) * (0.6 + P[(900 + i) * 4 + 3]); heat[o] += (tgt - heat[o]) * (1 - Math.exp(-dt * rate)); const fl = t < 7 ? (i === hero ? smooth(2.2, 2.6, t) * (1 - smooth(2.6, 4.0, t)) * 0.8 : 0) : 0; heat[o + 1] = fl; }
     tHeat.needsUpdate = true; U.uHover.value = api.hover;
-    fU.uDof.value = 1 - smooth(6.4, 8.6, t); { const hd = Math.max(1.2, cam.position.distanceTo(tv.set(hp.x, 1.5, hp.z))), k = smooth(2.7, 4.1, t); fU.uFocus.value = 1 / mix(1 / hd, 1 / 76, k); } ribs.material.depthWrite = t < 6.6; ribs.visible = ribU.uGain.value > 0.001; fU.uFade.value = smooth(0, 0.9, t) * (1 - smooth(LOOP - 0.9, LOOP, t));
+    fU.uDof.value = 1 - smooth(6.4, 8.6, t); { const hd = Math.max(1.2, cam.position.distanceTo(tv.set(hp.x, 1.5, hp.z))), lf = clamp((t - 2.35) / 3.1), q = Math.max(0, smooth(0, 1, lf) * 0.35 + lf * lf * 0.65 - 0.05), k = smooth(2.5, 3.2, t); fU.uFocus.value = Math.min(78, hd + k * (3 * (1 - q) * q * q * 54 + q * q * q * 75 + 3 * (1 - q) * (1 - q) * q * 3)); } ribs.material.depthWrite = t < 6.6; ribs.visible = ribU.uGain.value > 0.001; fU.uFade.value = smooth(0, 0.9, t) * (1 - smooth(LOOP - 0.9, LOOP, t));
   }
   function render() {
     U.uEye.value.copy(cam.position); U.uPx.value.set(w, h);

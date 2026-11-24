@@ -7,6 +7,12 @@ import { writePLY, planToJSON, planFromJSON } from './io.js';
 import { createPlanEditor, EXAMPLE_PLAN } from './plan.js';
 import { PLAN_MARGIN } from './scene.js';
 import { createHero, ACTS } from './hero.js';
+import { createStrip } from './strip.js';
+import { decode } from './bake.js';
+
+let bakeP = null; // the film's scan, worked out beforehand (bake.js): nothing is computed when the Demo opens
+if (document.documentElement.dataset.mode === 'demo') queueMicrotask(() => getBake().catch(() => {}));
+const getBake = () => (bakeP = bakeP || fetch(new URL('./samples/site-film.bin', import.meta.url)).then((r) => { if (!r.ok) throw new Error('The recorded scan is missing.'); return decode(r); }).catch((e) => { bakeP = null; throw e; }));
 import { planPath } from '../../core/planner.js';
 import { pointInPoly } from '../../core/geometry.js';
 
@@ -40,6 +46,7 @@ function createClient() {
 export default {
   async mount(root, ctx) {
     const { h, icon, realityTag, fmt, cssVar } = ctx.kit, world = ctx.world;
+    if (ctx.mode === 'demo') getBake().catch(() => {});
     if (!document.querySelector('link[data-scan-css]')) document.head.append(h('link', { rel: 'stylesheet', href: new URL('./style.css', import.meta.url).href, 'data-scan-css': '' }));
     const reduced = () => ctx.kit.reducedMotion();
     const N = (v) => Math.round(v).toLocaleString('en-US');
@@ -82,23 +89,23 @@ export default {
     for (const el of [hudTL, statLine, tools, sectionBar, scale, compassEl, transport, measureTip, planHost]) el.classList.add('adv-only');
 
     // ------------------------------------------------------------------ Demo: one film, full bleed, over the same view
-    const film = { hero: null, title: h('h1'), say: h('p'), act: h('button.btn.btn-primary', { onclick: () => filmAction() }), dots: h('div.scan-film-dots', { role: 'group', 'aria-label': 'Chapters of the film' }), fig: [0, 1, 2].map(() => h('b.num')), cap: [], last: '' };
+    const film = { hero: null, title: h('h1'), say: h('p'), act: h('button.btn.btn-primary', { onclick: () => filmAction() }), dots: h('div.scan-film-dots', { role: 'group', 'aria-label': 'Chapters of the film' }), fig: [0, 1, 2].map(() => h('b.num')), cap: [], last: '', strip: createStrip(h, cssVar, realityTag('sim')), rate: 0 };
     film.title.append('Room to ', h('em', null, 'survive'));
     const filmBox = h('section.scan-film.demo-only', { 'aria-label': 'Void finder film' },
-      h('div.scan-film-text', null, film.title, film.say, h('div.row', null, film.act, realityTag('live-algo'), film.src = h('span.tag.tag-sim', { title: 'The scan is simulated. The search that runs on it is real and ran just now, on this device.' }, 'Simulated scan'))),
-      h('div.scan-film-right', null, h('div.scan-film-figs', null, [['points', 0], ['voids found', 1], ['m³ of possible space', 2]].map(([t, i]) => h('div', null, film.fig[i], film.cap[i] = h('span', null, t)))), film.dots));
+      h('div.scan-film-text', null, h('div.scan-film-tags', null, film.src = h('span.tag.tag-sim', { title: 'A virtual scanner was flown through a model of the site. The drone and its lidar are a concept.' }, 'Simulated scan'), film.algo = h('span')), film.title, film.say, h('div.row', null, film.act, film.dots)),
+      h('div.scan-film-right', null, film.strip.el, h('div.scan-film-figs', null, [0, 1, 2].map((i) => h('div', null, film.fig[i], film.cap[i] = h('span'))))));
     stage.append(filmBox);
     const PASS_SAY = { aerial: 'A drone sweeps the site. Every beam that returns becomes a point.', orbit: 'It circles the collapse and looks in from the side.', close: 'Closer, for the cables, bars and bent roof sheets.', interior: 'Then inside, through every open door.', survey: 'A drone sweeps the building.', all: 'A simulated scan: every point is one beam that came back.' };
     // on the exercise site the roofs stand to the south, so look at the collapses from the north, as the film does
     function openSide(i) { const d = S.data; return d.kind !== 'site' ? undefined : d.voids.list[i].centre[0] > 88 ? 342 : 36; }
     function filmSay() {
-      const s = film.hero.S, d = S.data, v = s.cur && s.cur.v;
+      const s = film.hero.S, d = filmData(), v = s.cur && s.cur.v;
       if (s.act === 'scan' && d.kind === 'file') return (S.file && S.file.sample ? 'The simulated sample scan, ' : d.name + ', ') + N(d.n) + ' points.';
       if (s.act === 'scan') return PASS_SAY[s.cpt] || PASS_SAY.aerial;
-      if (s.act === 'open') return 'The roof lifts away. Now the search runs: free space, flooded inward from open air.';
+      if (s.act === 'open') return 'The roof lifts away, and free space is flooded inward from open air.';
       if (!v) return 'No space in this scan is big enough for a person.';
-      if (s.act === 'voids') return v.kind.split(':')[0] + '. ' + v.clear.toFixed(1) + ' m of headroom. ' + (v.places ? 'Floor for ' + v.places + (v.places === 1 ? ' person' : ' people') + ' lying down, assuming 2.0 by 0.6 m each.' : 'Too short to lie flat, long enough to crouch.');
-      return 'Looking into ' + v.id + '. ' + (v.seen == null ? 'A place to check, not a person found.' : 'Beams reached ' + Math.round(v.seen * 100) + ' % of it. A place to check, not a person found.');
+      if (s.act === 'voids') return v.kind.split(':')[0] + '. ' + v.clear.toFixed(1) + ' m of headroom, ' + (v.places ? 'floor for ' + v.places + ' lying down, at 2.0 by 0.6 m each.' : 'too short to lie flat, long enough to crouch.');
+      return 'Looking into ' + v.id + '. ' + (v.seen == null ? 'A place to check.' : 'Beams reached ' + Math.round(v.seen * 100) + ' % of it. A place to check.');
     }
     function filmHtml(v) { return '<b>' + v.id + '</b><span>' + v.volume.toFixed(0) + ' m³</span><em>' + (v.places ? 'fits ' + v.places + ' lying down' : 'room to crouch') + '</em>'; }
     function filmAction() { const H = film.hero; if (!H) return; H.go(H.S.act === 'inside' || !H.big ? 'scan' : 'inside'); tickFilm(true); }
@@ -106,25 +113,37 @@ export default {
     let filmFig = 0;
     function tickFilm(force) {
       const H = film.hero; if (!H) return; const s = H.S, now = performance.now();
-      if (force || now - filmFig > 90) { filmFig = now; const tx = [N(s.points), String(s.found), N(s.volume)]; film.fig.forEach((el, i) => { if (el.textContent !== tx[i]) el.textContent = tx[i]; });
+      if (s.cap != null) { // the instrument reads the points as they land
+        const a = film.lastCap, dc = a ? s.cap - a[0] : 0; if (dc > 0 && dc < 8 && a[2] === s.pass) { const r = (s.points - a[1]) / dc; film.rate += (r - film.rate) * (film.rate ? 0.06 : 1); } else if (dc < 0 || !a) film.rate = 0;
+        film.lastCap = [s.cap, s.points, s.pass]; s.alt = film.strip.feed(filmData(), s.drawn, s.cap, s.pass, view.gz);
+      }
+      film.strip.draw(now, s.cap != null);
+      if (force || now - filmFig > 90) { filmFig = now; const d = filmData(), fly = s.cap != null, L = d.voids.list, K = H.list.length, tx = fly ? [N(s.points), N(film.rate), N(s.alt || 0) + ' m'] : [N(s.points), String(s.found), N(s.volume)], cx = fly ? ['points so far', 'points a second', 'scanner height'] : ['points in the scan', K < L.length ? 'largest of ' + L.length + ' voids' : 'voids found', K < L.length ? 'm³, of ' + L.reduce((q, v) => q + v.volume, 0).toFixed(0) + ' possible' : 'm³ of possible space'];
+        film.fig.forEach((el, i) => { if (el.textContent !== tx[i]) el.textContent = tx[i]; if (film.cap[i].textContent !== cx[i]) film.cap[i].textContent = cx[i]; });
         const order = ACTS.map((a) => a[0]); order.forEach((id, i) => { const a = H.starts[id], b = i < 3 ? H.starts[order[i + 1]] : H.total, u = film.dots.children[i].querySelector('u'); u.style.transform = 'scaleX(' + Math.min(1, Math.max(0, (s.t - a) / (b - a))).toFixed(3) + ')'; }); }
       const key = s.act + s.cpt; if (key === film.last && !force) return; film.last = key;
       film.say.textContent = filmSay(); film.say.classList.remove('in'); void film.say.offsetWidth; film.say.classList.add('in');
       film.act.replaceChildren(s.act === 'inside' ? 'Play again' : H.big ? 'Look into ' + H.big.v.id : 'Play again'); film.act.prepend(icon(s.act === 'inside' ? 'reset' : 'target'));
       [...film.dots.children].forEach((x) => { if (x.dataset.act === s.act) x.setAttribute('aria-current', 'step'); else x.removeAttribute('aria-current'); });
     }
-    const demo = () => ctx.mode === 'demo';
+    const demo = () => ctx.mode === 'demo', filmData = () => (S.source === 'site' ? S.bake : S.data);
+    async function showBake() {
+      const id = ++job; stopFilm(); stopReplay(); veil.hidden = true; filmBox.classList.add('loading'); film.say.textContent = '';
+      try { S.bake = S.bake || await getBake(); } catch { if (id === job && demo()) { S.bake = null; film.say.textContent = 'The recorded scan could not be read. Open Advanced to run it live.'; } return; }
+      if (id !== job || !demo()) return;
+      view.setCloud(S.bake); view.setVoids(S.bake.voids.list); if (S.shown) startFilm();
+    }
     function startFilm() {
-      if (!demo() || !S.data) return; stopFilm(); S.replay.playing = false; S.replay.t = null; view.setTool('orbit'); tip();
+      const d0 = filmData(); if (!demo() || !d0) return; stopFilm(); S.replay.playing = false; S.replay.t = null; view.setTool('orbit'); tip();
       if (view.section.on) { view.setSection({ on: false }); }
       for (const g of ['frame', 'leads', 'routes', 'zones', 'occ', 'section', 'measure', 'access']) view.setLayer(g, false);
       view.setLayer('flight', true);
-      filmBox.classList.remove('loading'); film.hero = createHero(view, S.data, { reduced: reduced(), html: filmHtml }); film.hero.begin(); film.last = ''; film.src.hidden = S.source === 'file' && !(S.file && S.file.sample); { const L = S.data.voids.list, K = film.hero.list.length; film.cap[1].textContent = K < L.length ? 'largest of ' + L.length + ' voids' : 'voids found'; film.cap[2].textContent = K < L.length ? 'm³, of ' + L.reduce((s, q) => s + q.volume, 0).toFixed(0) + ' possible' : 'm³ of possible space'; } tickFilm(true); for (let i = 0; i < 4; i++) view.setClassVisible(i, true);
+      filmBox.classList.remove('loading'); film.strip.reset(); film.lastCap = null; film.algo.replaceChildren(d0.baked ? h('span.tag.tag-sim', { title: 'The same search, run beforehand on this scan and saved with it. Advanced runs it live.' }, 'Recorded result') : realityTag('live-algo')); film.hero = createHero(view, d0, { reduced: reduced(), html: filmHtml }); film.hero.begin(); film.last = ''; film.src.hidden = S.source === 'file' && !(S.file && S.file.sample); tickFilm(true); for (let i = 0; i < 4; i++) view.setClassVisible(i, true);
     }
     function stopFilm() { if (!film.hero) return; film.hero.end(); film.hero = null; }
     function onMode() {
-      if (demo()) startFilm();
-      else { stopFilm(); if (!S.data) return; for (const g of ['frame', 'section', 'measure', 'access']) view.setLayer(g, true); view.setMode(S.mode); view.setLit(lit); classOn.forEach((on, i) => view.setClassVisible(i, on)); view.selectVoid(S.sel); S.auto = false; setStep(S.step, true); if (S.step === 'capture') view.home(); }
+      if (demo()) { if (S.source === 'site') showBake(); else startFilm(); }
+      else { stopFilm(); if (S.source === 'site' && !S.data) { setSource('site'); return; } if (!S.data) return; if (view.data !== S.data) setData(S.data); for (const g of ['frame', 'section', 'measure', 'access']) view.setLayer(g, true); view.setMode(S.mode); view.setLit(lit); classOn.forEach((on, i) => view.setClassVisible(i, on)); view.selectVoid(S.sel); S.auto = false; setStep(S.step, true); if (S.step === 'capture') view.home(); }
     }
     drawDots();
 
@@ -409,13 +428,14 @@ export default {
       const d = S.data;
       if (S.source === 'file') return dockFile();
       if (S.source === 'plan' && !S.planScanned) return dockPlan();
-      if (!d) return [h('div.empty', null, h('div.spinner'), h('p', null, 'Preparing the scan…'))];
+      if (!d) return [h('div.empty', null, h('div.spinner'), h('p', null, 'Running it live on this device…'))];
       const out = [];
       out.push(panel(S.source === 'plan' ? 'How your plan was scanned' : 'How this scan was made', { tag: simTag() },
         h('p.muted', null, S.source === 'plan' ? 'A virtual scanner flew two crossing sets of lines over your drawing and every beam was ray-cast against your walls and rubble.' : 'A virtual lidar is flown through a model of the exercise site and every beam is ray-cast, so the shadows, holes and scan lines you see are what the geometry gives, not decoration. Four passes are merged.'),
         h('div.scan-passlist', null, d.passes.map((p, i) => h('button.scan-pass', { 'data-pass': i, title: 'Replay from here', onclick: () => startReplay(p.t0) }, h('b', null, p.name), h('span.num', null, N(p.i1 - p.i0) + ' points · ' + fmt.clock(p.t1 - p.t0)), h('em', null, p.detail), h('i')))),
         S.source === 'plan' ? h('button.btn', { onclick: () => { S.planScanned = false; view.setCloud(null); S.data = null; refreshAll(); } }, 'Edit the plan') : null,
-        S.source === 'site' ? h('div.note', null, icon('info'), h('span', null, 'The drone and its scanner are a concept: HOUND has no lidar today. Range noise is assumed at 8 to 20 mm and weak returns are dropped. People are not in the scan.')) : null));
+        S.source === 'site' ? h('div.note', null, icon('info'), h('span', null, 'The drone and its scanner are a concept. Range noise is set at 8 to 20 mm and weak returns are dropped. People are not in the scan.')) : null));
+      if (S.source === 'site') out.push(h('button.btn', { title: 'Scan the site again and redo every step on this device', onclick: () => setSource('site') }, icon('reset'), 'Run it live again'));
       out.push(facts(), display());
       return out;
     }
@@ -434,7 +454,7 @@ export default {
           h('p.muted', null, 'Because this scan is simulated, the true material of every point is known. It is used here only to mark the algorithm’s work. Each row adds up to 100 %.'), table,
           h('p.scan-small', null, 'Most points wrong in one place: ' + ((worst.n / rowTot[worst.r]) * 100).toFixed(1) + ' % of ' + TRUTH_ROWS[worst.r].toLowerCase() + ' points are called ' + CLASSES[worst.k].toLowerCase() + '. Furniture and vehicles have no class of their own, so they are left out of the score.'),
           checkBox(),
-          h('div.note.warn', null, icon('alert'), h('span', null, 'The rules and limits were adjusted by hand while looking at this very site, so the score above flatters them. One simulated site with clean geometry: a real scan has moving people, glass, dust and registration error, and would score lower.'))));
+          h('div.note.warn', null, icon('alert'), h('span', null, 'The rules and limits were set by hand on this simulated site, with clean geometry. Reshuffle the site to score the unchanged rules on a new one.'))));
       } else out.push(panel('No answer key for this scan', null, h('p.muted', null, 'A file you load has no known labels, so the classes cannot be scored here. Hide and show classes to check them by eye.')));
       return out;
     }
@@ -480,7 +500,7 @@ export default {
             h('div', null, h('i.dash'), h('span', null, 'On the planner’s own map'), h('b.num', null, R.planner.ok ? R.planner.length.toFixed(1) + ' m' : 'no way'), h('em', null, R.planner.ok ? (R.planner.reached ? 'reaches the opening' : 'stops ' + R.planner.gap.toFixed(1) + ' m short of the opening') : R.planner.reason)),
             h('p.dim.scan-small', null, 'From staging. The mission’s own route planner (A*), run on both maps in ' + R.ms.toFixed(0) + ' ms. Hazard costs are the mission’s; walls and obstacles come from the scan.')) : null));
       }
-      if (S.source === 'site') out.push(h('div.note.quiet', null, icon('info'), h('span', null, 'The search limits were adjusted by hand while looking at this site, which was also built by hand. The 0.6 m limit was added after comparing the list with the model, so the share that is really empty flatters it. The list shows the method working, not how often it would be right elsewhere.')));
+      if (S.source === 'site') out.push(h('div.note.quiet', null, icon('info'), h('span', null, 'The search limits were set by hand on this site, and the 0.6 m limit was added after comparing the list with the model. The list shows the method working on this site.')));
       out.push(h('div.note.warn', null, icon('alert'), h('span', null, 'A void is a place worth checking, not a finding. A scan cannot see into a sealed pocket, cannot tell an empty space from one it never saw into, and cannot tell whether anyone is there.')));
       return out;
     }
@@ -612,8 +632,9 @@ export default {
       maybeAutoplay();
     }
     function maybeAutoplay() {
-      if (!S.shown || !S.data) return;
-      if (demo()) { if (!film.hero) startFilm(); return; }
+      if (!S.shown) return;
+      if (demo()) { if (!film.hero && view.data && view.data === filmData()) startFilm(); return; }
+      if (!S.data) return;
       if (S.played || S.source !== 'site') return;
       S.played = true;
       if (reduced() || !S.auto) return;
@@ -628,7 +649,7 @@ export default {
       job++; veil.hidden = true; S.source = src; S.data = null; S.compare = null; S.sel = -1; S.route = null; S.error = null; S.planScanned = false; S.auto = S.auto && src === 'site';
       stopFilm(); stopReplay(); view.setCloud(null); view.setTool('orbit'); if (S.step !== 'capture') S.step = 'capture'; if (S.mode === 'class') S.mode = 'height'; view.setMode(S.mode);
       leadSig = ''; S.leads = []; refreshAll();
-      if (src === 'site') load('site');
+      if (src === 'site') { if (demo()) showBake(); else load('site'); }
       else if (src === 'file' && S.file) openFile(S.file, S.up);
       else if (src === 'plan') { editor.setTool(planTool); editor.redraw(); }
     }

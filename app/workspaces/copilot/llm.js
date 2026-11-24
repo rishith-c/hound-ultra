@@ -80,8 +80,9 @@ export function routePrompt(ent) {
 export const PHRASE_SYSTEM = 'You are the copilot of HOUND Command, a search-and-rescue console running a simulated training exercise. Answer the operator in at most three short, plain sentences, using ONLY the facts in the tool result. Copy every number and id exactly as given. Do not add advice, causes, medical judgement or anything that is not in the result. If the result does not answer the question, say that it does not.';
 export const SITREP_SYSTEM = 'You write radio situation reports for a search-and-rescue team in a simulated training exercise. Rewrite the facts as one short spoken paragraph of four to six plain sentences, most urgent first: people found, open leads, what is not searched, the route, anything broken, the next decision. Use ONLY the facts given. Copy every number, id and room exactly. No advice, no medical judgement, no added detail.';
 
-// v1 (kept for the recorded comparison): one prompt, the whole call schema, ten fixed examples.
-export async function routeV1(text, ent) {
+// One prompt, the whole call schema, ten fixed examples. This is the pipeline measured in model-comparison.json
+// (the workspace list in the prompt follows the console and may have grown since).
+export async function route(text, ent) {
   if (!engine) throw new Error('No model is loaded.');
   const t0 = performance.now();
   const r = await engine.chat.completions.create({
@@ -91,71 +92,6 @@ export async function routeV1(text, ent) {
   const raw = r.choices[0]?.message?.content || '', ms = performance.now() - t0;
   let call; try { call = normalise(JSON.parse(raw)); } catch { call = { tool: 'invalid', args: {} }; }
   return { call, raw, ms, tokens: r.usage?.completion_tokens || 0, promptTokens: r.usage?.prompt_tokens || 0, tokPerS: r.usage?.extra?.decode_tokens_per_s || 0 };
-}
-// ---------- v2: retrieved examples, two short steps ----------
-// Step 1 picks the tool (output held to the list of tool names). Step 2, only for tools that take arguments, fills
-// them (output held to that tool's argument schema, built from the live mission). Each step sees the handful of
-// development requests most similar to this one, found by word and letter-triple overlap: no second model needed.
-const feats = (s) => { const t = ' ' + String(s).toLowerCase().replace(/[^a-z0-9: ]+/g, ' ').replace(/\s+/g, ' ').trim() + ' ', out = new Set(t.trim().split(' ').map((w) => 'w:' + w.replace(/(ing|ed|es|s)$/, ''))); for (let i = 0; i < t.length - 2; i++) out.add(t.slice(i, i + 3)); return out; };
-export function makeRetriever(bank) {
-  const items = bank.map((b) => ({ ...b, f: feats(b.text) })), df = new Map();
-  for (const it of items) for (const f of it.f) df.set(f, (df.get(f) || 0) + 1);
-  const w = (f) => Math.log(1 + items.length / (df.get(f) || 0.5));
-  for (const it of items) it.norm = Math.sqrt([...it.f].reduce((s, f) => s + w(f) ** 2, 0));
-  return (text, k, only) => {
-    const q = feats(text), qn = Math.sqrt([...q].reduce((s, f) => s + w(f) ** 2, 0)), key = String(text).trim().toLowerCase();
-    return items.filter((it) => it.text.trim().toLowerCase() !== key && (!only || it.tool === only)).map((it) => { let dot = 0; for (const f of q) if (it.f.has(f)) dot += w(f) ** 2; return { it, s: dot / (qn * it.norm || 1) }; }).sort((a, b) => b.s - a.s).slice(0, k).map((x) => x.it);
-  };
-}
-const ARG_GUIDE = {
-  list_leads: 'status: "confirmed" = people found for sure; "possible" = uncertain or still open; "rejected" = ruled out, false alarms; "all" = no filter.',
-  explain_lead: 'id: the lead the operator means. Resolve a room number or a description (the outdoor one, the fan, the pipe, the confirmed person) with the leads list.',
-  investigate: 'id: the possible lead to look at again. Resolve a room number or a description with the leads list.',
-  plan_route: 'avoid: start from ["slope","mud","gas","collapse"] and leave out only the kinds the operator says may be crossed or ignored.',
-  set_speed: 'speed: 1 = real time, 32 = fastest; otherwise the number the operator gives.',
-  set_clock: 'running: false to pause simulated time, true to play it.',
-  seek_to: 'event: one of start, map_ready, rover_at_entrance, first_listen, first_possible, first_person_found, route_planned, route_approved, team_arrived, mission_complete; or a clock time "mm:ss".',
-  select: 'type and id of the one thing to highlight: lead (D#), person (V#), room (number), unit (HOUND-01 rover, DRONE-01 scout drone, TEAM-1 rescue team) or hazard.',
-  open_workspace: 'id: the workspace to open.',
-  set_layer: 'layer: which layer of the 3-D view; on: true to show, false to hide.',
-  inject_fault: 'id: linkLoss = radio link, csiDropout = Wi-Fi packets dropping, badWindow = corrupt Wi-Fi window, thermalFail = thermal camera, lowBattery = rover battery.',
-  clear_fault: 'id: linkLoss = radio link, csiDropout = Wi-Fi packets dropping, badWindow = corrupt Wi-Fi window, thermalFail = thermal camera, lowBattery = rover battery.',
-};
-const leadsLine = (ent) => 'Leads: ' + (ent.leads.length ? ent.leads.map((d) => d.id + ' = ' + (d.status === 'rejected' ? 'rejected (' + d.kind + ')' : d.status + ' person') + ', ' + where(d)).join('; ') : 'none yet') + '. People found: ' + (ent.people.length ? ent.people.map((v) => v.id + ' (lead ' + v.detId + ', ' + where(v) + ')').join('; ') : 'none') + '.';
-function digestFor(tool, ent) {
-  if (tool === 'explain_lead' || tool === 'investigate') return leadsLine(ent);
-  if (tool === 'select') return leadsLine(ent) + ' Rooms: ' + ent.rooms.map((r) => r.id).join(', ') + '. Units: HOUND-01 rover, DRONE-01 scout drone, TEAM-1 rescue team. Hazards: ' + ent.hazards.map((h) => h.id + ' ' + h.kind).join(', ') + '.';
-  if (tool === 'open_workspace') return 'Workspaces: ' + ent.workspaces.map((w) => w.id + ' = ' + w.title + ' (' + w.blurb + ')').join('; ') + '.';
-  if (tool === 'set_layer') return 'Layers: walls-xray (see-through walls), hazards, coverage (what was searched), heat, route, trail, scan (drone point cloud), labels, grid, sensing.';
-  return '';
-}
-export function step1Prompt(ent) {
-  return ['You route a rescue operator\'s request to exactly ONE tool of the HOUND Command console. Reply with JSON only: {"tool": name}.',
-    'Tools:\n' + TOOLS.map((t) => '- ' + t.name + ': ' + t.llm).join('\n'),
-    'Notes: a question about ONE lead (why, how sure, what is it) is explain_lead; a list of leads is list_leads. "Show / where is / highlight" a thing is select. Pausing time is set_clock; all_stop is the safety stop. Lifting a stop is resume. If the request is medical, unsafe, destructive or outside these tools, choose none.',
-    'Mission now: clock ' + ent.clock + ', phase ' + ent.phaseLabel + '. ' + leadsLine(ent)].join('\n');
-}
-async function ask(system, user, schema, maxTokens) {
-  const r = await engine.chat.completions.create({ messages: [{ role: 'system', content: system }, { role: 'user', content: user }], temperature: 0, max_tokens: maxTokens, response_format: { type: 'json_object', schema: JSON.stringify(schema) } });
-  let v = null; const raw = r.choices[0]?.message?.content || ''; try { v = JSON.parse(raw); } catch { /* cut off */ }
-  return { v, raw, tokens: r.usage?.completion_tokens || 0 };
-}
-// options: retrieve (from makeRetriever), hint ({ tool, args } from the rule-based interpreter, or null), k
-export async function routeV2(text, ent, { retrieve, hint = null, k = 8 } = {}) {
-  if (!engine) throw new Error('No model is loaded.');
-  const t0 = performance.now(), q = String(text).slice(0, 400);
-  const near = retrieve ? retrieve(q, k) : [];
-  const user1 = (near.length ? 'Similar requests and the right tool:\n' + near.map((e) => '"' + e.text + '" -> ' + e.tool).join('\n') + '\n\n' : '') + (hint ? 'A keyword matcher guesses: ' + hint.tool + '. It is usually right; overrule it only when it clearly misreads the request.\n\n' : '') + 'Request: "' + q + '"';
-  const s1 = await ask(step1Prompt(ent), user1, { type: 'object', properties: { tool: { enum: TOOLS.map((t) => t.name) } }, required: ['tool'], additionalProperties: false }, 24);
-  const name = s1.v?.tool, tool = TOOLS.find((t) => t.name === name);
-  if (!tool) return { call: { tool: 'invalid', args: {} }, raw: s1.raw, ms: performance.now() - t0, tokens: s1.tokens, steps: 1 };
-  const schema = tool.args(ent), hasArgs = schema.anyOf || Object.keys(schema.properties || {}).length;
-  if (!hasArgs) return { call: { tool: name, args: {} }, raw: s1.raw, ms: performance.now() - t0, tokens: s1.tokens, steps: 1 };
-  const same = retrieve ? retrieve(q, 4, name) : [];
-  const sys2 = ['Fill in the arguments of the tool "' + name + '" for the operator\'s request. Reply with JSON only.', name + ': ' + tool.llm, ARG_GUIDE[name] || '', digestFor(name, ent)].filter(Boolean).join('\n');
-  const user2 = (same.length ? 'Examples:\n' + same.map((e) => '"' + e.text + '" -> ' + JSON.stringify(normalise(e).args)).join('\n') + '\n\n' : '') + (hint && hint.tool === name ? 'A keyword matcher guesses: ' + JSON.stringify(hint.args) + '. Correct it if it misreads the request.\n\n' : '') + 'Request: "' + q + '"';
-  const s2 = await ask(sys2, user2, schema, 64);
-  return { call: normalise({ tool: name, args: s2.v || {} }), raw: s1.raw + ' ' + s2.raw, ms: performance.now() - t0, tokens: s1.tokens + s2.tokens, steps: 2 };
 }
 
 // Phrase facts as text, streaming. onToken(textSoFar). Returns { text, ms }.

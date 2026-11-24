@@ -80,7 +80,7 @@ export default function create(env) {
     c.save();
     if (!done) { c.save(); trace(c, S, poly); c.clip(); const ring = (x, z, a) => { c.beginPath(); c.arc(S.X(x), S.Z(z), rad * S.s, 0, 6.2832); c.strokeStyle = L.col('--accent', a); c.lineWidth = 2; c.stroke(); }; ring(src.x, src.z, 0.95); for (const p of imgs) ring(p.x, p.z, 0.6); c.restore(); }
     if (done && outline.length > 2) { trace(c, S, outline); c.fillStyle = L.col('--accent', 0.14); c.fill(); c.strokeStyle = L.tok('--accent'); c.lineWidth = S.thumb ? 1.25 : 2; c.stroke();
-      if (!S.thumb) for (const f of found) { const x = src.x - f.nx * f.dist, z = src.z - f.nz * f.dist; c.setLineDash([3, 4]); c.strokeStyle = L.col('--accent', 0.5); c.lineWidth = 1; c.beginPath(); c.moveTo(S.X(src.x), S.Z(src.z)); c.lineTo(S.X(x), S.Z(z)); c.stroke(); c.setLineDash([]); L.tagLabel(c, S.X((src.x + x) / 2), S.Z((src.z + z) / 2), f.dist.toFixed(2) + ' m', { dx: 8, dy: 0, color: '--text' }); } }
+      if (!S.thumb) for (const f of found) { const x = src.x - f.nx * f.dist, z = src.z - f.nz * f.dist; c.setLineDash([3, 4]); c.strokeStyle = L.col('--accent', 0.5); c.lineWidth = 1; c.beginPath(); c.moveTo(S.X(src.x), S.Z(src.z)); c.lineTo(S.X(x), S.Z(z)); c.stroke(); c.setLineDash([]); L.tagLabel(c, S.X((src.x + x) / 2), S.Z((src.z + z) / 2), f.dist.toFixed(2) + ' m', { dx: 8, dy: Math.abs(f.nz) < 0.3 ? -36 : -18, color: '--text' }); } }
     c.fillStyle = L.tok('--text'); c.beginPath(); c.arc(S.X(src.x), S.Z(src.z), S.thumb ? 2 : 4, 0, 6.283); c.fill(); if (!S.thumb) for (const m of mics) { c.fillStyle = L.tok('--accent'); c.beginPath(); c.arc(S.X(m.x), S.Z(m.z), 3, 0, 6.283); c.fill(); }
     c.restore();
   }
@@ -100,8 +100,8 @@ export default function create(env) {
   return {
     title: 'Hearing the shape of a void', hardware: 'A speaker and four microphones on a probe. The parts are ordinary; the probe is a concept.',
     lede: 'Clap in a room and the walls answer, each after the time sound takes to reach it and come back. With four microphones the echoes can be sorted into walls, and the walls draw the room.',
-    honest: 'the probe has to be inside the void first, the walls here are flat and the section is closed, and real rubble is rough, leaky and full of furniture. Whether sorting still works on broken concrete is unknown.',
-    assumed: 'Assumed: sound at 343 m/s, walls reflect 82 % of the pressure, four microphones 0.16 m from the speaker, a 2 to 18 kHz chirp, echoes up to second order, a convex void.',
+    honest: 'the probe has to be inside the void first, the walls here are flat and the section is closed, and real rubble is rough, leaky and full of furniture. Over six piles the lean-to always matched by 96 % or more, but the cellar fell to 28 %, 49 % and 71 % on three of them, where a wall went unheard. Whether sorting still works on broken concrete is unknown.',
+    assumed: 'Design values: sound at 343 m/s, walls reflect 82 % of the pressure, four microphones 0.16 m from the speaker, a 2 to 18 kHz chirp, echoes up to second order, a convex void.',
     sources: [{ who: 'Dokmanić et al., PNAS 110 (2013).', what: 'Acoustic echoes reveal room shape: the echo-sorting idea used here.', url: 'https://doi.org/10.1073/pnas.1221464110' }],
     setPile, controls, drawStage, drawReadout, tick, verdicts, pointer, view, hideLabels: true,
     _demo: () => ({ src, mics, imgs, found, outline, poly, M, P, rec, peaks }),
@@ -109,7 +109,7 @@ export default function create(env) {
     readoutTitle: () => ['Each wall is a spike at every microphone', 'Matched-filter output. White marks: echoes sorted into walls. Amber: where the true first echoes are.'],
     results: () => [
       { k: 'Walls recovered', v: M.hit + ' of ' + M.walls.length, sub: M.extra ? M.extra + ' false wall' + (M.extra > 1 ? 's' : '') : 'no false walls', tone: M.hit >= 3 && !M.extra ? 'ok' : M.hit >= 2 ? 'warn' : 'bad' },
-      { k: 'Distance error', v: isNaN(M.err) ? 'none found' : (M.err * 100).toFixed(1) + ' cm', sub: 'average over those walls', tone: M.err < 0.05 ? 'ok' : 'warn' },
+      { k: 'Distance error', v: isNaN(M.err) ? 'none found' : (M.err * 100).toFixed(1) + ' cm', sub: 'flat, ideal walls; rubble will be worse', tone: M.err < 0.05 ? 'ok' : 'warn' },
       { k: 'Area heard', v: M.area > 30 ? 'open' : M.area.toFixed(1) + ' m²', sub: 'true ' + M.true.toFixed(1) + ' m²' },
       { k: 'Overlap with truth', v: (M.iou * 100).toFixed(0) + ' %', sub: 'shared area ÷ combined area', tone: M.iou > 0.8 ? 'ok' : M.iou > 0.5 ? 'warn' : 'bad' },
     ],

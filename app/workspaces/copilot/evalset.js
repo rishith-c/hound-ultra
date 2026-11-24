@@ -6,6 +6,8 @@
 //   HELD-OUT  evalset-heldout.json: 44 requests written by a separate author (another AI agent) who was given only
 //             the tool definitions and the mission snapshot, never the rules or the prompts. The rules and the
 //             model's prompt and examples were frozen before this file was read.
+//   FINAL     evalset-final.json: 48 requests by a second separate author, run once on the rules and not used by the
+//             page. The result is recorded in model-comparison.json (finalTest).
 // Both parts refer to one frozen moment of the scripted mission (07:10, checking leads; see tools.frozenEntities):
 // D1 possible outdoors, D2 rejected (fan, room 102), D3 rejected (hot pipe, room 110), D4 possible room 103,
 // D5 confirmed room 112 (person V1).

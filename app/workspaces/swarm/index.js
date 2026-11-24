@@ -5,7 +5,7 @@ import { createLive } from './live.js';
 import { createDirector } from './director.js';
 import { LR } from '../../core/fusion.js';
 
-const DEMO = { layout: 'campus', seed: 3, n: 8, strategy: 'hungarian', race: false, charge: 1 };
+const DEMO = { layout: 'campus', seed: 3, n: 8, strategy: 'hungarian', race: false, charge: 1, failAt: 100 };   // failAt: simulated second of the scripted beacon failure
 
 const ORDER = ['nearest', 'greedy', 'hungarian'];
 const clock = (t) => (t == null ? '–' : Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0'));
@@ -20,9 +20,9 @@ export default {
 
     const cfg = { ...DEMO, strategyB: 'nearest', speed: 30, ...(ctx.params || {}) };
     let demo = ctx.mode === 'demo', director = null, dCapNext = '', paused = false;
-    let world = null, runs = [], playing = false, started = false, visible = false, raf = 0, last = 0, acc = 0, uiAcc = 1, focus = 0, selRobot = null, selLead = null, scene = null, sceneError = null, chartTab = 'seed', hover = null;
+    let world = null, runs = [], playing = false, started = false, visible = false, raf = 0, last = 0, acc = 0, uiAcc = 1, focus = 0, selRobot = null, selLead = null, scene = null, sceneError = null, chartTab = 'seed', hover = null, tlSegs = [];
     const history = new Map(), bench = new Map();
-    const key = () => [cfg.layout, cfg.seed, cfg.n, cfg.charge].join('|');
+    const key = () => [cfg.layout, cfg.seed, cfg.n, cfg.charge, runs[0]?.pair ? 'pair' : ''].join('|');
     const benchKey = () => [cfg.layout, cfg.n, cfg.charge].join('|');
     const hist = () => { if (!history.has(key())) history.set(key(), {}); return history.get(key()); };
 
@@ -48,7 +48,7 @@ export default {
 
     const head = h('header.ws-head.swarm-head.adv-only', null,
       h('div', null, h('h1', null, 'Swarm'), h('p', null, 'Several robots, one search: one shared map, bids for every lead, a radio path home.')),
-      h('span', { title: 'Only one rover exists. The fleet, the drones and the relay beacons are a concept.' }, realityTag('concept')), h('span.tag.tag-ok', { title: 'Exploration, assignment, auction, mesh routing and battery scheduling run live in this sandbox. Every number is measured from the run.' }, 'Live algorithm'),
+      h('span', { title: 'The fleet, the drones and the relay beacons are a concept.' }, realityTag('concept')), h('span.tag.tag-ok', { title: 'Exploration, assignment, auction, mesh routing and battery scheduling run live in this sandbox. Every number is measured from the run.' }, 'Live algorithm'),
       h('span', { title: 'How many simulated seconds pass per real second' }, segSpeed), btnRestart, btnPlay);
     const bar = h('div.swarm-bar.adv-only', null,
       field('Site', selLayout), field('Seed', h('div.swarm-seed', null, inSeed, btnDice)),
@@ -72,13 +72,16 @@ export default {
     const legend = h('div.swarm-legend.glass.legend.adv-only', null, lg('line', 'var(--text)', 'Frontier: where the known map ends'), lg('hollow', 'var(--accent)', 'Robot'), lg('line', 'var(--accent-2)', 'Radio link (amber: weak)'),
       lg('', 'var(--warn)', 'Lead: possible person'), lg('', 'var(--person)', 'Person confirmed'), h('span.dim', null, 'Walls cut at 1.7 m'));
     // ---------- demo overlay ----------
-    const dCap = h('p.swarm-dcap', { role: 'status' }), dFig = ['mapped', 'search time', 'searching'].map((t) => { const b = h('b.num', null, '–'); return { el: h('div', null, b, h('span', null, t)), b }; });
-    const btnDemo = h('button.btn.btn-primary', { title: 'Kills the beacon that carries the most machines. You can also click any beacon.', onclick: () => failRelay('busiest') }, icon('alert', 14), 'Fail a beacon');
+    const dCap = h('p.swarm-dcap', { role: 'status' }), dFig = ['Mapped', 'Search time', 'Searching'].map((t) => { const b = h('b.num', null, '–'); return { el: h('div', null, b, h('span', null, t)), b }; });
+    const btnDemo = h('button.btn.btn-primary', { title: 'Switches off the beacon that carries the most machines. You can also click any beacon.', onclick: () => failRelay('busiest') }, icon('alert', 14), 'Switch off a beacon');
     const btnHold = h('button.btn', { 'aria-label': 'Pause', onclick: () => { paused = !paused; btnHold.replaceChildren(icon(paused ? 'play' : 'pause', 14)); btnHold.setAttribute('aria-label', paused ? 'Play' : 'Pause'); }, hidden: ctx.kit.reducedMotion() }, icon('pause', 14));
     const demoBox = h('div.swarm-demo.demo-only', null,
       h('div.swarm-dtitle', null, h('div.swarm-dtags', null, realityTag('concept'), h('span.tag.tag-ok', null, 'Live algorithm')), h('h1', null, 'One search, eight machines'), dCap, h('div.row', null, btnDemo, btnHold)),
-      h('div.swarm-dfig', null, ...dFig.map((f) => f.el)));
+      h('div.swarm-dright', null, h('div.swarm-dfig', null, ...dFig.map((f) => f.el)),
+        h('div.swarm-dtl', null, h('div.swarm-dtlhead', null, realityTag('sim'), h('span.k.k-drive', null, 'Driving'), h('span.k.k-listen', null, 'Listening'), h('span.k.k-relay', { title: 'A beacon this machine placed is carrying traffic' }, 'Relaying')), null)));
+    const tlCanvas = h('canvas.swarm-tl', { role: 'img', 'aria-label': 'Timeline of the eight machines: driving, listening, and relaying through a beacon the machine placed. A beacon failure is a vertical break.' });
     const setCap = (text) => { if (dCapNext === text) return; dCapNext = text; dCap.classList.add('out'); setTimeout(() => { dCap.textContent = dCapNext; dCap.classList.remove('out'); }, 260); };
+    demoBox.querySelector('.swarm-dtl').append(tlCanvas);
     stage.append(...badges, divider, tools, legend, caption, demoBox);
 
     // ---------- panels ----------
@@ -106,7 +109,7 @@ export default {
     let sideTab = 'fleet';
     const sideTabs = h('div.tabs', { role: 'tablist', 'aria-label': 'Fleet, mesh and log' }, ...[['fleet', 'Fleet'], ['mesh', 'Mesh and energy'], ['log', 'Log']].map(([id, t]) => h('button', { type: 'button', role: 'tab', 'data-tab': id, 'aria-selected': String(id === 'fleet'), onclick: () => { sideTab = id; [...sideTabs.querySelectorAll('button')].forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === id))); fleetTable.hidden = id !== 'fleet'; meshBox.hidden = id !== 'mesh'; logBox.hidden = id !== 'log'; refreshAll(true); } }, t)), h('div.grow'), fleetAB);
     fleetPanel.querySelector('.panel-head').replaceWith(sideTabs);
-    const realNote = h('div.note.swarm-real', null, h('div', null, h('b', null, 'What is real. '), 'The algorithms run live and every number here is measured in this sandbox. The site, robots and sensors are simulated. The fleet is a concept: one rover exists. ',
+    const realNote = h('div.note.swarm-real', null, h('div', null, h('b', null, 'What is real. '), 'The algorithms run live and every number here is measured in this sandbox. The site, robots and sensors are simulated. The fleet is a concept; one rover is built. ',
       h('button.swarm-link', { type: 'button', onclick: () => openModel() }, 'Model and assumptions')));
 
     root.append(h('div.swarm', null, head, bar, h('div.swarm-main', null,
@@ -115,7 +118,7 @@ export default {
 
     // ---------- the 3-D scene ----------
     try {
-      const mod = await import('./scene.js');
+      const [mod] = await Promise.all([import('./scene.js'), import('./models.js').then((m) => m.loadHound()).catch((e) => console.warn('[swarm] HOUND model did not load, using a simpler rover', e))]);
       scene = mod.createScene(stage, { kit: ctx.kit, onPick: (p) => {
         if (p.view !== focus && runs.length > 1) { focus = p.view; fleetAB.redraw(); selLead = null; }
         if (p.type === 'robot') { if (demo) { scene.select(p.id); scene.film({ id: p.id, d: 22, el: 0.55, az: 0.4, st: 1.8, drift: 0.05 }); return; } selRobot = p.id; camMode = 'follow'; segCam.redraw(); scene.setCamera('follow', p.id); scene.select(p.id); refreshAll(true); }
@@ -131,11 +134,11 @@ export default {
     // ---------- runs ----------
     function build() {
       world = genWorld({ layout: cfg.layout, seed: cfg.seed, blockB });
-      const mk = (strategy, tag) => ({ strategy, tag, swarm: createLive(world, { n: cfg.n, strategy, startCharge: cfg.charge }, { layout: cfg.layout, seed: cfg.seed, blockB }) });
+      const pair = demo, mk = (strategy, tag) => ({ strategy, tag, pair, swarm: createLive(world, { n: cfg.n, strategy, startCharge: cfg.charge, pair, failAt: pair ? DEMO.failAt : 0 }, { layout: cfg.layout, seed: cfg.seed, blockB }) });
       for (const r of runs) r.swarm.dispose();
       runs = cfg.race ? [mk(cfg.strategy, 'A'), mk(cfg.strategyB, 'B')] : [mk(cfg.strategy, '')];
       for (const r of runs) r.swarm.advance(0, 4);
-      director = null;
+      director = null; tlSegs = [];
       focus = Math.min(focus, runs.length - 1); selLead = null; acc = 0; started = false; playing = false; hover = null;
       if (selRobot && !runs[0].swarm.state.robots.some((r) => r.id === selRobot)) { selRobot = null; if (camMode === 'follow') { camMode = 'overview'; segCam.redraw(); } }
       scene?.setSwarms(runs.map((r) => r.swarm)); applyCam();
@@ -145,7 +148,7 @@ export default {
       fleetBody.replaceChildren(); fleetRows.clear(); record(); refreshAll(true);
     }
     function applyCam() { if (!scene) return; scene.setCinema(demo); if (demo && !ctx.kit.reducedMotion()) scene.setCamera('film'); else scene.setCamera(demo ? 'overview' : camMode, selRobot); scene.select(!demo && camMode === 'follow' ? selRobot : null); }
-    function makeDirector() { const run = runs[0]; director = createDirector({ scene, live: run.swarm, world, onCaption: setCap, failBeacon: () => { if (run === runs[0]) run.swarm.failRelay('busiest'); }, onEnd: () => { scene.setFade(0); setTimeout(() => { if (!demo || runs[0] !== run) { scene.setFade(1); return; } Object.assign(cfg, DEMO); build(); play(); scene.setFade(1); }, 1300); } }); }
+    function makeDirector() { const run = runs[0]; director = createDirector({ scene, live: run.swarm, world, onCaption: setCap, failAt: DEMO.failAt, onEnd: () => { scene.setFade(0); setTimeout(() => { if (!demo || runs[0] !== run) { scene.setFade(1); return; } Object.assign(cfg, DEMO); build(); play(); scene.setFade(1); }, 1300); } }); }
     function setMode(m) { const on = m === 'demo'; if (on === demo) return; demo = on; if (demo && cfg.race) { cfg.race = false; build(); } director = null; applyCam(); if (demo) { play(); uiAcc = 1; } else refreshAll(true); requestAnimationFrame(() => scene?.resize()); }
     function record() { const H = hist(); for (const r of runs) H[r.strategy] = { series: r.swarm.state.series, sum: r.swarm.summary(), live: true, dt: r.swarm.state.seriesDt }; }
     function play() { if (runs.every((r) => r.swarm.state.done)) return; playing = true; started = true; drawPlay(); }
@@ -168,10 +171,23 @@ export default {
         if (!still) for (const r of runs) r.swarm.advance(adv, Math.max(3, speed * (demo ? 0.7 : 0.4)));
         if (runs.every((r) => r.swarm.state.done)) { playing = false; drawPlay(); if (!demo) announceEnd(); uiAcc = 1; }
       }
-      try { scene?.frame(dt, speed); } catch (e) { console.error('[swarm] scene', e); scene = null; }
+      try { scene?.frame(demo && paused && ctx.kit.reducedMotion() ? 0 : dt, speed); } catch (e) { console.error('[swarm] scene', e); scene = null; }
+      if (demo) drawTimeline();
       uiAcc += dt; if (uiAcc > (demo ? 0.1 : 0.25)) { uiAcc = 0; if (demo) drawDemo(); else refreshAll(false); }
     }
-    function drawDemo() { const S = runs[0].swarm.state, out = S.robots.filter((r) => r.mode === 'explore' || r.mode === 'lead' || r.mode === 'listen').length, v = [(S.m.coverage * 100).toFixed(0) + ' %', clock(S.t), out + ' of ' + S.n]; dFig.forEach((f, i) => { if (f.b.textContent !== v[i]) f.b.textContent = v[i]; }); }
+    // ---------- demo timeline: one hairline per machine, straight from the run ----------
+    let tlFont = '', tlCol = null;
+    function drawTimeline() {
+      const run = runs[0], S = run?.swarm.state; if (!S) return; const t = S.t, N = S.robots.length;
+      S.robots.forEach((r, i) => { const rel = S.relays.some((b) => b.alive && b.connected && b.by === r.id && b.load > 0), k = r.mode === 'swap' || r.mode === 'done' || r.mode === 'dead' || r.link.ok === false ? 0 : r.mode === 'listen' ? 2 : rel ? 3 : 1, L = (tlSegs[i] ||= []), z = L[L.length - 1]; if (z && z.k === k) z.b = t; else { if (z) z.b = t; L.push({ a: z ? t : 0, b: t, k }); } });
+      const W0 = tlCanvas.clientWidth, H0 = tlCanvas.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1); if (!W0) return; if (tlCanvas.width !== Math.round(W0 * dpr) || tlCanvas.height !== Math.round(H0 * dpr)) { tlCanvas.width = Math.round(W0 * dpr); tlCanvas.height = Math.round(H0 * dpr); }
+      const g = tlCanvas.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W0, H0);
+      tlFont ||= '500 11px ' + (cssVar('--font') || 'sans-serif'); tlCol ||= ['', 'rgba(226,232,238,0.42)', cssVar('--warn') || '#ffb224', '#a9dbe6', cssVar('--danger') || '#ff4d5e'];
+      const x0 = 26, x1 = W0 - 1, y0 = 18, rh = (H0 - y0 - 4) / Math.max(1, N - 1), span = Math.max(150, t * 1.015), X = (v) => x0 + (v / span) * (x1 - x0), wd = [0, 1, 3, 2]; g.font = tlFont; g.textBaseline = 'middle';
+      S.robots.forEach((r, i) => { const y = Math.round(y0 + i * rh); g.fillStyle = 'rgba(226,232,238,0.62)'; g.fillText(r.id, 0, y + 0.5); for (const z of tlSegs[i]) { if (!z.k) continue; g.fillStyle = tlCol[z.k]; const a = X(z.a), w = wd[z.k]; g.fillRect(a, y + 0.5 - w / 2, Math.max(0.6, X(z.b) - a), w); } });
+      for (const b of S.relays) if (!b.alive && b.failedAt != null) { const x = Math.round(X(b.failedAt)); g.clearRect(x - 3, y0 - 5, 7, H0); g.fillStyle = tlCol[4]; g.fillRect(x, 8, 1, 5); const s = 'Beacon ' + b.id.slice(1) + ' off', w = g.measureText(s).width; g.fillStyle = 'rgba(226,232,238,0.9)'; g.fillText(s, Math.min(x + 6, x1 - w), 7); }
+    }
+    function drawDemo() { btnDemo.disabled = btnHold.hidden = ctx.kit.reducedMotion(); const S = runs[0].swarm.state, out = S.robots.filter((r) => r.mode === 'explore' || r.mode === 'lead' || r.mode === 'listen').length, v = [(S.m.coverage * 100).toFixed(0) + ' %', clock(S.t), out + ' of ' + S.n]; dFig.forEach((f, i) => { if (f.b.textContent !== v[i]) f.b.textContent = v[i]; }); }
     function announceEnd() {
       const a = runs[0].swarm.summary(); if (runs.length === 1) ctx.shell.toast(STRATEGIES[a.strategy].label + ': search finished in ' + clock(a.tExplored) + ' of simulated time, ' + (a.coverage * 100).toFixed(1) + ' % mapped.', { level: 'ok' });
       else { const b = runs[1].swarm.summary(); if (a.t95 && b.t95) { const win = a.t95 <= b.t95 ? a : b, lose = win === a ? b : a; ctx.shell.toast(STRATEGIES[win.strategy].label + ' reached 95 % in ' + clock(win.t95) + ', ' + clock(lose.t95 - win.t95) + ' ahead of ' + STRATEGIES[lose.strategy].label.toLowerCase() + ' on this site.', { level: 'ok', ms: 7000 }); } }
@@ -250,9 +266,9 @@ export default {
         const linked = S.robots.filter((r) => r.link.ok || r.mode === 'done').length, hops = Math.max(0, ...S.robots.map((r) => (r.link.ok ? r.link.hops : 0)));
         const kv = (rows) => h('dl.kv.num', null, ...rows.flatMap(([k, v, tip]) => [h('dt', { title: tip || null }, k), h('dd', null, v)]));
         meshGrid.replaceChildren(
-          kv([['Beacons working', alive + ' of ' + S.relays.length], ['Robots with a path', linked + ' of ' + S.robots.length], ['Weakest link in use', weakest == null ? '–' : weakest.toFixed(0) + ' dBm', 'Links below ' + PARAMS.radio.rxMin + ' dBm are unusable (assumed radio).'], ['Longest path', hops + (hops === 1 ? ' hop' : ' hops')], ['Re-routed', String(m.reroutes), 'Robots that found another path after a beacon failed.'], ['Regrouped', String(m.regroups), 'Robots that lost every path and drove back to the mesh.']]),
+          kv([['Beacons working', alive + ' of ' + S.relays.length], ['Robots with a path', linked + ' of ' + S.robots.length], ['Weakest link in use', weakest == null ? '–' : weakest.toFixed(0) + ' dBm', 'Links below ' + PARAMS.radio.rxMin + ' dBm are unusable (design value).'], ['Longest path', hops + (hops === 1 ? ' hop' : ' hops')], ['Re-routed', String(m.reroutes), 'Robots that found another path after a beacon failed.'], ['Regrouped', String(m.regroups), 'Robots that lost every path and drove back to the mesh.']]),
           kv([['Energy used', m.energyWh.toFixed(1) + ' Wh'], ['Battery swaps', String(m.swaps)], ['Beacon restocks', String(m.restocks)], ['Fewest searching', S.t > 20 ? m.minSearching + ' of ' + S.n : '–', 'The fewest robots that were searching at any one moment.'], ['Leads raised', String(S.leads.length)], ['Yes / no / open', m.confirmed + ' / ' + m.rejected + ' / ' + (S.leads.length - m.confirmed - m.rejected)]]));
-        if (!meshNote.textContent) meshNote.textContent = 'A robot drops a beacon when its best link falls under ' + PARAMS.radio.drop + ' dBm. At most a third of the fleet may leave for a battery swap at once, so the search never stops. Radio and power figures are assumed.';
+        if (!meshNote.textContent) meshNote.textContent = 'A robot drops a beacon when its best link falls under ' + PARAMS.radio.drop + ' dBm. At most a third of the fleet may leave for a battery swap at once, so the search never stops. Radio and power figures are design values.';
       }
       if (sideTab === 'log') { const lastId = ev.length ? ev[ev.length - 1].id + focus * 1e6 : -1;
         if (force || lastId !== lastEvent) { lastEvent = lastId; logList.replaceChildren(...(ev.length ? ev.slice(-60).reverse().map((e) => h('li.' + e.level, null, h('time', null, clock(e.t)), h('span', null, e.text))) : [h('li', null, h('time', null, '0:00'), h('span', null, 'Nothing has happened yet.'))])); } }
@@ -268,11 +284,11 @@ export default {
       const stat = { auction: 'Auction open', assigned: lead.winner + ' is on the way', listening: lead.winner + ' is listening', confirmed: 'Person confirmed', rejected: 'Ruled out', open: 'Still possible: left for a person to decide' }[lead.status];
       const line = h('p.swarm-leadline', null, h('b', null, stat + ', ' + Math.round(lead.p * 100) + ' %. '), 'Raised at ' + clock(lead.t) + ' by ' + lead.by + ' (' + (lead.sensor === 'radar' ? 'radar, moving target' : lead.sensor === 'thermal' ? 'thermal, warm shape' : 'drone image') + '), ' + (lead.indoor ? 'indoors' : 'outdoors') + '.');
       const bids = (lead.bids || []).slice().sort((a, b) => (b.eligible - a.eligible) || ((b.score || 0) - (a.score || 0)));
-      const table = h('table.table.dense.swarm-bids', null, h('thead', null, h('tr', null, h('th', null, 'Robot'), h('th', { title: 'Drive or flight time to the second vantage, along the known map' }, 'Arrives in'), h('th', { title: 'Charge left after the trip, the 20 s listen and the drive home' }, 'Battery after'), h('th', { title: 'How well its sensors suit this lead (assumed scores)' }, 'Sensor fit'), h('th', { title: 'Bid = ' + PARAMS.bid.time + ' × speed + ' + PARAMS.bid.battery + ' × battery + ' + PARAMS.bid.fit + ' × sensor fit (assumed weights)' }, 'Bid'))),
+      const table = h('table.table.dense.swarm-bids', null, h('thead', null, h('tr', null, h('th', null, 'Robot'), h('th', { title: 'Drive or flight time to the second vantage, along the known map' }, 'Arrives in'), h('th', { title: 'Charge left after the trip, the 20 s listen and the drive home' }, 'Battery after'), h('th', { title: 'How well its sensors suit this lead (design values)' }, 'Sensor fit'), h('th', { title: 'Bid = ' + PARAMS.bid.time + ' × speed + ' + PARAMS.bid.battery + ' × battery + ' + PARAMS.bid.fit + ' × sensor fit (design values)' }, 'Bid'))),
         h('tbody', null, ...bids.map((b) => (b.eligible
           ? h('tr' + (b.robot === lead.winner ? '.won' : ''), null, h('td', null, b.robot), h('td', null, Math.round(b.eta) + ' s'), h('td', null, Math.round(b.battAfter * 100) + ' %'), h('td', { title: b.fitWhy }, b.fit.toFixed(2)), h('td', null, h('span.swarm-bidbar', null, h('i', { style: { width: Math.round(b.score * 100) + '%' } })), b.score.toFixed(2) + (b.robot === lead.winner ? ' won' : '')))
           : h('tr.out', null, h('td', null, b.robot), h('td.why', { colspan: 4 }, 'No bid: ' + b.reason))))));
-      const steps = lead.steps && lead.evidence.length > 1 ? h('div.swarm-steps', { title: 'Each reading multiplies the odds. The Wi-Fi network\'s rates are measured on simulated test windows; every other likelihood is assumed.' },
+      const steps = lead.steps && lead.evidence.length > 1 ? h('div.swarm-steps', { title: 'Each reading multiplies the odds. The Wi-Fi network\'s rates are measured on simulated test windows; every other likelihood is a design value.' },
         ...lead.steps.map((s) => h('span' + (s.lr > 1.05 ? '.up' : s.lr < 0.95 ? '.down' : ''), null, (LR[s.sensor]?.label || s.sensor).replace('Wi-Fi neural network', 'Wi-Fi network') + ' ', h('b', null, s.lr === 1 ? 'no info' : '×' + s.lr.toFixed(2))))) : null;
       auctionBody.replaceChildren(tabs, line, lead.bids ? table : h('p.dim', null, 'Waiting for a known place to stand for the second look.'), steps);
     }
@@ -348,7 +364,7 @@ export default {
       const todo = ORDER.filter((s) => !(H[s] && H[s].sum.tExplored != null) && !liveSet.has(s));
       btnMeasure.textContent = 'Measuring…'; drawKpi();
       try {
-        await Promise.all(todo.map(async (s) => { const r = await getPool().run({ layout: cfg.layout, seed: cfg.seed, n: cfg.n, strategy: s, startCharge: cfg.charge }); const Hk = history.get(k); if (Hk && !(k === key() && runs.some((x) => x.strategy === s))) Hk[s] = { series: r.series, sum: r, live: false, dt: 2 }; }));
+        await Promise.all(todo.map(async (s) => { const r = await getPool().run({ layout: cfg.layout, seed: cfg.seed, n: cfg.n, strategy: s, startCharge: cfg.charge, pair: !!runs[0]?.pair }); const Hk = history.get(k); if (Hk && !(k === key() && runs.some((x) => x.strategy === s))) Hk[s] = { series: r.series, sum: r, live: false, dt: 2 }; }));
         if (todo.length) ctx.shell.toast('Measured ' + todo.map((s) => STRATEGIES[s].short.toLowerCase()).join(' and ') + ' on the same site. See the table and the chart.', { level: 'ok' });
       } catch (e) { ctx.shell.toast('The off-screen runs failed: ' + e.message, { level: 'alert' }); }
       measuring = false; btnMeasure.textContent = 'Measure all three'; refreshAll(true);
@@ -408,24 +424,26 @@ export default {
         ['Assignment', 'Nearest frontier (no coordination), greedy auction with a spreading penalty, and the Hungarian method (Kuhn–Munkres) solved at every replan.', 'Live algorithm'],
         ['Coverage score', 'Share of the floor a rover could ever reach that the fleet has seen as free. Scored against the hidden map; the robots never read it.', 'Measured'],
         ['Rover', P.rover.speed + ' m/s (HOUND-01\'s speed), ' + P.rover.capWh + ' Wh pack (3S 2200 mAh, as built).', 'Real values'],
-        ['Rover mapping sensor', 'A ' + P.rover.lidar + ' m line-of-sight range sensor. HOUND-01 does not carry one yet.', 'Assumed'],
-        ['Rover power draw', P.rover.hotelW + ' W standing, ' + (P.rover.hotelW + P.rover.driveW) + ' W driving.', 'Assumed'],
-        ['Drone', P.drone.speed + ' m/s at ' + P.drone.alt + ' m, sees open ground and roofs within ' + P.drone.footprint + ' m, ' + P.drone.capWh + ' Wh at ' + P.drone.flyW + ' W. No drone exists.', 'Concept, assumed'],
-        ['Radio', 'Log-distance path loss: ' + P.radio.p1m + ' dBm at 1 m, exponent ' + P.radio.exponent + ', minus ' + P.radio.loss[1] + ' dB per concrete wall, ' + P.radio.loss[2] + ' dB per drywall, ' + P.radio.loss[3] + ' dB per rubble pile. Usable above ' + P.radio.rxMin + ' dBm.', 'Assumed'],
+        ['Rover mapping sensor', 'A ' + P.rover.lidar + ' m line-of-sight range sensor. A concept for HOUND-01.', 'Design value'],
+        ['Rover power draw', P.rover.hotelW + ' W standing, ' + (P.rover.hotelW + P.rover.driveW) + ' W driving.', 'Design value'],
+        ['Drone', P.drone.speed + ' m/s at ' + P.drone.alt + ' m, sees open ground and roofs within ' + P.drone.footprint + ' m, ' + P.drone.capWh + ' Wh at ' + P.drone.flyW + ' W.', 'Concept, design value'],
+        ['Radio', 'Log-distance path loss: ' + P.radio.p1m + ' dBm at 1 m, exponent ' + P.radio.exponent + ', minus ' + P.radio.loss[1] + ' dB per concrete wall, ' + P.radio.loss[2] + ' dB per drywall, ' + P.radio.loss[3] + ' dB per rubble pile. Usable above ' + P.radio.rxMin + ' dBm.', 'Design value'],
         ['Relay beacons', 'A robot drops one when its best link falls under ' + P.radio.drop + ' dBm. Rovers carry ' + P.rover.relays + ', drones ' + P.drone.relays + '. A drone sets its beacon on a roof or another high point, so that beacon\'s links are traced from the air. Robots attach to the backbone; they do not relay for each other.', 'Concept, live algorithm'],
         ['Battery scheduler', 'Return when charge left is under ' + P.energy.margin + ' × the trip home plus ' + P.energy.reserve * 100 + ' %. At most a third of the fleet may be away for a swap at once.', 'Live algorithm'],
-        ['Leads while driving', 'Radar picks up a moving target within ' + P.cue.radarRange + ' m through at most one wall; the thermal camera needs line of sight within ' + P.cue.thermalRange + ' m. A still person behind a wall is not picked up while driving.', 'Simulated, assumed rates'],
-        ['Second look', 'Two 10 s Wi-Fi windows, radar and thermal from a new position, fused with Bayes\' rule. The Wi-Fi network answers with its measured rates: 86.9 % for a moving person, 21.4 % for a still one, 11.1 % false alarms.', 'Measured in simulation'],
-        ['Other sensor likelihoods', 'Radar, thermal, drone image, machine signature: the same assumed values as the Fusion workspace.', 'Assumed'],
-        ['Bid', P.bid.time + ' × speed score + ' + P.bid.battery + ' × battery after + ' + P.bid.fit + ' × sensor fit.', 'Assumed weights'],
+        ['Leads while driving', 'Radar picks up a moving target within ' + P.cue.radarRange + ' m through at most one wall; the thermal camera needs line of sight within ' + P.cue.thermalRange + ' m. A still person behind a wall is not picked up while driving.', 'Simulated, design values'],
+        ['Second look', 'Two 10 s Wi-Fi windows, radar and thermal from a new position, fused with Bayes\' rule. The Wi-Fi network answers with its measured rates for moving people, still people and empty rooms; the complete table is in Wi-Fi AI, Test set.', 'Measured in simulation'],
+        ['Second bearing (Demo runs only)', 'The auction\'s runner-up goes to another side of the lead. A bearing comes from thermal (± ' + P.bearing.thermalDeg + '°) or radar (± ' + P.bearing.radarDeg + '°), and the lead moves to where the two cross. The second look\'s readings are fused as independent. The benchmarks do not use it.', 'Assumed, live algorithm'],
+        ['Demo failure', 'The Demo run is started with one beacon failure at ' + DEMO.failAt + ' s: the beacon whose loss cuts off a machine that can get back soon. In the film the links go dark one by one; in the run they drop at the same moment.', 'Scripted'],
+        ['Other sensor likelihoods', 'Radar, thermal, drone image, machine signature: the same design values as the Fusion workspace.', 'Design value'],
+        ['Bid', P.bid.time + ' × speed score + ' + P.bid.battery + ' × battery after + ' + P.bid.fit + ' × sensor fit.', 'Design values'],
       ];
       const close = () => { wrap.remove(); prev?.focus?.(); };
       const ok = h('button.btn.btn-primary', { onclick: close }, 'Close');
       const wrap = h('div.scrim', { onclick: (e) => { if (e.target === wrap) close(); }, onkeydown: (e) => { if (e.key === 'Escape') close(); } },
         h('div.dialog.glass.swarm-dialog', { role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Model and assumptions' }, h('h2', null, 'Model and assumptions'),
-          h('p', null, 'Only one rover exists, so this fleet has never driven anywhere. What you can trust is narrower and still useful: given this model, these algorithms produce these numbers, and you can re-run every one of them.'),
+          h('p', null, 'One rover is built; this fleet is a concept, and it is simulated. Given this model, these algorithms produce these numbers, and you can re-run every one of them.'),
           h('table.table', null, h('thead', null, h('tr', null, h('th', null, 'Part'), h('th', null, 'How it works here'), h('th', null, 'Status'))), h('tbody', null, ...rows.map((r) => h('tr', null, h('td', { style: { whiteSpace: 'nowrap', fontWeight: 600 } }, r[0]), h('td', { style: { whiteSpace: 'normal', lineHeight: 1.4 } }, r[1]), h('td', { style: { whiteSpace: 'nowrap' } }, r[2]))))),
-          h('p', null, 'Not modelled: robots colliding with each other, wheel slip and stairs, radio interference and multipath, sensor noise in the map, and people who move.'),
+          h('p', null, 'Outside this model: robots colliding with each other, wheel slip and stairs, radio interference and multipath, sensor noise in the map, and people who move.'),
           h('div.row', { style: { justifyContent: 'flex-end' } }, ok)));
       (document.getElementById('overlays') || document.body).append(wrap); ok.focus();
     }

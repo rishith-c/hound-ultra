@@ -9,30 +9,30 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { W, H, RES, T, K, PARAMS } from './engine.js';
 import * as MT from './materials.js';
-import { parts, siteShells, citySurround } from './models.js';
+import { parts, siteShells, citySurround, houndModel } from './models.js';
 
 const { hash } = MT;
 const SX = W * RES, SY = H * RES, MAXR = 12, THREADS = 192, SEGS = 9000;
 const v3 = (x, y, h = 0) => new THREE.Vector3(x, h, -y);
-const clamp = THREE.MathUtils.clamp, TAU = Math.PI * 2;
+const clamp = THREE.MathUtils.clamp, TAU = Math.PI * 2, HS = 1.45;
 
 function tokenColors(kit) {
   const c = (n) => new THREE.Color(kit.cssVar(n) || '#888');
   return { accent: c('--accent'), person: c('--person'), warn: c('--warn'), ok: c('--ok'), danger: c('--danger'), sim: c('--sim'), text: c('--text'), text3: c('--text-3'), bg0: c('--bg-0'), black: new THREE.Color(0, 0, 0),
-    scan: new THREE.Color('#9fcdf5'), head: new THREE.Color('#f4f2ec'), thread: new THREE.Color('#a9dbe6'), ground: new THREE.Color('#54534f'), slab: new THREE.Color('#8b8984'), haze: new THREE.Color('#10151b'), zen: new THREE.Color('#040609'), fog: new THREE.Color('#262b31'),
+    scan: new THREE.Color('#9fcdf5'), head: new THREE.Color('#f4f2ec'), thread: new THREE.Color('#a9dbe6'), ground: new THREE.Color('#54534f'), slab: new THREE.Color('#8b8984'), haze: new THREE.Color('#18202a'), zen: new THREE.Color('#05080d'), fog: new THREE.Color('#2c343d'), moon: new THREE.Color('#a9bfdc'),
     concrete: new THREE.Color('#9c9a95'), drywall: new THREE.Color('#b8b4ab'), rubble: new THREE.Color('#7d766d'), furn: new THREE.Color('#5d5348') };
 }
 
 class View {
   constructor(shared, swarm, tag) {
     this.sh = shared; this.swarm = swarm; this.tag = tag; this.world = swarm.world;
-    const C = shared.C, sc = this.scene = new THREE.Scene();
-    sc.background = C.haze; sc.fog = new THREE.FogExp2(C.haze.getHex(), 0.0042); sc.environment = shared.env; sc.environmentIntensity = 0.55;
-    this.hemi = new THREE.HemisphereLight(0x76818f, 0x121110, 0.62); sc.add(this.hemi);
-    const moon = this.moon = new THREE.DirectionalLight(0xc3cedd, 1.55); moon.position.set(SX / 2 + 70, 74, -SY / 2 - 46); moon.target.position.set(SX / 2, 0, -SY / 2);
-    moon.castShadow = true; moon.shadow.mapSize.set(3072, 3072); const cam = moon.shadow.camera; cam.left = -84; cam.right = 84; cam.top = 72; cam.bottom = -72; cam.near = 10; cam.far = 240; moon.shadow.bias = -0.0008; moon.shadow.normalBias = 0.06; moon.shadow.radius = 2.4;
+    const C = shared.C, sc = this.scene = new THREE.Scene(), [mbx, mby] = this.world.base, ma = Math.atan2(mbx - SX / 2, -(mby - SY / 2)) - 0.1; this.moonDir = new THREE.Vector3(Math.sin(ma) * 0.91, 0.41, Math.cos(ma) * 0.91).normalize();
+    sc.background = C.haze; sc.fog = new THREE.FogExp2(C.haze.getHex(), 0.0052); sc.environment = shared.env; sc.environmentIntensity = 0.55;
+    this.hemi = new THREE.HemisphereLight(0x6f8098, 0x14120f, 0.62); this.hemi.layers.enable(1); sc.add(this.hemi);
+    const moon = this.moon = new THREE.DirectionalLight(0xb4c8e6, 1.55); moon.layers.enable(1); moon.position.copy(this.moonDir).multiplyScalar(135).add(new THREE.Vector3(SX / 2, 0, -SY / 2)); moon.target.position.set(SX / 2, 0, -SY / 2);
+    moon.castShadow = true; moon.shadow.mapSize.set(3072, 3072); const cam = moon.shadow.camera; cam.left = -84; cam.right = 84; cam.top = 72; cam.bottom = -72; cam.near = 10; cam.far = 270; moon.shadow.bias = -0.0008; moon.shadow.normalBias = 0.06; moon.shadow.radius = 2.4;
     sc.add(moon, moon.target);
-    this.time = 0; this.robots = new Map(); this.relays = new Map(); this.leads = new Map(); this.labels = new Map(); this.threads = new Map(); this.threadPool = []; this.selected = null; this.linkRev = -1; this.frontRev = -1; this.bidSeen = new Map();
+    this.time = 0; this.robots = new Map(); this.relays = new Map(); this.leads = new Map(); this.labels = new Map(); this.threads = new Map(); this.threadPool = []; this.selected = null; this.linkRev = -1; this.frontRev = -1; this.bidSeen = new Map(); this.seenDead = new Set();
     this._m = new THREE.Matrix4(); this._q = new THREE.Quaternion(); this._s = new THREE.Vector3(); this._p = new THREE.Vector3(); this._p2 = new THREE.Vector3(); this._c = new THREE.Color(); this._e = new THREE.Euler();
     this.labelHost = document.createElement('div'); this.labelHost.className = 'swarm-labels'; shared.host.append(this.labelHost);
     this.buildFields(); this.buildGround(); this.buildSolids(); this.buildShells(); this.buildBase(); this.buildFog(); this.buildThreads(); this.buildTrails(); this.buildTruth();
@@ -48,7 +48,7 @@ class View {
     this.fieldTex = new THREE.DataTexture(this.fieldArr, W, H, THREE.RGBAFormat); this.fieldTex.magFilter = this.fieldTex.minFilter = THREE.LinearFilter;
     this.lightRT = new THREE.WebGLRenderTarget(960, 720, { type: THREE.HalfFloatType, depthBuffer: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
     this.U = { uField: { value: this.fieldTex }, uState: { value: this.stateTex }, uLight: { value: this.lightRT.texture }, uNoise: { value: this.sh.noise }, uSite: { value: new THREE.Vector2(SX, SY) }, uTime: { value: 0 }, uBoost: { value: 1 },
-      uScan: { value: C.scan }, uHead: { value: C.head }, uPerson: { value: C.person }, uTruth: { value: new THREE.Color(0, 0, 0) }, uBeaconC: { value: C.thread }, uGroundC: { value: C.ground }, uSlabC: { value: C.slab } };
+      uScan: { value: C.scan }, uHead: { value: C.head }, uPerson: { value: C.person }, uTruth: { value: new THREE.Color(0, 0, 0) }, uBeaconC: { value: C.thread }, uGroundC: { value: C.ground }, uSlabC: { value: C.slab }, uMoonD: { value: this.moonDir }, uMoonC: { value: C.moon }, uRefl: this.sh.reflU.tex, uReflM: this.sh.reflU.mat, uReflOn: this.sh.reflU.on };
     // light fans
     const cap = 60000; this.lp = new Float32Array(cap * 2); this.la = new Float32Array(cap * 4); this.lm = new Float32Array(cap * 2); this.ln = 0; this.lcap = cap;
     const g = this.lgeo = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(this.lp, 2).setUsage(THREE.DynamicDrawUsage)); g.setAttribute('aL', new THREE.BufferAttribute(this.la, 4).setUsage(THREE.DynamicDrawUsage)); g.setAttribute('aM', new THREE.BufferAttribute(this.lm, 2).setUsage(THREE.DynamicDrawUsage));
@@ -83,7 +83,7 @@ class View {
     const put = (x, y) => { this._m.makeTranslation(x, 0, -y); post.setMatrixAt(n++, this._m); };
     for (let x = 0; x <= SX; x += 3) { put(x, 0); put(x, SY); } for (let y = 3; y < SY; y += 3) { put(0, y); put(SX, y); } post.count = n; this.scene.add(post);
     const tape = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([v3(0, 0, 0.92), v3(SX, 0, 0.92), v3(SX, SY, 0.92), v3(0, SY, 0.92)]), new THREE.LineBasicMaterial({ color: C.text3, transparent: true, opacity: 0.4 })); this.scene.add(tape);
-    const sky = new THREE.Mesh(new THREE.SphereGeometry(620, 32, 16), this.sh.skyMat); sky.position.set(SX / 2, -6, -SY / 2); this.scene.add(sky);
+    const sky = new THREE.Mesh(new THREE.SphereGeometry(620, 32, 16), this.sh.skyMat); sky.position.set(SX / 2, -6, -SY / 2); sky.layers.enable(1); this.scene.add(sky);
   }
   buildSolids() {
     const C = this.sh.C, w = this.world; let walls = 0, rub = 0, furn = 0; const comp = this.carAt = new Map();
@@ -115,7 +115,7 @@ class View {
       e.set(0, along ? 0 : Math.PI / 2, 0); this._c.setHSL(hash(k) < 0.5 ? 0.58 : 0.07, 0.03 + 0.05 * hash(k * 3), 0.16 + 0.3 * hash(k * 5)); this.put(this.carM, ((x0 + x1 + 1) / 2) * RES, 0, -((y0 + y1 + 1) / 2) * RES, e, along ? lx : ly, 1.75, along ? ly : lx, this._c.clone(), k, instant); } }
   }
   buildShells() {
-    const geo = siteShells(this.world.buildings, this.world.seed); const mk = (g, shadow) => { const m = new THREE.Mesh(g, MT.patched({ roughness: 0.9, side: THREE.DoubleSide }, this.U, 'shell', MT.SHELL)); m.castShadow = shadow; m.receiveShadow = true; if (shadow) m.customDepthMaterial = MT.patchedDepth(this.U, 'shell', MT.SHELL_DEPTH); this.scene.add(m); return m; };
+    const geo = siteShells(this.world.buildings, this.world.seed); const mk = (g, shadow) => { const m = new THREE.Mesh(g, MT.patched({ roughness: 0.9, side: THREE.DoubleSide }, this.U, 'shell', MT.SHELL)); m.castShadow = shadow; m.receiveShadow = true; if (shadow) m.customDepthMaterial = MT.patchedDepth(this.U, 'shell', MT.SHELL_DEPTH); m.layers.enable(1); this.scene.add(m); return m; };
     if (geo) this.shell = mk(geo, true);
     this.city = mk(citySurround(SX, SY, 3), false);
   }
@@ -145,9 +145,9 @@ class View {
     this.tA = mk(3); this.tB = mk(3); this.tC = mk(3); this.tP = mk(4); g.setAttribute('iA', this.tA); g.setAttribute('iB', this.tB); g.setAttribute('iC', this.tC); g.setAttribute('iP', this.tP); g.instanceCount = 0; this.tGeo = g; g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e4);
     this.tU = { uRes: { value: new THREE.Vector2(1, 1) }, uPx: { value: 5 }, uTime: this.U.uTime };
     const mat = (depthFunc, gain) => new THREE.ShaderMaterial({ vertexShader: MT.THREAD_VERT, fragmentShader: MT.THREAD_FRAG, uniforms: { ...this.tU, uGain: { value: gain } }, transparent: true, depthWrite: false, depthFunc, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
-    for (const [f, k] of [[THREE.LessEqualDepth, 1], [THREE.GreaterDepth, 0.3]]) { const m = new THREE.Mesh(g, mat(f, k)); m.frustumCulled = false; m.renderOrder = 6; this.scene.add(m); (this.threadMeshes ||= []).push(m); }
+    for (const [f, k] of [[THREE.LessEqualDepth, 1], [THREE.GreaterDepth, 0.3]]) { const m = new THREE.Mesh(g, mat(f, k)); m.frustumCulled = false; m.renderOrder = 6; if (k === 1) m.layers.enable(1); this.scene.add(m); (this.threadMeshes ||= []).push(m); }
   }
-  thread(key) { let t = this.threads.get(key); if (!t) { t = this.threadPool.pop() || { a: new THREE.Vector3(), b: new THREE.Vector3(), c: new THREE.Color() }; Object.assign(t, { key, age: 0, sag: 0, sagV: 0, grow: 0, alpha: 0, want: 1, dying: 0, fall: 0, kind: 'link', dly: 0, hold: 0, aId: '', bId: '', rest: 1, q: 1, rev: 0, len: 0, snap: false }); this.threads.set(key, t); } return t; }
+  thread(key) { let t = this.threads.get(key); if (!t) { t = this.threadPool.pop() || { a: new THREE.Vector3(), b: new THREE.Vector3(), c: new THREE.Color() }; Object.assign(t, { key, age: 0, sag: 0, sagV: 0, grow: 0, alpha: 0, want: 1, dying: 0, fall: 0, kind: 'link', dly: 0, hold: 0, aId: '', bId: '', rest: 1, q: 1, rev: 0, len: 0, snap: false, slow: 0.6 }); this.threads.set(key, t); } return t; }
   buildTrails() {
     const C = this.sh.C, g = new THREE.InstancedBufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array([0, 1, 0, 0, -1, 0, 1, 1, 0, 1, -1, 0]), 3)); g.setIndex([0, 1, 2, 2, 1, 3]);
     this.sg = new THREE.InstancedBufferAttribute(new Float32Array(SEGS * 4), 4).setUsage(THREE.DynamicDrawUsage); this.sm = new THREE.InstancedBufferAttribute(new Float32Array(SEGS * 2), 2).setUsage(THREE.DynamicDrawUsage); g.setAttribute('iSeg', this.sg); g.setAttribute('iMeta', this.sm); g.instanceCount = 0; this.trailGeo = g; g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e4); this.segN = 0;
@@ -190,15 +190,21 @@ class View {
   makeRover(r) {
     const C = this.sh.C, P = parts(), g = new THREE.Group(), body = new THREE.Group(); g.add(body);
     const pm = (this.paint ||= MT.patched({ vertexColors: true, roughness: 0.42, metalness: 0.45 }, this.U, 'paint', { color: 'gE += diffuseColor.rgb * fieldLight(sUv(vW), vW.y) * 0.22;' }));
-    const sh = new THREE.Mesh(P.rover, pm); sh.castShadow = sh.receiveShadow = true; body.add(sh);
-    const wheels = []; for (const z of [0.215, -0.215]) for (const x of [-0.22, 0, 0.22]) { const w = new THREE.Mesh(P.wheel, pm); w.position.set(x, 0.1, z); w.castShadow = true; body.add(w); wheels.push(w); }
-    const lidar = new THREE.Mesh(P.lidar, pm); lidar.position.set(-0.1, 0.41, 0); body.add(lidar);
-    const hm = (this.headMat ||= new THREE.MeshBasicMaterial({ color: C.head.clone().multiplyScalar(4.5) })), tm = (this.tailMat ||= new THREE.MeshBasicMaterial({ color: new THREE.Color(0.9, 0.06, 0.05) }));
-    for (const z of [0.09, -0.09]) { const l = new THREE.Mesh(this._hl ||= new THREE.CylinderGeometry(0.032, 0.032, 0.02, 14).rotateZ(Math.PI / 2), hm); l.position.set(0.385, 0.2, z); body.add(l); const t = new THREE.Mesh(this._tl ||= new THREE.BoxGeometry(0.012, 0.025, 0.06), tm); t.position.set(-0.352, 0.2, z); body.add(t); }
-    const lamp = new THREE.Mesh(this._lampG ||= new THREE.SphereGeometry(0.026, 10, 8), new THREE.MeshBasicMaterial({ color: C.accent })); lamp.position.set(-0.24, 0.72, 0.09); body.add(lamp);
+    const Hm = houndModel(), hg = new THREE.Group(); body.add(hg); const wheels = []; let lidar = null, top = [-0.24, 0.72, 0.09], hp, tp;
+    if (Hm) {
+      hg.scale.setScalar(HS); const hmat = (this.hmat ||= MT.patched({ vertexColors: true, roughness: 0.5, metalness: 0.6, envMapIntensity: 1.6 }, this.U, 'hound', MT.HOUND));
+      const b = new THREE.Mesh(Hm.body, hmat); b.castShadow = b.receiveShadow = true; hg.add(b); for (const w of Hm.wheels) { const o = new THREE.Mesh(w.geo, hmat); o.position.fromArray(w.p); o.castShadow = true; hg.add(o); wheels.push(o); }
+      top = [-0.158, 0.417, 0].map((v) => v * HS); hp = [0.1905, 0.085, 0.115]; tp = [-0.1915, 0.085, 0.115];
+    } else {
+      const b = new THREE.Mesh(P.rover, pm); b.castShadow = b.receiveShadow = true; hg.add(b); for (const z of [0.215, -0.215]) for (const x of [-0.22, 0, 0.22]) { const w = new THREE.Mesh(P.wheel, pm); w.position.set(x, 0.1, z); w.castShadow = true; hg.add(w); wheels.push(w); }
+      lidar = new THREE.Mesh(P.lidar, pm); lidar.position.set(-0.1, 0.41, 0); hg.add(lidar); hp = [0.385, 0.2, 0.09]; tp = [-0.352, 0.2, 0.09];
+    }
+    const hm = new THREE.MeshBasicMaterial({ color: C.head.clone().multiplyScalar(4.5) }), tm = (this.tailMat ||= new THREE.MeshBasicMaterial({ color: new THREE.Color(0.9, 0.06, 0.05) }));
+    for (const z of [1, -1]) { const l = new THREE.Mesh(this._hl ||= new THREE.CylinderGeometry(0.02, 0.02, 0.012, 14).rotateZ(Math.PI / 2), hm); l.position.set(hp[0], hp[1], hp[2] * z); l.layers.enable(1); hg.add(l); const t = new THREE.Mesh(this._tl ||= new THREE.BoxGeometry(0.006, 0.012, 0.04), tm); t.position.set(tp[0], tp[1], tp[2] * z); hg.add(t); }
+    const lamp = new THREE.Mesh(this._lampG ||= new THREE.SphereGeometry(0.026, 10, 8), new THREE.MeshBasicMaterial({ color: C.accent })); lamp.position.fromArray(top); lamp.layers.enable(1); body.add(lamp);
     const ring = new THREE.Mesh(this._ringG ||= new THREE.RingGeometry(0.58, 0.64, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: C.accent, transparent: true, opacity: 0.75, depthWrite: false })); ring.position.y = 0.09; ring.renderOrder = 4; g.add(ring);
     const hit = new THREE.Mesh(this._hitG ||= new THREE.SphereGeometry(1.5, 8, 6), this._hitM ||= new THREE.MeshBasicMaterial({ visible: false })); hit.userData.pick = { type: 'robot', id: r.id }; g.add(hit);
-    return { g, body, ring, lamp, wheels, lidar, hit, kind: 'rover', alt: 0 };
+    return { g, body, ring, lamp, wheels, lidar, hm, top, hit, kind: 'rover', alt: 0, wr: Hm ? 0.06 * HS : 0.095 };
   }
   makeDrone(r) {
     const C = this.sh.C, P = parts(), g = new THREE.Group(), body = new THREE.Group(); g.add(body);
@@ -207,7 +213,7 @@ class View {
     for (const [x, y, z] of P.hubs) { const b = new THREE.Mesh(P.blade, pm); b.position.set(x, y, z); body.add(b); rotors.push(b); const d = new THREE.Mesh(this._discG ||= new THREE.CircleGeometry(0.25, 28).rotateX(-Math.PI / 2), this._discM ||= new THREE.MeshBasicMaterial({ color: 0xb8c4d2, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false })); d.position.set(x, y + 0.01, z); body.add(d); }
     const mk = (c, x, y, z, s = 0.03) => { const m = new THREE.Mesh(this._lampG ||= new THREE.SphereGeometry(0.026, 10, 8), new THREE.MeshBasicMaterial({ color: c })); m.position.set(x, y, z); m.scale.setScalar(s / 0.026); body.add(m); return m; };
     mk(new THREE.Color(2.2, 0.12, 0.1), 0.33, 0.0, -0.33); mk(new THREE.Color(0.1, 2.0, 0.6), 0.33, 0.0, 0.33); const lamp = mk(C.accent, -0.18, 0.04, 0); const flood = mk(C.head.clone().multiplyScalar(3.2), 0.17, -0.14, 0, 0.04);
-    const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 1, 1, 40, 1, true).translate(0, -0.5, 0), new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, uniforms: { uC: { value: C.scan } }, vertexShader: 'varying float vY; varying vec3 vN; varying vec3 vV; void main(){ vY = -position.y; vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position, 1.0); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }', fragmentShader: 'varying float vY; varying vec3 vN; varying vec3 vV; uniform vec3 uC; void main(){ float f = pow(abs(dot(vN, vV)), 1.6); gl_FragColor = vec4(uC * f * (1.0 - vY) * 0.13, 1.0); }' })); cone.renderOrder = 6; g.add(cone);
+    const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 1, 1, 40, 1, true).translate(0, -0.5, 0), new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, uniforms: { uC: { value: C.scan.clone() } }, vertexShader: 'varying float vY; varying vec3 vN; varying vec3 vV; void main(){ vY = -position.y; vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position, 1.0); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }', fragmentShader: 'varying float vY; varying vec3 vN; varying vec3 vV; uniform vec3 uC; void main(){ float f = pow(abs(dot(vN, vV)), 1.6); gl_FragColor = vec4(uC * f * (1.0 - vY) * 0.13, 1.0); }' })); cone.renderOrder = 6; g.add(cone);
     const ring = new THREE.Mesh(this._ringG2 ||= new THREE.RingGeometry(0.5, 0.56, 4).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: C.scan, transparent: true, opacity: 0.6, depthWrite: false })); ring.position.y = 0.09; ring.renderOrder = 4; g.add(ring);
     const hit = new THREE.Mesh(this._hitG ||= new THREE.SphereGeometry(1.5, 8, 6), this._hitM ||= new THREE.MeshBasicMaterial({ visible: false })); hit.userData.pick = { type: 'robot', id: r.id }; body.add(hit);
     return { g, body, ring, lamp, rotors, cone, flood, hit, kind: 'drone', alt: 0, sx: r.x, sy: r.y };
@@ -255,7 +261,7 @@ class View {
   disc(x, y, R, type, amp) { const lp = this.lp, la = this.la, lm = this.lm, n = this.ln; if (n + 6 > this.lcap) return; const q = View.Q; for (let w = 0; w < 6; w++) { const gx = q[w * 2] * R, gy = q[w * 2 + 1] * R; lp[(n + w) * 2] = x + gx; lp[(n + w) * 2 + 1] = y + gy; const j = (n + w) * 4; la[j] = gx; la[j + 1] = gy; la[j + 2] = R; la[j + 3] = amp; lm[(n + w) * 2] = type; lm[(n + w) * 2 + 1] = 0; } this.ln += 6; }
   flushLight(renderer) { const g = this.lgeo, n = this.ln; for (const k of ['position', 'aL', 'aM']) { const a = g.attributes[k]; a.clearUpdateRanges(); a.addUpdateRange(0, n * a.itemSize); a.needsUpdate = true; } g.setDrawRange(0, n); renderer.setRenderTarget(this.lightRT); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(this.lscene, this.lcam); renderer.setRenderTarget(null); }
 
-  nodeTop(id, out, scale) { if (id === 'BASE') return out.copy(this.baseTop); const b = this.relays.get(id); if (b) return out.set(b.g.position.x, b.base + 1.9 * b.g.scale.x, b.g.position.z); const r = this.robots.get(id); if (!r) return out.copy(this.baseTop); if (r.kind === 'drone') return out.set(r.x, r.body.position.y, -r.y); const c = Math.cos(r.h) * scale, s = Math.sin(r.h) * scale; return out.set(r.x - 0.24 * c + 0.09 * s, 0.72 * scale, -r.y + 0.24 * s + 0.09 * c); }
+  nodeTop(id, out, scale) { if (id === 'BASE') return out.copy(this.baseTop); const b = this.relays.get(id); if (b) return out.set(b.g.position.x, b.base + 1.9 * b.g.scale.x, b.g.position.z); const r = this.robots.get(id); if (!r) return out.copy(this.baseTop); if (r.kind === 'drone') return out.set(r.x, r.body.position.y, -r.y); const c = Math.cos(r.h) * scale, s = Math.sin(r.h) * scale; const [tx, ty, tz] = r.top; return out.set(r.x + tx * c + tz * s, ty * scale, -r.y - tx * s + tz * c); }
 
   update(dt, speed) {
     const S = this.swarm.state, C = this.sh.C, sh = this.sh; this.time += dt; const time = this.time; this.U.uTime.value = time; this.ln = 0;
@@ -276,11 +282,15 @@ class View {
       o.alt += ((flying ? PARAMS.drone.alt : 0.25) - o.alt) * (1 - Math.exp(-dt * 1.8));
       o.g.position.set(o.x, 0, -o.y); o.body.position.y = r.kind === 'drone' ? o.alt + (flying ? Math.sin(time * 1.7 + q) * 0.12 : 0) : 0; o.body.rotation.y = o.h; o.body.scale.setScalar(scale);
       if (o.rotors) { if (flying) { for (let w = 0; w < 4; w++) o.rotors[w].rotation.y += dt * (w % 2 ? 38 : -38); o.body.rotation.z = -clamp(sp / Math.max(dt, 1e-3) * 0.008, 0, 0.3); } else o.body.rotation.z = 0; const R = PARAMS.drone.footprint; o.cone.visible = flying && sh.layers.range; o.cone.position.y = o.body.position.y - 0.1; o.cone.scale.set(R, o.body.position.y, R); }
-      if (o.wheels) { const roll = -sp / (0.095 * scale); for (let w = 0; w < 6; w++) o.wheels[w].rotation.z += roll; o.lidar.rotation.y += dt * 11; }
+      if (o.wheels) { const roll = -sp / (o.wr * scale); for (const w of o.wheels) w.rotation.z += roll; if (o.lidar) o.lidar.rotation.y += dt * 11; }
+      // a machine with no path to base goes dark in the film, and lights up again when it is back
+      const cut = sh.cinema && r.link && r.link.ok === false && !off && r.mode !== 'swap'; if (o.cut && !cut) o.flash = 1; o.cut = cut; o.lit = (o.lit ?? 1) + ((cut ? 0.03 : 1) - (o.lit ?? 1)) * (1 - Math.exp(-dt * (cut ? 3 : 4))); o.flash = Math.max(0, (o.flash || 0) - dt / 1.6);
+      if (o.wheels && o.shad !== sh.cinema) { o.shad = sh.cinema; o.body.traverse((m) => { if (m.isMesh && m.receiveShadow) m.castShadow = sh.cinema; }); for (const w of o.wheels) w.castShadow = sh.cinema; }
+      if (o.hm) o.hm.color.copy(C.head).multiplyScalar(4.5 * o.lit + 5 * o.flash); if (o.flood) o.flood.material.color.copy(C.head).multiplyScalar(3.2 * o.lit + 4 * o.flash); if (o.cone) o.cone.material.uniforms.uC.value.copy(C.scan).multiplyScalar(o.lit + 1.6 * o.flash);
       const col = r.mode === 'lead' || r.mode === 'listen' ? C.warn : r.mode === 'regroup' || r.mode === 'dead' ? C.danger : r.mode === 'swap' || r.mode === 'return' ? C.ok : off ? C.text3 : C.accent;
-      o.ring.material.color.copy(col); o.lamp.material.color.copy(col).multiplyScalar(2.6); const ringOn = !sh.cinema || this.selected === r.id; o.ring.visible = ringOn; if (ringOn) o.ring.scale.setScalar(scale * (this.selected === r.id ? 1.35 + 0.1 * Math.sin(time * 4) : 1));
+      o.ring.material.color.copy(col); o.lamp.material.color.copy(col).multiplyScalar(cut ? 0.6 + 2.6 * Math.max(0, Math.sin(time * 5)) : 2.6); const ringOn = !sh.cinema || this.selected === r.id || o.flash > 0; o.ring.visible = ringOn; if (ringOn) { o.ring.scale.setScalar(scale * (o.flash > 0 && sh.cinema ? 1 + 1.1 * (1 - o.flash) : this.selected === r.id ? 1.35 + 0.1 * Math.sin(time * 4) : 1)); o.ring.material.opacity = sh.cinema && o.flash > 0 ? 0.9 * o.flash : 0.7; if (o.flash > 0) o.ring.material.color.copy(C.thread).multiplyScalar(2); }
       // light
-      if (r.kind === 'rover') { if (!off && r.mode !== 'swap') this.fan(o.x + Math.cos(o.h) * 0.3, o.y + Math.sin(o.h) * 0.3, o.h, 0.86, 44, 15, 0, 1, 0); if (!off && sh.layers.range) this.fan(o.x, o.y, 0, Math.PI, 84, PARAMS.rover.lidar, 1, r.mode === 'listen' ? 1.8 : 1, hash(q)); }
+      if (r.kind === 'rover') { if (!off && r.mode !== 'swap') this.fan(o.x + Math.cos(o.h) * 0.3, o.y + Math.sin(o.h) * 0.3, o.h, 0.86, 44, 15, 0, o.lit + 0.7 * o.flash, 0); if (!off && sh.layers.range) this.fan(o.x, o.y, 0, Math.PI, 84, PARAMS.rover.lidar, 1, (r.mode === 'listen' ? 1.8 : 1) * o.lit, hash(q)); }
       else if (flying) { if (sh.layers.range) this.disc(o.x, o.y, PARAMS.drone.footprint, 4, 0.9); this.disc(o.x, o.y, 5, 0.1, 0); }
       const moved = Math.hypot(o.x - o.lx, o.y - o.ly); if (moved > 0.35) { if (moved < 14) this.addSeg(o.lx, o.ly, o.x, o.y, r.kind === 'drone' ? 1 : 0); o.lx = o.x; o.ly = o.y; }
       if (sh.layers.goals && !sh.cinema && r.goal && !r.goal.home && (r.mode === 'explore' || r.mode === 'lead') && gi < MAXR) { const j = gi * 6; gp[j] = o.x; gp[j + 1] = r.kind === 'drone' ? o.alt : 0.5; gp[j + 2] = -o.y; gp[j + 3] = r.goal.x; gp[j + 4] = 0.3; gp[j + 5] = -r.goal.y; this._m.compose(this._p.set(r.goal.x, 0.1, -r.goal.y), this._q.identity(), this._s.setScalar(scale * 0.5)); this.goalMarks.setMatrixAt(gi, this._m); gi++; }
@@ -295,33 +305,39 @@ class View {
       const age = time - o.born, s = clamp(camDist / 48, 1, 2.3), drop = 1 - Math.pow(1 - clamp(age / 0.5, 0, 1), 3); if (!b.alive && !o.deadAt) o.deadAt = time;
       const flick = b.dying && b.alive ? (Math.sin(time * 34) > 0 ? 1.6 : 0.15) : 1, col = !b.alive ? C.danger : b.connected === false ? C.warn : C.thread;
       o.tip.material.color.copy(col).multiplyScalar((b.alive ? 2.6 : Math.max(0.05, 3 - (time - o.deadAt) * 2)) * flick); o.ring.material.color.copy(col); o.g.scale.setScalar(s * (0.25 + 0.75 * drop)); o.g.position.y = o.base + (1 - drop) * 1.2;
-      const p = age < 1.4 ? age / 1.4 : 1, dp = o.deadAt ? clamp((time - o.deadAt) / 1.6, 0, 1) : 0; o.ring.scale.setScalar(o.deadAt ? 1 + dp * 3.2 : 1 + (age < 1.4 ? p * 5 : 0)); o.ring.material.opacity = o.deadAt ? 0.9 * (1 - dp) : age < 1.4 ? 0.8 * (1 - p) + 0.08 : sh.cinema ? 0.08 : 0.3;
-      if (o.deadAt) o.body.rotation.z = Math.min(1.32, o.body.rotation.z + dt * (0.3 + o.body.rotation.z * 4));
+      const p = age < 1.4 ? age / 1.4 : 1, dp = o.deadAt ? clamp((time - o.deadAt) / 1.6, 0, 1) : 0; o.ring.scale.setScalar(o.deadAt ? 1 + dp * 3.2 : 1 + (age < 1.4 ? p * (sh.cinema ? 1.6 : 5) : 0)); o.ring.material.opacity = o.deadAt ? 0.9 * (1 - dp) : age < 1.4 ? 0.8 * (1 - p) + 0.08 : sh.cinema ? 0.08 : 0.3;
+      o.tip.visible = !o.deadAt || time - o.deadAt < 1.2; if (o.deadAt) o.body.rotation.z = Math.min(1.32, o.body.rotation.z + dt * (0.3 + o.body.rotation.z * 4));
       if (b.alive) this.disc(b.x, b.y, 2.4, 3, 0.5 * flick);
     }
     // mesh links: each link keeps its own thread so it can stretch, sag, fall and be replaced
     if (this.linkRev !== S.linkRev) { this.linkRev = S.linkRev; const rev = (this.rev = (this.rev || 0) + 1);
-      for (const L of S.links) { const t = this.thread(L.a + '|' + L.b); t.rev = rev; t.aId = L.a; t.bId = L.b; t.kind = L.kind === 'backbone' ? 'back' : 'up'; t.q = L.q; t.want = L.kind === 'backbone' ? 0.95 : 0.6; t.c.copy(this.sh.cinema || L.rssi > -83 ? C.thread : L.rssi > -86.5 ? C.warn : C.danger); if (this.sh.cinema) t.want *= 0.35 + 0.65 * Math.min(1, L.q * 2.2); if (t.dying) { t.dying = 0; t.fall = 0; } }
-      for (const t of this.threads.values()) if (t.kind !== 'bid' && t.rev !== rev && !t.dying) { t.dying = 1e-4; const b = S.relays.find((x) => x.id === t.bId); t.snap = !!(b && !b.alive) || !!S.relays.find((x) => x.id === t.aId && !x.alive); if (t.snap) t.c.copy(C.danger); } }
+      const dead = sh.cinema && S.relays.find((b) => !b.alive && !this.seenDead.has(b.id)), born = [], gone = []; if (dead) this.seenDead.add(dead.id);
+      for (const L of S.links) { const t = this.thread(L.a + '|' + L.b); if (!t.age && !t.rev) born.push(t); t.rev = rev; t.aId = L.a; t.bId = L.b; t.kind = L.kind === 'backbone' ? 'back' : 'up'; t.q = L.q; t.want = L.kind === 'backbone' ? 0.95 : 0.6; t.c.copy(this.sh.cinema || L.rssi > -83 ? C.thread : L.rssi > -86.5 ? C.warn : C.danger); if (this.sh.cinema) t.want *= 0.35 + 0.65 * Math.min(1, L.q * 2.2); if (t.dying) { t.dying = 0; t.fall = 0; } }
+      for (const t of this.threads.values()) if (t.kind !== 'bid' && t.kind !== 'brg' && t.rev !== rev && !t.dying) { gone.push(t); t.dying = 1e-4; const b = S.relays.find((x) => x.id === t.bId); t.snap = !!(b && !b.alive) || !!S.relays.find((x) => x.id === t.aId && !x.alive); if (t.snap) t.c.copy(C.danger); }
+      // the film shows the failure one link at a time, outwards from the beacon; the new links are drawn once the old ones are dark
+      if (dead) { const near = (t) => Math.min(Math.hypot(t.a.x - dead.x, t.a.z + dead.y), Math.hypot(t.b.x - dead.x, t.b.z + dead.y)); gone.sort((p, q) => near(p) - near(q)); gone.forEach((t, i) => { t.dying = -0.5 - i * 0.34; t.snap = true; t.c.copy(C.danger); }); born.forEach((t, i) => { t.dly = 0.9 + gone.length * 0.34 + i * 0.4; t.slow = 1.2; }); } }
     let n = 0; const TA = this.tA.array, TB = this.tB.array, TC = this.tC.array, TP = this.tP.array;
     for (const t of this.threads.values()) {
       t.age += dt; const live = t.age - t.dly; if (live < 0) continue;
-      if (!t.dying || !t.snap) { this.nodeTop(t.aId, t.a, scale); if (t.bId !== '@') this.nodeTop(t.bId, t.b, scale); }
-      if (t.kind === 'bid') { const g = clamp(live / 0.5, 0, 1); t.grow = g * g * (3 - 2 * g); t.sag = t.rest; const end = live > t.hold; t.alpha += ((end ? 0 : t.want) - t.alpha) * (1 - Math.exp(-dt * (end ? 3.2 : 9))); if (end && t.alpha < 0.01) { this.threads.delete(t.key); this.threadPool.push(t); continue; } }
+      if (t.kind !== 'brg' && (!t.dying || !t.snap || t.dying < 0)) { this.nodeTop(t.aId, t.a, scale); if (t.bId !== '@') this.nodeTop(t.bId, t.b, scale); }
+      if (t.kind === 'brg') { const g = clamp(live / 1.4, 0, 1); t.grow = g * g * (3 - 2 * g); t.sag = 0; const end = live > t.hold; t.alpha += ((end ? 0 : 2.6) - t.alpha) * (1 - Math.exp(-dt * (end ? 1.5 : 7))); if (end && t.alpha < 0.01) { this.threads.delete(t.key); this.threadPool.push(t); continue; } }
+      else if (t.dying < 0) { t.dying = Math.min(1e-4, t.dying + dt); t.alpha = t.want * (1.1 + 0.5 * Math.sin(time * 30)); if (t.dying > 0) t.sagV = 0; }
+      else if (t.kind === 'bid') { const g = clamp(live / 0.5, 0, 1); t.grow = g * g * (3 - 2 * g); t.sag = t.rest; const end = live > t.hold; t.alpha += ((end ? 0 : t.want) - t.alpha) * (1 - Math.exp(-dt * (end ? 3.2 : 9))); if (end && t.alpha < 0.01) { this.threads.delete(t.key); this.threadPool.push(t); continue; } }
       else if (t.dying) { t.dying += dt; if (t.snap) { t.sagV += dt * 7; t.sag += t.sagV * dt; t.fall = Math.min(1, t.fall + dt * 1.1); t.alpha = (1 - clamp(t.dying / 1.5, 0, 1)) * 1.5; } else { t.alpha *= Math.exp(-dt * 5); t.sag += dt * 1.5; } if (t.dying > 1.5 || t.alpha < 0.02) { this.threads.delete(t.key); this.threadPool.push(t); continue; } }
-      else { const g = clamp(live / 0.6, 0, 1); t.grow = 1 - Math.pow(1 - g, 3); const len = t.a.distanceTo(t.b); t.rest = 0.25 + len * (0.012 + 0.05 * (1 - t.q)); const acc = -46 * (t.sag - t.rest) - 8.5 * t.sagV - (t.len ? (len - t.len) * 30 : 0); t.len = len; t.sagV += acc * dt; t.sag = clamp(t.sag + t.sagV * dt, 0, 5); t.alpha += (t.want - t.alpha) * (1 - Math.exp(-dt * 6)); }
+      else { const g = clamp(live / t.slow, 0, 1); t.grow = 1 - Math.pow(1 - g, 3); const len = t.a.distanceTo(t.b); t.rest = 0.25 + len * (0.012 + 0.05 * (1 - t.q)); const acc = -46 * (t.sag - t.rest) - 8.5 * t.sagV - (t.len ? (len - t.len) * 30 : 0); t.len = len; t.sagV += acc * dt; t.sag = clamp(t.sag + t.sagV * dt, 0, 5); t.alpha += (t.want - t.alpha) * (1 - Math.exp(-dt * 6)); }
       if (n >= THREADS) continue; const i3 = n * 3, i4 = n * 4, fy = t.fall * t.fall;
-      TA[i3] = t.a.x; TA[i3 + 1] = t.a.y; TA[i3 + 2] = t.a.z; TB[i3] = t.b.x; TB[i3 + 1] = t.b.y * (1 - fy) + 0.1 * fy; TB[i3 + 2] = t.b.z; TC[i3] = t.c.r; TC[i3 + 1] = t.c.g; TC[i3 + 2] = t.c.b; TP[i4] = t.sag; TP[i4 + 1] = t.grow; TP[i4 + 2] = t.alpha * (t.kind === 'bid' ? 1.5 : 1) * (sh.layers.mesh || t.kind === 'bid' ? 1 : 0); TP[i4 + 3] = t.dying || sh.reduced ? -1 : hash(n * 7 + 1); n++;
+      TA[i3] = t.a.x; TA[i3 + 1] = t.a.y; TA[i3 + 2] = t.a.z; TB[i3] = t.b.x; TB[i3 + 1] = t.b.y * (1 - fy) + 0.1 * fy; TB[i3 + 2] = t.b.z; TC[i3] = t.c.r; TC[i3 + 1] = t.c.g; TC[i3 + 2] = t.c.b; TP[i4] = t.sag; TP[i4 + 1] = t.grow; TP[i4 + 2] = t.alpha * (t.kind === 'bid' ? 1.5 : 1) * (sh.layers.mesh || t.kind === 'bid' || t.kind === 'brg' ? 1 : 0); TP[i4 + 3] = t.kind === 'brg' ? -2 : t.dying || sh.reduced ? -1 : hash(n * 7 + 1); n++;
     }
     this.tGeo.instanceCount = n; this.tA.needsUpdate = this.tB.needsUpdate = this.tC.needsUpdate = this.tP.needsUpdate = true;
 
     // leads, the bids for them, and people
     for (let q = 0; q < S.leads.length; q++) {
-      const l = S.leads[q]; let o = this.leads.get(l.id); if (!o) { o = this.makeLead(l); this.leads.set(l.id, o); this.openAround(Math.floor(l.pos[1] / RES) * W + Math.floor(l.pos[0] / RES), 10); }
+      const l = S.leads[q]; let o = this.leads.get(l.id); if (!o) { o = this.makeLead(l); this.leads.set(l.id, o); this.openAround(Math.floor(l.pos[1] / RES) * W + Math.floor(l.pos[0] / RES), sh.cinema ? 14 : 10); }
       const conf = l.status === 'confirmed', rej = l.status === 'rejected', col = conf ? C.person : rej ? C.text3 : C.warn;
       if (l.bids && l.winner && this.bidSeen.get(l.id) !== l.awardedAt) { const first = !this.bidSeen.has(l.id); this.bidSeen.set(l.id, l.awardedAt); if (first || true) { let d = 0; for (const b of l.bids) { if (!b.eligible) continue; const t = this.thread('bid' + l.id + b.robot); const won = b.robot === l.winner; t.kind = 'bid'; t.aId = b.robot; t.bId = '@'; t.b.copy(v3(l.pos[0], l.pos[1], 2.4)); t.c.copy(won ? C.warn : C.accent); t.rest = -4 - 2 * hash(d + 3); t.want = won ? 1 : 0.75; t.dly = won ? 0.75 : d * 0.09; t.hold = won ? 4.5 : 1.15; d++; } } }
-      if (o.st !== l.status) { o.st = l.status; if (conf) o.confAt = time; const txt = conf ? 'Person · ' + Math.round(l.p * 100) + ' %' : rej ? 'Ruled out' : l.status === 'open' ? 'Possible · ' + Math.round(l.p * 100) + ' % · needs a person' : 'Possible · ' + Math.round(l.p * 100) + ' %' + (l.winner ? ' · ' + l.winner : ''); this.label(l.id, txt, 'swarm-l-lead ' + (conf ? 'person' : rej ? 'off' : 'warn')); }
-      o.conf += ((conf ? 1 : 0) - o.conf) * (1 - Math.exp(-dt * 1.4)); o.h += ((conf ? 3.4 : rej ? 0.6 : 3.0) - o.h) * (1 - Math.exp(-dt * 3)); o.beam.scale.y = Math.max(0.01, o.h - 1.75);
+      if (o.st !== l.status) { o.st = l.status; if (conf) { o.confAt = time; if (sh.cinema) this.openAround(Math.floor(l.pos[1] / RES) * W + Math.floor(l.pos[0] / RES), 24); if (l.fix) { o.dly = 1.25; for (const [q2, b] of [l.fix.a, l.fix.b].entries()) { const t = this.thread('brg' + l.id + q2), ay = 0.5 * Math.min(scale, 2), L = Math.hypot(l.pos[0] - b.x, l.pos[1] - b.y), T2 = (L + 1.3) / L; t.kind = 'brg'; t.hold = 9; t.dly = 0.15; t.c.copy(C.person); t.a.copy(v3(b.x, b.y, ay)); t.b.copy(v3(b.x + (l.pos[0] - b.x) * T2, b.y + (l.pos[1] - b.y) * T2, ay + (1.0 - ay) * T2)); } } } const txt = conf ? 'Person · ' + (l.p > 0.99 ? 'over 99 %' : Math.round(l.p * 100) + ' %') : rej ? 'Ruled out' : l.status === 'open' ? 'Possible · ' + Math.round(l.p * 100) + ' % · needs a person' : 'Possible · ' + Math.round(l.p * 100) + ' %' + (l.winner ? ' · ' + l.winner : ''); this.label(l.id, txt, 'swarm-l-lead ' + (conf ? 'person' : rej ? 'off' : 'warn')); }
+      o.g.position.x += (l.pos[0] - o.g.position.x) * (1 - Math.exp(-dt * 6)); o.g.position.z += (-l.pos[1] - o.g.position.z) * (1 - Math.exp(-dt * 6));
+      o.conf += ((conf && time - o.confAt > (o.dly || 0) ? 1 : 0) - o.conf) * (1 - Math.exp(-dt * 1.4)); o.h += ((conf ? 3.4 : rej ? 0.6 : 3.0) - o.h) * (1 - Math.exp(-dt * 3)); o.beam.scale.y = Math.max(0.01, o.h - 1.75);
       o.mat.color.copy(col).multiplyScalar(conf ? 1.7 : rej ? 0.5 : 1.2); o.mat.opacity = rej ? 0.25 : 0.75; o.pulse.material.color.copy(col);
       const f = ((time - o.born) * 0.32) % 1; o.pulse.visible = !rej && !sh.reduced; o.pulse.scale.setScalar(1.3 + f * (conf ? 5 : 3)); o.pulse.material.opacity = 0.55 * (1 - f) * (1 - f);
       const s = clamp(camDist / 60, 0.9, 1.9); o.ring.scale.setScalar(s * (rej ? 0.5 : 1)); const breath = sh.reduced ? 0.7 : 0.7 + 0.3 * Math.sin(time * 1.7);
@@ -331,11 +347,11 @@ class View {
     }
     const bl = this.labels.get('BASE'); bl.off = sh.cinema; this.baseRing.visible = !sh.cinema; this.at(bl, this.world.base[0], 6.5, -this.world.base[1]);
     this.truthMarks.visible = sh.layers.truth; this.U.uTruth.value.copy(sh.layers.truth ? C.sim : C.black);
-    this.trU.uOn.value = sh.layers.trails ? 1 : 0; this.U.uBoost.value = sh.cinema ? 0.8 : 1.5; this.hemi.intensity = sh.cinema ? 0.95 : 1.9; this.moon.intensity = sh.cinema ? 1.7 : 2.4; this.fogU.uDens.value = sh.cinema ? 0.17 : 0.06;
+    this.scene.fog.density = sh.cinema ? 0.0052 : 0.0022; this.trU.uOn.value = sh.layers.trails ? 1 : 0; this.U.uBoost.value = sh.cinema ? 0.8 : 1.5; this.hemi.intensity = sh.cinema ? 1.45 : 1.9; this.moon.intensity = sh.cinema ? 4.0 : 3.0; this.fogU.uDens.value = sh.cinema ? 0.16 : 0.06;
   }
   robotPos(id, out) { const o = this.robots.get(id); return o ? out.set(o.x, o.kind === 'drone' ? o.alt * 0.3 : 0.3, -o.y) : null; }
   dispose() {
-    this.labelHost.remove(); const shared = new Set(Object.values(parts()));
+    this.labelHost.remove(); const shared = new Set(Object.values(parts())), Hm = houndModel(); if (Hm) { shared.add(Hm.body); for (const w of Hm.wheels) shared.add(w.geo); }
     this.scene.traverse((o) => { if (o.geometry && !shared.has(o.geometry)) o.geometry.dispose(); const m = o.material; if (m && m !== this.sh.skyMat) (Array.isArray(m) ? m : [m]).forEach((x) => x.dispose?.()); o.customDepthMaterial?.dispose?.(); if (o.isInstancedMesh) o.dispose(); });
     this.moon.shadow.map?.dispose(); this.lgeo.dispose(); this.lightRT.dispose(); this.stateTex.dispose(); this.fieldTex.dispose();
   }
@@ -360,8 +376,9 @@ export function createScene(host, { kit, onPick }) {
   const controls = new OrbitControls(camera, canvas); controls.enableDamping = true; controls.dampingFactor = 0.07; controls.maxPolarAngle = Math.PI * 0.47; controls.minDistance = 6; controls.maxDistance = 260; controls.zoomSpeed = 0.8;
   const skyMat = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, uniforms: { uHor: { value: C.haze }, uZen: { value: C.zen } }, vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }', fragmentShader: MT.SKY_FRAG });
   // reflections come from a small generated night sky
-  let env = null; { const s = new THREE.Scene(); s.add(new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }', fragmentShader: 'varying vec3 vD; void main(){ float h = vD.y; vec3 c = mix(vec3(0.115,0.13,0.15), vec3(0.025,0.03,0.04), smoothstep(-0.05, 0.5, h)); c += vec3(0.58,0.62,0.7) * exp(-pow(distance(vD, normalize(vec3(0.62,0.5,-0.5))) / 0.22, 2.0)) * 0.9; c *= step(-0.08, h) * 0.92 + 0.08; gl_FragColor = vec4(c, 1.0); }' }))); const pm = new THREE.PMREMGenerator(renderer); env = pm.fromScene(s, 0.02).texture; pm.dispose(); }
-  const sh = { C, host, camera, controls, env, skyMat, noise: MT.noiseTexture(), layers: { mesh: true, trails: true, range: true, goals: true, truth: false }, reduced: kit.reducedMotion(), cinema: false };
+  let env = null; { const s = new THREE.Scene(); s.add(new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }', fragmentShader: 'varying vec3 vD; void main(){ float h = vD.y; vec3 c = mix(vec3(0.115,0.13,0.15), vec3(0.025,0.03,0.04), smoothstep(-0.05, 0.5, h)); c += vec3(0.58,0.62,0.7) * exp(-pow(distance(vD, normalize(vec3(0.80,0.40,-0.45))) / 0.22, 2.0)) * 0.9; c *= step(-0.08, h) * 0.92 + 0.08; gl_FragColor = vec4(c, 1.0); }' }))); const pm = new THREE.PMREMGenerator(renderer); env = pm.fromScene(s, 0.02).texture; pm.dispose(); }
+  const sh = { C, host, camera, controls, env, skyMat, noise: MT.noiseTexture(), layers: { mesh: true, trails: true, range: true, goals: true, truth: false }, reduced: kit.reducedMotion(), cinema: false, reflU: { tex: { value: null }, mat: { value: new THREE.Matrix4() }, on: { value: 0 } } };
+  const reflRT = new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType }), rcam = new THREE.PerspectiveCamera(), rdir = new THREE.Vector3(); rcam.layers.set(1); rcam.up.set(0, -1, 0); sh.reflU.tex.value = reflRT.texture;
   let views = [], size = { w: 1, h: 1 }, mode = 'overview', follow = null, lastTouch = -1e9, clock = 0, composer = null, bloom = null, final = null, disposed = false, fade = 1, fadeTo = 1, frameNo = 0, slow = 0, fast = 0, rs = [{ x: 0, y: 0, w: 1, h: 1 }];
   const goal = { pos: new THREE.Vector3(), target: new THREE.Vector3(), active: false }, centre = new THREE.Vector3(SX / 2, 0, -SY / 2), tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3(), off = new THREE.Vector3();
   const cam = { x: SX / 2, y: 1, z: -SY / 2, d: 120, az: 0, el: 0.7, v: { x: 0, y: 0, z: 0, d: 0, az: 0, el: 0 } }, shot = { x: SX / 2, y: 1, z: -SY / 2, d: 120, az: 0, el: 0.7, st: 3, drift: 0, id: null, shift: 0 };
@@ -402,7 +419,13 @@ export function createScene(host, { kit, onPick }) {
     camera.position.y = Math.max(1.1, camera.position.y); camera.lookAt(controls.target);
   }
 
+  // the mirrored view for the wet ground: buildings, sky, mesh and lamps only, at a lower resolution
+  function drawReflection(v, r) {
+    camera.aspect = r.w / r.h; camera.updateProjectionMatrix(); camera.getWorldDirection(rdir); rcam.position.set(camera.position.x, -camera.position.y, camera.position.z); rcam.lookAt(rcam.position.x + rdir.x, rcam.position.y - rdir.y, rcam.position.z + rdir.z); rcam.updateMatrixWorld(); rcam.projectionMatrix.copy(camera.projectionMatrix); rcam.projectionMatrixInverse.copy(camera.projectionMatrixInverse); rcam.far = camera.far; rcam.near = camera.near;
+    sh.reflU.mat.value.multiplyMatrices(rcam.projectionMatrix, rcam.matrixWorldInverse); renderer.shadowMap.needsUpdate = false; renderer.setScissorTest(false); renderer.setRenderTarget(reflRT); renderer.setClearColor(C.haze, 1); renderer.clear(); renderer.render(v.scene, rcam); renderer.setRenderTarget(null);
+  }
   function drawViews(target) {
+    const mirror = sh.cinema && views.length === 1 && views[0].moon.shadow.map; sh.reflU.on.value = 0; if (mirror) { drawReflection(views[0], rs[0]); sh.reflU.on.value = 1; }
     renderer.setRenderTarget(target); if (target) { target.scissorTest = false; target.viewport.set(0, 0, target.width, target.height); renderer.setRenderTarget(target); } else { renderer.setScissorTest(false); renderer.setViewport(0, 0, size.w, size.h); }
     renderer.setClearColor(C.bg0, 1); renderer.clear();
     for (let i = 0; i < views.length; i++) {
@@ -419,7 +442,7 @@ export function createScene(host, { kit, onPick }) {
       bloom = new UnrealBloomPass(new THREE.Vector2(size.w, size.h), 0.5, 0.62, 0.85); composer.addPass(bloom); final = new ShaderPass(MT.FINAL); composer.addPass(final);
     } catch (e) { console.warn('[swarm] post-processing unavailable, drawing without it', e); composer = null; renderer.toneMapping = THREE.ACESFilmicToneMapping; }
   }
-  function applySize() { renderer.setPixelRatio(pr); renderer.setSize(size.w, size.h, false); if (composer) { composer.setPixelRatio(pr); composer.setSize(size.w, size.h); } }
+  function applySize() { renderer.setPixelRatio(pr); renderer.setSize(size.w, size.h, false); if (composer) { composer.setPixelRatio(pr); composer.setSize(size.w, size.h); } reflRT.setSize(Math.max(2, Math.round(size.w * pr * 0.34)), Math.max(2, Math.round(size.h * pr * 0.34))); }
   function resize() {
     const r = host.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return; size = { w: Math.round(r.width), h: Math.round(r.height) }; canvas.style.width = size.w + 'px'; canvas.style.height = size.h + 'px'; calcRects(); if (!composer) buildComposer(); applySize();
     if (mode !== 'follow' && mode !== 'film') { frameSite(mode); if (clock - lastTouch > 1) snap(); }
@@ -438,7 +461,7 @@ export function createScene(host, { kit, onPick }) {
     else { if (goal.active) { const k = 1 - Math.exp(-dt * 2.6); camera.position.lerp(goal.pos, k); controls.target.lerp(goal.target, k); if (camera.position.distanceTo(goal.pos) < 0.05) goal.active = false; } else if (mode === 'overview' && !sh.reduced && clock - lastTouch > 8) { off.copy(camera.position).sub(controls.target).applyAxisAngle(THREE.Object3D.DEFAULT_UP, Math.sin(clock * 0.07) * 0.00012); camera.position.copy(controls.target).add(off); } controls.update(); }
     camera.updateMatrixWorld();
     for (const v of views) { v.update(dt, speed); v.flushLight(renderer); }
-    fade += (fadeTo - fade) * (1 - Math.exp(-dt * 4)); if (final) { final.uniforms.uTime.value = clock % 10; final.uniforms.uFade.value = fade; final.uniforms.uExp.value = sh.cinema ? 1.3 : 1.65; final.uniforms.uVig.value = sh.cinema ? 1 : 0.45; bloom.strength = sh.cinema ? 0.5 : 0.36; }
+    fade += (fadeTo - fade) * (1 - Math.exp(-dt * 4)); if (final) { final.uniforms.uTime.value = clock % 10; final.uniforms.uFade.value = fade; final.uniforms.uExp.value = sh.cinema ? 1.55 : 1.65; final.uniforms.uVig.value = sh.cinema ? 1 : 0.45; bloom.strength = sh.cinema ? 0.5 : 0.36; }
     if (composer) composer.render(dt); else drawViews(null);
     for (let i = 0; i < views.length; i++) { camera.aspect = rs[i].w / rs[i].h; camera.updateProjectionMatrix(); views[i].placeLabels(rs[i]); }
   }
@@ -453,6 +476,6 @@ export function createScene(host, { kit, onPick }) {
     canvas, setSwarms, frame, resize, setCamera, film, cameraMode: () => mode, rects, snap, pixelRatio: () => pr,
     setCinema(on) { sh.cinema = on; }, setFade(v, now) { fadeTo = v; if (now) fade = v; }, touched: () => clock - lastTouch < 6,
     setLayer(name, on) { sh.layers[name] = on; }, layers: () => ({ ...sh.layers }), select(id) { for (const v of views) v.selected = id; }, hasBloom: () => !!composer, parts: () => ({ renderer, composer, bloom, views, final }),
-    dispose() { disposed = true; ro.disconnect(); for (const v of views) v.dispose(); views = []; controls.dispose(); composer?.dispose?.(); renderer.dispose(); canvas.remove(); },
+    dispose() { disposed = true; ro.disconnect(); for (const v of views) v.dispose(); views = []; controls.dispose(); composer?.dispose?.(); reflRT.dispose(); renderer.dispose(); canvas.remove(); },
   };
 }

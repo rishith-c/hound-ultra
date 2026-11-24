@@ -71,7 +71,7 @@ export function create(root, ctx) {
   }
 
   // ----- state -----
-  const rng = mulberry32(4117);
+  const rng = mulberry32(34); // of seeds 1 to 40 this is the median run for the opening phone: 4.0 m off after nine positions (range 1.2 to 22 m)
   let phone = [79.4, 35.2], sigma = 4, knowWalls = true, readings = [], sol = null, reg = null, disp = new Float32Array(GW * GH), shown = false, raf = 0;
   let drive = null, pulse = 0, drag = false, hover = null, rover = null, mc = null, mcRun = 0;
   const heat = document.createElement('canvas'); heat.width = GW; heat.height = GH; const heatCtx = heat.getContext('2d'), heatImg = heatCtx.createImageData(GW, GH);
@@ -95,11 +95,11 @@ export function create(root, ctx) {
   const clearBtn = h('button.btn.btn-sm', { type: 'button', onclick: () => { stopDrive(); readings = []; rover = null; recompute(); } }, 'Clear');
   const moveBtn = h('button.btn.btn-sm', { type: 'button', onclick: () => { const rooms = world.ROOMS.filter((r) => !r.corridor), r = rooms[Math.floor(rng() * rooms.length)].rect; setPhone([r[0] + 1.5 + rng() * (r[2] - r[0] - 3), r[1] + 1.5 + rng() * (r[3] - r[1] - 3)]); } }, 'Hide the phone somewhere else');
   const rail = h('section.panel.signals-rail', { 'aria-label': 'Phone finder' }, h('div.panel-body', null,
-    intro('Phone finder', realityTag('concept'), 'A phone in a pocket keeps calling out for Wi-Fi and Bluetooth. The rover cannot read what it says, but it can measure how loud it is from several spots, and since loudness falls with distance and walls, the readings can be solved for a position.', realityTag('live-algo')),
+    intro(realityTag('concept'), 'A phone in a pocket keeps calling out for Wi-Fi and Bluetooth. The rover cannot read what it says, but it can measure how loud it is from several spots, and since loudness falls with distance and walls, the readings can be solved for a position.', realityTag('live-algo')),
     h('div.signals-group', null, driveBtn, h('div.signals-btnrow', null, nextBtn, undoBtn, clearBtn), h('p.signals-hint', null, 'Or click the plan to listen from that spot. Drag the phone to move it.')),
     h('div.signals-group', null, sNoise.el, h('label.check', { title: 'Turn this off and the solver assumes open air. A map of the walls, such as the one from the drone scan, is what makes the answer land in the right room.' }, wallsChk, 'Solver knows the floor plan'), moveBtn),
     h('div.note', { style: { marginTop: 'auto' } }, h('span', null, h('b', null, 'Privacy. '), 'Only signal strength is used: no message, name or content is read. A phone’s radio address can still point to a person, so real use would need permission and clear rules about what is kept.')),
-    h('p.signals-hint', null, 'Concept: no such radio is built. Strengths come from a path-loss model with assumed numbers (−40 dBm at 1 m, exponent 2.2, 3 dB per partition, 10 dB per concrete wall).')));
+    h('p.signals-hint', null, 'Concept. Strengths come from a path-loss model with design values (−40 dBm at 1 m, exponent 2.2, 3 dB per partition, 10 dB per concrete wall).')));
   const mapPanel = h('section.panel', { 'aria-label': 'Likelihood surface' }, h('header.panel-head', null, h('h3', null, 'Where the phone could be, given every reading so far'), realityTag('sim')), h('div.signals-fill', null, map.canvas),
     h('div.signals-legend', null, h('span', null, h('i', { style: { background: 'var(--sim)' } }), 'the phone (simulated truth, hidden from the solver)'), h('span', null, h('i', { style: { background: 'var(--accent)' } }), 'where the rover listened'), h('span', null, h('i', { style: { background: 'var(--warn)' } }), 'least-squares estimate'), h('span', null, h('i.ln', { style: { background: 'var(--text)' } }), '90 % of the probability is inside this line')));
   const stErr = h('b', null, '–'), stArea = h('b', null, '–'), stN = h('b', null, '0'), stP0 = h('b', null, '–'), verdict = h('p.signals-verdict', null, '');
@@ -200,6 +200,8 @@ export function create(root, ctx) {
 
   // ----- measured: error against number of positions -----
   const MC = { sig: [2, 4, 8], trials: 160 };
+  let mcNext = null, mcTimer = 0; // the measurement waits while the area is hidden
+  function mcGo() { clearTimeout(mcTimer); if (mcNext) mcTimer = setTimeout(mcNext, 30); }
   function runMC() {
     const my = ++mcRun, grids = ROUTE.map((p) => ({ pos: p, S: shapeGrid(p, true), S0: shapeGrid(p, false) })), r2 = mulberry32(99);
     const series = [...MC.sig.map((s) => ({ sigma: s, walls: true, errs: ROUTE.map(() => []) })), { sigma: 4, walls: false, errs: ROUTE.map(() => []) }];
@@ -214,7 +216,7 @@ export function create(root, ctx) {
         t++;
       }
       mc.done = t; drawChart();
-      if (t < MC.trials) setTimeout(step, shown ? 30 : 400);
+      mcNext = t < MC.trials ? step : null; if (shown) mcGo();
     };
     step();
   }
@@ -280,8 +282,8 @@ export function create(root, ctx) {
   renderSide();
   let first = true;
   return {
-    show() { shown = true; if (first) { first = false; setTimeout(() => { if (shown && !readings.length && !drive) startDrive(); }, 500); runMC(); } kick(); },
-    hide() { shown = false; cancelAnimationFrame(raf); raf = 0; if (drive) { stopDrive(); } },
+    show() { shown = true; if (first) { first = false; setTimeout(() => { if (shown && !readings.length && !drive) startDrive(); }, 500); runMC(); } mcGo(); kick(); },
+    hide() { shown = false; clearTimeout(mcTimer); cancelAnimationFrame(raf); raf = 0; if (drive) { stopDrive(); } },
     repaint() { draw(); drawChart(); },
     debug: () => ({ readings, sol, phone, mc }),
   };

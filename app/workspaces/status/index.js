@@ -6,6 +6,7 @@ import { createWall } from './wall.js';
 import { createDrillFilm, FILM } from './film.js';
 import { createAdvanced } from './advanced.js';
 import { createRealWall } from './real.js';
+import { ALL, checkBuilt } from './ledger.js';
 import { asked } from '../../global/a11y.js';
 
 export const VERDICT = { pass: 'Pass', limit: 'Pass, with known limits', fail: 'Fail' };
@@ -60,6 +61,7 @@ export default {
     async function go(v) { // one WebGL canvas at a time: a scene is released when the next one opens
       const g = ++gen; view = v; wallHost.hidden = v !== 'wall'; filmHost.hidden = v !== 'film'; realHost.hidden = v !== 'real'; tip.classList.remove('show');
       head(); if (v !== 'wall') closeWall(); if (v !== 'film') closeFilm(); if (v === 'real') real.show(); else real.hide();
+      if (v === 'real') checkBuilt().then(() => { if (view !== 'real') return; const n = (f) => String(ALL.filter(f).length); figs.replaceChildren(fig(n((r) => r.built === 'built'), 'found in the code'), fig(n((r) => r.built === 'built' && r.kind === 'concept'), 'of those, concepts only'), fig(n((r) => r.built === 'missing'), 'not built', 'bad')); });
       if (!shown || ctx.mode !== 'demo') return;
       if (v === 'wall') { await openWall(); if (g !== gen) return closeWall(); wall?.start(); }
       if (v === 'film' && !film) { title.textContent = 'Broken on purpose'; sub.textContent = 'A private copy of the mission. The live one is not touched.'; now.textContent = 'Building the site'; const f = await createDrillFilm(filmHost, ctx, { onUpdate: onFilm }); if (g !== gen) { f.dispose(); return; } film = f; film.twin.setSafeArea?.({ left: 0, top: 0, right: 380, bottom: 220 }); film.start(); }
@@ -81,7 +83,7 @@ export default {
       const lit = wall ? wall.lit() : 0, done = store.out, par = store.results.get('nn-parity'), sh = wall ? Math.round(wall.part('nn-parity') * (par?.passed || 0)) : 0;
       let bad = 0; for (const [id, r] of store.results) if (!wall || wall.part(id) >= 1) bad += r.failed;
       const set = (i, t) => { const b = F[i].firstChild; if (b.textContent !== t) b.textContent = t; }; set(0, lit.toLocaleString('en')); set(1, sh + ' / 30'); set(2, String(bad)); F[2].classList.toggle('bad', bad > 0); F[1].classList.toggle('good', sh === 30);
-      const t = store.error ? 'The tests could not run: ' + store.error : done && wall?.settled() ? (done.failed ? done.results.filter((r) => r.failed).length + ' of ' + SUITE.length + ' tests failed. Red shows which; Advanced says why.' : 'All ' + SUITE.length + ' passed, in ' + (done.ms / 1000).toFixed(0) + ' seconds. Amber is a limit we measured and kept.') : store.running.size ? 'Running: ' + SUITE.find((x) => x.id === [...store.running][0]).title : last ? last.got : 'Starting';
+      const t = store.error ? 'The tests could not run: ' + store.error : done && wall?.settled() ? (done.failed ? done.results.filter((r) => r.failed).length + ' of ' + SUITE.length + ' tests failed. Their names are lit on the wall; Advanced says why.' : 'All ' + SUITE.length + ' passed, in ' + (done.ms / 1000).toFixed(0) + ' seconds. Amber is a measured limit, kept in view.') : store.running.size ? 'Running: ' + SUITE.find((x) => x.id === [...store.running][0]).title : last ? last.got : 'Starting';
       if (now.textContent !== t) now.textContent = t; now.dataset.tone = store.error || bad ? 'bad' : 'ok';
       if (done && wall?.settled() && !touched && !reducedMotion() && performance.now() - finishedAt > 14000 && wall.time > 34) go('film');
     }
@@ -108,6 +110,7 @@ export default {
     return {
       onShow() { shown = true; resume(); if (!ran) runAll(); },
       onHide() { shown = false; pause(); },
+      dispose() { shown = false; pause(); closeWall(); closeFilm(); },
       onParams(p) { if (p?.view) ctx.bus.emit('status:view', p.view); },
     };
   },

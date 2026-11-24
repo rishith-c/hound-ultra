@@ -86,8 +86,9 @@ export function segments(y) {
 // Hann windows at 75 % overlap are correlated: K segments are worth fewer independent averages (Welch 1967; Harris 1978).
 export const kEff = (K) => { const c = [0.434, 0.0279, 0.00006]; let s = 1; for (let j = 1; j <= Math.min(3, K - 1); j++) s += 2 * (1 - j / K) * c[j - 1]; return K / s; };
 const q25 = (K) => (1 - 1 / (9 * K) - 0.6745 / (3 * Math.sqrt(K))) ** 3;   // lower quartile of an average of K exponentials (Wilson-Hilferty)
-// Scatter of the harmonic sum when there is only noise, in dB, against the number of independent averages. PLACEHOLDER
-export const sigma0 = (ke) => 9.7 / Math.sqrt(ke);
+// Scatter of the harmonic sum when there is only noise, in dB, against the number of independent averages. Measured with calibrate()
+// below on 100 recordings of white noise: 7.0 to 8.0 times 1/sqrt(ke). The 99th percentile of the noise-only score is then under 5.
+export const sigma0 = (ke) => 7.3 / Math.sqrt(ke);
 const CAND = Float64Array.from({ length: Math.round((3.2 - 0.75) * 128) + 1 }, (_, i) => 0.75 + i / 128);
 // 4. Welch average of K segments. 5. Noise floor: the lower quartile within 1 Hz either side, corrected to a mean.
 // 6. Harmonic product: for every candidate rate, add the decibels above the floor at its first five harmonics.
@@ -183,7 +184,7 @@ export default {
     }
 
     // ---------- readouts ----------
-    const sHr = L.stat('estimated beats a minute'), sErr = L.stat('error against the truth', { unit: 'beats/min' }), sLine = L.stat('heartbeat line above the floor', { unit: 'dB' }), sRaw = L.stat('heartbeat against all else, raw', { unit: 'dB', hint: 'Power of the true heartbeat velocity over the power of everything else in the recording. Known only because this is a simulation.' }), sT = L.stat('averaging for a confident detection', { unit: 's' });
+    const sHr = L.stat('estimated beats a minute'), sErr = L.stat('error against the truth', { unit: 'beats/min' }), sLine = L.stat('heartbeat line above the floor', { unit: 'dB' }), sRaw = L.stat('heartbeat against all else, raw', { unit: 'dB', hint: 'Power of the true heartbeat velocity over the power of everything else in the recording. Known only because this is a simulation.' }), sT = L.stat('until the score crosses the threshold', { unit: 's' });
     readout.append(L.h('h4', null, 'Measured against the simulated truth'), sHr.el, sErr.el, sLine.el, sRaw.el, sT.el,
       L.h('p.note.quiet.wide', null, 'An experiment on a simulated person, not a medical reading. A rate is shown only to compare it with the truth.'));
     function report() {
@@ -205,7 +206,7 @@ export default {
       fSig.setNote('Above: the last 8 s as recorded. Below: Welch average of 8 s Hann segments after a 0.5 Hz high-pass. Shot-noise floor ' + (rec.n0 >= 10 ? L.fix(rec.n0, 0) : L.fix(rec.n0, 1)) + ' µm/s per root hertz here (0.3 at 10 m on white, assumed; its power grows as range squared). ' + L.pct(rec.dropFrac, 1) + ' % of samples are speckle dropouts.');
       if (mc) {
         const ok = Number.isFinite(mc.tDet);
-        sT.set(ok ? L.fix(mc.tDet, 0) : '> ' + TMC, ok ? 'averaging for a confident detection (median of ' + mc.n + ' recordings)' : 'no confident detection within a minute (' + mc.n + ' recordings)'); sT.tone(ok ? (mc.tDet <= 30 ? 'ok' : 'warn') : 'danger');
+        sT.set(ok ? L.fix(mc.tDet, 0) : '> ' + TMC, ok ? 'until the score crosses the threshold (median of ' + mc.n + ' recordings)' : 'no confident detection within a minute (' + mc.n + ' recordings)'); sT.tone(ok ? (mc.tDet <= 30 ? 'ok' : 'warn') : 'danger');
         const e = mc.er[Math.min(mc.er.length - 1, Math.max(0, segsAt(P.T) - 1))];
         fConv.setTitle((ok ? 'Across ' + mc.n + ' simulated recordings the score crosses the threshold after ' + L.fix(mc.tDet, 0) + ' s' : 'Across ' + mc.n + ' simulated recordings the score never reaches the threshold within a minute')
           + (Number.isFinite(mc.expo) ? '; it grows as averages to the power ' + L.fix(mc.expo, 2) : '') + '. Rate error after ' + P.T + ' s: ' + L.fix(e, 1) + ' beats a minute');
@@ -347,7 +348,7 @@ export default {
       const P1 = L.plot(g, B1, { xd: [7.4, 62], yd: zd, xlog: true, ylog: true, xticks: XT, xfmt: () => '', ylabel: 'detection score (robust standard deviations)', yfmt: (v) => (v >= 1 ? String(v) : v.toPrecision(1)) });
       g.save(); g.beginPath(); g.rect(B1.x, B1.y, B1.w, B1.h); g.clip(); g.fillStyle = L.rgba('accent', 0.13); g.beginPath(); taus.forEach((t, k) => (k ? g.lineTo(P1.X(t), P1.Y(Math.max(mc.hi[k], zd[0]))) : g.moveTo(P1.X(t), P1.Y(Math.max(mc.hi[k], zd[0]))))); for (let k = nK - 1; k >= 0; k--) g.lineTo(P1.X(taus[k]), P1.Y(Math.max(mc.lo[k], zd[0]))); g.closePath(); g.fill(); g.restore();
       L.rule(g, P1, { y: ZTHR, color: 'warn', label: 'threshold ' + ZTHR });
-      if (Number.isFinite(mc.c)) { const law = taus.map((_, k) => mc.c * Math.sqrt(kEff(k + 1))); L.trace(g, P1, taus, law, { color: 'text2', width: 1.25, dash: [5, 3] }); const kk = Math.round(nK * 0.42); L.callout(g, 'square-root law', P1.X(taus[kk]), P1.Y(law[kk]), P1.X(taus[kk]) + 26, clamp(P1.Y(law[kk]) + 30, B1.y + 12, B1.y + B1.h - 8), { color: 'text2', dot: false }); }
+      if (Number.isFinite(mc.c)) { const law = taus.map((_, k) => mc.c * Math.sqrt(kEff(k + 1))); L.trace(g, P1, taus, law, { color: 'text2', width: 1.25, dash: [5, 3] }); const kk = Math.round(nK * 0.42); L.callout(g, 'square-root law', P1.X(taus[kk]), P1.Y(law[kk]), P1.X(taus[kk]) + 26, clamp(P1.Y(law[kk]) + 56, B1.y + 12, B1.y + B1.h - 8), { color: 'text2', dot: false }); }
       L.trace(g, P1, taus, mc.med.map((v) => Math.max(v, zd[0])), { color: 'accent', width: 2 });
       L.dots(g, P1, taus.slice(0, shown), own.z.slice(0, shown).map((v) => Math.max(v, zd[0])), { color: 'text', r: 2, alpha: 0.9 });
       L.text(g, 'median of ' + mc.n + ' recordings, middle half shaded', B1.x + 8, B1.y + 12, { color: 'accent2', size: 10.5, halo: true }); L.text(g, 'white dots: the recording on the left', B1.x + 8, B1.y + 26, { color: 'text', size: 10.5, halo: true });
@@ -364,10 +365,10 @@ export default {
     const changed = L.soon(() => { newRecording(false); resetTrials(); if (L.reduced()) settle(); report(); redrawAll(); });
     function settle() { while (trials.length < NTRIAL) runTrial(); paintSpeckle(0); report(); redrawAll(); }
     const sRange = L.slider({ label: 'Range to the person', min: 10, max: 300, step: 5, value: P.range, unit: 'm', hint: 'Collected light falls as the square of the range, so the noise power rises as the square of the range.', onInput: (v) => { P.range = v; changed(); } });
-    const sSurf = L.seg({ label: 'The beam is aimed at', value: P.surf, options: Object.entries(SURF).map(([k, s]) => ({ value: k, label: s.short, hint: 'Heartbeat moves it about ' + s.card + ' µm (assumed)' })), onChange: (v) => { P.surf = v; changed(); } });
+    const sSurf = L.seg({ label: 'The beam is aimed at', value: P.surf, options: Object.entries(SURF).map(([k, s]) => ({ value: k, label: s.short, hint: 'Heartbeat moves it about ' + s.card + ' µm (design value)' })), onChange: (v) => { P.surf = v; changed(); } });
     controls.append(sRange.el, sSurf.el,
       L.slider({ label: 'Averaging time', min: 8, max: 60, step: 2, value: P.T, unit: 's', hint: 'How much of the recording goes into the averaged spectrum.', onInput: (v) => { P.T = v; if (phase !== 'build') { lastK = -1; analyseNow(); } report(); if (L.reduced()) redrawAll(); } }).el,
-      L.slider({ label: 'Platform vibration', min: 0, max: 2.5, step: 0.05, value: Math.log10(P.vib), format: (v) => { const u = 10 ** v; return (u < 10 ? u.toFixed(1) : Math.round(u)) + ' µm/s rms: ' + (u < 6 ? 'tripod on firm ground' : u < 40 ? 'tripod in wind' : u < 150 ? 'idling vehicle' : 'hovering drone'); }, hint: 'The instrument measures its own shaking too, and a shaking beam drags the spot across the surface. The four names are assumed levels.', onInput: (v) => { P.vib = 10 ** v; changed(); } }).el,
+      L.slider({ label: 'Platform vibration', min: 0, max: 2.5, step: 0.05, value: Math.log10(P.vib), format: (v) => { const u = 10 ** v; return (u < 10 ? u.toFixed(1) : Math.round(u)) + ' µm/s rms: ' + (u < 6 ? 'tripod on firm ground' : u < 40 ? 'tripod in wind' : u < 150 ? 'idling vehicle' : 'hovering drone'); }, hint: 'The instrument measures its own shaking too, and a shaking beam drags the spot across the surface. The four names are design levels.', onInput: (v) => { P.vib = 10 ** v; changed(); } }).el,
       L.slider({ label: 'Heart rate of the simulated person', min: 45, max: 150, step: 1, value: P.hr, unit: 'beats/min', onInput: (v) => { P.hr = v; changed(); } }).el,
       L.row(L.button({ label: 'New recording', icon: 'reset', hint: 'A fresh draw of noise, replayed from zero so the line can be watched rising.', onClick: () => { P.seed++; newRecording(true, 6); resetTrials(); if (L.reduced()) settle(); redrawAll(); } })));
 

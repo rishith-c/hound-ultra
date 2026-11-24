@@ -105,10 +105,10 @@ export async function createWall(host, { nn, ctx, css, reduced = () => false, on
       + 'float d=.22; vec3 gx=blur(p+vec2(d,0.),3.2)-blur(p-vec2(d,0.),3.2), gy=blur(p+vec2(0.,d),3.2)-blur(p-vec2(0.,d),3.2); vec3 rel=gx*bump.x+gy*bump.y;'
       + 'E=mix(vec3(dot(E,vec3(.25,.6,.15))),E,.72); vec3 col=alb*(E*.5+rel*1.5); col+=alb*lip*(e1*2.4+e2*.8);'
       + 'float up=exp(-max(7.4-p.y,0.)*.55); float graze=1.+bump.y*1.4; vec3 wash=vec3(.36,.5,.66)*(up*.62+.06+uLift*.03)*graze; col+=alb*wash;'
-      + 'col*=mix(.35,1.,smoothstep(0.,.5,p.y)); col+=alb*smoothstep(.36,.3,p.y)*smoothstep(.0,.06,p.y)*.0;'
+      + 'col*=mix(.35,1.,smoothstep(0.,.5,p.y))*mix(.16,1.,smoothstep(11.,7.4,p.y)); col+=alb*smoothstep(.36,.3,p.y)*smoothstep(.0,.06,p.y)*.0;'
       + 'vec2 lu=vec2((p.x-' + LX0 + ')/' + (LX1 - LX0).toFixed(3) + ',p.y/' + H.toFixed(2) + '); if(lu.x>0.&&lu.x<1.&&lu.y<1.){ vec4 t=texture(tLabel,lu); float red=step(t.g+.08,t.r); vec3 ink=mix(vec3(t.r),vec3(1.,.14,.16)*t.r,red); col+=ink*vec3(.62,.66,.7); }'
       + 'col+=emitAt(p,px)*1.15; col+=e5*.012+e4*.008; o=vec4(col,1.); }' });
-  const wall = new THREE.Mesh(new THREE.PlaneGeometry(W + 60, H).translate(W / 2, H / 2, 0), wallMat); scene.add(wall);
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(W + 60, H + 5).translate(W / 2, (H + 5) / 2, 0), wallMat); scene.add(wall);
 
   // ---------- floor: wet, polished, reflecting the wall ----------
   const floorMat = new THREE.ShaderMaterial({ glslVersion: THREE.GLSL3, uniforms: U, transparent: true, depthWrite: false,
@@ -118,7 +118,7 @@ export async function createWall(host, { nn, ctx, css, reduced = () => false, on
       + 'vec2 slab=abs(fract(g/vec2(6.,5.))-.5)*vec2(6.,5.); float jn=smoothstep(2.984,2.992,slab.x)+smoothstep(2.484,2.492,slab.y); jn=clamp(jn,0.,1.);'
       + 'vec2 nz=(vec2(vn(g*9.),vn(g*9.+31.))-.5)*mix(.05,.008,wet)+(vec2(fbm(g*2.3),fbm(g*2.3+17.))-.5)*.02; vec3 N=normalize(vec3(nz.x,1.,nz.y)); vec3 R=reflect(V,N);'
       + 'float t=-vP.z/min(R.z,-.02); vec3 hit=vP+R*t; float rough=mix(.5,.12,wet)+ft*.16; float lod=clamp(log2(1.+t*rough*7.),.4,6.2); float onw=smoothstep(8.6,7.2,hit.y);'
-      + 'vec2 sp=vec2(h21(gl_FragCoord.xy)-.5,h21(gl_FragCoord.yx+9.)-.5)*(.25+lod*.32); vec3 refl=(blur(hit.xy+sp,max(lod-1.2,.4))*1.5+blur(hit.xy+sp*2.2,max(lod-.2,.4))*.6)*onw; refl=mix(vec3(dot(refl,vec3(.25,.6,.15))),refl,.75); refl+=vec3(.36,.5,.66)*.012*exp(-max(7.4-hit.y,0.)*.55)*onw;'
+      + 'vec2 sp=vec2(h21(gl_FragCoord.xy)-.5,h21(gl_FragCoord.yx+9.)-.5)*(.04+lod*.06); vec3 refl=(blur(hit.xy+sp,lod)*1.3+blur(hit.xy-sp,min(lod+1.2,6.))*.8)*onw; refl=mix(vec3(dot(refl,vec3(.25,.6,.15))),refl,.75); refl+=vec3(.36,.5,.66)*.012*exp(-max(7.4-hit.y,0.)*.55)*onw;'
       + 'float fr=.045+.955*pow(1.-max(dot(-V,N),0.),5.); float k=mix(fr*1.5+.05,fr*3.+.16,wet); vec3 near=blur(vec2(vP.x,1.2),6.); vec3 alb=vec3(pow(ft,1.6))*.5*mix(1.,.45,wet); vec3 col=alb*(near*1.5/(1.+vP.z*.22)+vec3(.36,.5,.66)*(.006+uLift*.006)); col+=refl*k*.55; col*=1.-jn*.75;'
       + 'vec2 rd=(g-uRover.xy)/vec2(1.55,1.2); float occ=exp(-dot(rd,rd)*1.15); col*=1.-occ*.9; col*=mix(.4,1.,smoothstep(0.,.6,vP.z));'
       + 'float far=smoothstep(34.,14.,vP.z); o=vec4(col*far,mix(.985,.8,clamp(wet*.8+fr,0.,1.))); }' });
@@ -140,7 +140,7 @@ export async function createWall(host, { nn, ctx, css, reduced = () => false, on
   }).catch(() => { U.uRover.value.set(-99, -99, 0); });
   const g0 = () => scene.traverse((o) => { if (o.isSpotLight) o.visible = false; });
   const areas = [[TX0 + TW * 1.5, 3.7, TW * 3, 6], [XL0 + 3, 3.7, 6, 6], [XL0 + 8.9, 3.7, 6, 6]].map(([x, y, w, h]) => { const l = new THREE.RectAreaLight(0xffffff, 0, w, h); l.position.set(x, y, 0.02); l.lookAt(x, y, 10); scene.add(l); return l; });
-  const sky = new THREE.RectAreaLight(0xbcd4ea, 4.2, 9, 1.2); sky.position.set(18.5, 8.4, 10); sky.lookAt(16.9, 0.4, 6.2); scene.add(sky, new THREE.AmbientLight(0x8fa6bd, 0.22));
+  const sky = new THREE.RectAreaLight(0xbcd4ea, 13, 9, 1.2); sky.position.set(18.5, 8.4, 10); sky.lookAt(16.9, 0.4, 6.2); scene.add(sky, new THREE.AmbientLight(0x8fa6bd, 0.5));
 
   // ---------- dust in the light ----------
   const ND = 420, dp = new Float32Array(ND * 3), ds = new Float32Array(ND); for (let i = 0; i < ND; i++) { dp[i * 3] = -3 + Math.random() * 30; dp[i * 3 + 1] = Math.random() * 7; dp[i * 3 + 2] = 0.4 + Math.random() * 11; ds[i] = Math.random(); }

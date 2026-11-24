@@ -6,7 +6,7 @@ import { tokens, rgba, clamp, pct, roundRect, STATUS, whereOf } from './util.js'
 const VIEW = { x0: 42.4, y0: 28.2, x1: 85.6, y1: 59.8 };       // building B with a margin, metres
 const FIELD = { x0: 86.5, y0: 60.5, x1: 108.5, y1: 78.5 };     // the debris field outdoors (inset)
 const ROOM_COLOR = { unsearched: 'text3', clear: 'ok', lead: 'warn', person: 'person', blocked: 'danger' };
-const ROOM_WORD = { unsearched: 'not searched', clear: 'chance missed', lead: 'possible person', person: 'person found', blocked: 'not searched' };
+const ROOM_WORD = { unsearched: 'not searched', clear: 'left to check', lead: 'possible person', person: 'person found', blocked: 'not searched' };
 
 export function createMap(host, ctx, api) {
   const { h, fmt } = ctx.kit, W = ctx.world;
@@ -16,7 +16,7 @@ export function createMap(host, ctx, api) {
     ...[['ok', 'Searched, no lead'], ['warn', 'Possible person'], ['person', 'Person found'], ['text3', 'Not searched: 10 % prior']].map(([c, t]) => h('span', null, h('i', { 'data-c': c }), t)),
     h('span', null, h('i.is-cell'), 'Lit squares: reached by the sensors (1 m)'), h('span', null, h('i.is-ring'), 'Ring: 86 % of a lead’s position (2σ)'));
   const live = h('span.dim.fusion-map-live');
-  const panel = ctx.kit.panel('Probability map: where a person may be, or was missed', { flush: true, actions: [live] }, h('div.fusion-map-wrap', null, canvas, legend, tip));
+  const panel = ctx.kit.panel('Probability map: where a person may be', { flush: true, actions: [live] }, h('div.fusion-map-wrap', null, canvas, legend, tip));
   panel.classList.add('fusion-map');
   host.append(panel);
 
@@ -138,17 +138,17 @@ export function createMap(host, ctx, api) {
     for (const st of W.STOPS) {
       const x = v.X(st.pos[0]), y = v.Y(st.pos[1]), done = st.covers.some((id) => S.coverage[id]?.stop === st.id);
       c.save(); c.translate(x, y); c.rotate(Math.PI / 4); c.fillStyle = done ? T.accent : T.bg2; c.strokeStyle = T.accent; c.lineWidth = 1.2; c.fillRect(-3, -3, 6, 6); c.strokeRect(-3, -3, 6, 6); c.restore();
-      font(600, 10, true); c.fillStyle = rgba(T.accent, 0.95); c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(st.id, x + 7, y + 0.5);
+      font(600, 10, true); c.fillStyle = rgba(T.accent, 0.95); c.textAlign = 'left'; c.textBaseline = 'middle'; c.textAlign = 'center'; c.fillText(st.id, x, y + 12);
     }
     // room numbers
     for (const r of W.ROOMS) {
       if (r.corridor) continue;
       const cov = roomView(S, r.id), col = T[ROOM_COLOR[cov.status]];
-      const x = v.X(r.rect[0]) + 8, north = r.rect[1] >= 46, y = north ? v.Y(r.rect[3]) + 8 : v.Y(r.rect[1]) - 54;
+      const x = v.X(r.rect[0]) + 8, north = r.rect[1] >= 46, low = !north && S.detections.some((d) => d.room === r.id && d.pos && d.pos[0] - r.rect[0] < 6.6 && d.pos[1] - r.rect[1] < 54 / v.s + 1.2), y = north || low ? v.Y(r.rect[3]) + 8 : v.Y(r.rect[1]) - 54;
       c.textAlign = 'left'; c.textBaseline = 'top';
       font(500, 10.5, false); c.fillStyle = T.text3; c.fillText(r.id, x, y);
-      font(600, v.s > 8.5 ? 19 : 16, true); c.fillStyle = cov.status === 'unsearched' || cov.status === 'blocked' ? T.text2 : col; c.fillText(pct(cov.residual), x, y + 12);
-      font(500, v.s > 8.5 ? 10.5 : 10, false); c.fillStyle = T.text2; c.fillText(ROOM_WORD[cov.status], x, y + 33);
+      font(600, low ? 12 : v.s > 8.5 ? 19 : 16, true); c.fillStyle = cov.status === 'unsearched' || cov.status === 'blocked' ? T.text2 : col; c.fillText(pct(cov.residual), low ? x + 22 : x, low ? y - 1 : y + 12); // one line when moved, clear of the stop below it
+      if (!low) { font(500, v.s > 8.5 ? 10.5 : 10, false); c.fillStyle = T.text2; c.fillText(ROOM_WORD[cov.status], x, y + 33); } // a moved number gives its word up to the lead's own label
       const isSel = selRoom === r.id || (sel?.type === 'room' && sel.id === r.id), isHover = hover?.type === 'room' && hover.id === r.id;
       if (isSel || isHover) { c.strokeStyle = isSel ? T.accent : rgba(T.text, 0.5); c.lineWidth = isSel ? 2 : 1; c.strokeRect(v.X(r.rect[0]) + 3, v.Y(r.rect[3]) + 3, (r.rect[2] - r.rect[0]) * v.s - 6, (r.rect[3] - r.rect[1]) * v.s - 6); }
     }
@@ -221,7 +221,7 @@ export function createMap(host, ctx, api) {
     let title, lines;
     if (it.type === 'room') {
       const r = W.roomById(it.id), cov = roomView(S, it.id);
-      title = r.name; lines = [pct(cov.residual) + ' ' + (cov.status === 'clear' ? 'chance someone was missed' : cov.status === 'lead' || cov.status === 'person' ? 'chance a person is here' : 'prior, nothing measured (assumed)'), cov.note, 'Click to see how this number was reached.'];
+      title = r.name; lines = [pct(cov.residual) + ' ' + (cov.status === 'clear' ? 'chance a person is still here' : cov.status === 'lead' || cov.status === 'person' ? 'chance a person is here' : 'prior, no reading yet'), cov.note, 'Click to see how this number was reached.'];
     } else {
       const d = S.detections.find((x) => x.id === it.id); if (!d) { tip.hidden = true; return; }
       title = 'Lead ' + d.id + ': ' + (STATUS[d.status]?.label || '') + ', ' + pct(d.p);

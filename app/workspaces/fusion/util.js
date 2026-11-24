@@ -53,3 +53,6 @@ export const STATUS = {
   new: { label: 'New', tag: '', color: 'text3' },
 };
 export const whereOf = (d) => (d.room ? 'room ' + d.room : d.outdoor ? 'outdoors' : 'at the stop');
+
+// Demo hero: metres of light shaft for a probability of 1.
+export const SHAFT_M = 6;

@@ -1,7 +1,7 @@
 // Runs one search off the main thread and streams it as small frames, so the view never waits for the planner.
 import { genWorld, createSwarm } from './engine.js';
 
-let sw = null, upTo = 0, lastEv = 0, sentSeries = 0, lastClusters = null, lastRelays = '', lastLeads = '', forceSlow = true, steps = 0, busy = false;
+let failAt = 0, sw = null, upTo = 0, lastEv = 0, sentSeries = 0, lastClusters = null, lastRelays = '', lastLeads = '', forceSlow = true, steps = 0, busy = false;
 
 const lite = (r) => ({ mode: r.mode, goal: r.goal ? { x: r.goal.x, y: r.goal.y, home: !!r.goal.home } : null, lead: r.lead, timer: r.timer, why: r.why, energy: r.energy, relaysLeft: r.relaysLeft, odo: r.odo, used: r.used, link: r.link });
 const liteLead = ({ target, ...l }) => l;                       // the hidden target never leaves the worker
@@ -25,7 +25,7 @@ function frame() {
 function pump() {
   if (busy || !sw) return; busy = true;
   const frames = [], t0 = performance.now();
-  while (sw.state.t < upTo && !sw.state.done && performance.now() - t0 < 24) { sw.step(); steps++; frames.push(frame()); }
+  while (sw.state.t < upTo && !sw.state.done && performance.now() - t0 < 24) { sw.step(); steps++; if (failAt && sw.state.t >= failAt) { if (sw.failRelay(sw.state.t > failAt + 60 ? 'busiest' : 'critical')) failAt = 0; } frames.push(frame()); }
   if (frames.length) self.postMessage({ frames }, frames.flatMap((f) => [f.pos.buffer, f.ch.buffer, f.cv.buffer]));
   busy = false;
   if (sw.state.t < upTo && !sw.state.done) setTimeout(pump, 0);
@@ -33,7 +33,7 @@ function pump() {
 self.onmessage = (e) => {
   const d = e.data;
   try {
-    if (d.init) { const o = d.init; sw = createSwarm(genWorld({ layout: o.layout, seed: o.seed, blockB: o.blockB }), { n: o.n, strategy: o.strategy, startCharge: o.startCharge, track: true }); }
+    if (d.init) { const o = d.init; failAt = o.failAt || 0; sw = createSwarm(genWorld({ layout: o.layout, seed: o.seed, blockB: o.blockB }), { n: o.n, strategy: o.strategy, startCharge: o.startCharge, pair: o.pair, track: true }); }
     else if (d.fail) { const r = sw.failRelay(d.fail); forceSlow = true; self.postMessage({ failed: r ? { ...r } : null, at: sw.state.t }); }
     else if (d.upTo > upTo) { upTo = d.upTo; pump(); }
   } catch (err) { self.postMessage({ error: String((err && err.message) || err) }); }

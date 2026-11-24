@@ -17,7 +17,7 @@ export function createInstruments(host, ctx, api) {
     ctx.kit.fitCanvas(canvas, (c, w, hh) => { o.size = { w, h: hh }; isDirty = true; });
     return o;
   }
-  const radar = make('Radar', realityTag('sim'), '24 GHz, reach 6 m (assumed)');
+  const radar = make('Radar', realityTag('sim'), '24 GHz, reach 6 m (design value)');
   const thermal = make('Thermal', realityTag('sim'), '32 × 24 = 768 pixels');
   const wifi = make('Wi-Fi window', realityTag('live-ai'), 'Input: 52 rows × 10 s');
   radar.canvas.setAttribute('role', 'img'); thermal.canvas.setAttribute('role', 'img'); wifi.canvas.setAttribute('role', 'img');
@@ -30,7 +30,7 @@ export function createInstruments(host, ctx, api) {
   function drawRadar(S) {
     const { w, h: hh } = radar.size; if (!w) return;
     const c = radar.canvas.getContext('2d'), T = tokens(); c.clearRect(0, 0, w, hh);
-    const strip = 56, R = Math.max(30, Math.min(w / 2 - 16, (hh - strip - 16) / 2)), cx = w / 2, cy = 9 + R, s = R / 6;
+    const strip = 68, R = Math.max(30, Math.min(w / 2 - 16, (hh - strip - 16) / 2)), cx = w / 2, cy = 9 + R, s = R / 6;
     const has = S.sensors.at != null, key = S.sensors.stop, rover = S.units['HOUND-01'];
     const o = has ? api.originOf(key).pos : rover.pos;
     const PX = (p) => cx + (p[0] - o[0]) * s, PY = (p) => cy - (p[1] - o[1]) * s;
@@ -80,7 +80,7 @@ export function createInstruments(host, ctx, api) {
     c.save(); c.translate(cx, cy); c.rotate(-heading); c.fillStyle = T.text; roundRect(c, -5, -3.5, 10, 7, 2); c.fill(); c.fillStyle = T.accent; c.beginPath(); c.moveTo(8, 0); c.lineTo(4, -2.6); c.lineTo(4, 2.6); c.closePath(); c.fill(); c.restore();
 
     // presence gates, 0.75 m each
-    const gy = cy + R + 14, gx0 = 12, gw = w - 24, n = 6, cw = gw / n;
+    const gy = cy + R + 17, gx0 = 12, gw = w - 24, n = 6, cw = gw / n;
     font(500, 9.5, false); c.fillStyle = T.text3; c.textAlign = 'left'; c.textBaseline = 'alphabetic'; c.fillText('Stillness by range gate (0.75 m each)', gx0, gy - 3);
     for (let i = 0; i < n; i++) {
       const on = gate && Math.round(gate.r / 0.75) - 1 === i;
@@ -97,13 +97,13 @@ export function createInstruments(host, ctx, api) {
       c.strokeStyle = T.accent; c.lineWidth = 2; c.beginPath(); c.moveTo(mid + sgn * 7, dy); c.lineTo(x, dy); c.stroke(); c.fillStyle = T.text2; c.fillRect(x - 1, dy - 6, 2, 12);
     }
     font(500, 9.5, true); c.fillStyle = T.text2; c.textBaseline = 'top';
-    c.textAlign = 'left'; c.fillText('rear ' + (tof ? tof.rear.toFixed(2) + ' m' : 'no reading'), mid - half, dy + 8); c.textAlign = 'right'; c.fillText('front ' + (tof ? tof.front.toFixed(2) + ' m' : 'no reading'), mid + half, dy + 8);
+    c.textAlign = 'left'; c.fillText('rear ' + (tof ? tof.rear.toFixed(2) + ' m' : '–'), mid - half, dy + 8); c.textAlign = 'right'; c.fillText('front ' + (tof ? tof.front.toFixed(2) + ' m' : '–'), mid + half, dy + 8);
 
     const movers = targets.filter((t) => t.kind === 'moving').length, steady = targets.length - movers;
     radar.big.textContent = !has ? 'No reading yet' : targets.length ? (movers ? movers + ' moving target' + (movers > 1 ? 's' : '') : steady + ' steady target' + (steady > 1 ? 's' : '')) : gate ? 'Stillness at ' + gate.r.toFixed(2) + ' m' : 'No target';
     radar.small.textContent = !has ? 'The radar reports each time the rover stops to listen.'
       : 'At ' + key + ', ' + age(S, S.sensors.radar.t) + '. ' + (gate ? 'The presence radar measures range only: the still target is somewhere on the amber ring. ' : targets.length ? '' : 'Nothing moving inside 6 m. ')
-        + (turned ? 'Field drawn toward the target: the simulator does not model where the radar points.' : gate ? '' : 'Blue wedge: the tracking radar’s 120° field.');
+        + (turned ? 'Field drawn toward the target.' : gate ? '' : 'Blue wedge: the tracking radar’s 120° field.');
     radar.canvas.setAttribute('aria-label', 'Radar plot. ' + radar.big.textContent + '. ' + radar.small.textContent);
   }
   radar.canvas.addEventListener('click', (e) => { const r = radar.canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top; const t = radarHits.find((q) => Math.hypot(q.x - mx, q.y - my) < 16); if (t) api.pick({ type: 'detection', id: t.id }); });
@@ -181,7 +181,7 @@ export function createInstruments(host, ctx, api) {
     const warm = th.blobs.length;
     thermal.big.textContent = 'Peak ' + frame.max.toFixed(1) + ' °C';
     thermal.small.textContent = (warm ? (frame.max > 40 ? 'Far hotter than skin: not a body. ' : frame.max >= 28 ? 'Inside the skin range. ' : 'A faint warm edge. ') : 'No warm shape. ')
-      + 'One square = one pixel. Synthesised from the simulator’s heat sources; sizes' + (turned ? ' and aim assumed.' : ' assumed.');
+      + 'One square = one pixel. Synthesised from the simulator’s heat sources; sizes' + (turned ? ' and aim are design values.' : ' are design values.');
     thermal.canvas.setAttribute('aria-label', 'Thermal frame, 32 by 24 pixels. ' + thermal.big.textContent + '. ' + thermal.small.textContent);
   }
 
@@ -245,11 +245,11 @@ export function createInstruments(host, ctx, api) {
 
     if (state === 'listening') {
       wifi.big.textContent = 'Listening ' + (L.progress * L.dur).toFixed(1) + ' of ' + L.dur + ' s';
-      wifi.small.textContent = 'Stop ' + L.stop + ', window ' + L.window + '. ' + Math.round(L.progress * 1000).toLocaleString('en-US') + ' of 1,000 probes. The rover must stand still: the network needs the whole window.' + (img ? '' : ' The window is drawn when it is complete.');
+      wifi.small.textContent = 'Stop ' + L.stop + ', window ' + L.window + '. ' + Math.round(L.progress * 1000).toLocaleString('en-US') + ' of 1,000 probes. The rover must stand still. ' + (img ? 'Revealed as it fills: the simulated test window this listen will draw.' : 'The window is drawn when it is complete.');
     } else if (state === 'done') {
       wifi.big.textContent = csi.says ? 'Says person' + (csi.moving > 0.5 ? ', moving' : ', still') : 'Says no one';
       wifi.small.textContent = 'Output ' + csi.person.toFixed(2) + ', alarm line ' + csi.threshold.toFixed(2) + '. At ' + csi.stop + ', ' + age(S, csi.t) + '. Real network, ' + (csi.ms < 0.1 ? 'under 0.1' : csi.ms.toFixed(1)) + ' ms, on simulated test window ' + (csi.sample + 1) + ' of 30.';
-    } else if (state === 'failed') { wifi.big.textContent = 'No answer'; wifi.small.textContent = csi.reason + ' The network never guesses.'; }
+    } else if (state === 'failed') { wifi.big.textContent = 'No answer'; wifi.small.textContent = csi.reason + ' The rover listens again.'; }
     else { wifi.big.textContent = 'No window yet'; wifi.small.textContent = 'At each stop the rover collects 10 seconds of Wi-Fi signal, then the network answers.'; }
     wifi.canvas.setAttribute('aria-label', 'Wi-Fi window. ' + wifi.big.textContent + '. ' + wifi.small.textContent);
   }

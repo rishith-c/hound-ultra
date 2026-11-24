@@ -14,16 +14,16 @@ export async function create(el, env) {
   const sl = slider('Weights removed', { min: 0, max: 99, step: 1, value: Math.round(frac * 100), fmt: (v) => v + ' %', oninput: (v) => { frac = v / 100; update(); } });
   const modeSeg = seg('Which curve', [['one_shot', 'Cut only'], ['ft', 'Cut, then retrain', ft ? 'Three more epochs on the full training set with the removed weights held at zero' : 'This measurement has not been run yet']], mode, (v) => { mode = v; drawPlot(); syncPy(); });
   if (!ft) modeSeg.querySelector('[data-v="ft"]').disabled = true;
-  const live = { moving: fig('–', '%', 'moving people found', bte.n + ' test windows', 'page', 'person'), still: fig('–', '%', 'still people found', bte.n + ' test windows', 'page', 'warn'), empty: fig('–', '%', 'empty rooms called empty', bte.n + ' test windows', 'page', 'ok'), auc: fig('–', '', 'area under the ROC curve', bte.n + ' test windows', 'page') };
+  const live = { moving: fig('…', '%', 'moving people found', bte.n + ' test windows', 'page', 'person'), still: fig('…', '%', 'still people found', bte.n + ' test windows', 'page', 'warn'), empty: fig('…', '%', 'empty rooms called empty', bte.n + ' test windows', 'page', 'ok'), auc: fig('…', '', 'area under the ROC curve', bte.n + ' test windows', 'page') };
   const pyRow = h('p.forge-p');
-  const chart = block('Most of the network is not needed; the last part is', null,
+  const chart = block('Two weights in five can go before ranking quality moves', null,
     h('div.row', null, modeSeg, h('span.grow'), src('py', 'all 955 test windows, 14 levels')),
     h('div.forge-plot-wrap.tall', null, cv), h('div.forge-prune-slider', null, sl.el),
     h('div.forge-figs', null, live.moving, live.still, live.empty, live.auc), pyRow);
 
   const die = h('canvas.forge-px.forge-die', { width: MW, height: MH, role: 'img', 'aria-label': 'The weights that survive at this level of pruning.' });
   const layerRows = TILES.map((tl) => { const bar = h('i'), n = h('b.num'); return { el: h('div.forge-layer', null, h('span', null, tl.name), h('div.forge-layer-bar', null, bar), n), bar, n }; });
-  const left = { w: fig('–', '', 'weights left of ' + fmtInt(total), null, 'page', 'sm'), mac: fig('–', '', 'multiply-adds per reading', 'zero weights skipped', 'page', 'sm'), bytes: fig('–', 'bytes', 'stored sparse', '1 byte value + 2 bytes position each', 'page', 'sm') };
+  const left = { w: fig('…', '', 'weights left of ' + fmtInt(total), null, 'page', 'sm'), mac: fig('…', '', 'multiply-adds per reading', 'zero weights skipped', 'page', 'sm'), bytes: fig('…', 'bytes', 'stored sparse', '1 byte value + 2 bytes position each', 'page', 'sm') };
   const storeNote = h('p.forge-p');
   const what = block('What is left', src('page', 'pruned here, now'),
     h('div.forge-die-wrap.crop', null, die), h('div.forge-layers', null, layerRows.map((r) => r.el)),
@@ -31,7 +31,7 @@ export async function create(el, env) {
 
   el.append(h('div.forge-ex', null,
     h('header.forge-ex-head', null, h('div', null, h('h2', null, 'How small can it get'),
-      h('p', null, 'Set the smallest weights to zero, smallest first across the whole network, and ask the test set whether anything changed. Up to the knee nothing does: those weights were never carrying the answer.')),
+      h('p', null, 'Set the smallest weights to zero, smallest first across the whole network, and ask the test set whether anything changed. Up to the knee (' + pct(P.knee_one_shot, 0) + ' removed) ranking quality stays within 0.01' + (ft ? '; with three more epochs of training, ' + pct(ft.knee, 0) + ' can go' : '') + '.')),
       h('div.forge-ex-tags', null, realityTag('live-ai'))),
     h('div.forge-grid.forge-prune', null, chart, what),
     h('footer.forge-ex-foot', null,
@@ -50,13 +50,13 @@ export async function create(el, env) {
         ...(mode === 'ft' ? [{ pts: o.map((r) => [r.frac, r.auc]), color: '--line-3', dash: [3, 3], width: 1.1 }, { pts: o.map((r) => [r.frac, r.moving_found]), color: 'rgba(255,106,69,0.4)', dash: [3, 3], width: 1.1, label: 'cut only', labelAt: [0.93, o.find((r) => r.frac === 0.95).moving_found] }] : []),
         { pts: xs('auc'), color: '--text', dots: 2.4, label: 'ranking quality (AUC)', labelAt: [0.02, c[0].auc] },
         { pts: xs('moving_found'), color: '--person', dots: 2.4, label: 'moving found', labelAt: [0.02, c[0].moving_found] },
-        { pts: xs('empty_ok'), color: '--ok', dots: 2.4, label: 'empty called empty', labelAt: [0.3, c[3].empty_ok], dy: 16 },
+        { pts: xs('empty_ok'), color: '--ok', dots: 2.4, label: 'empty called empty', labelAt: [0.72, c[8].empty_ok], dy: -12 },
         { pts: xs('still_found'), color: '--warn', dots: 2.4, label: 'still found', labelAt: [0.02, c[0].still_found] }],
       points: livePts ? [{ x: frac, y: livePts.moving, color: '--person', r: 4.5, ring: true }, { x: frac, y: livePts.still, color: '--warn', r: 4.5, ring: true }, { x: frac, y: livePts.emptyOk, color: '--ok', r: 4.5, ring: true }, { x: frac, y: livePts.auc, color: '--text', r: 4.5, ring: true }] : [] });
   }
   function syncPy() {
     const c = curve(); let near = c[0]; for (const r of c) if (Math.abs(r.frac - frac) < Math.abs(near.frac - frac)) near = r;
-    pyRow.replaceChildren(src('py', 'nearest measured level, ' + pct(near.frac, 0) + ' removed' + (mode === 'ft' ? ' then retrained' : '')), h('span', null, ': moving ', h('b.num', null, pct(near.moving_found)), ', still ', h('b.num', null, pct(near.still_found)), ', empty called empty ', h('b.num', null, pct(near.empty_ok)), ', AUC ', h('b.num', null, near.auc.toFixed(3)), '. Rings on the chart are this page’s run on ' + bte.n + ' windows' + (mode === 'ft' ? ' (cut only: the page does not retrain).' : '.')));
+    pyRow.replaceChildren(src('py', 'nearest measured level, ' + pct(near.frac, 0) + ' removed' + (mode === 'ft' ? ' then retrained' : '')), h('span', null, ': moving ', h('b.num', null, pct(near.moving_found)), ', still ', h('b.num', null, pct(near.still_found)), ', empty called empty ', h('b.num', null, pct(near.empty_ok)), ', AUC ', h('b.num', null, near.auc.toFixed(3)), '. Rings on the chart are this page’s run on ' + bte.n + ' windows, with the threshold set on only ' + bv.n + (mode === 'ft' ? ' (cut only: the page does not retrain).' : ', so they scatter.')));
   }
 
   async function update() {

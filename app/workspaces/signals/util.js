@@ -60,9 +60,9 @@ export function seg(options, value, onChange, label) {
   return { el, set };
 }
 
-// The opening of every area: its name, its reality label and two plain sentences.
-export function intro(title, tag, text, extraTag) {
-  return h('div.signals-intro', null, h('div.signals-intro-head', null, h('h3', null, title), tag, extraTag), h('p', null, text));
+// The opening of every area: its reality label and two plain sentences. Its name is on the tab above.
+export function intro(tag, text, extraTag) {
+  return h('div.signals-intro', null, h('div.signals-intro-head', null, tag, extraTag), h('p', null, text));
 }
 export function text(c, str, x, y, { color = C.text2, size = 11, align = 'left', weight = 400, mono = false, base = 'alphabetic' } = {}) {
   c.font = `${weight} ${size}px ${mono ? C.mono : C.font}`; c.fillStyle = color; c.textAlign = align; c.textBaseline = base; c.fillText(str, x, y);

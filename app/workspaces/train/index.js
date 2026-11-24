@@ -4,7 +4,7 @@ import { LEVELS } from './scenario.js';
 import { createHero } from './hero.js';
 
 export const LESSON_META = [
-  { id: 'wifi', title: 'How Wi-Fi sensing works, and where it stops', minutes: 4, screens: 3, blurb: 'Drag a person through the echoes, then try to beat the network on real test windows.' },
+  { id: 'wifi', title: 'How Wi-Fi sensing works', minutes: 4, screens: 3, blurb: 'Drag a person through the echoes, then try to beat the network on real test windows.' },
   { id: 'fusion', title: 'Why three sensors beat one', minutes: 3, screens: 2, blurb: 'Build a finding one reading at a time and watch the odds move.' },
   { id: 'probability', title: 'Reading a probability', minutes: 3, screens: 2, blurb: 'What 21 % asks of you, and why an alarm is not an answer.' },
   { id: 'approval', title: 'Why a person approves the route', minutes: 3, screens: 2, blurb: 'Run the planner yourself, then catch the route it should not have proposed.' },
@@ -21,8 +21,7 @@ export default {
     let progress = load(), view = null, visible = false, saved = true;
     const body = h('div.train-body.adv-only');
     root.append(body);
-    const hero = createHero(root, ctx, { onDrill: () => { ctx.setMode('advanced'); drill(1); } }); window.__thero = hero;
-
+    const hero = createHero(root, ctx, { onDrill: () => { ctx.setMode('advanced'); drill(1); } });
     function swap(next) { try { view?.destroy?.(); } catch (e) { console.error(e); } view = null; body.replaceChildren(); body.className = 'train-body adv-only'; body.scrollTop = 0; return next(); }
     const seedFor = (level) => (level.windows === 'scripted' ? ctx.world.SEED : 1000 + level.id * 7919 + ((progress.levels[level.id]?.runs || 0) + 1) * 104729);
     const recommend = () => { const l = LESSON_META.find((x) => !progress.lessons[x.id]); if (l) return { type: 'lesson', id: l.id }; const lv = LEVELS.find((x) => (progress.levels[x.id]?.best ?? -1) < 75) || LEVELS[LEVELS.length - 1]; return { type: 'drill', id: lv.id }; };
@@ -53,10 +52,10 @@ export default {
             h('button.btn', { onclick: card }, icon('print', 14), 'Operator card'),
             progress.runs.length || doneLessons ? h('button.btn.btn-ghost', { onclick: async () => { if (await ctx.shell.confirm({ title: 'Clear your training record?', body: 'Lesson ticks and drill scores saved in this browser will be removed.', confirmLabel: 'Clear record', danger: true })) { progress = { v: 1, lessons: {}, levels: {}, runs: [] }; saved = save(progress); home(); } } }, 'Clear record') : null),
           saved ? null : h('p.note.warn', null, icon('alert'), h('span', null, 'This browser is not letting the page save. Your record lasts until you close the tab.')),
-          h('div.train-who', null, h('h4', null, 'Who this is for'), h('p', null, 'Volunteer and student teams. The rover is cheap enough to build; the judgement is the hard part. Here a new operator can meet a false alarm, a silent sensor and a bad route before any of them is real.')));
+          h('div.train-who', null, h('h4', null, 'Who this is for'), h('p', null, 'Volunteer and student teams. The rover is cheap enough to build; the judgement is the hard part. Here a new operator meets a look-alike, a silent sensor and a risky route first, in simulation.')));
         body.classList.add('train-home');
         body.append(
-          h('header.ws-head', null, h('div', null, h('div.row', null, h('h1', null, 'Training'), realityTag('live-algo')), h('p', null, 'Practise the operator’s decisions on the real mission engine, with the real network, and get a debrief that shows what you could not see. The scenario and its people are simulated.'))),
+          h('header.ws-head', null, h('div', null, h('div.row', null, h('h1', null, 'Training'), realityTag('live-algo')), h('p', null, 'Practise the operator’s decisions on the real mission engine, with the real network, and get a debrief that shows the whole building. The scenario and its people are simulated.'))),
           h('div.train-homegrid', null,
             h('div.train-syllabus', null,
               h('section', { 'aria-label': 'Lessons' }, h('div.train-sechead', null, h('h2', null, 'Learn'), h('span.train-meta', null, 'four short lessons, about ' + LESSON_META.reduce((a, l) => a + l.minutes, 0) + ' minutes, each built on a figure you can move')), h('ol.train-track', null, ...lessons)),

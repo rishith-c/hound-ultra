@@ -145,13 +145,13 @@ export function sampleGrid(G, x, z) { // bilinear
 const path = (c, S, pts) => { c.beginPath(); for (let i = 0; i < pts.length; i++) { const x = S.X(pts[i][0]), y = S.Z(pts[i][1]); if (i) c.lineTo(x, y); else c.moveTo(x, y); } c.closePath(); };
 export function pilePath(c, S) { const o = S.pile.outline; c.beginPath(); c.moveTo(S.X(o[0][0]), S.Z(0)); for (const p of o) c.lineTo(S.X(p[0]), S.Z(p[1])); c.lineTo(S.X(o[o.length - 1][0]), S.Z(0)); c.closePath(); }
 export function drawPile(S, { interior = S.truth, dim = 1 } = {}) {
-  const { c, pile } = S, gx0 = S.X(WORLD.x0) - 40, gx1 = S.X(WORLD.x1) + 40, gy = S.Z(0), s = S.s;
+  const { c, pile } = S, gx0 = -4, gx1 = S.w + 4, gy = S.Z(0), s = S.s;
   c.save(); c.lineJoin = 'round';
   // soil
   const g = c.createLinearGradient(0, gy, 0, S.Z(WORLD.z0)); g.addColorStop(0, col('--bg-3', 0.95 * dim)); g.addColorStop(1, col('--bg-1', 0.9 * dim));
   c.fillStyle = g; c.fillRect(gx0, gy, gx1 - gx0, S.Z(WORLD.z0) - gy + 60);
   if (!S.thumb) { c.save(); c.beginPath(); c.rect(gx0, gy, gx1 - gx0, S.Z(WORLD.z0) - gy + 60); c.clip(); c.strokeStyle = col('--line-2', 0.5 * dim); c.lineWidth = 1; c.beginPath();
-    for (let k = 0; k < 150; k++) { const hx = ((k * 0.6180339) % 1) * 25 - 0.5, hz = -0.25 - ((k * 0.3819) % 1) * 2.9, L = 0.12 + ((k * 0.77) % 1) * 0.2; c.moveTo(S.X(hx), S.Z(hz)); c.lineTo(S.X(hx + L), S.Z(hz + L * 0.5)); } c.stroke(); c.restore(); }
+    for (let k = 0; k < 150; k++) { const hx = ((k * 0.75487767) % 1) * 25 - 0.5, hz = -0.25 - ((k * 0.56984029) % 1) * 2.9, L = 0.12 + ((k * 0.77) % 1) * 0.2; c.moveTo(S.X(hx), S.Z(hz)); c.lineTo(S.X(hx + L), S.Z(hz + L * 0.5)); } c.stroke(); c.restore(); }
   // the pile body
   pilePath(c, S); c.fillStyle = col('--bg-4', dim); c.fill();
   c.save(); pilePath(c, S); c.clip();
@@ -174,7 +174,9 @@ export function drawPile(S, { interior = S.truth, dim = 1 } = {}) {
 export function drawPerson(S, dim = 1) {
   const { c, pile } = S, p = pile.person, e = (cx, cz, rx, rz) => { c.beginPath(); c.ellipse(S.X(cx), S.Z(cz), rx * S.s, rz * S.s, 0, 0, 6.2832); c.fill(); };
   c.save(); c.fillStyle = col('--person', dim); c.shadowColor = col('--person', 0.55 * dim); c.shadowBlur = S.thumb ? 3 : 10;
-  e(p.head[0], p.head[1], p.head[2], p.head[2]); for (const q of p.parts) e(q[0], q[1], q[2], q[3]);
+  const limb = (wd, ...q) => { c.beginPath(); q.forEach((a, i) => (i ? c.lineTo : c.moveTo).call(c, S.X(p.head[0] + a[0]), S.Z(a[1]))); c.lineWidth = wd * S.s; c.stroke(); };
+  c.strokeStyle = col('--person', dim); c.lineCap = c.lineJoin = 'round';
+  e(p.head[0], p.head[1], p.head[2], p.head[2] * 0.9); limb(0.2, [0.26, 0.15], [0.74, 0.13]); limb(0.12, [0.78, 0.12], [1.16, 0.3], [1.5, 0.07], [1.64, 0.08]); limb(0.07, [0.3, 0.2], [0.52, 0.06], [0.78, 0.05]);
   c.restore();
 }
 export function voidLabels(S, verdicts) {
@@ -191,8 +193,8 @@ export function voidLabels(S, verdicts) {
 export function drawScale(S) {
   const { c } = S; c.save(); c.font = font(11); c.fillStyle = tok('--text-3'); c.strokeStyle = col('--line-3', 0.8); c.lineWidth = 1; c.textBaseline = 'middle';
   const x = S.X(WORLD.x0) + 6; c.textAlign = 'left';
-  for (let z = Math.ceil(S.zr[0]); z <= S.zr[1]; z += S.s > 60 ? 0.5 : S.s > 24 ? 1 : 2) { const y = Math.round(S.Z(z)) + 0.5; if (y < 8 || y > S.h - 8) continue; c.beginPath(); c.moveTo(0, y); c.lineTo(5, y); c.stroke(); c.fillText((z > 0 ? '+' : '') + z + (z === 0 ? ' m, street level' : ''), 9, y); }
-  const len = S.s > 120 ? 0.5 : S.s > 50 ? 1 : 2, bx = S.w - 18 - len * S.s, by = S.h - 16;
+  for (let z = Math.ceil(S.zr[0]); z <= S.zr[1]; z += S.s > 60 ? 0.5 : S.s > 24 ? 1 : 2) { const y = Math.round(S.Z(z)) + 0.5; if (y < 34 || y > S.h - 8) continue; c.beginPath(); c.moveTo(0, y); c.lineTo(5, y); c.stroke(); c.fillText((z > 0 ? '+' : '') + z + (z === 0 ? ' m, street level' : ''), 9, z === 0 ? y - 8 : y); }
+  const len = S.s > 120 ? 0.5 : S.s > 50 ? 1 : 2, bx = S.w - 18 - len * S.s, by = 60;
   c.strokeStyle = tok('--text-2'); c.beginPath(); c.moveTo(bx, by - 4); c.lineTo(bx, by); c.lineTo(bx + len * S.s, by); c.lineTo(bx + len * S.s, by - 4); c.stroke();
   c.textAlign = 'center'; c.textBaseline = 'bottom'; c.fillStyle = tok('--text-2'); c.fillText(len + ' m', bx + len * S.s / 2, by - 4);
   c.restore();

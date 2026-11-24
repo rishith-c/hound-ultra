@@ -10,7 +10,7 @@ const FILES = ['atoms', 'corners', 'seeds', 'laser', 'insects', 'smell', 'passiv
 const BANDS = [
   { label: 'Lab result', sub: 'in a laboratory or a set-piece test' },
   { label: 'Field trial', sub: 'tried outdoors or at a real incident' },
-  { label: 'Fielded', sub: 'in routine use somewhere. Not by HOUND.' },
+  { label: 'Fielded', sub: 'in routine use today.' },
 ];
 const ZONES = [[0.01, 1, 'inside the rubble'], [1, 10, 'in the room'], [10, 100, 'across the street'], [100, 1e4, 'across the valley'], [1e4, 1e5, 'the sky'], [1.6e5, 2e6, 'orbit']];
 const YD = [0.01, 2e6];
@@ -52,10 +52,10 @@ export default {
         h('header.horizon-ov-head', null,
           h('div.row', null, h('h1', null, 'Horizon'), realityTag('concept')),
           h('p.lede', null, EX.length + ' ideas that sound like science fiction. Each is anchored in published research, and each runs its mathematics in this page.'),
-          h('p.horizon-ov-how', null, 'HOUND has none of this hardware. The chart places every idea by how far it has come, left to right, and by how far its sensor stands from the person it is looking for, bottom to top.')),
+          h('p.horizon-ov-how', null, 'The chart places every idea by how far it has come, left to right, and by how far its sensor stands from the person it is looking for, bottom to top.')),
         placard,
         h('div.horizon-ov-foot', null,
-          realityTag('concept'), h('span', null, 'The hardware. HOUND does not have it.'),
+          realityTag('concept'), h('span', null, 'The hardware.'),
           realityTag('live-algo'), h('span', null, 'The mathematics, computed in this page on simulated measurements.'),
           h('span', null, h('kbd', null, '←'), ' ', h('kbd', null, '→')), h('span', null, 'Move between exhibits. Escape returns here.'))));
     const nodes = EX.map((e) => {
@@ -173,9 +173,9 @@ export default {
           h('p.horizon-say', null, e.sentences[0]), h('p.horizon-say', null, e.sentences[1]),
           readinessScale(e)),
         readout, controls,
-        h('div.horizon-group', null, h('h4', null, 'What would have to be true'), h('p', null, e.needs), h('h4', null, 'What is unknown'), h('p', null, e.unknown)),
+        h('div.horizon-group', null, h('h4', null, 'What it needs'), h('p', null, e.needs), h('h4', null, 'Open questions'), h('p', null, e.unknown)),
         e.labelNote ? h('div.horizon-group', null, h('h4', null, 'What is real here'), h('p', null, e.labelNote)) : null,
-        h('div.horizon-group.horizon-sources', null, h('h4', null, e.sources.length ? 'Published research behind this' : 'Idea only: no source verified'),
+        h('div.horizon-group.horizon-sources', null, h('h4', null, e.sources.length ? 'Published research behind this' : 'Idea'),
           e.sources.map((s) => h('p', null, h('b', null, s.who + ' (' + s.year + '). '), s.title + '. ', s.where ? h('i', null, s.where + '. ') : null, s.url ? h('a', { href: s.url, target: '_blank', rel: 'noopener noreferrer' }, 'Open source', icon('external', 12)) : null, s.note ? h('span.dim', null, ' ' + s.note) : null))));
     }
     function ensure(e) {

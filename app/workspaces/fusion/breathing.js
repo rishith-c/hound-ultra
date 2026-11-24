@@ -4,7 +4,7 @@
 import { tokens, rgba, clamp, mulberry, gaussian, roundRect } from './util.js';
 
 const FS = 20, NFFT = 2048, BAND = [0.1, 0.5], RATE = [7, 30];
-// The project's measured result (ml/results/synthetic.md): 75 still people the network found.
+// The project's measured result (ml/results/synthetic.md): 75 windows of still people that the network found.
 const FOUND = { n: 75, within: 31, pct: 41.3, median: 6.1, clearest: 42.1 };
 
 function fft(re, im) {
@@ -64,16 +64,16 @@ export function createBreathing(host, ctx) {
   const dots = h('div.fusion-dots', { 'aria-hidden': 'true' }, ...Array.from({ length: FOUND.n }, (_, i) => h('i' + (i < FOUND.within ? '.on' : ''))));
   const withheld = h('div.fusion-withheld', null,
     h('div.fusion-withheld-read', { 'aria-label': 'Breathing rate: not shown as a reading' }, h('span.dim', null, 'Breathing rate'), h('b.num', { 'aria-hidden': 'true' }, '– –'), h('span.dim', null, 'per min'), h('span.tag.tag-warn', null, 'Withheld')),
-    h('p.fusion-withheld-why', null, h('b', null, 'The console does not show a breathing rate as a reading.'), ' In the project’s own test, on ' + FOUND.n + ' still simulated people the network had found, the estimate was within 3 breaths a minute for only ' + FOUND.within + ' of them (' + FOUND.pct.toFixed(0) + ' %). The median error was ' + FOUND.median + ' a minute, and the windows with the clearest rhythm did no better (' + FOUND.clearest.toFixed(0) + ' %).'),
-    dots, h('p.dim.fusion-dots-cap', null, 'One dot per test window. Filled: within 3 breaths a minute. Simulated people; no real recordings exist yet.'),
+    h('p.fusion-withheld-why', null, h('b', null, 'The console does not show a breathing rate as a reading.'), ' In the project’s own test of the Wi-Fi network, on ' + FOUND.n + ' simulated windows where it had found a still person, the estimate was within 3 breaths a minute in ' + FOUND.pct.toFixed(0) + ' %. The median error was ' + FOUND.median + ' a minute; for the windows with the clearest rhythm the share was close to the same (' + FOUND.clearest.toFixed(0) + ' %).'),
+    dots, h('p.dim.fusion-dots-cap', null, 'One dot per test window, ' + FOUND.within + ' of ' + FOUND.n + ' filled: within 3 breaths a minute. That test used Wi-Fi windows; the signal on this page is a simpler stand-in.'),
     h('div.fusion-exp', null, h('span.tag.tag-sim', null, 'Experiment'), h('span', null, 'This signal: estimate ', readEst, ', true rate ', readTrue, ' (known only because it is simulated). ', readErr)));
   const batchLine = h('p.fusion-br-batch');
   const body = h('div.fusion-br', null, controls,
     h('figure.fusion-fig', null, h('figcaption', null, h('b', null, 'What the sensor records: '), 'chest motion of 0.05 to 0.4 % of the signal, under noise, drift and gain jumps'), cTs),
     h('figure.fusion-fig', null, h('figcaption', null, h('b', null, 'Its spectrum: '), 'the tallest peak in the band is taken as the rate. A short window makes every peak wide'), cSp),
     h('div.fusion-br-bottom', null, withheld,
-      h('figure.fusion-fig.fusion-br-scfig', null, h('figcaption', null, h('b', null, 'Wrong estimates land anywhere in the band')), cSc, batchLine)));
-  const panel = ctx.kit.panel('Breathing band: a rate you can compute, but should not trust yet', { tag: realityTag('sim'), flush: true }, body);
+      h('figure.fusion-fig.fusion-br-scfig', null, h('figcaption', null, h('b', null, 'Estimated against true rate')), cSc, batchLine)));
+  const panel = ctx.kit.panel('Breathing band: an experiment, so no rate is shown as a reading', { tag: realityTag('sim'), flush: true }, body);
   panel.classList.add('fusion-brp'); host.append(panel);
 
   function regen(batchToo) {
@@ -122,11 +122,11 @@ export function createBreathing(host, ctx) {
       c.strokeStyle = T.ok; c.setLineDash([4, 3]); c.lineWidth = 1.5; c.beginPath(); c.moveTo(X(ft) + 0.5, t); c.lineTo(X(ft) + 0.5, t + ph); c.stroke(); c.setLineDash([]);
       font(c, 600, 10.5, true); const eRight = fe >= ft;
       { const lab = 'estimate ' + est.rate.toFixed(0) + '/min', lw = c.measureText(lab).width, ly = t + ph - 8, lx = eRight ? X(fe) + 7 : X(fe) - 7 - lw; c.fillStyle = rgba(T.bg2, 0.85); c.fillRect(lx - 3, ly - 12, lw + 6, 15); c.fillStyle = T.text; c.textAlign = 'left'; c.textBaseline = 'bottom'; c.fillText(lab, lx, ly + 1); }
-      c.fillStyle = T.ok; c.textAlign = eRight ? 'right' : 'left'; c.textBaseline = 'top'; c.fillText('true ' + sig.rate.toFixed(0) + '/min', X(ft) + (eRight ? -6 : 6), t + 18);
+      c.fillStyle = T.ok; c.textAlign = eRight ? 'right' : 'left'; c.textBaseline = 'top'; { const lab = 'true ' + sig.rate.toFixed(0) + '/min', lw = c.measureText(lab).width, lx = eRight ? Math.max(l + 2, X(ft) - 7 - lw) : X(ft) + 7, ly = t + ph - 26; c.fillStyle = rgba(T.bg2, 0.85); c.fillRect(lx - 3, ly - 1, lw + 6, 15); c.fillStyle = T.ok; c.textAlign = 'left'; c.fillText(lab, lx, ly + 1); }
       // what one window can resolve
       const step = 1 / sig.seconds, bx = X(FMAX) - X(step) + X(0) - 6;
       c.strokeStyle = T.warn; c.lineWidth = 1.5; c.beginPath(); c.moveTo(bx, t + 30); c.lineTo(bx + X(step) - X(0), t + 30); c.moveTo(bx, t + 26); c.lineTo(bx, t + 34); c.moveTo(bx + X(step) - X(0), t + 26); c.lineTo(bx + X(step) - X(0), t + 34); c.stroke();
-      font(c, 500, 10.5, false); c.fillStyle = T.warn; c.textAlign = 'right'; c.textBaseline = 'top'; c.fillText('a ' + sig.seconds + ' s window cannot separate rates closer than ' + (step * 60).toFixed(1).replace('.0', '') + '/min', X(FMAX) - 6, t + 3);
+      font(c, 500, 10.5, false); c.fillStyle = T.warn; c.textAlign = 'right'; c.textBaseline = 'top'; c.fillText(sig.seconds + ' s: rates within ' + (step * 60).toFixed(1).replace('.0', '') + '/min blur together', X(FMAX) - 6, t + 3);
       font(c, 500, 10, true); c.fillStyle = T.text3; c.textBaseline = 'top'; c.textAlign = 'center';
       for (let f = 0; f <= FMAX + 1e-9; f += 0.1) c.fillText(f.toFixed(1) + (f === 0 ? ' Hz' : ''), X(f), t + ph + 5);
       c.textBaseline = 'bottom'; for (let bpm = 6; bpm <= 42; bpm += 6) c.fillText(String(bpm), X(bpm / 60), t - 3); c.textAlign = 'right'; c.fillText('per min', l + 8, t - 3);
@@ -153,8 +153,8 @@ export function createBreathing(host, ctx) {
     } }
     noiseOut.textContent = P.noise.toFixed(1) + ' %';
     readEst.textContent = est.rate.toFixed(0) + '/min'; readTrue.textContent = sig.rate.toFixed(0) + '/min';
-    const err = Math.abs(est.rate - sig.rate); readErr.textContent = err <= 3 ? 'Within 3 this time.' : 'Off by ' + err.toFixed(0) + ' this time.';
-    batchLine.replaceChildren(P.seconds + ' s at ' + P.noise.toFixed(1) + ' % noise: ', h('b.num', null, (batch.within * 100).toFixed(0) + ' %'), ' within 3/min, median error ', h('b.num', null, batch.median.toFixed(1)), ', clearest quarter ', h('b.num', null, (batch.clearest * 100).toFixed(0) + ' %'), '. ', P.noise === 1.5 && P.seconds === 10 ? 'Noise chosen so this illustration behaves like the project’s measured result: an assumption, not a measurement.' : 'Compare with 10 s at 1.5 %, the setting that behaves like the project’s measured result.');
+    const err = Math.abs(est.rate - sig.rate); readErr.textContent = err <= 3 ? 'Within 3 this time.' : 'Differs by ' + err.toFixed(0) + ' this time.';
+    batchLine.replaceChildren(P.seconds + ' s at ' + P.noise.toFixed(1) + ' % noise: ', h('b.num', null, (batch.within * 100).toFixed(0) + ' %'), ' within 3/min, median error ', h('b.num', null, batch.median.toFixed(1)), ', clearest quarter ', h('b.num', null, (batch.clearest * 100).toFixed(0) + ' %'), '. ', P.noise === 1.5 && P.seconds === 10 ? 'This noise was chosen so that the illustration lands near the project’s 41 %. At 0.5 % noise the same method gets about 78 %.' : 'Compare with 10 s at 1.5 %, the setting that behaves like the project’s measured result.');
   }
   return { dirty() { isDirty = true; }, frame() { if (!isDirty) return; isDirty = false; draw(); } };
 }

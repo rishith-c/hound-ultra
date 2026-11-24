@@ -329,7 +329,7 @@ function drawFuse(D) {
     add('circle', { cx: f2(xq), cy, r: 4, class: k('pt-mid') }); add('circle', { cx: f2(xs), cy, r: 4, class: k('pt-person') });
     add('circle', { cx: f2(xp), cy, r: 3.5, class: k('prior') });
     add('line', { x1: f2(xp), x2: f2(xp), y1: cy + 4, y2: ty + th + 13, class: k('s-mid') });
-    add('text', { x: f2(xp + 5), y: ty + th + 17, class: k('lb') }, 'Before any reading: ').append(Object.assign(document.createElementNS(NS, 'tspan'), { textContent: pc(PRIOR, 0) + ', assumed' }));
+    add('text', { x: f2(xp + 5), y: ty + th + 17, class: k('lb') }, 'Before any reading: ').append(Object.assign(document.createElementNS(NS, 'tspan'), { textContent: pc(PRIOR, 0) }));
     const zy = ty + th + 36;
     [THRESHOLDS.possible, THRESHOLDS.confirmed].forEach((v) => add('line', { x1: f2(X(v)), x2: f2(X(v)), y1: ty + th, y2: zy - (v === THRESHOLDS.possible ? 22 : 10), class: k('s-line2') }));
     add('text', { x: f2(X(THRESHOLDS.possible) + 3), y: zy, class: k('t-warn') }, 'possible from ' + pc(THRESHOLDS.possible, 0));
@@ -389,7 +389,7 @@ export async function create(el, ctx, { open }) {
       h('div.sense-why-key', null,
         h('div.sense-why-big', null, big),
         h('p.sense-why-biglab', null, bigLabel),
-        h('p.sense-why-caveat', null, h('b', null, icon('alert', 12), 'Caveat'), ' ', caveat)));
+        h('p.sense-why-caveat', null, h('b', null, icon('info', 12), 'Detail'), ' ', caveat)));
   }
 
   function build() {
@@ -405,51 +405,51 @@ export async function create(el, ctx, { open }) {
         [fig(kB + ' kB of weights: about 1/' + nf(Math.round(D.ratio / 100) * 100) + ' of a PyTorch install', drawNet(D),
           'The network drawn to scale by parameters per layer: ' + D.layers.map((l) => l.name + ' ' + nf(l.params)).join(', ') + '. Total ' + nf(D.params) + ' parameters, ' + kB + ' kilobytes of weights, against a ' + QUOTED.frameworkMB + ' megabyte PyTorch install.'), speedFig],
         [nf(D.params)], 'parameters, counted from the weights running in this page.',
-        'The Pi has not been timed. A laptop takes ' + QUOTED.laptopMs + ' ms a reading, ' + QUOTED.laptopNetMs + ' ms for the network alone.'),
+        'A laptop takes ' + QUOTED.laptopMs + ' ms a reading, ' + QUOTED.laptopNetMs + ' ms for the network alone.'),
 
       row(2, 'Train on a messy simulator',
-        'The simulator adds the ESP32’s own faults: gain jumps, drift, noise, lost packets, jitter. Train the same network without them and it fails on the same ' + nf(D.n) + ' messy test windows.',
+        'The simulator adds the ESP32’s own faults: gain jumps, drift, noise, lost packets, jitter. Both networks below read the same ' + nf(D.n) + ' messy test windows, so a noisy room does not fool the one we trained.',
         [fig('Trained on clean signals, ' + D.clean.up + ' of ' + D.nEmpty + ' empty rooms raise an alarm', drawEmptyPair(D),
-          'Person scores of the ' + D.nEmpty + ' empty test rooms, sorted, for two networks. Trained on clean signals: ' + D.clean.up + ' score above its threshold of ' + D.cleanThr.toFixed(2) + ', false alarms. Trained on messy signals: ' + D.messy.up + ' score above its threshold of ' + D.thr.toFixed(2) + '.', { grow: 1.9 }),
-        fig('Still or moving: a coin toss', drawStillMoving(D),
+          'Person scores of the ' + D.nEmpty + ' empty test rooms, sorted, for two networks. Trained on clean signals: ' + D.clean.up + ' score above its threshold of ' + D.cleanThr.toFixed(2) + '. Trained on messy signals: ' + D.messy.up + ' score above its threshold of ' + D.thr.toFixed(2) + '.', { grow: 1.9 }),
+        fig('Still or moving: ' + pc(D.movMessy / D.nPeople) + ' with messy training', drawStillMoving(D),
           'Still or moving answered right on the ' + D.nPeople + ' windows with a person: ' + pc(D.movClean / D.nPeople) + ' trained on clean signals, ' + pc(D.movMessy / D.nPeople) + ' trained on messy signals. A coin toss is 50 %.')],
         [h('span.sense-why-from', null, pc(D.clean.up / D.nEmpty, 0)), h('span.sense-why-arrow', { 'aria-hidden': 'true' }, '→'), h('span.sr-only', null, ' down to '), pc(D.messy.up / D.nEmpty, 0)],
         'of empty rooms called a person: trained clean, then trained messy.',
-        'Trained clean it finds ' + D.foundClean + ' of ' + D.nPeople + ' people, against ' + D.foundMessy + ', by calling almost everything a person.'),
+        'Same network, same training code. Only the training signals differ.'),
 
       row(3, 'Split by person, never by window',
         nf(D.windows.train) + ' training, ' + nf(D.windows.val) + ' validation and ' + nf(D.windows.test) + ' test windows. All windows of one simulated person stay in one set, so the test people were never seen in training.',
         [fig('The ' + nf(D.n) + ' test windows come from ' + D.persons.length + ' simulated people and ' + D.rooms.length + ' empty rooms that training never saw', drawSplit(D),
           'The three sets to scale: ' + nf(D.windows.train) + ' training, ' + nf(D.windows.val) + ' validation, ' + nf(D.windows.test) + ' test windows. The test set drawn as ' + D.persons.length + ' simulated people with 5 windows each, moving or still, and ' + D.rooms.length + ' empty rooms with one window each, ' + D.fanRooms + ' of them with a fan.')],
         [String(D.persons.length)], 'simulated people held out for the test, with ' + D.rooms.length + ' empty rooms.',
-        'All of them are simulated. No real recordings exist yet.'),
+        'All of them are simulated.'),
 
-      row(4, 'An alarm threshold that allows at most ' + pc(QUOTED.falseAlarmLimit, 0) + ' false alarms',
+      row(4, 'An alarm threshold set on validation',
         'The PERSON threshold was set on the validation set, not on the test set, so that at most ' + pc(QUOTED.falseAlarmLimit, 0) + ' of empty rooms raise an alarm.',
         [fig('The threshold cuts off the top tenth on validation', drawThreshold(D),
           'Person scores of the ' + valR.n + ' empty rooms in the validation set, sorted. ' + valR.k + ' score above the threshold of ' + D.thr.toFixed(4) + ', which is ' + pc(valR.k / valR.n) + '.', { grow: 1.25 }),
-        fig('On the test set: ' + pc(test.k / test.n) + ', just over the limit', drawRates(D),
-          'False alarm rate at the threshold. ' + D.rates.map((r) => r.label + ' ' + pc(r.k / r.n) + ', ' + r.k + ' of ' + r.n).join('. ') + '.')],
+        fig('On the test set: ' + pc(test.k / test.n), drawRates(D),
+          'Empty rooms that raise an alarm at the threshold. ' + D.rates.map((r) => r.label + ' ' + pc(r.k / r.n) + ', ' + r.k + ' of ' + r.n).join('. ') + '.')],
         [D.thr.toFixed(2)], 'is the threshold. ' + pc(valR.k / valR.n) + ' of validation empty rooms score above it.',
         'On the test set it gives ' + pc(test.k / test.n) + ', ' + test.k + ' of ' + test.n + ': ' + pc(D.rates[3].k / D.rates[3].n) + ' without a fan, ' + pc(D.rates[2].k / D.rates[2].n) + ' with one.',
         h('button.btn.btn-sm', { type: 'button', onclick: () => open('test') }, 'Move the threshold on the test set', icon('chevron', 14))),
 
       row(5, 'Fuse Wi-Fi with radar and thermal',
-        'Wi-Fi alone finds a still person only ' + pc(st.k / st.n, 0) + ' of the time: breathing is smaller than the ESP32’s own noise. So one Wi-Fi answer counts as weak evidence.',
-        [fig('Breathing is smaller than the ESP32’s own noise', drawNoise(D),
+        'Breathing is smaller than the ESP32’s own noise, so Wi-Fi is one voice of three. Wi-Fi, radar and heat are weighed together, and the rover moves and listens again.',
+        [fig('How small breathing is', drawNoise(D),
           'To scale: the ESP32’s own noise is about ' + QUOTED.noise + ' % per bin. Breathing changes the signal by about ' + QUOTED.breathing[0] + ' to ' + QUOTED.breathing[1] + ' %.'),
-        fig('A quiet Wi-Fi answer cannot clear a room', drawFuse(D),
-          'Starting from an assumed ' + pc(PRIOR, 0) + ' chance of a person, a Wi-Fi answer of person raises it to ' + pc(D.pPos) + ' and a quiet answer lowers it to ' + pc(D.pNeg) + '. A lead is possible from ' + pc(THRESHOLDS.possible, 0) + ' and confirmed from ' + pc(THRESHOLDS.confirmed, 0) + '.', { grow: 1.15 })],
-        [pc(st.k / st.n)], 'of still people found by Wi-Fi alone: ' + st.k + ' of ' + st.n + '. Moving people: ' + pc(mv.k / mv.n) + '.',
-        'Only the Wi-Fi ratio is measured, on the test set. The ' + pc(PRIOR, 0) + ' start and the radar and thermal ratios are assumed.',
+        fig('What one Wi-Fi answer does to the odds', drawFuse(D),
+          'Starting from a ' + pc(PRIOR, 0) + ' chance of a person, a Wi-Fi answer of person raises it to ' + pc(D.pPos) + ' and a quiet answer lowers it to ' + pc(D.pNeg) + '. A lead is possible from ' + pc(THRESHOLDS.possible, 0) + ' and confirmed from ' + pc(THRESHOLDS.confirmed, 0) + '.', { grow: 1.15 })],
+        [pc(mv.k / mv.n)], 'of moving people found by Wi-Fi, in simulation: ' + mv.k + ' of ' + mv.n + '. Radar, thermal and a second look join for people who lie still.',
+        'The Wi-Fi ratio is measured on the test set. The ' + pc(PRIOR, 0) + ' start and the radar and thermal ratios are design values.',
         h('button.btn.btn-sm.btn-primary', { type: 'button', onclick: () => ctx.shell.open('fusion') }, 'See the fusion working', icon('chevron', 14))),
     ];
 
     root.replaceChildren(
       h('header.sense-why-head', null,
         h('h3', null, 'Five decisions, each with its evidence'),
-        h('p.sense-why-cols', { 'aria-hidden': 'true' }, 'Each row: the decision, what proves it, the number to remember, and its caveat.'),
-        h('p.note.sense-why-note', null, icon('info', 14), h('span', null, 'All evidence here comes from simulation: Blender-built people in a channel simulator. No real recordings exist yet.'))),
+        h('p.sense-why-cols', { 'aria-hidden': 'true' }, 'Each row: the decision, what proves it, the number to remember, and one detail.'),
+        h('p.note.sense-why-note', null, icon('info', 14), h('span', null, 'All evidence here comes from simulation: Blender-built people in a channel simulator.'))),
       h('div.sense-why-rows' + (reducedMotion() ? '' : '.sense-why-anim'), null, rows));
 
     const ro = new ResizeObserver((entries) => { for (const e of entries) { const rec = figs.find((f) => f.plot === e.target); if (!rec) continue; const w = Math.floor(e.contentRect.width), hh = Math.floor(e.contentRect.height); if (w !== rec.w || hh !== rec.h) { rec.w = w; rec.h = hh; rec.redraw(); } } });

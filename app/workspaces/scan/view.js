@@ -14,17 +14,17 @@ const V3 = (x, y, z) => new THREE.Vector3(x, z, -y);
 const hex = (c) => new THREE.Color(c);
 
 const POINT_VS = /* glsl */ `
-attribute float aI; attribute float aC; attribute float aT; attribute float aH; attribute float aS; attribute vec3 aRGB; attribute vec4 aN; attribute vec4 aL;
-uniform int uMode; uniform float uGrain, uGrainPx; uniform float uSize, uScale, uMinPx, uMaxPx, uTime, uFlash, uH0, uH1, uDur, uSect, uSlab, uSettle, uAgeK, uLit, uCutOn, uCutY, uOpen, uEdge, uCap, uBand;
+attribute float aI; attribute float aC; attribute float aT; attribute float aH; attribute float aS; attribute vec3 aRGB; attribute vec4 aN; attribute vec4 aL; attribute float aE;
+uniform float uNight, uFocus; uniform int uMode; uniform float uGrain, uGrainPx; uniform float uSize, uScale, uMinPx, uMaxPx, uTime, uFlash, uH0, uH1, uDur, uSect, uSlab, uSettle, uAgeK, uLit, uCutOn, uCutY, uOpen, uEdge, uCap, uBand;
 uniform sampler2D uRamp; uniform vec3 uCls[4]; uniform float uOn[4]; uniform vec4 uPlane; uniform vec3 uGlow; uniform vec3 uSun; uniform vec4 uCutBox; uniform vec4 uBounds; uniform vec4 uVoid[4]; uniform float uVoidI[4]; uniform vec3 uWarm;
-varying vec3 vCol; varying float vZ; varying float vR;
+varying vec3 vCol; varying float vZ; varying float vR; varying float vRim;
 vec3 lin(vec3 c) { return pow(c, vec3(2.2)); }
 void main() {
   vec3 P = position; vec3 nn = normalize(aN.xyz + 1e-4); int c = int(aC + 0.5);
   float gi = float(gl_InstanceID), gA = 0.0;
   if (uGrain > 1.5) { // close up, a point is drawn as a few grains spread over the patch of surface it stands for
     gA = fract(sin(dot(position, vec3(12.9898, 78.233, 37.719)) + gi * 7.13) * 43758.5453); float gB = fract(gA * 57.31 + gi * 0.618);
-    vec3 t1 = normalize(cross(nn, abs(nn.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0))), t2 = cross(nn, t1); float rr = min(aS * 0.002, 0.13) * 0.85 * sqrt(gB), an = gA * 6.2832;
+    vec3 t1 = normalize(cross(nn, abs(nn.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0))), t2 = cross(nn, t1); float rr = min(aS * 0.002, mix(0.13, 0.34, uNight)) * mix(0.85, 1.0, uNight) * sqrt(gB), an = gA * 6.2832;
     P += (t1 * cos(an) + t2 * sin(an)) * rr + nn * (fract(gA * 91.7) - 0.5) * (c == 3 ? 0.16 : c == 2 ? 0.03 : 0.008);
   }
   float rnd = aL.w, hide = aT > uTime ? 1.0 : 0.0;
@@ -73,17 +73,30 @@ void main() {
   col *= mix(vec3(1.0), light * (uMode == 5 ? 1.0 : 0.72), uLit);
   for (int k = 0; k < 4; k++) if (uVoidI[k] > 0.0) { vec3 d = uVoid[k].xyz - P; float r = uVoid[k].w, q = dot(d, d) / (r * r); col += (0.35 * col + 0.10) * uWarm * uVoidI[k] * (0.3 + 0.7 * max(dot(nn, normalize(d)), 0.0)) * 1.5 / (1.0 + 3.0 * q * q); }
   col = mix(col, uGlow * (uMode == 5 ? 1.9 : 0.95), clamp(fresh * 0.8 + glow * 0.85, 0.0, 1.0));
-  vCol = col;
-  float s = clamp(uSize * min(aS * 0.002, uCap) * uScale / -mv.z, uMinPx, uMaxPx) * (uGrain > 1.5 ? uGrainPx : 1.0) * (1.0 + 0.5 * glow) * shrink * (1.0 - 0.55 * min(1.0, fall));
+  if (uNight > 0.5) { // the Demo film: a night survey. Moonlight, a lit line on every edge, sparks where beams land, dark with distance.
+    vec3 vd = normalize(cameraPosition - P); float moon = max(dot(nn, uSun), 0.0) * mix(aL.x, aL.y, uOpen), ao2 = mix(aN.w, aL.z, uOpen); ao2 = 0.08 + 0.92 * ao2 * ao2;
+    float alb = c == 0 ? 0.035 + 0.15 * pow(aI, 1.7) : c == 3 ? 0.10 + 0.08 * rnd : c == 2 ? 0.10 + 0.34 * pow(aI, 1.2) : 0.13 + 0.42 * pow(aI, 1.2);
+    col = alb * (vec3(0.50, 0.68, 1.0) * 1.25 * moon + vec3(0.10, 0.15, 0.25) * ao2 * (0.55 + 0.45 * nn.y)) * (0.7 + 0.6 * fract(rnd * 7.3));
+    float rim = pow(1.0 - abs(dot(nn, vd)), 2.5) * ao2; col += rim * vec3(0.055, 0.085, 0.14) * (c == 1 ? 1.0 : c == 2 ? 0.6 : 0.0);
+    col += aE * aE * vec3(0.36, 0.54, 0.86) * (0.30 + 0.70 * ao2) * (c == 1 ? 1.0 : 0.42);
+    float far = -mv.z / uFocus; col *= mix(1.22, 0.20, smoothstep(0.50, 2.0, far)) * mix(0.12, 1.0, smoothstep(0.16, 0.62, far));
+    float lit = max(max(uVoidI[0], uVoidI[1]), max(uVoidI[2], uVoidI[3])), near = 0.0; vec3 warm = vec3(0.0);
+    for (int k = 0; k < 4; k++) if (uVoidI[k] > 0.0) { vec3 d = uVoid[k].xyz - P; float r = uVoid[k].w, q = dot(d, d) / (r * r), w = uVoidI[k] / (1.0 + 3.0 * q * q); near = max(near, w); warm += (0.5 * alb + 0.07) * vec3(1.0, 0.36, 0.055) * w * (0.22 + 0.78 * max(dot(nn, normalize(d)), 0.0)); }
+    col = col * (1.0 - 0.42 * min(lit, 1.0)) * (1.0 - 0.62 * min(near, 1.0)) + warm * 7.5;
+    col += uGlow * glow * (0.5 + 0.9 * rnd) * vec3(0.55, 0.8, 1.2);
+    col += uFlash * (vec3(0.85, 0.97, 1.12) * 5.0 * exp(-age * 16.0) + vec3(0.20, 0.50, 1.15) * 1.5 * exp(-age * 5.0) + vec3(0.05, 0.16, 0.48) * 0.6 * exp(-age * 1.5)) * (0.4 + 0.9 * rnd);
+  }
+  vRim = c == 1 ? 1.0 : c == 2 ? 0.5 : c == 3 ? 0.1 : 0.0; vCol = col;
+  float s = clamp(uSize * min(aS * 0.002, uCap) * uScale / -mv.z, uMinPx, uMaxPx) * (uGrain > 1.5 ? uGrainPx : 1.0) * (1.0 + 0.5 * glow) * mix(1.0, (uGrain > 1.5 ? 0.58 : 0.74) * mix(1.1, 0.8, smoothstep(0.5, 2.2, -mv.z / uFocus)), uNight) * shrink * (1.0 - 0.55 * min(1.0, fall));
   gl_PointSize = s; vZ = -mv.z; vR = 0.5 * s * vZ / uScale;
   if (hide > 0.5) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); gl_PointSize = 0.0; }
 }`;
 // Each point is drawn as a small dome rather than a flat disc, so neighbouring points meet in a smooth surface.
 const POINT_FS = /* glsl */ `
-uniform vec2 uPZ; varying vec3 vCol; varying float vZ; varying float vR;
-void main() { vec2 p = gl_PointCoord * 2.0 - 1.0; float r2 = dot(p, p); if (r2 > 1.0) discard; float z = vZ + vR * r2; gl_FragDepth = clamp(0.5 * (uPZ.y - uPZ.x * z) / z + 0.5, 0.0, 1.0); gl_FragColor = vec4(vCol * (1.0 - 0.10 * r2), 1.0); }`;
+uniform vec2 uPZ; varying vec3 vCol; varying float vZ; varying float vR; varying float vRim;
+void main() { vec2 p = gl_PointCoord * 2.0 - 1.0; float r2 = dot(p, p); if (r2 > 1.0) discard; float z = vZ + vR * r2; gl_FragDepth = clamp(0.5 * (uPZ.y - uPZ.x * z) / z + 0.5, 0.0, 1.0); gl_FragColor = vec4(vCol * (1.0 - 0.10 * r2), vRim); }`;
 const EDL_FS = /* glsl */ `
-uniform sampler2D tColor; uniform sampler2D tDepth; uniform vec2 uPx; uniform float uNear, uFar, uStrength, uRadius, uFog, uFilm, uFade, uTimeS, uFloor, uGridA, uGain; uniform vec3 uBg0, uBg1, uHaze, uZen, uEye; uniform mat4 uInv; uniform vec4 uBounds;
+uniform sampler2D tColor; uniform sampler2D tDepth; uniform sampler2D tBloomA, tBloomB; uniform float uNight; uniform vec2 uPx; uniform float uNear, uFar, uStrength, uRadius, uFog, uFilm, uFade, uTimeS, uFloor, uGridA, uGain; uniform vec3 uBg0, uBg1, uHaze, uZen, uEye; uniform mat4 uInv; uniform vec4 uBounds;
 varying vec2 vUv;
 float lz(vec2 uv) { float d = texture2D(tDepth, uv).x; if (d >= 0.999999) return -1.0; return log2((2.0 * uNear * uFar) / (uFar + uNear - (2.0 * d - 1.0) * (uFar - uNear))); }
 vec3 aces(vec3 x) { return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
@@ -93,7 +106,7 @@ void main() {
   float d = texture2D(tDepth, vUv).x;
   vec4 far4 = uInv * vec4(vUv * 2.0 - 1.0, 1.0, 1.0); vec3 dir = normalize(far4.xyz / far4.w - uEye);
   vec3 bg = sky(dir), col; float depthOut = 1.0;
-  if (dir.y < -0.001) { // a survey grid on the datum, fading into the haze, so the site sits in a place
+  if (uNight < 0.5 && dir.y < -0.001) { // a survey grid on the datum, fading into the haze, so the site sits in a place
     float t = (uFloor - uEye.y) / dir.y; vec3 p = uEye + dir * t;
     if (t > 0.0) { vec2 g = p.xz / 10.0, w = fwidth(g) * 1.2 + 1e-5, a = abs(fract(g - 0.5) - 0.5) / w; float line = 1.0 - min(min(a.x, a.y), 1.0); vec2 g5 = p.xz / 50.0, w5 = fwidth(g5) * 1.2 + 1e-5, a5 = abs(fract(g5 - 0.5) - 0.5) / w5; line = line * 0.4 + (1.0 - min(min(a5.x, a5.y), 1.0)) * 0.6;
       float f = exp(-t * uFog * 2.2); bg = mix(bg, mix(uBg0, vec3(0.16, 0.20, 0.26), line * uGridA), f * 0.85); }
@@ -101,20 +114,22 @@ void main() {
   if (d >= 0.999999) { // close pin-holes between neighbouring points
     float m = 1.0, c = 0.0; vec3 acc = vec3(0.0);
     for (int i = 0; i < 8; i++) { float a = float(i) * 0.7853982; vec2 uv = vUv + vec2(cos(a), sin(a)) * uPx * uRadius * 1.7; float n = texture2D(tDepth, uv).x; if (n < 0.999999) { c += 1.0; m = min(m, n); acc += texture2D(tColor, uv).rgb; } }
-    if (c > 5.5) { d = m; float z = (2.0 * uNear * uFar) / (uFar + uNear - (2.0 * d - 1.0) * (uFar - uNear)); col = mix(acc / c * 0.8, sky(vec3(dir.x, max(dir.y, -0.02), dir.z)), 1.0 - exp(-z * uFog)); depthOut = d; } else col = bg;
+    if (c > 5.5 + 1.2 * uNight) { d = m; float z = (2.0 * uNear * uFar) / (uFar + uNear - (2.0 * d - 1.0) * (uFar - uNear)); col = mix(acc / c * 0.8, sky(vec3(dir.x, max(dir.y, -0.02), dir.z)), 1.0 - exp(-z * uFog)); depthOut = d; } else col = bg + uNight * texture2D(tColor, vUv).rgb;
   }
   else {
-    float l = lz(vUv), s = 0.0, ws = 1.0; vec3 acc = texture2D(tColor, vUv).rgb;
+    float l = lz(vUv), s = 0.0, ws = 1.0, open = 0.0; vec3 acc = texture2D(tColor, vUv).rgb;
     for (int i = 0; i < 8; i++) {
       float a = float(i) * 0.7853982; vec2 o = vec2(cos(a), sin(a)) * uPx;
-      float n = lz(vUv + o * uRadius); if (n > 0.0) s += max(0.0, l - n);
+      float n = lz(vUv + o * uRadius); if (n > 0.0) s += max(0.0, l - n); open += n < 0.0 || n - l > 0.10 ? 0.125 : 0.0;
       float n2 = lz(vUv + o * uRadius * 3.2); if (n2 > 0.0) s += 0.35 * max(0.0, l - n2);
       float w = n > 0.0 ? 0.8 * exp(-abs(n - l) * 90.0) : 0.0; acc += texture2D(tColor, vUv + o * uRadius).rgb * w; ws += w;
     }
-    col = acc / ws;
-    col *= mix(0.16, 0.46, uFilm) + mix(0.84, 0.54, uFilm) * exp(-s * 13.0 * uStrength);
+    col = mix(acc / ws, texture2D(tColor, vUv).rgb, uNight);
+    float edl = exp(-s * 13.0 * uStrength); col *= mix(mix(0.16, 0.46, uFilm) + mix(0.84, 0.54, uFilm) * edl, 0.12 + 0.88 * edl, uNight);
+    col += uNight * texture2D(tColor, vUv).a * smoothstep(0.25, 0.75, open) * edl * vec3(0.075, 0.115, 0.19); // rim: an outline where a surface ends against the dark
     float z = exp2(l); col = mix(col, sky(vec3(dir.x, max(dir.y, -0.02), dir.z)), 1.0 - exp(-z * uFog)); depthOut = d;
   }
+  if (uNight > 0.5) col += texture2D(tBloomA, vUv).rgb * 0.34 + texture2D(tBloomB, vUv).rgb * 0.30;
   col = mix(col, aces(col * uGain), uFilm);
   vec2 q = vUv - 0.5; col *= 1.0 - uFilm * 0.62 * smoothstep(0.25, 0.95, length(q * vec2(1.25, 1.0)));
   col = pow(max(col, 0.0), vec3(1.0 / 2.2));
@@ -168,13 +183,13 @@ export function createView(host, { colors, reduced = false } = {}) {
     uMode: { value: 0 }, uSize: { value: 1.5 }, uScale: { value: 1000 }, uMinPx: { value: 1.6 }, uMaxPx: { value: 26 }, uTime: { value: 1e9 }, uFlash: { value: 0 }, uH0: { value: 0 }, uH1: { value: 7.5 }, uDur: { value: 1 },
     uSect: { value: 0 }, uSlab: { value: 0 }, uPlane: { value: new THREE.Vector4(0, 1, 0, -3) }, uGlow: { value: hex(C.glow) }, uRamp: { value: rampTexture(HEIGHT_RAMP, TIME_RAMP) },
     uCls: { value: [hex('#6a7684'), hex('#8fb8e8'), hex(C.warn), hex(C.ok)] }, uOn: { value: [1, 1, 1, 1] },
-    uSettle: { value: 0 }, uAgeK: { value: 1 }, uLit: { value: 1 }, uCutOn: { value: 0 }, uCutY: { value: 99 }, uOpen: { value: 0 }, uEdge: { value: 0 }, uCap: { value: 0.125 }, uBand: { value: 1.9 }, uGrain: { value: 1 }, uGrainPx: { value: 0.6 }, uPZ: { value: new THREE.Vector2() },
+    uSettle: { value: 0 }, uAgeK: { value: 1 }, uLit: { value: 1 }, uCutOn: { value: 0 }, uCutY: { value: 99 }, uOpen: { value: 0 }, uEdge: { value: 0 }, uCap: { value: 0.125 }, uBand: { value: 1.9 }, uNight: { value: 0 }, uFocus: { value: 80 }, uGrain: { value: 1 }, uGrainPx: { value: 0.6 }, uPZ: { value: new THREE.Vector2() },
     uSun: { value: new THREE.Vector3(SUN[0], SUN[2], -SUN[1]) }, uCutBox: { value: new THREE.Vector4() }, uBounds: { value: new THREE.Vector4() }, uVoid: { value: [0, 1, 2, 3].map(() => new THREE.Vector4(0, 0, 0, 1)) }, uVoidI: { value: [0, 0, 0, 0] }, uWarm: { value: hex(C.warn) },
   };
   const pMat = new THREE.ShaderMaterial({ vertexShader: POINT_VS, fragmentShader: POINT_FS, uniforms: U });
   let points = null, data = null, posT = null, count = 0;
   const E = { tColor: { value: null }, tDepth: { value: null }, uPx: { value: new THREE.Vector2() }, uNear: { value: camera.near }, uFar: { value: camera.far }, uStrength: { value: 1 }, uRadius: { value: 1.6 }, uFog: { value: 0.0016 }, uBg0: { value: hex(C.bg0) }, uBg1: { value: hex(C.bg1) },
-    uFilm: { value: 0 }, uFade: { value: 1 }, uTimeS: { value: 0 }, uFloor: { value: 0 }, uGridA: { value: 0.35 }, uGain: { value: 0.92 }, uHaze: { value: new THREE.Color(0.038, 0.047, 0.060) }, uZen: { value: new THREE.Color(0.006, 0.0075, 0.010) }, uEye: { value: new THREE.Vector3() }, uInv: { value: new THREE.Matrix4() }, uBounds: U.uBounds };
+    uFilm: { value: 0 }, uFade: { value: 1 }, uTimeS: { value: 0 }, uFloor: { value: 0 }, uGridA: { value: 0.35 }, uGain: { value: 0.92 }, uHaze: { value: new THREE.Color(0.038, 0.047, 0.060) }, uZen: { value: new THREE.Color(0.006, 0.0075, 0.010) }, uEye: { value: new THREE.Vector3() }, uInv: { value: new THREE.Matrix4() }, uBounds: U.uBounds, uNight: U.uNight, tBloomA: { value: null }, tBloomB: { value: null } };
   const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({ vertexShader: QUAD_VS, fragmentShader: EDL_FS, uniforms: E, toneMapped: false, depthFunc: THREE.AlwaysDepth, depthWrite: true, depthTest: true }));
   quad.frustumCulled = false; qScene.add(quad);
 
@@ -234,6 +249,7 @@ export function createView(host, { colors, reduced = false } = {}) {
     g.setAttribute('aH', new THREE.BufferAttribute(d.hag, 1));
     g.setAttribute('aS', new THREE.BufferAttribute(d.sp, 1, false));
     g.setAttribute('aRGB', d.rgb ? new THREE.BufferAttribute(d.rgb, 3, true) : new THREE.BufferAttribute(new Uint8Array(n * 3), 3, true));
+    g.setAttribute('aE', new THREE.BufferAttribute(d.edge || new Uint8Array(n), 1, true));
     if (d.lightN) { g.setAttribute('aN', new THREE.BufferAttribute(d.lightN, 4, true)); g.setAttribute('aL', new THREE.BufferAttribute(d.lightL, 4, true)); }
     points = new THREE.Points(g, pMat); points.frustumCulled = false; pScene.add(points);
     count = n; U.uDur.value = d.duration || 1; U.uTime.value = 1e9;
@@ -262,8 +278,8 @@ export function createView(host, { colors, reduced = false } = {}) {
   }
 
   // ---------- capture replay: flight path, scanner, fan of beams
-  let flight = null;
-  const FAN = 420, TRAIL = 90, p0 = new THREE.Vector3(), pw = [0, 0, 0];
+  let flight = null, sheet = null;
+  const SHEET = 420, FAN = 420, TRAIL = 90, p0 = new THREE.Vector3(), pw = [0, 0, 0];
   const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'), g = x.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.25, 'rgba(255,255,255,0.42)'); g.addColorStop(0.6, 'rgba(255,255,255,0.09)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })();
   oScene.add(new THREE.HemisphereLight(0xbfd2ea, 0x20242a, 1.5)); { const L = new THREE.DirectionalLight(0xffe6c4, 2.6); L.position.copy(U.uSun.value); oScene.add(L); }
   function makeDrone() {
@@ -280,6 +296,7 @@ export function createView(host, { colors, reduced = false } = {}) {
   }
   function buildFlight() {
     clear(groups.flight); dropTags('flight'); flight = null;
+    if (sheet) { pScene.remove(sheet); sheet.geometry.dispose(); sheet.material.dispose(); sheet = null; }
     if (!data.traj) return;
     const trail = new THREE.Line(new THREE.BufferGeometry(), new THREE.ShaderMaterial({ vertexShader: FAN_VS, fragmentShader: FAN_FS, uniforms: { uColor: { value: hex(C.glow) } }, transparent: true, depthWrite: false })); trail.frustumCulled = false;
     trail.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(TRAIL * 3), 3)); trail.geometry.setAttribute('aA', new THREE.BufferAttribute(new Float32Array(TRAIL), 1));
@@ -289,6 +306,8 @@ export function createView(host, { colors, reduced = false } = {}) {
     fan.frustumCulled = false;
     const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: C.glow, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending })); halo.scale.setScalar(1.6); drone.add(halo); halo.position.y = -0.2;
     groups.flight.add(trail, drone, fan);
+    const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(SHEET * 9), 3)); sg.setAttribute('aA', new THREE.BufferAttribute(new Float32Array(SHEET * 3), 1));
+    sheet = new THREE.Mesh(sg, new THREE.ShaderMaterial({ vertexShader: FAN_VS, fragmentShader: 'varying float vA; void main() { float a = vA; gl_FragColor = vec4(mix(vec3(0.16, 0.42, 1.05) * a, vec3(0.95, 1.08, 1.25) * a, smoothstep(0.02, 0.24, a)), 1.0); }', transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneFactor })); sheet.frustumCulled = false; sheet.visible = false; pScene.add(sheet);
     flight = { trail, drone, fan };
     setReplay(null);
   }
@@ -300,10 +319,10 @@ export function createView(host, { colors, reduced = false } = {}) {
     if (!data) return;
     const live = t != null && data.time;
     if (!live) { count = data.n; U.uTime.value = 1e9; U.uFlash.value = 0; U.uSettle.value = 0; }
-    else { let lo = 0, hi = data.n; const tm = data.time; while (lo < hi) { const m = (lo + hi) >> 1; if (tm[m] <= t) lo = m + 1; else hi = m; } count = lo; U.uTime.value = t; U.uFlash.value = 1; U.uSettle.value = reduced ? 0 : 1; }
+    else { let lo = 0, hi = data.n; const tm = data.time; while (lo < hi) { const m = (lo + hi) >> 1; if (tm[m] <= t) lo = m + 1; else hi = m; } count = lo; U.uTime.value = t; U.uFlash.value = 1; U.uSettle.value = reduced ? 0 : story ? 0.4 : 1; }
     if (points) points.geometry.setDrawRange(0, count);
     if (!flight) return;
-    const f = flight; f.drone.visible = f.fan.visible = f.trail.visible = !!live;
+    const f = flight; f.drone.visible = f.trail.visible = !!live; f.fan.visible = !!live && !story; if (sheet) sheet.visible = !!live && !!story;
     const tg = tags.get('drone'); if (tg) tg.hidden = !live;
     if (!live) return;
     poseAt(data.traj, t, pose); const p = f.drone.position.set(pose[0], pose[2], -pose[1]);
@@ -311,6 +330,14 @@ export function createView(host, { colors, reduced = false } = {}) {
     const tp = f.trail.geometry.attributes.position, ta = f.trail.geometry.attributes.aA;
     for (let i = 0; i < TRAIL; i++) { poseAt(data.traj, Math.max(0, t - i * 0.16 * Math.max(1, 1 / Math.max(0.05, U.uAgeK.value) / 12)), pw); tp.setXYZ(i, pw[0], pw[2], -pw[1]); ta.setX(i, 0.7 * Math.pow(1 - i / (TRAIL - 1), 2)); }
     tp.needsUpdate = ta.needsUpdate = true;
+    if (sheet && story) { // the film's beam: a sheet of light from the scanner to the last lines it drew
+      const sp = sheet.geometry.attributes.position, sa = sheet.geometry.attributes.aA; let k = 0;
+      for (let i = count - 1; i > 0 && k < SHEET; i--) {
+        const j = i - 1, dx = posT[i * 3] - posT[j * 3], dy = posT[i * 3 + 1] - posT[j * 3 + 1], dz = posT[i * 3 + 2] - posT[j * 3 + 2]; if (dx * dx + dy * dy + dz * dz > 9) continue;
+        const al = 1 - k / SHEET, v = k * 3; sp.setXYZ(v, p.x, p.y - 0.25, p.z); sp.setXYZ(v + 1, posT[i * 3], posT[i * 3 + 1], posT[i * 3 + 2]); sp.setXYZ(v + 2, posT[j * 3], posT[j * 3 + 1], posT[j * 3 + 2]); const g2 = al * (0.35 + 0.65 * ((i * 2654435761 >>> 0) / 4294967296)); sa.setX(v, 0.26 * g2); sa.setX(v + 1, 0.011 * g2); sa.setX(v + 2, 0.011 * g2); k++;
+      }
+      sheet.geometry.setDrawRange(0, k * 3); sp.needsUpdate = sa.needsUpdate = true;
+    }
     const pa = f.fan.geometry.attributes.position, aa = f.fan.geometry.attributes.aA; let m = 0;
     for (let i = count - 1; i >= 0 && m < FAN; i--) { const age = t - data.time[i]; if (age > 0.35) break; pa.setXYZ(m * 2, p.x, p.y, p.z); pa.setXYZ(m * 2 + 1, posT[i * 3], posT[i * 3 + 1], posT[i * 3 + 2]); const al = 0.075 * (1 - age / 0.35); aa.setX(m * 2, al * 0.55); aa.setX(m * 2 + 1, al * 0.75); m++; }
     f.fan.geometry.setDrawRange(0, m * 2); pa.needsUpdate = true; aa.needsUpdate = true;
@@ -506,18 +533,25 @@ export function createView(host, { colors, reduced = false } = {}) {
     camera.aspect = w / h; camera.updateProjectionMatrix();
     const dw = renderer.domElement.width, dh = renderer.domElement.height;
     if (rt) { rt.depthTexture.dispose(); rt.dispose(); }
-    rt = new THREE.WebGLRenderTarget(dw, dh, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, type: THREE.HalfFloatType, depthBuffer: true, depthTexture: new THREE.DepthTexture(dw, dh, THREE.UnsignedIntType) });
+    rt = new THREE.WebGLRenderTarget(dw, dh, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, type: THREE.HalfFloatType, depthBuffer: true, depthTexture: new THREE.DepthTexture(dw, dh, THREE.UnsignedIntType) });
+    for (const b of [bA, bA2]) b.setSize(dw >> 2, dh >> 2); for (const b of [bB, bB2]) b.setSize(dw >> 4, dh >> 4);
     E.tColor.value = rt.texture; E.tDepth.value = rt.depthTexture; E.uPx.value.set(1 / dw, 1 / dh); E.uRadius.value = 1.1 * renderer.getPixelRatio() + 0.3;
     U.uScale.value = moteU.uScale.value = dh / (2 * Math.tan((camera.fov * Math.PI) / 360));
     U.uMinPx.value = 1.5 * pr; U.uMaxPx.value = 18 * pr;
   }
   const ro = new ResizeObserver(() => { resize(); if (!running) renderOnce(); }); ro.observe(host);
+  // light that spills from the brightest points: two blurred, smaller copies of the picture
+  const BU = { t: { value: null }, uD: { value: new THREE.Vector2() }, uO: { value: new THREE.Vector2() }, uThr: { value: 0 } }, bScene = new THREE.Scene(), HF = () => new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, depthBuffer: false }), bA = HF(), bA2 = HF(), bB = HF(), bB2 = HF();
+  { const m = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({ vertexShader: QUAD_VS, fragmentShader: 'uniform sampler2D t; uniform vec2 uD, uO; uniform float uThr; varying vec2 vUv; vec3 s1(vec2 o) { return min(texture2D(t, o).rgb, vec3(5.0)); } vec3 g(vec2 o) { vec2 p = vUv + o, q = vec2(uO.x, -uO.y); vec3 c = 0.25 * (s1(p + uO) + s1(p - uO) + s1(p + q) + s1(p - q)); return uThr > 0.0 ? c * smoothstep(uThr, uThr * 3.0, max(c.r, max(c.g, c.b))) : c; } void main() { vec3 c = g(vec2(0.0)) * 0.2; c += (g(uD) + g(-uD)) * 0.17; c += (g(uD * 2.0) + g(-uD * 2.0)) * 0.12; c += (g(uD * 3.0) + g(-uD * 3.0)) * 0.07; c += (g(uD * 4.0) + g(-uD * 4.0)) * 0.04; gl_FragColor = vec4(c, 1.0); }', uniforms: BU, depthTest: false, depthWrite: false, toneMapped: false })); m.frustumCulled = false; bScene.add(m); }
+  function blur(src, dst, dx, dy, thr, ox = 0, oy = 0) { BU.t.value = src; BU.uO.value.set(ox, oy); BU.uD.value.set(dx, dy); BU.uThr.value = thr; renderer.setRenderTarget(dst); renderer.render(bScene, qCam); }
+  function bloom() { blur(rt.texture, bA2, 1.1 / bA.width, 0, 0.30, 1 / rt.width, 1 / rt.height); blur(bA2.texture, bA, 0, 1.1 / bA.height, 0); blur(bA.texture, bB2, 1.0 / bB.width, 0, 0, 1 / bA.width, 1 / bA.height); blur(bB2.texture, bB, 0, 1.0 / bB.height, 0, 0.25 / bB.width, 0.25 / bB.height); E.tBloomA.value = bA.texture; E.tBloomB.value = bB.texture; }
   function renderOnce() {
     if (!rt) return;
     const near = story ? Math.min(0.4, Math.max(0.06, camera.position.distanceTo(controls.target) * 0.012)) : Math.min(0.4, controls.minDistance * 0.2);
     if (Math.abs(near - camera.near) > 0.004) { camera.near = near; camera.updateProjectionMatrix(); }
     camera.updateMatrixWorld(); E.uNear.value = camera.near; E.uFar.value = camera.far; E.uEye.value.copy(camera.position); E.uInv.value.multiplyMatrices(camera.matrixWorld, camera.projectionMatrixInverse); U.uPZ.value.set(camera.projectionMatrix.elements[10], camera.projectionMatrix.elements[14]);
     renderer.setRenderTarget(rt); renderer.setClearColor(0x000000, 1); renderer.clear(); renderer.render(pScene, camera);
+    if (U.uNight.value > 0.5) bloom();
     renderer.setRenderTarget(null); renderer.clear(); renderer.render(qScene, qCam); renderer.render(oScene, camera);
     placeTags();
   }
@@ -530,11 +564,11 @@ export function createView(host, { colors, reduced = false } = {}) {
     if (!idle && !reduced && now - lastInput > 14000 && !fly && tool === 'orbit' && !section.dragging) idle = true;
     controls.autoRotate = idle && !reduced && !fly && autoOrbit;
     if (story && !story.paused) { story.camera(camera, controls.target); camera.lookAt(controls.target); } else controls.update(dt);
-    clockS += dt; E.uTimeS.value = clockS; setGrains(); U.uMaxPx.value = (story ? 8 : E.uFilm.value > 0.5 ? 10 : 9) * pr; U_T.value = moteU.uT.value = clockS;
+    clockS += dt; E.uTimeS.value = clockS; setGrains(); U.uMaxPx.value = (story ? 7 : E.uFilm.value > 0.5 ? 10 : 9) * pr; U.uMinPx.value = (story ? 1.15 : 1.5) * pr; U.uFocus.value = Math.max(4, camera.position.distanceTo(controls.target)); U_T.value = moteU.uT.value = clockS;
     emit('frame', dt);
     if (section.on) updateSection();
     if (tool === 'measure' && hoverXY) { const i = pick(hoverXY[0], hoverXY[1]); hoverXY = null; measure.hover = i >= 0 ? P3(i) : null; drawMeasure(); }
-    if (replayT != null && flight && !story) { const p = flight.drone.position; flight.drone.scale.setScalar(Math.max(1.4, camera.position.distanceTo(p) * 0.012)); }
+    if (replayT != null && flight) { const p = flight.drone.position; flight.drone.scale.setScalar(Math.max(1.4, camera.position.distanceTo(p) * 0.012)); }
     renderOnce();
     // scale bar: metres per pixel where the camera is looking
     const dist = camera.position.distanceTo(controls.target), mpp = (2 * dist * Math.tan((camera.fov * Math.PI) / 360)) / Math.max(1, host.clientHeight);
@@ -548,7 +582,7 @@ export function createView(host, { colors, reduced = false } = {}) {
     setMode(m) { U.uMode.value = ['height', 'intensity', 'class', 'time', 'rgb', 'natural'].indexOf(m); const nat = m === 'natural' || story; E.uFilm.value = nat ? 1 : 0; },
     setLit(v) { U.uLit.value = v; }, get lit() { return U.uLit.value; },
     U, E, get camera() { return camera; }, get controls() { return controls; }, gz, V3, tag, dropTags, get voidMeshes() { return voidMeshes; }, get grains() { return points ? points.geometry.instanceCount : 0; }, get frameCount() { return count; },
-    setStory(s) { story = s; motes.visible = !!s; controls.enabled = true; fly = null; if (!s) { E.uFade.value = 1; U.uCutOn.value = 0; U.uOpen.value = 0; U.uVoidI.value.fill(0); U.uAgeK.value = 1 / 4; voidMeshes.forEach((m) => { m.solid.material.uniforms.uFill.value = m.ghost.material.uniforms.uFill.value = 1e6; m.halo.material.opacity = 0; }); for (const t of tags.values()) t.shown = undefined; } E.uGridA.value = s ? 0.22 : 0.35; },
+    setStory(s) { story = s; U.uNight.value = s ? 1 : 0; if (s) { E.uHaze.value.setRGB(0.0022, 0.0034, 0.0055); E.uZen.value.setRGB(0.0007, 0.0010, 0.0018); } else { E.uHaze.value.setRGB(0.038, 0.047, 0.060); E.uZen.value.setRGB(0.006, 0.0075, 0.010); } motes.visible = false; controls.enabled = true; fly = null; if (!s) { E.uFade.value = 1; U.uCutOn.value = 0; U.uOpen.value = 0; U.uVoidI.value.fill(0); U.uAgeK.value = 1 / 4; voidMeshes.forEach((m) => { m.solid.material.uniforms.uFill.value = m.ghost.material.uniforms.uFill.value = 1e6; m.halo.material.opacity = 0; }); for (const t of tags.values()) t.shown = undefined; } E.uGridA.value = s ? 0 : 0.35; },
     addPreview, setPreview,
     moteCentre(p) { moteU.uC.value.copy(p); },
     setClassVisible(i, on) { U.uOn.value[i] = on ? 1 : 0; },

@@ -227,7 +227,7 @@ export default {
       g.fillStyle = T.bg0; g.beginPath(); g.rect(rx - 6, ry - 6, 12, 12); g.fill(); g.stroke(); g.lineWidth = 1.25; g.beginPath(); g.arc(rx, ry, 2.5, -2.3, -0.8); g.stroke(); g.beginPath(); g.arc(rx, ry + 2, 1.2, 0, TAU); g.fillStyle = T.accent; g.fill();
       // labels, leader-lined, placed away from the cloud
       const side = (px) => (px > mx + mw * 0.55 ? -1 : 1), up = (py) => (py > my + mh * 0.5 ? -1 : 1);
-      L.callout(g, 'hot spot, truth (simulated): drag', hx + HOT.sig * sc * 0.72 * side(hx), hy - HOT.sig * sc * 0.72, hx + (hx + 220 < w ? 34 : 34 * side(hx)), hy - HOT.sig * sc - 14, { color: 'danger', dot: false });
+      L.callout(g, 'hot spot, truth (simulated): drag', hx + HOT.sig * sc * 0.72 * side(hx), hy - HOT.sig * sc * 0.72, hx + (hx + 190 < w ? 34 : 34 * side(hx)), hy - HOT.sig * sc - 14, { color: 'danger', dot: false });
       if (A.hotSeen && P.view !== 'truth') L.callout(g, 'hottest point of the rebuilt map', X(A.hotEst[0]), Y(A.hotEst[1]) + 7, X(A.hotEst[0]) + 22 * side(hx), Y(A.hotEst[1]) + 30, { color: 'accent2', dot: false });
       L.callout(g, 'reader: drag', rx + 7 * side(rx), ry + 6, rx + 26 * side(rx), ry + 22, { color: 'accent2', dot: false });
       L.callout(g, 'aim point: drag', ax + 5 * side(ax), ay + 5 * -up(ay), ax + 30 * side(ax), ay - 26 * up(ay), { color: 'accent2', dot: false });
@@ -312,7 +312,7 @@ export default {
     fConv.draw = (g, w, hh) => {
       if (!A) return; const B = L.pad(w, hh, { l: 46, t: 14, b: 34, r: 16 }), ymax = Math.max(flat * 1.25, Number.isFinite(A.rms) ? A.rms * 1.15 : 0, 2);
       const Pl = L.plot(g, B, { xd: [7, 450], yd: [0, ymax], xlog: true, xticks: MCN, xlabel: 'seeds dropped', ylabel: 'RMS error of the rebuilt map, °C', yfmt: (v) => L.fix(v, v < 10 && ymax < 6 ? 1 : 0) });
-      L.rule(g, Pl, { y: flat, label: 'no seeds: one flat guess, ' + L.fix(flat, 1) + ' °C', color: 'text3' });
+      L.rule(g, Pl, { y: flat, color: 'text2' });
       L.rule(g, Pl, { y: ASSUME.noise, label: 'noise of one sensor, ' + ASSUME.noise + ' °C (assumed)', color: 'ok' });
       if (mc) { const xs = [], lo = [], md = [], hi = []; MCN.forEach((n, i) => { if (mc.rms[i].length) { xs.push(n); lo.push(qtl(mc.rms[i], 0.1)); md.push(qtl(mc.rms[i], 0.5)); hi.push(qtl(mc.rms[i], 0.9)); } });
         if (xs.length > 1) { g.fillStyle = L.rgba('accent', 0.13); g.beginPath(); xs.forEach((x, i) => (i ? g.lineTo(Pl.X(x), Pl.Y(hi[i])) : g.moveTo(Pl.X(x), Pl.Y(hi[i])))); for (let i = xs.length - 1; i >= 0; i--) g.lineTo(Pl.X(xs[i]), Pl.Y(lo[i])); g.closePath(); g.fill(); }
@@ -326,14 +326,14 @@ export default {
       if (!mc || mc.rms[0].length < 2) { fConv.setTitle('Repeating the drop to see how the error falls with the number of seeds…'); return; }
       const a = qtl(mc.rms[1], 0.5), b = qtl(mc.rms[5].length ? mc.rms[5] : mc.rms[4], 0.5), nb = mc.rms[5].length ? 320 : 160, tries = mc.rms[4].length || 1;
       fConv.setTitle(b < a * 0.9 ? 'Twenty seeds leave the map ' + L.fix(a, 1) + ' °C wrong; ' + nb + ' bring it to ' + L.fix(b, 1) + ' °C' : 'More seeds do not help here: the error stays near ' + L.fix(b, 1) + ' °C because too few answer');
-      fConv.setNote('Each dot is one whole drop with new gusts, in today’s wind and with the reader where it is (' + MCT + ' drops per size; band: middle 80 %). At 160 seeds the hot spot is placed within 8 m in ' + mc.hits[4] + ' of ' + tries + ' drops.');
+      fConv.setNote('Each dot is one whole drop with new gusts, in today’s wind and with the reader where it is (' + MCT + ' drops per size; band: middle 80 %; dashed: no seeds, one flat guess). At 160 seeds the hot spot is placed within 8 m in ' + mc.hits[4] + ' of ' + tries + ' drops.');
     }
 
     // ---- readouts ----
     const sWork = L.stat('seeds answer the reader'), sArea = L.stat('of open ground sensed', { unit: '%' }), sRms = L.stat('map error against truth (RMS)', { unit: '°C' }), sDrift = L.stat('mean drift (forecast –)', { unit: 'm' }), sHot = L.stat('hot spot placed', { unit: 'm off' });
     const pub = L.h('table.table.dense.wide', null, L.h('thead', null, L.h('tr', null, L.h('th', null, 'Published for the real devices'), L.h('th.num', null, 'Value'))),
       L.h('tbody', null, [['Mass', '30 mg'], ['Fall speed', '0.87 m/s'], ['Lands face up', 'over 95 %'], ['Travel in a gentle to moderate breeze', '50 to 100 m'], ['Backscatter range', 'up to 60 m'], ['Senses', 'temperature, humidity, pressure, light']].map(([a, b]) => L.h('tr', null, L.h('td', null, a), L.h('td.num', null, b)))));
-    const assumed = L.h('p.caption.wide', null, 'Assumed in this simulation: fall speeds spread by 12 %; gusts of 22 % and turbulence of 15 % of the wind; wind rising with height to the power 0.2; 80 % of seeds in shade and 40 % in rubble fail; a wall in the way halves the radio range; sensor noise 0.5 °C; one reading speaks for the ground within 6 m.');
+    const assumed = L.h('p.caption.wide', null, 'Used in this simulation: fall speeds spread by 12 %; gusts of 22 % and turbulence of 15 % of the wind; wind rising with height to the power 0.2; 80 % of seeds in shade and 40 % in rubble fail; a wall in the way halves the radio range; sensor noise 0.5 °C; one reading speaks for the ground within 6 m.');
     readout.append(L.h('h4', null, 'Measured against the simulated truth'), sWork.el, sArea.el, sRms.el, sHot.el, sDrift.el, pub, assumed);
     function report() {
       const ls = A.land, n = ls.length, ok = ls.filter((s) => s.state === 'ok').length, heard = A.n, cnt = (k) => ls.filter((s) => s.state === k).length;

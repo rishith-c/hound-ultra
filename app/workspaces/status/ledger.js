@@ -7,7 +7,7 @@ const NET = '23,372 weights trained in NumPy on simulated people', SCN = 'The bu
 
 export const LEDGER = [
   { group: 'The rover', rows: [
-    R('built', 'The rover itself', 'rover', 'workspaces/rover/index.js', /mount/, 'An aluminium frame, four steppers on mecanum wheels, two ESP32-S3, radars, a thermal camera, a Raspberry Pi. It was built and drives.', 'This console is not connected to it.', 'Our own CAD and photographs'),
+    R('built', 'The rover itself', 'rover', 'workspaces/rover/index.js', /mount/, 'An aluminium extrusion frame, four NEMA 17 steppers on mecanum wheels, an Arduino UNO R4, a Raspberry Pi, an ESP32-S3, radars, a thermal camera. The rover and its web remote exist.', 'This console is not connected to it.', 'Our own CAD and photographs'),
   ] },
   { group: 'Sensing and AI', rows: [
     R('live-ai', 'Wi-Fi neural network, live', 'sense', 'core/nn.js', /export function forward/, 'The trained network runs in this page on held-out test windows.', NET + '. No real recordings exist.', 'Self-test: 30 of 30 windows match Python to 0.01'),

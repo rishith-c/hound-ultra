@@ -102,13 +102,15 @@ function eulerLUT() {
 function makeUF(n) { const p = new Int32Array(n); for (let i = 0; i < n; i++) p[i] = i; const find = (a) => { while (p[a] !== a) { p[a] = p[p[a]]; a = p[a]; } return a; }; return { p, find, union(a, b) { a = find(a); b = find(b); if (a !== b) p[b] = a; } }; }
 
 // S is a Uint8Array mask of the solid on an nx*ny*nz grid whose outer shell (except the ground side) is empty.
-export function betti(S, nx, ny, nz) {
+export function betti(S, nx, ny, nz) { const g = bettiSteps(S, nx, ny, nz); let r; while (!(r = g.next()).done); return r.value; }
+function* bettiSteps(S, nx, ny, nz) {   // yields nothing, between slabs, so a caller can spread it over frames
   const sl = nx * nz, n = S.length, lut = eulerLUT();
   let chi = 0;
   const get = (x, y, z) => (x < 0 || y < 0 || z < 0 || x >= nx || y >= ny || z >= nz) ? 0 : S[x + nx * (z + nz * y)];
   for (let y = 0; y <= ny; y++) for (let z = 0; z <= nz; z++) for (let x = 0; x <= nx; x++) {
     const c = get(x - 1, y - 1, z - 1) | (get(x, y - 1, z - 1) << 1) | (get(x - 1, y, z - 1) << 2) | (get(x, y, z - 1) << 3) | (get(x - 1, y - 1, z) << 4) | (get(x, y - 1, z) << 5) | (get(x - 1, y, z) << 6) | (get(x, y, z) << 7);
     if (c) chi += lut[c];
+    if (x === nx && z === nz) yield;
   }
   const uf = makeUF(n);
   // solid: 26-connectivity, 13 forward neighbours
@@ -117,6 +119,7 @@ export function betti(S, nx, ny, nz) {
     const id = x + nx * (z + nz * y);
     if (S[id]) { for (const [dx, dy, dz] of fw) { const X = x + dx, Y = y + dy, Z = z + dz; if (X < 0 || X >= nx || Y >= ny || Z < 0 || Z >= nz) continue; const j = X + nx * (Z + nz * Y); if (S[j]) uf.union(id, j); } }
     else { if (x + 1 < nx && !S[id + 1]) uf.union(id, id + 1); if (z + 1 < nz && !S[id + nx]) uf.union(id, id + nx); if (y + 1 < ny && !S[id + sl]) uf.union(id, id + sl); }
+    if (x === nx - 1 && z === nz - 1) yield;
   }
   const out = uf.find(n - 1);                                           // a top corner: always open air
   let b0 = 0, b2 = 0; const cav = [];
@@ -144,7 +147,7 @@ export function* bettiCurve(g, radii) {
   for (const r of radii) {
     const t = (r + res / 2) / res, t2 = r === 0 ? 0.5 : t * t;
     for (let i = 0; i < n; i++) S[i] = d2[i] < t2 ? 1 : 0;
-    const b = betti(S, nx, ny, nz);
+    const b = yield* bettiSteps(S, nx, ny, nz);
     out.push({ r, b0: b.b0, b1: b.b1, b2: b.b2, chi: b.chi });
     yield out;
   }

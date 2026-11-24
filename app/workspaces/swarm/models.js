@@ -9,6 +9,28 @@ const box = (w, h, d, x, y, z, c) => at(tint(new THREE.BoxGeometry(w, h, d), c),
 const cyl = (r, r2, h, x, y, z, c, seg = 14, rx = 0, rz = 0) => { const g = new THREE.CylinderGeometry(r, r2, h, seg); if (rx) g.rotateX(rx); if (rz) g.rotateZ(rz); return at(tint(g, c), x, y, z); };
 const merge = (list) => { const l = list.map((g) => (g.index ? g.toNonIndexed() : g)); const m = mergeGeometries(l, false); list.forEach((g) => g.dispose()); return m; };
 
+// The HOUND drive base is the real CAD, baked into assets/models/hound01.bin (the same file the twin's rover uses).
+// The mast, boards and battery on top are simple blocks here, at the CAD's positions.
+let hound = null;
+export async function loadHound() {
+  if (hound) return hound;
+  const res = await fetch(new URL('../../../assets/models/hound01.bin', import.meta.url)); if (!res.ok) throw new Error('HTTP ' + res.status);
+  const buf = await res.arrayBuffer(), hl = new DataView(buf).getUint32(0, true), meta = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, hl))), o = 4 + hl, c = new THREE.Color();
+  const geo = (id) => { const e = meta.parts[id], n = e.verts, g = new THREE.BufferGeometry(), nr = new Int8Array(buf, o + e.nor, n * 4), cs = new Uint8Array(buf, o + e.col, n * 4), pb = new Uint8Array(buf, o + e.pbr, n * 4), N = new Float32Array(n * 3), K = new Float32Array(n * 3), Q = new Float32Array(n * 2);
+    for (let i = 0; i < n; i++) { const l = Math.hypot(nr[i * 4], nr[i * 4 + 1], nr[i * 4 + 2]); N[i * 3] = l ? nr[i * 4] / l : 0; N[i * 3 + 1] = l ? nr[i * 4 + 1] / l : 1; N[i * 3 + 2] = l ? nr[i * 4 + 2] / l : 0; c.setRGB(cs[i * 4] / 255, cs[i * 4 + 1] / 255, cs[i * 4 + 2] / 255, THREE.SRGBColorSpace); K[i * 3] = c.r; K[i * 3 + 1] = c.g; K[i * 3 + 2] = c.b; Q[i * 2] = pb[i * 4] / 255; Q[i * 2 + 1] = pb[i * 4 + 1] / 255; }
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(buf, o + e.pos, n * 3).slice(), 3)); g.setAttribute('normal', new THREE.BufferAttribute(N, 3)); g.setAttribute('color', new THREE.BufferAttribute(K, 3)); g.setAttribute('aPbr', new THREE.BufferAttribute(Q, 2));
+    g.setIndex(new THREE.BufferAttribute(e.wide ? new Uint32Array(buf, o + e.idx, e.count) : Uint32Array.from(new Uint16Array(buf, o + e.idx, e.count)), 1)); return g; };
+  const add = (g, met, ro) => { g = g.index ? g : g; g.deleteAttribute('uv'); const n = g.attributes.position.count, Q = new Float32Array(n * 2); for (let i = 0; i < n; i++) { Q[i * 2] = met; Q[i * 2 + 1] = ro; } g.setAttribute('aPbr', new THREE.BufferAttribute(Q, 2)); const ix = g.index; if (ix && !(ix.array instanceof Uint32Array)) g.setIndex(new THREE.BufferAttribute(Uint32Array.from(ix.array), 1)); return g; };
+  const D = 0.108, MX = -0.158, top = [add(box(0.02, 0.3, 0.04, MX, D + 0.15, 0, 0xc4c8cc), 1, 0.36), add(box(0.03, 0.012, 0.23, MX + 0.0255, D + 0.284, 0, 0xc4c8cc), 1, 0.36), add(box(0.11, 0.03, 0.04, -0.07, D + 0.0195, 0, 0x1b2b50), 0, 0.3), add(box(0.016, 0.033, 0.043, -0.105, D + 0.0195, 0, 0x14161a), 0, 0.7),
+    add(box(0.085, 0.004, 0.056, -0.0915, D + 0.011, -0.093, 0x0e5c3a), 0, 0.5), add(box(0.02, 0.014, 0.05, -0.126, D + 0.018, -0.093, 0xa2a8af), 1, 0.35), add(box(0.069, 0.004, 0.0535, 0, D + 0.0135, 0.095, 0x0b5568), 0, 0.5), add(box(0.069, 0.016, 0.04, 0, D + 0.028, 0.095, 0x40266a), 0, 0.5), add(box(0.004, 0.052, 0.026, MX + 0.0125, D + 0.2, 0, 0x0d0f11), 0, 0.5)];
+  for (const z of [-0.105, 0.105]) top.push(add(cyl(0.0034, 0.0052, 0.115, MX + 0.0255, D + 0.35, z, 0x14161a, 8), 0, 0.6));
+  const roller = geo('roller'), zA = new THREE.Vector3(0, 0, 1), q = new THREE.Quaternion(), m = new THREE.Matrix4(), one = new THREE.Vector3(1, 1, 1), hubs = {};
+  for (const h of ['hubA', 'hubB']) hubs[h] = mergeGeometries([geo(h), ...meta.rollers[h].map((r) => roller.clone().applyMatrix4(m.compose(new THREE.Vector3().fromArray(r.p), q.setFromUnitVectors(zA, new THREE.Vector3().fromArray(r.a).normalize()), one)))], false);
+  const body = mergeGeometries([geo('body'), geo('carriage'), ...top], false); if (!body || !hubs.hubA || !hubs.hubB) throw new Error('merge failed');
+  hound = { body, wheels: Object.values(meta.wheels).map((w) => ({ p: [w.x, w.z, -w.y], geo: hubs[w.hub] })) }; return hound;
+}
+export const houndModel = () => hound;
+
 let cache = null;
 export function parts() {
   if (cache) return cache;
@@ -43,9 +65,9 @@ export function parts() {
   return cache;
 }
 
-const addShell = (list, x0, x1, z0, z1, y0, y1, top, real, dmg) => {
+const addShell = (list, x0, x1, z0, z1, y0, y1, top, real, dmg, edge = 0) => {
   const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0); g.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
-  const n = g.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[i * 3] = top; a[i * 3 + 1] = real; a[i * 3 + 2] = dmg; } g.setAttribute('aShell', new THREE.BufferAttribute(a, 3)); g.deleteAttribute('uv'); list.push(g);
+  const n = g.attributes.position.count, a = new Float32Array(n * 4); for (let i = 0; i < n; i++) { a[i * 4] = top; a[i * 4 + 1] = real; a[i * 4 + 2] = dmg; a[i * 4 + 3] = edge; } g.setAttribute('aShell', new THREE.BufferAttribute(a, 4)); g.deleteAttribute('uv'); list.push(g);
 };
 // building outlines are on the site map before anyone goes in; heights are drawn, not measured
 export function siteShells(buildings, seed) {
@@ -54,7 +76,8 @@ export function siteShells(buildings, seed) {
     const [x0, y0, x1, y1] = b.rect, r = hash(b.id * 31 + seed * 7 + 5), r2 = hash(b.id * 17 + seed + 99), top = (r < 0.35 ? 2 : r < 0.8 ? 3 : 1) * 3.05 + 0.6, dmg = (r2 - 0.5) * 0.16;
     addShell(list, x0 - 0.06, x1 + 0.06, -y1 - 0.06, -y0 + 0.06, -0.6, top, top, 1, dmg);
     // parapet and plant on the roof
-    for (const [a, b2, c, d] of [[x0, x1, -y1, -y1 + 0.25], [x0, x1, -y0 - 0.25, -y0], [x0, x0 + 0.25, -y1, -y0], [x1 - 0.25, x1, -y1, -y0]]) addShell(list, a, b2, c, d, top, top + 0.45, top + 1.2, 1, dmg);
+    for (const [a, b2, c, d] of [[x0, x1, -y1, -y1 + 0.25], [x0, x1, -y0 - 0.25, -y0], [x0, x0 + 0.25, -y1, -y0], [x1 - 0.25, x1, -y1, -y0]]) addShell(list, a, b2, c, d, top, top + 0.45, top + 1.2, 1, dmg, 1);
+    for (let y = 3.05; y < top - 1; y += 3.05) addShell(list, x0 + 0.1, x1 - 0.1, -y1 + 0.1, -y0 - 0.1, y - 0.1, y + 0.14, top, 1, dmg, 2);   // floor slabs, seen where the facade has come away
     const n = 2 + Math.floor(r2 * 4); for (let q = 0; q < n; q++) { const w = 1 + hash(q * 7 + b.id * 3 + seed) * 2.4, d = 1 + hash(q * 11 + b.id * 5 + seed) * 1.8, x = x0 + 1.5 + hash(q + b.id * 77 + seed) * Math.max(0.1, x1 - x0 - 6), y = y0 + 1.5 + hash(q * 3 + b.id * 41 + seed) * Math.max(0.1, y1 - y0 - 5); addShell(list, x, x + w, -y - d, -y, top, top + 0.7 + hash(q * 13 + b.id) * 0.9, top + 2, 1, dmg); }
   }
   return list.length ? mergeGeometries(list, false) : null;
@@ -66,7 +89,7 @@ export function citySurround(SX, SY, seed) {
     if (cx + w / 2 > -11 && cx - w / 2 < SX + 11 && cy + d / 2 > -11 && cy - d / 2 < SY + 11) continue; if (hash(gx * 5 + gy * 71) < 0.1) continue;
     const dist = Math.max(0, Math.max(-cx, cx - SX, -cy, cy - SY)), top = (2 + Math.floor(hash(gx * 41 + gy * 3) * (dist > 60 ? 8 : 4.2))) * 3.05 + 0.6;
     addShell(list, cx - w / 2, cx + w / 2, -cy - d / 2, -cy + d / 2, -0.6, top, top, 0, (r - 0.5) * 0.1 - 0.05);
-    addShell(list, cx - w / 2, cx + w / 2, -cy - d / 2, -cy - d / 2 + 0.3, top, top + 0.5, top + 2, 0, -0.4); addShell(list, cx - w / 2, cx + w / 2, -cy + d / 2 - 0.3, -cy + d / 2, top, top + 0.5, top + 2, 0, -0.4);
+    for (const [a, b, c, e] of [[cx - w / 2, cx + w / 2, -cy - d / 2, -cy - d / 2 + 0.3], [cx - w / 2, cx + w / 2, -cy + d / 2 - 0.3, -cy + d / 2], [cx - w / 2, cx - w / 2 + 0.3, -cy - d / 2, -cy + d / 2], [cx + w / 2 - 0.3, cx + w / 2, -cy - d / 2, -cy + d / 2]]) addShell(list, a, b, c, e, top, top + 0.5, top + 2, 0, -0.4, 1);
     if (r2 > 0.3) { const px = cx - w / 4, pz = -cy; addShell(list, px, px + 3.5, pz, pz + 2.6, top, top + 1.8, top + 4, 0, -0.4); }
   }
   return mergeGeometries(list, false);

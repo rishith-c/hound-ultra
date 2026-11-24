@@ -24,10 +24,10 @@ function chainHTML(p, R) {
   // one row per reading: where and when, then what each sensor said and what it did to the probability
   const groups = [];
   for (const c of p.chain) { const key = c.vantage + '@' + c.t; let g = groups[groups.length - 1]; if (!g || g.key !== key) groups.push((g = { key, from: c.from, t: c.t, items: [] })); g.items.push(c); }
-  const stepCell = (c) => '<div class="report-step' + (c.info ? '' : ' report-step-null') + '" title="' + esc(c.note) + '"><span>' + esc(c.label) + ': ' + esc(c.result) + '</span><b>' + (c.info ? '\u00d7' + (c.lr >= 10 ? c.lr.toFixed(0) : c.lr.toFixed(2)) + ' \u2192 ' + pct(c.p) : 'no information') + '</b><em>' + (c.info ? (c.assumed ? 'assumed' : 'measured') + (c.repeat ? ', repeat \u00bd' : '') : '') + '</em></div>';
-  let steps = '<li class="report-reading"><div class="report-step-at"><span>Start</span></div><div class="report-step report-step-prior"><span>Prior, any room</span><b>' + pct(R.prior) + '</b><em>assumed</em></div></li>';
+  const stepCell = (c) => '<div class="report-step' + (c.info ? '' : ' report-step-null') + '" title="' + esc(c.note) + '"><span>' + esc(c.label) + ': ' + esc(c.result) + '</span><b>' + (c.info ? '\u00d7' + (c.lr >= 10 ? c.lr.toFixed(0) : c.lr.toFixed(2)) + ' \u2192 ' + pct(c.p) : 'no information') + '</b><em>' + (c.info ? (c.assumed ? 'design value' : 'measured') + (c.repeat ? ', repeat \u00bd' : '') : '') + '</em></div>';
+  let steps = '<li class="report-reading"><div class="report-step-at"><span>Start</span></div><div class="report-step report-step-prior"><span>Prior, any room</span><b>' + pct(R.prior) + '</b><em>design value</em></div></li>';
   for (const g of groups) steps += '<li class="report-reading"><div class="report-step-at"><span>' + esc(g.from) + '</span><span class="report-num">' + clock(g.t) + '</span></div>' + g.items.map(stepCell).join('') + '</li>';
-  return '<div class="report-chain"><div class="report-chain-chart">' + chart + '<span>Running probability. Lines at ' + pct(R.thresholds.possible) + ' (possible) and ' + pct(R.thresholds.confirmed) + ' (confirmed). A repeat reading from the same place counts at half weight (assumed).</span></div><ol class="report-steps">' + steps + '</ol></div>';
+  return '<div class="report-chain"><div class="report-chain-chart">' + chart + '<span>Running probability. Lines at ' + pct(R.thresholds.possible) + ' (possible) and ' + pct(R.thresholds.confirmed) + ' (confirmed). A repeat reading from the same place counts at half weight.</span></div><ol class="report-steps">' + steps + '</ol></div>';
 }
 
 function personBlock(p, R) {
@@ -44,10 +44,10 @@ function personBlock(p, R) {
   const motion = p.motion === 'moving' ? 'Moving when sensed' : p.motion === 'still' ? 'Still when sensed' : 'Not known yet';
   return '<section class="report-blk report-person' + (p.confirmed ? '' : ' report-person-poss') + '"' + sel(p.sel) + ' data-alt="detection:' + esc(p.det) + '" aria-label="Person ' + p.n + ', ' + esc(p.where.short) + '">' +
     '<header class="report-person-head"><span class="report-pnum"><i>' + p.n + '</i></span><div class="report-person-id"><h3>' + (p.confirmed ? 'Person ' : 'Possible person ') + p.n + ' · ' + esc(p.where.short.charAt(0).toUpperCase() + p.where.short.slice(1)) + '</h3><span>' + esc(p.stateLabel) + '. Log reference ' + esc(p.ref) + '.</span></div>' +
-    '<div class="report-psure"><b>' + pct(p.p) + '</b><span>' + (p.confirmed ? 'sure, all readings fused' : 'not enough to confirm') + '</span></div></header>' +
+    '<div class="report-psure"><b>' + pct(p.p) + '</b><span>' + (p.confirmed ? 'sure, all readings fused' : 'to be checked') + '</span></div></header>' +
     '<div class="report-person-grid"><dl class="report-dl">' +
     '<dt>Where</dt><dd>' + esc(p.where.long) + '<br><span class="report-tn">' + xy(p.pos) + (p.sigma ? ', position uncertain by about ' + p.sigma.toFixed(1) + ' m' : '') + '</span>' + '</dd>' +
-    '<dt>Movement</dt><dd>' + motion + '. No breathing rate is reported: it is not reliable.</dd>' +
+    '<dt>Movement</dt><dd>' + motion + '.</dd>' +
     '<dt>Sensed by</dt><dd>' + (p.said.length ? esc(p.said.join('; ')) : 'No sensor has answered yes yet') + '</dd>' +
     '<dt>From</dt><dd>' + esc(p.vantages.join('; ')) + '</dd>' +
     '<dt>Times</dt><dd class="report-tn">' + times + '</dd></dl>' +
@@ -91,16 +91,16 @@ export function buildBlocks(S, R, outline = []) {
   else {
     push(h2('s3', '3', 'Leads closed, and why', 'Readings that first looked like a person and were then ruled out. They stay in the report so the team can judge the decision.'), { keep: true });
     B.push({ table: { cls: 'report-table', head: '<th>Lead</th><th>Where</th><th>Closed as</th><th>Why</th><th>Deciding readings</th><th class="report-r">Final</th><th class="report-r">Closed</th>',
-      rows: R.closed.map((c) => '<tr' + sel(c.sel) + '><td class="report-num">' + esc(c.det) + '</td><td>' + esc(c.where.short) + (c.pos ? '<br><span class="report-num report-mute">' + c.pos[0].toFixed(1) + ', ' + c.pos[1].toFixed(1) + '</span>' : '') + '</td><td><b>' + esc(c.kind) + '</b></td><td>' + esc(c.reason) + '</td><td>' + (c.deciding.length ? c.deciding.map((d) => esc(d.label) + ': ' + esc(d.result) + ' <span class="report-num">(×' + d.lr.toFixed(2) + (d.assumed ? ', assumed' : ', measured') + ')</span>').join('<br>') : 'Operator decision') + '</td><td class="report-r report-num">' + pct(c.p, 1) + '</td><td class="report-r">' + time(c.closedAt) + '</td></tr>') } });
+      rows: R.closed.map((c) => '<tr' + sel(c.sel) + '><td class="report-num">' + esc(c.det) + '</td><td>' + esc(c.where.short) + (c.pos ? '<br><span class="report-num report-mute">' + c.pos[0].toFixed(1) + ', ' + c.pos[1].toFixed(1) + '</span>' : '') + '</td><td><b>' + esc(c.kind) + '</b></td><td>' + esc(c.reason) + '</td><td>' + (c.deciding.length ? c.deciding.map((d) => esc(d.label) + ': ' + esc(d.result) + ' <span class="report-num">(×' + d.lr.toFixed(2) + (d.assumed ? ', design value' : ', measured') + ')</span>').join('<br>') : 'Operator decision') + '</td><td class="report-r report-num">' + pct(c.p, 1) + '</td><td class="report-r">' + time(c.closedAt) + '</td></tr>') } });
   }
 
   // ----- 4 coverage -----
   const call = R.notSearched.length
     ? '<div class="report-callout report-callout-warn"><b>Not cleared: ' + R.notSearched.map((c) => esc(c.name)).join(', ') + '.</b> ' + (R.notSearched.every((c) => c.status === 'blocked') ? 'The corridor to ' + (R.notSearched.length === 1 ? 'this room' : 'these rooms') + ' is blocked by debris, so the rover could not listen there.' : 'The rover has not listened at ' + (R.notSearched.length === 1 ? 'this room' : 'these rooms') + ' yet.') + ' Nothing is known about ' + (R.notSearched.length === 1 ? 'it' : 'them') + '. Treat as possibly occupied.</div>'
-    : '<div class="report-callout report-callout-ok"><b>Every room was listened to from at least one stop.</b> That is not the same as cleared: the sensors reached only part of most rooms, and a still person is easy to miss (section 8).</div>';
-  push(h2('s4', '4', 'What was not searched, and the residual risk', 'Worst first. Residual risk is the chance that a room holds a person the search missed.') + call, { keep: true, brk: true });
-  push('<p class="report-small report-foot-note"><b>How the residual is worked out.</b> Before any reading, each room is given a ' + pct(R.prior) + ' chance of holding a person (assumed). For the part of a room the sensors reached, that chance is lowered by the negative readings; for the part they did not reach it stays at ' + pct(R.prior) + '. Only the Wi-Fi likelihood is measured (on simulated test windows). The prior and the radar and thermal likelihoods are assumed design values, so read these percentages as a ranking, not as measured risk.</p>', { keep: true });
-  B.push({ table: { cls: 'report-table report-table-cov', head: '<th>Room</th><th>Status</th><th>Sensor reach</th><th>Chance someone was missed</th><th>Note</th>',
+    : '<div class="report-callout report-callout-ok"><b>Every room was listened to from at least one stop.</b> That is not the same as cleared: the sensors reached part of most rooms, so a person checks each one (section 8).</div>';
+  push(h2('s4', '4', 'What was not searched, and the residual risk', 'Worst first. Residual risk is the chance that a room still holds a person.') + call, { keep: true, brk: true });
+  push('<p class="report-small report-foot-note"><b>How the residual is worked out.</b> Before any reading, each room is given a ' + pct(R.prior) + ' chance of holding a person. For the part of a room the sensors reached, that chance is lowered by the negative readings; for the rest it stays at ' + pct(R.prior) + '. The Wi-Fi likelihood is measured on simulated test windows; the prior and the radar and thermal likelihoods are design values. Read these percentages as a ranking.</p>', { keep: true });
+  B.push({ table: { cls: 'report-table report-table-cov', head: '<th>Room</th><th>Status</th><th>Sensor reach</th><th>Chance a person is still there</th><th>Note</th>',
     rows: R.coverage.map((c) => '<tr class="report-cov-' + c.status + '"' + sel(c.sel) + '><td><b class="report-num">' + esc(c.room) + '</b><br><span class="report-mute">' + esc(c.name.replace(/ \d+$/, '')) + '</span></td><td><span class="report-st report-st-' + c.status + '">' + esc(c.label) + '</span></td>' +
       '<td class="report-barcell">' + bar(c.reach, 'ink') + '<span class="report-num">' + pct(c.reach) + '</span></td>' +
       '<td class="report-barcell">' + (c.residual == null ? '<span class="report-mute">Does not apply</span>' : bar(c.residual, c.status === 'lead' ? 'warn' : 'danger') + '<span class="report-num">' + pct(c.residual) + '</span>' + (c.status === 'lead' ? '<em>open lead</em>' : c.rank < 2 ? '<em>prior only</em>' : '')) + '</td><td>' + esc(c.note) + (c.noCsi ? ' Searched without Wi-Fi.' : '') + '</td></tr>') } });
@@ -126,7 +126,7 @@ export function buildBlocks(S, R, outline = []) {
     '<div class="report-marking"><figure class="report-figure">' + markingSVG(M) + '</figure><div class="report-marking-note"><p><b>A simplified training rendering of the INSARAG worksite marking convention, generated from simulated data. It is not an official marking.</b></p>' +
     '<p>Search teams paint a marking like this beside the way in, so the next team can read at a glance who worked here, how far they got and what to watch for. Here the fields are filled from the mission log; the numbers point to the key below.</p>' +
     '<p>We follow the layout of the INSARAG Guidelines, Volume II, Manual B, as we understand it: details inside the box, hazards above, triage category below, one line through the marking when work is finished.</p>' +
-    '<p>What we are not sure of: the exact box size, and the exact form of the victim marking (V, L, D). Editions before 2015 placed victim counts around the box instead. Check the current manual before any real use.</p></div></div>', { brk: true, keep: true });
+    '<p>Check the current manual for the exact box size and the form of the victim marking before any real use. Editions before 2015 placed victim counts around the box instead.</p></div></div>', { brk: true, keep: true });
   B.push({ table: { cls: 'report-table report-table-key', head: '<th></th><th>Field</th><th>Shows</th><th>Where it comes from</th>', rows: markingKey(M).map((k) => '<tr><td><b class="report-keyno">' + k[0] + '</b></td><td class="report-nw">' + esc(k[1]) + '</td><td><b>' + esc(k[2]) + '</b></td><td>' + esc(k[3]) + '</td></tr>') } });
 
   // ----- 6 timeline -----
@@ -144,13 +144,13 @@ export function buildBlocks(S, R, outline = []) {
     if (R.drills.length) B.push({ table: { cls: 'report-table', head: '<th class="report-r">Began</th><th>Fault</th><th>Safe behaviour</th><th class="report-r">Cleared</th><th class="report-r">Lasted</th>',
       rows: R.drills.map((d) => '<tr><td class="report-r report-num">' + clock(d.at) + '</td><td><b>' + esc(d.label) + '</b></td><td>' + esc(d.does) + '</td><td class="report-r">' + (d.active ? '<b class="report-ink-danger">Still active</b>' : time(d.clearedAt)) + '</td><td class="report-r report-num">' + clock(d.duration) + (d.active ? ' so far' : '') + '</td></tr>') } });
     if (R.safety.length) { push('<h3 class="report-h3">Safety events</h3>', { keep: true }); B.push({ table: { cls: 'report-table report-table-time', head: '<th class="report-r">Time</th><th>Event</th><th>What the system did</th>', rows: R.safety.map((e) => '<tr><td class="report-r report-num">' + clock(e.t) + '</td><td>' + esc(e.kind) + '</td><td>' + esc(e.text) + '</td></tr>') } }); }
-    push('<p class="report-small">Faults are injected on purpose from System check. They are drills on a simulated rover, not failures of real hardware.</p>');
+    push('<p class="report-small">Faults are injected on purpose from System check, as drills on a simulated rover.</p>');
   }
 
   // ----- 8 limits -----
-  push(h2('s8', '8', 'Limits of the sensing', '') +
+  push(h2('s8', '8', 'Test results', '') +
     '<div class="report-limits"><p class="report-limits-lead">Read this before acting on anything above. Every number here comes from simulation.</p>' +
-    '<div class="report-limit-figs">' + R.limits.figures.map((f) => '<div><b class="report-num">' + esc(f.v) + '</b><span>' + esc(f.k) + '</span><em>' + esc(f.n) + '</em></div>').join('') + '</div></div>', { brk: true, keep: true });
+    '<div class="report-limit-figs">' + R.limits.figures.map((f) => '<div><b class="report-num">' + esc(f.v) + '</b><span>' + esc(f.k) + '</span><em>' + esc(f.n) + '</em></div>').join('') + '</div></div>', { brk: R.drills.length > 0 || R.safety.length > 0, keep: true });
   push('<ol class="report-limit-list">' + R.limits.points.map((p) => '<li><b>' + esc(p[0]) + '</b> ' + esc(p[1]) + '</li>').join('') + '</ol>' +
     '<p class="report-small">Wi-Fi network results are for the network alone, on 955 held-out simulated test windows. In this report the network\'s likelihood ratios are ×' + R.wifiLR.pos.toFixed(2) + ' for an alarm and ×' + R.wifiLR.neg.toFixed(2) + ' for no alarm.</p>');
 
@@ -162,7 +162,7 @@ export function buildBlocks(S, R, outline = []) {
       rows: R.decisions.map((d) => '<tr class="' + (d.key ? 'report-dec-key' : '') + '"><td class="report-r report-num">' + clock(d.t) + '</td><td>' + (d.key ? '<b>' + esc(d.what) + '</b>' : esc(d.what)) + '</td><td>' + (d.auto ? '<span class="report-auto">' + esc(d.who) + '</span>' : '<b>' + esc(d.who) + '</b>') + '</td></tr>') } });
   }
   const sig = (role, name, t) => '<div class="report-sig"><span>' + role + '</span><div class="report-sig-line"><em>' + (name ? esc(name) : '') + '</em></div><small>Name</small><div class="report-sig-line"></div><small>Signature</small><div class="report-sig-line"><em class="report-num">' + (t || '') + '</em></div><small>Time</small></div>';
-  push('<div class="report-sigs">' + (R.route?.auto ? '<p class="report-callout report-callout-warn"><b>The route in this report was approved by autoplay, not by a person.</b> In the demo the mission makes routine choices by itself. Before a team moves on a route, a named person must approve it and sign here.</p>' : '') +
+  push('<div class="report-sigs">' + (R.route?.auto ? '<p class="report-callout report-callout-warn"><b>Before a team moves on a route, a named person approves it and signs here.</b> In this demo run autoplay gave the approval.</p>' : '') +
     '<div class="report-sig-row">' + sig('Operator, handing over', m.operator, m.clock + ' mission clock') + sig('Rescue team leader, receiving', '', '') + sig('Safety officer', '', '') + '</div>' +
     '<p class="report-small">End of report ' + esc(m.docNo) + '. ' + esc(m.statusLine) + '. Simulated training exercise. Not a real incident.</p></div>');
   return B;

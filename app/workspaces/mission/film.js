@@ -77,7 +77,7 @@ export function createFilm(app) {
   function wayIn(r) { // what the planned path goes around, and what it still crosses
     if (wayFor === r) return wayText; wayFor = r;
     const over = crossed(r, sim.state, world).map(short), av = r.avoided.map(short);
-    return (wayText = (av.length ? 'Around the ' + av.slice(0, 2).join(' and the ') + '.' : 'Planned on the surveyed map.') + (over.length ? ' A person approves it, with the edge of the ' + over[0] + ' marked.' : ''));
+    return (wayText = (av.length ? 'Around the ' + av.slice(0, 2).join(' and the ') + '.' : 'Planned on the surveyed map.') + (over.length ? ' The edge of the ' + over[0] + ' is marked for approval.' : ''));
   }
   function scene(S) {
     const r = S.units['HOUND-01'], L = S.sensors.listen, route = S.routes.rescue;
@@ -86,7 +86,7 @@ export function createFilm(app) {
     if (beat?.kind === 'closed') { const d = detOf(beat.det); return { key: 'closed' + beat.det, head: d?.kind === 'machine' ? 'A fan, recognised' : d?.kind === 'hot object' ? 'A hot pipe, recognised' : d?.kind === 'dismissed' ? 'Closed by the operator' : 'Checked and closed', line: d?.kind === 'machine' ? 'It moves too steadily and gives off no body heat. HOUND moves on.' : d?.kind === 'hot object' ? 'Far warmer than a person, and perfectly still. HOUND moves on.' : d?.kind === 'dismissed' ? d.reason : d?.kind === 'no one there' ? 'The team looked in person. HOUND moves on.' : 'Wi-Fi, radar and heat are compared, and the lead is closed.', tags: ['sim'], inst: 'odds', det: d }; }
     if (route && beat?.kind === 'route') return { key: 'plan', head: 'The way in', line: wayIn(route), tags: ['sim', 'live-algo'], inst: 'route' };
     switch (S.phase) {
-      case 'standby': return { key: 'standby', head: 'A building has come down', line: 'A scout drone maps the valley first.', tags: ['sim'], inst: null };
+      case 'standby': return { key: 'standby', head: 'Block B, after the flood', line: 'Someone may be inside. A scout drone maps the site first.', tags: ['sim'], inst: null };
       case 'aerial': return { key: 'aerial', head: 'Mapping the ground from above', line: 'A scout drone finds where the rover can drive.', tags: ['sim', 'concept'], inst: 'scan' };
       case 'deploy': return { key: 'deploy', head: 'The rover goes in first', line: 'HOUND-01 plans its own way past mud and the unstable slope.', tags: ['sim', 'live-algo'], inst: 'drive' };
       case 'search': case 'assess': {

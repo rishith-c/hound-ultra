@@ -11,12 +11,12 @@ export function createDemo(root, ctx, opts) {
     h('section.area-demo-title', null,
       h('div.row', null, realityTag('real-data'), realityTag('simulated')),
       h('h1', null, 'Somewhere down there, people are trapped.'),
-      h('p', null, 'A flood has hit a mountain village. Rescuers cannot see inside the buildings.'),
+      h('p', null, 'A flood has hit a mountain village. Rescuers need to know who is inside.'),
       h('div.row', null, (el.fly = h('button.btn.btn-ghost', { type: 'button', onclick: () => film?.fly() }, 'Fly to the block')),
         (el.again = h('button.btn.btn-ghost.btn-icon', { type: 'button', 'aria-label': 'Play the flight again', title: 'Play the flight again', onclick: () => film?.restart() }, icon('reset'))),
         (el.now = h('span.area-demo-now', { role: 'status' })))),
     h('div.area-demo-figs', null, fig('front', 'surge to the block'), fig('ha', 'flooded now'), fig('need', 'rooms to search')),
-    (el.credit = h('p.area-demo-credit', null, h('span', null, 'Timure, Nepal, from real elevation and satellite imagery. The water is illustrative, not a forecast or a reconstruction.'), h('span', null, 'The block, its damage and the people are a simulated exercise. Trees, mist, dust, building heights and the ground under the block are drawn.'), h('span', null, 'Imagery © Esri, Maxar · Terrain: Mapzen, AWS · © OpenStreetMap'))));
+    (el.credit = h('p.area-demo-credit', null, h('span', null, 'Timure, Nepal, from real elevation and satellite imagery. The water is simulated.'), h('span', null, 'The block, its damage and the people are a simulated exercise. Trees, mist, dust, building heights and the ground under the block are drawn.'), h('span', null, 'Imagery © Esri, Maxar · Terrain: Mapzen, AWS · © OpenStreetMap'))));
   root.append(ui);
   let film = null, starting = null, lastText = 0, gone = false, shown = false;
   const set = (e, s) => { if (e.textContent !== s) e.textContent = s; };

@@ -15,7 +15,7 @@ export async function create(el, env) {
   const go = h('button.btn.btn-primary.btn-lg', { onclick: () => (running ? stop() : start()) }, icon('play'), h('span', null, 'Train from random weights'));
   const seedIn = h('input.input.input-sm.num', { type: 'number', min: 0, max: 999, value: 0, 'aria-label': 'Random seed for the starting weights', style: { width: '64px' }, onchange: () => { seed = Math.max(0, Math.min(999, Math.round(+seedIn.value || 0))); seedIn.value = seed; if (!running) reset(); } });
   const lrSeg = seg('Learning rate', [[0.0005, '0.0005'], [0.002, '0.002', 'The rate the project used'], [0.008, '0.008']], lr, (v) => { lr = +v; });
-  const ro = { epoch: h('b.num', null, '0'), rate: h('b.num', null, '–'), time: h('b.num', null, '0.0'), workers: h('b.num', null, String(Math.max(1, Math.min(8, (navigator.hardwareConcurrency || 4) - 2)))) };
+  const ro = { epoch: h('b.num', null, '0'), rate: h('b.num', null, '…'), time: h('b.num', null, '0.0'), workers: h('b.num', null, String(Math.max(1, Math.min(8, (navigator.hardwareConcurrency || 4) - 2)))) };
   const bar = h('div.bar', null, h('i', { style: { width: '0%' } }));
   const run = block('Run', realityTag('live-ai'),
     h('div.forge-run-go', null, go),
@@ -53,7 +53,7 @@ export async function create(el, env) {
   // ---------- right: scoreboard ----------
   const cmYou = kindMatrix('Yours: random weights'), cmShip = kindMatrix('The rover’s network, same windows');
   const rows = [['Moving person found', 'moving_found', 'moving'], ['Still person found', 'still_found', 'still'], ['Empty room called empty', 'empty_ok', 'emptyOk'], ['Still or moving, right', 'moving_acc', 'mv']];
-  const cells = rows.map(() => [h('td.num', null, '–'), h('td.num'), h('td.num')]);
+  const cells = rows.map(() => [h('td.num', null, '…'), h('td.num'), h('td.num')]);
   const testCap = h('p.forge-p.dim', null, 'Scored when training ends, on ' + bte.n + ' test windows from people neither network trained on. Each network uses its own threshold (10 % false alarms on validation).');
   const board = h('div.forge-col',
     block('Validation, ' + bv.n + ' windows, after every epoch', null, cmYou, cmShip, src('page', bv.n + ' validation windows')),
@@ -72,7 +72,7 @@ export async function create(el, env) {
   // shipped network's numbers on the same windows
   const shipV = ref?.shipped_bundle_val, shipT = ref?.shipped_bundle_test, twin = ref?.python_same_windows?.bundle_test;
   if (shipV) cmShip.set(shipV.by_kind);
-  rows.forEach((r, i) => { cells[i][1].textContent = shipT ? pct(shipT[r[1]]) : '–'; cells[i][2].textContent = twin ? pct(twin[r[1]]) : '–'; });
+  rows.forEach((r, i) => { cells[i][1].textContent = shipT ? pct(shipT[r[1]]) : '…'; cells[i][2].textContent = twin ? pct(twin[r[1]]) : '…'; });
 
   function drawFilters(cv, w0) {
     let mx = 1e-9; for (let i = 0; i < w0.length; i++) mx = Math.max(mx, Math.abs(w0[i]));
@@ -94,7 +94,7 @@ export async function create(el, env) {
       points: best ? [{ x: best.epoch, y: best.val, color: '--ok', r: 4.5, ring: true, label: 'kept' }] : [] });
     ratePlot.set({ x: { min: 0, max: n, ticks: xt, label: 'epoch' }, y: { min: 0, max: 1, ticks: [0, 0.25, 0.5, 0.75, 1], fmt: (v) => Math.round(v * 100) + '', label: '% found' },
       hlines: shipV ? [{ at: shipV.moving_found, color: '--person', label: 'rover’s: moving ' + pct(shipV.moving_found, 0) }, { at: shipV.still_found, color: '--warn', label: 'rover’s: still ' + pct(shipV.still_found, 0) }] : [],
-      series: [{ pts: hist.map((e) => [e.epoch, e.rates.moving]), color: '--person', dots: 2.2, label: 'moving' }, { pts: hist.map((e) => [e.epoch, e.rates.still]), color: '--warn', dots: 2.2, label: 'still' }] });
+      series: [{ pts: hist.map((e) => [e.epoch, e.rates.moving]), color: '--person', dots: 2.2, label: 'moving', dy: 24 }, { pts: hist.map((e) => [e.epoch, e.rates.still]), color: '--warn', dots: 2.2, label: 'still', dy: 22 }] });
   }
 
   // ---------- validation and test scoring ----------
@@ -112,11 +112,11 @@ export async function create(el, env) {
   }
 
   // ---------- the loop (train.py's train()) ----------
-  function reset() { W = init(seed); best = null; hist = []; stepPts = []; state = 'idle'; ro.epoch.textContent = '0'; ro.rate.textContent = '–'; ro.time.textContent = '0.0'; bar.firstChild.style.width = '0%';
-    status.textContent = 'Ready. The network below is 23,372 random numbers (seed ' + seed + ').'; filtCap.textContent = 'Yours: random weights'; cmYou.firstChild.textContent = 'Yours: random weights'; drawFilters(filtA, W[0]); drawCurves(); rows.forEach((r, i) => { cells[i][0].textContent = '–'; }); scoreNow(); }
+  function reset() { W = init(seed); best = null; hist = []; stepPts = []; state = 'idle'; ro.epoch.textContent = '0'; ro.rate.textContent = '…'; ro.time.textContent = '0.0'; bar.firstChild.style.width = '0%';
+    status.textContent = 'Ready. The network below is 23,372 random numbers (seed ' + seed + ').'; filtCap.textContent = 'Yours: random weights'; cmYou.firstChild.textContent = 'Yours: random weights'; drawFilters(filtA, W[0]); drawCurves(); rows.forEach((r, i) => { cells[i][0].textContent = '…'; }); scoreNow(); }
   async function scoreNow() { try { const v = await score(W, 'val', bv), thr = thresholdAt(v.p, v.kind, hy.false_alarm); cmYou.set(byKind(v.p, thr, v.kind)); } catch (e) { console.error(e); } }
   function stop() { token++; running = false; setGo(); status.textContent = 'Stopped at epoch ' + hist.length + '.' + (best ? ' The best epoch so far (' + best.epoch + ') is kept.' : ''); if (best) finish(); }
-  function setGo() { go.replaceChildren(icon(running ? 'stop' : 'play'), h('span', null, running ? 'Stop training' : hist.length ? 'Train again from new random weights' : 'Train from random weights')); go.classList.toggle('btn-primary', !running); seedIn.disabled = running; lrSeg.querySelectorAll('button').forEach((b) => { b.disabled = running; }); }
+  function setGo() { go.replaceChildren(icon(running ? 'stop' : 'play'), h('span', null, running ? 'Stop training' : hist.length ? 'Train again' : 'Train from random weights')); go.classList.toggle('btn-primary', !running); seedIn.disabled = running; lrSeg.querySelectorAll('button').forEach((b) => { b.disabled = running; }); }
 
   async function start() {
     const my = ++token; running = true; setGo();

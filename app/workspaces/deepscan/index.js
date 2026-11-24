@@ -1,7 +1,7 @@
 // Deep scan: one collapsed building, seen through six kinds of physics.
 // Every lens runs its real mathematics in this page on measurements simulated from the same seeded cross-section,
 // and scores its answer against that simulated truth. The hardware is concept; none of it is on HOUND.
-import { buildPile, drawPile, drawScale, voidLabels, WORLD } from './model.js';
+import { buildPile, drawPile, drawPerson, drawScale, voidLabels } from './model.js';
 import * as L from './lib.js';
 import { createCompare } from './compare.js';
 import { createDemo } from './demo.js';
@@ -11,7 +11,7 @@ const LENSES = [
   { id: 'gravity', n: '2', name: 'Quantum gravity', what: 'feels missing mass' },
   { id: 'gpr', n: '3', name: 'Ground radar', what: 'echoes off material edges' },
   { id: 'das', n: '4', name: 'Fibre as a microphone', what: 'hears a tap along a cable' },
-  { id: 'seismic', n: '5', name: 'Seismic tap location', what: 'times a tap at six sensors' },
+  { id: 'seismic', n: '5', name: 'Seismic tap location', what: 'times a tap at eight sensors' },
   { id: 'echo', n: '6', name: 'Shape of a void', what: 'ranges the walls by echo' },
 ];
 const FULL = { x0: -1.5, x1: 24.5, z0: -3.55, z1: 6.2 };
@@ -76,14 +76,16 @@ export default {
       h('button.ds-lens.ds-lens-cmp', { type: 'button', role: 'tab', id: 'ds-tab-compare', 'aria-selected': 'false', onclick: () => show('compare') },
         h('span.ds-lens-n', null, icon('grid', 15)), h('span.ds-lens-t', null, h('b', null, 'Compare all six'), h('small', null, 'who sees what, and at what cost'))));
 
+    tabs.addEventListener('keydown', (e) => { const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!step) return; const all = [...tabs.querySelectorAll('button:not([disabled])')], b = all[(all.indexOf(document.activeElement) + step + all.length) % all.length]; e.preventDefault(); b.focus(); b.click(); });
+
     const stageCv = h('canvas.ds-canvas', { 'aria-label': 'Cross-section of the simulated rubble pile with the selected instrument', role: 'img' });
     const readCv = h('canvas.ds-canvas', { 'aria-label': 'What the instrument recorded', role: 'img' });
     const stageCap = h('div.ds-cap'), readTitle = h('h3.ds-fig-title'), readSub = h('p.ds-fig-sub');
     const hud = h('aside.ds-hud', { 'aria-label': 'What this instrument finds in the pile' });
     const stageWrap = h('section.ds-stage', { 'aria-label': 'The pile' }, stageCv, stageCap);
-    const readWrap = h('section.ds-readout', { 'aria-label': 'Measurements' }, h('div.ds-fig', null, h('header.ds-fig-head', null, readTitle, readSub), h('div.ds-read-body', null, readCv)), hud);
+    const readWrap = h('section.ds-readout', { 'aria-label': 'Measurements' }, h('div.ds-fig', null, h('header.ds-fig-head', null, readTitle, readSub), h('div.ds-read-body', null, readCv)));
     const side = h('aside.ds-side', { 'aria-label': 'About this instrument' });
-    const body = h('div.ds-body', null, h('div.ds-main', null, stageWrap, readWrap), side);
+    const body = h('div.ds-body', null, h('div.ds-main', null, stageWrap, hud, readWrap), side);
     const compare = createCompare(env, { LENSES, exhibits, ensure, open: (id) => show(id) });
     compare.el.hidden = true;
     const demo = createDemo(ctx, { getPile: () => pile, getSeed: () => st.seed, reduced: () => ctx.kit.reducedMotion() });
@@ -101,20 +103,20 @@ export default {
         h('p.ds-card-lede', null, ex.lede),
         h('div.ds-block', null, h('h4', null, 'Try it'), ex.controls()),
         h('div.ds-block', null, h('h4', null, 'Scored against the simulated truth'), results),
-        h('div.note.quiet.ds-honest', null, icon('info'), h('div', null, h('b', null, 'For this to work in the field: '), ex.honest)),
+        h('div.note.quiet.ds-honest', null, icon('info'), h('div', null, h('b', null, 'What it needs: '), ex.honest)),
         h('div.ds-src', null, h('h4', null, 'Real work this stands on'), ex.sources.map((s) => h('a', { href: s.url, target: '_blank', rel: 'noopener' }, icon('external', 13), h('span', null, h('b', null, s.who), ' ', s.what)))),
         h('p.ds-assume', null, ex.assumed));
       const rec = { el, results }; sideParts.set(ex.meta.id, rec); return rec;
     }
-    const STATE = { seen: ['tag-ok', 'Found'], hint: ['tag-warn', 'A hint'], missed: ['', 'Missed'], na: ['', 'Cannot'] };
+    const STATE = { seen: ['tag-ok', 'Found'], hint: ['tag-warn', 'A hint'], missed: ['', 'Not seen'], na: ['', 'Not covered'] };
     function fillSide(ex) {
       const rec = buildSide(ex);
       if (side.firstChild !== rec.el) side.replaceChildren(rec.el);
       rec.results.replaceChildren(...ex.results().map((r) => h('div.ds-stat', null, h('span', null, r.k), h('b.num', { class: r.tone ? 'ds-' + r.tone : '' }, r.v), r.sub ? h('small', null, r.sub) : null)));
       const V = ex.verdicts();
-      hud.replaceChildren(h('div.ds-hud-head', null, h('b', null, 'What it finds in this pile')), ...[...pile.voids.map((v) => [v.id, v.id, v.kind, v.area.toFixed(1) + ' m² · ' + v.depth.toFixed(1) + ' m down']), ['person', '', 'the person', 'lying in void A']].map(([id, badge, name, desc]) => {
+      hud.replaceChildren(...[...pile.voids.map((v) => [v.id, v.id, v.kind, v.depth.toFixed(1) + ' m down']), ['person', '', 'the person', 'in void A']].map(([id, badge, name, desc]) => {
         const d = V[id] || { state: 'na', text: '' }, sdef = STATE[d.state] || STATE.na;
-        return h('div.ds-hud-row', { title: d.why || '' }, badge ? h('i.ds-hud-id', null, badge) : h('i.ds-hud-id.person', null, icon('person', 11)), h('span.ds-hud-what', null, h('b', null, name), h('small', null, desc)), h('span.ds-hud-v', null, h('span.tag.plain.' + (sdef[0] || 'ds-tag-off'), null, sdef[1]), h('small', null, d.text)));
+        return h('div.ds-hud-row', { title: name + ', ' + desc + '. ' + (d.why || '') }, badge ? h('i.ds-hud-id', null, badge) : h('i.ds-hud-id.person', null, icon('person', 11)), h('span.ds-hud-what', null, h('b', null, name), h('small', null, desc)), h('span.ds-hud-v', null, h('span.tag.plain.' + (sdef[0] || 'ds-tag-off'), null, sdef[1]), h('small', null, d.text)));
       }));
       stageCap.replaceChildren(h('b', null, ex.stageTitle?.() || ex.title), h('span', null, ex.stageNote?.() || ''), h('span.tag.tag-sim', { title: 'The pile and every measurement of it are simulated.' }, 'Simulated pile'));
       const rt = ex.readoutTitle(); readTitle.textContent = rt[0]; readSub.textContent = rt[1] || '';
@@ -135,6 +137,13 @@ export default {
     const begin = (cv) => { const z = sizes.get(cv); if (!z) return null; const c = cv.getContext('2d'); c.setTransform(z.dpr, 0, 0, z.dpr, 0, 0); c.clearRect(0, 0, z.w, z.h); return { c, w: z.w, h: z.h }; };
 
     const demoSeed = st.seed; // the film set is built once, for the pile the page opened with
+    // the pile itself only changes with the view, so it is painted once and reused while the instrument animates
+    let still = null, stillKey = '';
+    function stillPile(S) {
+      const z = sizes.get(stageCv), k = [S.w, S.h, z.dpr, view.x0, view.x1, view.z0, view.z1, st.truth, st.seed, L.tok('--bg-4')].join(); still = still || document.createElement('canvas');
+      if (k !== stillKey) { stillKey = k; still.width = stageCv.width; still.height = stageCv.height; const c = still.getContext('2d'); c.setTransform(z.dpr, 0, 0, z.dpr, 0, 0); drawPile({ ...S, c }); }
+      S.c.drawImage(still, 0, 0, S.w, S.h);
+    }
     let raf = 0, last = 0, lastS = null;
     function frame(now) {
       raf = requestAnimationFrame(frame);
@@ -150,7 +159,7 @@ export default {
         if (dirty.side) { fillSide(ex); dirty.side = false; }
         if (dirty.stage || anim || moving) {
           const b = begin(stageCv);
-          if (b) { const S = makeS(b.c, b.w, b.h); lastS = S; ex.under?.(S); drawPile(S); ex.drawStage(S); if (st.truth && !ex.hideLabels) voidLabels(S, ex.verdicts()); drawScale(S); }
+          if (b) { const S = makeS(b.c, b.w, b.h); lastS = S; ex.under?.(S); stillPile(S); ex.drawStage(S); if (st.truth) drawPerson(S); if (st.truth && !ex.hideLabels) voidLabels(S, ex.verdicts()); drawScale(S); }
           dirty.stage = false;
         }
         if (dirty.readout || anim) { const b = begin(readCv); if (b) ex.drawReadout({ c: b.c, w: b.w, h: b.h, t: now / 1000, truth: st.truth, pile, SX: lastS && view.x0 === FULL.x0 && view.x1 === FULL.x1 ? lastS.X : (x) => 56 + (x / 24) * (b.w - 72) }); dirty.readout = false; }

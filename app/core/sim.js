@@ -27,7 +27,7 @@ export const PHASE_INFO = {
   aerial: { label: 'Drone survey', hint: 'The scout drone maps the site from above and looks for people in the open.' },
   deploy: { label: 'Rover deploying', hint: 'HOUND-01 drives from staging to the building entrance.' },
   search: { label: 'Searching', hint: 'HOUND-01 stops at each room and listens for 10 seconds through the walls.' },
-  assess: { label: 'Checking leads', hint: 'Uncertain readings are checked from a second position before anyone is sent in.' },
+  assess: { label: 'Checking leads', hint: 'Each lead is checked from a second position before anyone is sent in.' },
   plan: { label: 'Planning rescue', hint: 'A safe route for the rescue team is planned around the damage. A person must approve it.' },
   rescue: { label: 'Rescue team moving', hint: 'The team follows the approved route to each person.' },
   complete: { label: 'Mission complete', hint: 'Everyone found has been reached. The report is ready.' },

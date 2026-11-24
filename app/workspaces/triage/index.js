@@ -56,17 +56,17 @@ export default {
     const viewSeg = h('div.seg', { role: 'group', 'aria-label': 'Map view' }, ...[['building', 'Building'], ['site', 'Whole site']].map(([id, label]) => h('button', { 'aria-pressed': String(id === view), onclick: (e) => { view = id; [...viewSeg.children].forEach((b) => b.setAttribute('aria-pressed', String(b === e.currentTarget))); plan.setView(id); } }, label)));
     const legend = h('div.triage-legend', null,
       h('span', null, h('i.lg-person'), 'Person found'), h('span', null, h('i.lg-possible'), 'Possible'), h('span', null, h('i.lg-route'), 'Route in board order'),
-      h('span', null, h('i.lg-exp'), 'Route inside a hazard'), h('span', null, h('i.lg-haz'), 'Hazard'), h('span', null, h('i.lg-sigma'), 'Where they may be (2σ)'));
+      h('span', null, h('i.lg-exp'), 'Route inside a hazard'), h('span', null, h('i.lg-haz'), 'Hazard'), h('span', null, h('i.lg-sigma'), 'Where they may be (2σ)'), h('span', null, 'Cards measure each route from where the team is now'));
     const access = h('section.triage-access', { 'aria-label': 'Access planner' });
     const centre = h('section.triage-centre', null,
-      h('div.triage-map', null, canvas, h('div.triage-maptop', null, viewSeg, mapNote, h('div.grow'), realityTag('sim')), legend),
+      h('div.triage-map', null, canvas, h('div.triage-maptop', null, viewSeg, mapNote, h('div.grow'), realityTag('sim'))), legend,
       access);
 
     const modelPanel = h('section.triage-panel', { 'aria-label': 'Priority model' });
     const teamPanel = h('section.triage-panel', { 'aria-label': 'Resource sketch' });
     const side = h('aside.triage-side', null, modelPanel, teamPanel);
     root.append(head, h('div.triage-body.adv-only', null, board, centre, side), live);
-    const hero = createHero(root, ctx); window.__hero = hero;
+    const hero = createHero(root, ctx);
     const demo = () => ctx.mode === 'demo';
 
     const plan = createPlan(canvas, { scene, onPick: (id) => { if (id) pick(id); }, view });
@@ -85,7 +85,7 @@ export default {
         const val = h('span.num.triage-wval'), share = h('span.num.triage-wshare');
         sliders[t.key] = { input, val, share };
         return h('div.triage-wrow', { 'data-k': t.key },
-          h('div.triage-wname', null, h('span.triage-chip', { 'data-k': t.key }, t.letter), h('b', null, t.label), t.assumed ? h('span.triage-assumed', { title: 'The shape of this term is a design assumption, not a measurement.' }, 'assumed') : null, h('div.grow'), val, share),
+          h('div.triage-wname', null, h('span.triage-chip', { 'data-k': t.key }, t.letter), h('b', null, t.label), t.assumed ? h('span.triage-assumed', { title: 'The shape of this term is a design value.' }, 'assumed') : null, h('div.grow'), val, share),
           input, h('p.triage-wdef', null, t.def));
       });
       const presets = h('div.seg.triage-presets', { role: 'group', 'aria-label': 'Weight presets' }, ...M.PRESETS.map((p) => h('button', { 'data-id': p.id, onclick: () => { weights = { ...p.w }; store.set('hound.triage.weights', weights); syncSliders(); announce('Weights set to ' + p.label + '.'); refresh(true); } }, p.label)));
@@ -253,13 +253,13 @@ export default {
     // ---------- access planner ----------
     function routeStrip(path, exposure, doors, endLabel, lengthLabel) {
       const W = 560, x0 = 46, x1 = W - 60, len = exposure.length || 1, X = (d) => x0 + (d / len) * (x1 - x0);
-      const g = s('svg', { viewBox: '0 0 ' + W + ' 62', class: 'triage-strip', role: 'img', 'aria-label': 'The way in as a straight strip: ' + lengthLabel });
+      const g = s('svg', { viewBox: '0 0 ' + W + ' 68', class: 'triage-strip', role: 'img', 'aria-label': 'The way in as a straight strip: ' + lengthLabel });
       g.append(s('defs', null, s('pattern', { id: 'triage-hz', width: 6, height: 6, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, s('rect', { width: 3, height: 6, class: 'st-hzfill' }))));
       g.append(s('line', { x1: x0, y1: 30, x2: x1, y2: 30, class: 'st-line' }));
       for (const sp of exposure.spans) g.append(s('rect', { x: X(sp.from), y: 24, width: Math.max(2, X(sp.to) - X(sp.from)), height: 12, class: 'st-hz', fill: 'url(#triage-hz)' }), s('text', { x: (X(sp.from) + X(sp.to)) / 2, y: 18, class: 'st-hzlab', 'text-anchor': 'middle' }, shortHz(sp.hz) + ' ' + (sp.to - sp.from).toFixed(1) + ' m'));
       const step = len > 120 ? 40 : len > 50 ? 20 : 10;
-      for (let d = step; d < len - step * 0.3; d += step) g.append(s('line', { x1: X(d), y1: 27, x2: X(d), y2: 33, class: 'st-tick' }), s('text', { x: X(d), y: 50, class: 'st-num', 'text-anchor': 'middle' }, d + ' m'));
-      for (const dr of doors) g.append(s('path', { d: 'M' + (X(dr.at) - 4) + ' 36 v-12 h8 v12', class: 'st-door' }), s('text', { x: X(dr.at), y: 58, class: 'st-lab', 'text-anchor': 'middle' }, dr.door.id === 'entrance' ? 'entrance' : 'door ' + dr.door.room));
+      for (let d = step; d < len - step * 0.3; d += step) g.append(s('line', { x1: X(d), y1: 27, x2: X(d), y2: 33, class: 'st-tick' }), s('text', { x: X(d), y: 46, class: 'st-num', 'text-anchor': 'middle' }, d + ' m'));
+      for (const dr of doors) g.append(s('path', { d: 'M' + (X(dr.at) - 4) + ' 36 v-12 h8 v12', class: 'st-door' }), s('text', { x: X(dr.at), y: 63, class: 'st-lab', 'text-anchor': 'middle' }, dr.door.id === 'entrance' ? 'entrance' : 'door ' + dr.door.room));
       g.append(s('circle', { cx: x0, cy: 30, r: 5, class: 'st-team' }), s('text', { x: x0 - 9, y: 34, class: 'st-lab', 'text-anchor': 'end' }, 'Team'));
       g.append(s('circle', { cx: x1, cy: 30, r: 5, class: 'st-end' }), s('text', { x: x1 + 9, y: 34, class: 'st-lab' }, endLabel));
       return g;
@@ -294,7 +294,7 @@ export default {
       g.append(fig(xS, 1.75, 'cs-team', false), fig(xP, 1.7, 'cs-fig', t.motion !== 'moving'));
       const dim = (xa, xb, y, label, anchor) => { const gg = s('g', { class: 'cs-dim' }); gg.append(s('line', { x1: xa, y1: floor + 3, x2: xa, y2: y + 4, class: 'ext' }), s('line', { x1: xb, y1: floor + 3, x2: xb, y2: y + 4, class: 'ext' }), s('line', { x1: xa, y1: y, x2: xb, y2: y }), s('line', { x1: xa - 3, y1: y + 3, x2: xa + 3, y2: y - 3 }), s('line', { x1: xb - 3, y1: y + 3, x2: xb + 3, y2: y - 3 }), s('text', { x: anchor === 'end' ? xb : anchor === 'start' ? xa : (xa + xb) / 2, y: y + 14, 'text-anchor': anchor || 'middle' }, label)); return gg; };
       g.append(dim(xS, xWall, floor + 20, '', 'end'), s('text', { x: xS - 8, y: floor + 24, class: 'cs-dimlab', 'text-anchor': 'end' }, M.ASSUMED.standOffM.toFixed(1) + ' m'), dim(xWall + tw, xP, floor + 20, alt.through.toFixed(1) + ' m to the estimated position', alt.through * k < 150 ? 'start' : 'middle'));
-      g.append(s('text', { x: 8, y: H - 8, class: 'cs-note' }, 'Wall ' + alt.wall.id + ' · ' + (alt.wall.state === 'damaged' ? 'damaged ' : '') + alt.wall.mat + ' · about ' + (thick * 100).toFixed(0) + ' cm (assumed) · to scale'));
+      g.append(s('text', { x: 8, y: H - 8, class: 'cs-note' }, 'Wall ' + alt.wall.id + ' · ' + (alt.wall.state === 'damaged' ? 'damaged ' : '') + alt.wall.mat + ' · about ' + (thick * 100).toFixed(0) + ' cm (design value) · to scale'));
       return g;
     }
 
@@ -315,7 +315,7 @@ export default {
               h('div.stat', null, h('b', null, '± ' + (2 * t.sigma).toFixed(1) + ' m'), h('span', null, 'position uncertainty (2σ)'))),
             routeStrip(t.path, t.exposure, t.doors, 'Person', t.length.toFixed(0) + ' metres'),
             h('p.triage-walknote', null, t.doors.length ? 'No wall to open: the planner reaches the estimated position through ' + t.doors.map((d) => (d.door.id === 'entrance' ? 'the entrance' : 'the door of room ' + d.door.room)).join(', then ') + '. ' : 'No wall to open: the way is in the open. ',
-              t.exposure.by.length ? 'It cannot avoid ' + t.exposure.by.map((x) => shortHz(x.hz)).join(' and ') + ' completely; the red stretch is where.' : 'It keeps out of every marked hazard.')));
+              t.exposure.by.length ? 'It passes through ' + t.exposure.by.map((x) => shortHz(x.hz)).join(' and ') + ' completely; the red stretch is where.' : 'It keeps out of every marked hazard.')));
         return;
       }
       // break through
@@ -327,7 +327,7 @@ export default {
       const rows = h('div.triage-alts', { role: 'radiogroup', 'aria-label': 'Approach sides, ranked by time and hazard' }, ...alts.map((a, i) => a.usable
         ? h('button.triage-alt', { role: 'radio', 'aria-checked': String(a === alt), onclick: () => choose(i) },
           h('span.triage-altname', null, h('b', null, a.label), a.best ? h('span.tag.tag-ok.plain', null, 'Quickest') : null, a.planners ? h('span.tag.plain', { title: 'The route planner always goes to the closest point it can reach.' }, 'Planner’s route') : null),
-          h('span.triage-altnums', { title: 'Time is walking at ' + M.TEAM_SPEED + ' m/s plus an assumed time to open the wall: drywall ' + M.ASSUMED.breachMin.drywall + ' min, concrete ' + M.ASSUMED.breachMin.concrete + ' min, a damaged wall × ' + M.ASSUMED.damagedFactor + '.' },
+          h('span.triage-altnums', { title: 'Time is walking at ' + M.TEAM_SPEED + ' m/s plus a design-value time to open the wall: drywall ' + M.ASSUMED.breachMin.drywall + ' min, concrete ' + M.ASSUMED.breachMin.concrete + ' min, a damaged wall × ' + M.ASSUMED.damagedFactor + '.' },
             h('span', null, (a.wall.state === 'damaged' ? 'damaged ' : '') + a.wall.mat),
             h('span', null, h('b.num', null, a.length.toFixed(0) + ' m'), ' walk'),
             h('span', null, h('b.num', { class: a.exposure.total > 0.05 ? 'bad' : '' }, a.exposure.total.toFixed(1) + ' m'), ' in hazards'),
@@ -343,11 +343,11 @@ export default {
               so.direct ? 'The nearest the person is likely to be is ' + so.clear.toFixed(1) + ' m behind the wall. ' : 'The person may be right behind the wall (clear depth ' + Math.max(0, so.clear).toFixed(1) + ' m), so offset the opening by 2σ + ' + M.ASSUMED.clearMarginM + ' m. ',
               so.collapseZone ? 'The wall is damaged: check it first and keep everyone not cutting ' + so.collapseZone.toFixed(1) + ' m back (1.5 × its height). ' : '',
               alt.debris?.length ? 'Debris lies behind this wall. ' : '',
-              h('i.triage-assumed', null, 'Rule of thumb, assumed'))),
+              h('i.triage-assumed', null, 'Rule of thumb'))),
           h('div.triage-breachside', null,
             h('p.triage-altlede', null, 'Sides the team could open. Ranked by walking and opening time, plus 30 s per metre inside a hazard.'),
             rows,
-            best && planners && best !== planners ? h('p.triage-fine', null, 'The route planner goes to the closest point it can reach (' + planners.side.toLowerCase() + ' side). This comparison rates the ' + best.side.toLowerCase() + ' side ' + mins(Math.max(0, planners.rank - best.rank)) + ' better. The planner cannot be told a side yet, so pass it on by radio.') : null)));
+            best && planners && best !== planners ? h('p.triage-fine', null, 'The route planner goes to the closest point it can reach (' + planners.side.toLowerCase() + ' side). This comparison rates the ' + best.side.toLowerCase() + ' side ' + mins(Math.max(0, planners.rank - best.rank)) + ' better. Pass the side on by radio.') : null)));
     }
 
     // ---------- resources ----------
@@ -386,14 +386,14 @@ export default {
         h('div.triage-teamstats', null,
           h('div.stat', null, h('b', null, mins(sol.makespan)), h('span', null, 'until the last person is reached')),
           nTeams > 1 ? h('div.stat', null, h('b', null, sol.makespan < base - 0.05 ? '−' + mins(base - sol.makespan) : 'no gain'), h('span', null, 'against one team')) : h('div.stat', null, h('b', null, String(use.length)), h('span', null, use.length === 1 ? 'person, in board order' : 'people, in board order')),
-          h('span.tag.plain.' + (nTeams > 1 ? 'tag-sim' : 'tag-ok'), { title: nTeams > 1 ? 'Only one rescue team is simulated. Extra teams are a planning what-if.' : 'The simulated rescue team.' }, nTeams > 1 ? 'What if' : 'The plan')),
+          h('span.tag.plain.' + (nTeams > 1 ? 'tag-sim' : 'tag-ok'), { title: nTeams > 1 ? 'Extra teams are a planning what-if.' : 'The simulated rescue team.' }, nTeams > 1 ? 'What if' : 'The plan')),
         g,
         h('div.triage-gkey', null, h('span', null, h('i.k-walk'), 'walking'), h('span', null, h('i.k-work'), 'opening a wall'), h('span', null, h('i.k-stay'), 'with the person, ' + M.ASSUMED.onSiteMin + ' min')),
         h('ol.triage-assign', null, ...sol.teams.map((line, i) => h('li', null, h('b', null, 'Team ' + (i + 1)), h('span', null, line.map((st) => use[st.i].rank + ' ' + (use[st.i].det.room ? 'room ' + use[st.i].det.room : 'outdoors')).join('  →  ') || 'stand by')))),
         h('div.triage-mini', { role: 'img', 'aria-label': 'Time until the last person is reached, by number of teams: ' + sols.map((x, i) => (i + 1) + ': ' + mins(x.makespan)).join(', ') },
           h('p', null, 'Last person reached, by number of teams'),
           ...sols.map((x, i) => h('div.triage-minirow', { 'data-on': String(i + 1 === nTeams) }, h('span.num', null, String(i + 1)), h('div.bar', null, h('i', { style: { width: (x.makespan / span) * 100 + '%' } })), h('span.num', null, mins(x.makespan))))),
-        h('p.triage-fine', null, (nTeams > 1 ? sol.tried.toLocaleString() + ' visiting orders checked. Objective: the smallest sum of each person’s time-to-reach × priority score. ' : '') + 'All teams start where Rescue team 1 is now. Wall-opening times are assumed' + (targets.length > 7 ? '; only the first seven on the board are assigned.' : '.')));
+        h('p.triage-fine', null, (nTeams > 1 ? sol.tried.toLocaleString() + ' visiting orders checked. Objective: the smallest sum of each person’s time-to-reach × priority score. ' : '') + 'All teams start where Rescue team 1 is now. Wall-opening times are design values' + (targets.length > 7 ? '; only the first seven on the board are assigned.' : '.')));
     }
 
     // ---------- sending the order ----------
@@ -427,7 +427,7 @@ export default {
       holdBox.hidden = ph === 'plan' && !holdAtPlan ? false : ph === 'rescue' || ph === 'complete';
       holdBox.querySelector('input').checked = holdAtPlan;
       let note;
-      if (ph === 'rescue' || ph === 'complete') note = [h('b', null, ph === 'complete' ? 'Everyone found has been reached.' : 'Route approved' + (r?.approvedBy ? ' by ' + r.approvedBy : '') + '.'), ' The planner is closed; the board shows who is still waiting.'];
+      if (ph === 'rescue' || ph === 'complete' || r?.status === 'approved' || r?.status === 'done') note = [h('b', null, ph === 'complete' ? 'Everyone found has been reached.' : 'Route approved' + (r?.approvedBy ? ' by ' + r.approvedBy : '') + '.'), ' The planner is closed; the board shows who is still waiting.'];
       else if (open && r?.status === 'planned') {
         const mine = lastSend && r.legs.map((l) => l.det).join() === lastSend.ids.join();
         note = [h('b', null, 'Route planned' + (mine ? (lastSend.human ? ' in your order' : ' in the model’s order') : '') + ': ' + r.length.toFixed(0) + ' m, about ' + Math.max(1, Math.round(r.etaS / 60)) + ' min.'), ' Waiting for approval. ', h('button.btn.btn-sm', { onclick: approve }, icon('check', 14), 'Approve'), ' ', h('button.btn.btn-sm.btn-ghost', { onclick: () => ctx.shell.open('mission') }, 'Review in Mission')];
@@ -443,9 +443,10 @@ export default {
       compute(); lastCompute = performance.now();
       renderBoard(animate); renderAccess(); renderTeams(); renderSend();
       const S = sim.state, real = S.routes.rescue && (S.routes.rescue.status === 'approved' || S.routes.rescue.status === 'done');
-      setText(mapNote, !model.order.length ? 'Nothing found yet' : real ? 'Showing the approved route' : 'Preview of the route in board order');
+      setText(mapNote, !model.order.length ? 'Nothing found yet' : real ? 'Showing the approved route' : 'Preview in board order');
       plan.draw();
     }
+    let accessW = 0; new ResizeObserver(() => { const w = access.clientWidth; if (visible && w && Math.abs(w - accessW) > 4) { accessW = w; if (model) renderAccess(); } }).observe(access);
     const soft = () => { if (visible && performance.now() - lastCompute > 450) refresh(true); };
     bus.on('tick', soft);
     for (const ev of ['detection', 'survivor', 'route', 'reset', 'seek']) bus.on(ev, () => { if (ev === 'reset' || ev === 'seek') { if (ev === 'reset') { manual = null; lastSend = null; altPick.clear(); heldAutoplay = false; } cards.forEach((el) => el.remove()); cards.clear(); } if (visible) refresh(true); });

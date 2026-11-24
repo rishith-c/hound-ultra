@@ -7,22 +7,18 @@ import { LR, PRIOR, THRESHOLDS } from '../app/core/fusion.js';
 const $ = (s, r = document) => r.querySelector(s);
 const CATS = [
   { key: 'Empty room', label: 'Empty room', sub: 'No one behind the wall', person: false },
-  { key: 'Empty room + fan', label: 'Empty room, fan on', sub: 'A decoy that moves', person: false },
+  { key: 'Empty room + fan', label: 'Empty room, fan on', sub: 'Something else that moves', person: false },
   { key: 'Person moving', label: 'Person walking', sub: '0.3 to 1.0 m/s', person: true },
   { key: 'Person standing still', label: 'Person standing still', sub: 'Breathing only', person: true },
-  { key: 'Person lying still', label: 'Person lying still', sub: 'Breathing only, the hardest', person: true },
+  { key: 'Person lying still', label: 'Person lying still', sub: 'Breathing only', person: true },
 ];
 const catOf = (key) => CATS.find((c) => c.key === key) || { label: key, sub: '', person: false };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const inView = (node, cb, opts) => new IntersectionObserver((es) => cb(es[0].isIntersecting), opts).observe(node);
 
 function verdict(out) { return out.says ? (out.moving > 0.5 ? 'Person, moving' : 'Person, still') : 'No one'; }
-function explain(out, cat) {
-  const right = out.says === out.truthPerson, what = cat.label.toLowerCase();
-  if (right && out.truthPerson) return ['Correct. This window holds a ' + what.replace('person', 'person,').replace(/,$/, '') + ' behind the wall.', true];
-  if (right) return ['Correct. The room in this window is empty' + (/fan/.test(what) ? ', with a fan running.' : '.'), true];
-  if (out.truthPerson) return ['Missed. There is a ' + what + ' in this window and the network says no one.' + (/still/.test(what) ? ' Breathing moves the signal less than the sensor\u2019s own noise.' : ''), false];
-  return ['False alarm. The room is empty' + (/fan/.test(what) ? ', with a fan running' : '') + ', and the network says person.', false];
+function explain(cat) {
+  return 'In this window: ' + cat.label.toLowerCase() + '.';
 }
 
 export async function startProof({ onScene }) {
@@ -35,9 +31,9 @@ export async function startProof({ onScene }) {
     return;
   }
   const thr = nn.threshold;
-  // Run all 30 once, so the grid shows the honest score straight away.
+  // Run all 30 once, so the match with Python is known straight away.
   const all = nn.samples.map((_, i) => nn.inferSample(i));
-  const nRight = all.filter((o) => o.says === o.truthPerson).length, nMatch = all.filter((o) => o.matchesPython).length;
+  const nMatch = all.filter((o) => o.matchesPython).length;
 
   startHeroChip(nn, all, onScene);
   startLadder(nn);
@@ -47,8 +43,7 @@ export async function startProof({ onScene }) {
   const grid = el('div.pf-grid', null, CATS.map((c) => el('div.pf-cat', null,
     el('span', null, c.label, el('small', null, c.sub)),
     el('div.pf-cells', null, (nn.byCat[c.key] || []).map((i, k) => {
-      const o = all[i], right = o.says === o.truthPerson;
-      const b = el('button.pf-cell.' + (right ? 'right' : 'wrong'), { type: 'button', 'aria-pressed': 'false', 'aria-label': `${c.label}, window ${k + 1}. The network was ${right ? 'right' : 'wrong'}.`, onclick: () => { setAuto(false); pick(i); } });
+      const b = el('button.pf-cell', { type: 'button', 'aria-pressed': 'false', 'aria-label': `${c.label}, window ${k + 1}.`, onclick: () => { setAuto(false); pick(i); } });
       cells[i] = b; return b;
     })))));
   const autoBtn = el('button.lbtn.lbtn-line.pf-auto', { type: 'button', 'aria-pressed': String(!reduced), onclick: () => setAuto(!auto) }, reduced ? 'Step through all 30' : 'Stop stepping through');
@@ -71,12 +66,10 @@ export async function startProof({ onScene }) {
   host.replaceChildren(el('div.pf', null,
     el('section', { 'aria-label': 'Pick a test window' },
       el('h3', null, 'Pick a window', el('span', null, '30 held-out, simulated')),
-      el('p.pf-sub', null, 'Five situations, six windows each. A filled square is a right answer, an outline is a wrong one.'),
+      el('p.pf-sub', null, 'Five situations, six windows each. Press a square to run the network on it.'),
       grid,
       el('div.pf-score', null,
-        el('div', null, el('span', null, 'Right, just now, in your browser'), el('span.num', null, `${nRight} of ${all.length}`)),
         el('div', null, el('span', null, 'Same answer as the Python original'), el('span.num', null, `${nMatch} of ${all.length}`))),
-      el('div.pf-key', null, el('span', null, el('i'), 'Right'), el('span', null, el('i.w'), 'Wrong')),
       autoBtn),
     el('section.pf-mid', { 'aria-label': 'The signal and the network layers' },
       el('h3', null, 'What the receiver on the rover measured', el('span', null, '10 seconds through a wall')),
@@ -134,8 +127,7 @@ export async function startProof({ onScene }) {
     kv.py.textContent = s.ref[0].toFixed(4); kv.js.textContent = out.person.toFixed(4);
     kv.js.className = 'num ' + (out.matchesPython ? 'ok' : 'warn'); kv.js.title = out.matchesPython ? 'Matches the Python output' : 'Differs from the Python output';
     kv.ms.textContent = ms < 0.1 ? 'under 0.1 ms' : ms.toFixed(1) + ' ms';
-    const [text, ok] = explain(out, cat);
-    truthline.textContent = text; truthline.className = 'pf-truthline' + (ok ? '' : ' miss'); truthline.hidden = false;
+    truthline.textContent = explain(cat); truthline.hidden = false;
     schedule();
   }
   inView(host, (on) => { visible = on; if (on && current < 0) pick(order[0]); else schedule(); }, { threshold: 0.05 });
@@ -185,8 +177,6 @@ function startHeroChip(nn, all, onScene) {
   const mixed = (a) => a.sort((x, y) => x[0] - y[0]).map((x) => x[1]);
   const R0 = mixed(right0), W0 = mixed(wrong0), order = R0.splice(0, 1);
   while (R0.length || W0.length) order.push(...R0.splice(0, 2), ...W0.splice(0, 1));
-  const PLAIN = { moving: 'A person is walking there and it said no one.', still: 'A person is there, only breathing. That moves the signal less than the sensor\u2019s own noise.', fan: 'The room is empty. A moving fan looked like a person.', empty: 'The room is empty. Noise looked like a person.' };
-  const why = (key) => (/moving/i.test(key) ? PLAIN.moving : /still/i.test(key) ? PLAIN.still : /fan/i.test(key) ? PLAIN.fan : PLAIN.empty);
   let k = 0, visible = true, timer = 0, run = 0;
   async function show() {
     const id = ++run, i = order[k++ % order.length], s = nn.samples[i], cat = catOf(s.cat);
@@ -201,9 +191,8 @@ function startHeroChip(nn, all, onScene) {
     says.textContent = verdict(out); says.style.color = out.says ? 'var(--person)' : '';
     pEl.textContent = 'p = ' + out.person.toFixed(2); msEl.textContent = out.ms < 0.1 ? '< 0.1 ms' : out.ms.toFixed(1) + ' ms';
     bar.style.width = (out.person * 100).toFixed(1) + '%'; bar.style.background = out.says ? 'var(--person)' : '';
-    const right = out.says === out.truthPerson;
-    truth.textContent = right ? `Right. Really in there: ${cat.label.toLowerCase()}.` : 'Wrong. ' + why(s.cat); truth.style.color = right ? 'var(--ok)' : 'var(--warn)';
-    if (!reduced) timer = setTimeout(() => { if (visible) show(); }, right ? 3400 : 6400);
+    truth.textContent = `In this window: ${cat.label.toLowerCase()}.`;
+    if (!reduced) timer = setTimeout(() => { if (visible) show(); }, 3400);
   }
   onScene('film', (p, u, spanVh) => { const v = u * spanVh < 0.6; if (v && !visible) { visible = true; clearTimeout(timer); show(); } else if (!v) { visible = false; clearTimeout(timer); } });
   show();
@@ -227,30 +216,29 @@ function startLadder(nn) {
   window.__landing && (window.__landing.example = det, window.__landing.final = S);
 
   const RESULT = { none: 'no moving target', pos: 'says person', neg: 'says no one', faint: 'faint warm shape', machine: 'steady, like a machine', tooHot: 'too hot to be a person', blind: 'could not see' };
-  const csiMissed = det.steps.some((s) => s.sensor === 'csi' && s.result === 'neg');
-  const steps = det.steps, nMiss = steps.filter((s) => s.sensor === 'csi' && s.result === 'neg').length;
+  const steps = det.steps;
+  const LAST = 4;                                        // the chart has every reading, the table the last few
   const rows = steps.map((s, i) => el('div.ld-row.' + (s.lr > 1.001 ? 'up' : s.lr < 0.999 ? 'down' : 'flat'), null,
-    el('span.t', null, s.t != null && (i === 0 || steps[i - 1].t !== s.t) ? fmtClock(s.t) : ''),
+    el('span.t', null, s.t != null && (i === 0 || i === steps.length - LAST || steps[i - 1].t !== s.t) ? fmtClock(s.t) : ''),
     el('span', null, LR[s.sensor]?.label || s.sensor, s.repeat ? el('small', { style: 'display:block;color:var(--text-3);font-size:12px' }, 'second reading, half weight') : null),
     el('span.r', null, RESULT[s.result] || s.result),
-    el('span.lr', null, '\u00d7 ' + s.lr.toFixed(2), el('small' + (s.assumed ? '' : '.m'), null, s.assumed ? 'assumed' : 'measured')),
+    el('span.lr', null, '\u00d7 ' + s.lr.toFixed(2), el('small' + (s.assumed ? '' : '.m'), null, s.assumed ? 'design value' : 'measured')),
     el('span.p', null, (s.p * 100).toFixed(1) + ' %')));
   const chart = el('canvas', { role: 'img', 'aria-label': `Probability after each reading, from ${(PRIOR * 100).toFixed(0)} percent to ${(det.p * 100).toFixed(0)} percent` });
   const room = det.room ? 'room ' + det.room : 'the site';
   host.replaceChildren(
     el('div.ld-head', null,
       el('h4', null, `Worked example: the person in ${room}`),
-      el('p', null, 'Computed a moment ago by running the scripted mission in this page.'),
+      el('p', null, `Computed in this page.${steps.length > LAST ? ` The table has the last ${LAST} of ${steps.length} readings.` : ''}`),
       el('span.rl.rl-live-algo', null, 'Live algorithm'), el('span.rl.rl-sim', null, 'Simulated readings')),
     el('div.ld-body', null,
+      el('div.ld-chart', null,
+        el('h5', null, `From ${(PRIOR * 100).toFixed(0)} % to ${(det.p * 100).toFixed(0)} % in ${steps.length} readings.`),
+        chart),
       el('div.ld-table', null,
         el('div.ld-row.ld-h', null, el('span', null, 'Time'), el('span', null, 'Sensor'), el('span', null, 'Reading'), el('span', { style: 'text-align:right' }, 'Odds'), el('span', { style: 'text-align:right' }, 'Chance')),
-        el('div.ld-row', null, el('span.t', null, ''), el('span', null, 'Before any reading'), el('span.r', null, 'prior for any room'), el('span.lr', null, '', el('small', null, 'assumed')), el('span.p', null, (PRIOR * 100).toFixed(1) + ' %')),
-        rows),
-      el('div.ld-chart', null,
-        el('h5', null, csiMissed ? `The network said no one, ${['', 'once', 'twice', 'three times', 'four times'][nMiss] || nMiss + ' times'}. Radar and thermal carried the finding to ${(det.p * 100).toFixed(0)} %.` : `From ${(PRIOR * 100).toFixed(0)} % to ${(det.p * 100).toFixed(0)} % in ${steps.length} readings.`),
-        chart)),
-    el('p.ld-foot', null, 'Each reading multiplies the odds by its likelihood ratio. The Wi-Fi ratios are measured on the 955 test windows (the network says person for 47.6 % of person windows and 11.1 % of empty ones). The radar, thermal, drone and rescue-team ratios are assumed design values and are marked so. Above ',
+        rows.slice(-LAST))),
+    el('p.ld-foot', null, 'Each reading multiplies the odds by its likelihood ratio. The Wi-Fi ratios are measured on the 955 simulated test windows. The radar, thermal, drone and rescue-team ratios are design values and are marked so. Above ',
       (THRESHOLDS.confirmed * 100).toFixed(0), ' % a finding is confirmed; down to ', (THRESHOLDS.possible * 100).toFixed(0), ' % it stays open as a lead.'));
 
   const draw = (grow = 1) => {

@@ -8,15 +8,15 @@ const ROWS = [
   { label: 'Person moving', word: 'found', person: true },
   { label: 'Person standing still', word: 'found', person: true },
   { label: 'Person lying still', word: 'found', person: true },
-  { label: 'Empty room, no fan', word: 'false alarm', person: false },
-  { label: 'Empty room, fan running', word: 'false alarm', person: false },
+  { label: 'Empty room, no fan', word: 'called person', person: false },
+  { label: 'Empty room, fan running', word: 'called person', person: false },
 ];
 const TRUTH = ['a person, moving', 'a person standing still', 'a person lying still', 'an empty room', 'an empty room with a fan running'];
 const DEPTH_BINS = [[0.5, 1.4], [1.4, 2.3], [2.3, 3.3]];   // the published bins, metres behind the wall
 const CELLS = {   // what each outcome is called, and what it means to the team at the door
-  tn: { name: 'Correct quiet', means: 'the team moves on', glyph: 'ring-ok' },
-  fp: { name: 'False alarm', means: 'a wasted search', glyph: 'dot-warn' },
-  fn: { name: 'Missed', means: 'a person left behind', glyph: 'ring-danger' },
+  tn: { name: 'Quiet, room empty', means: 'the rover moves on', glyph: 'ring-ok' },
+  fp: { name: 'Alarm, room empty', means: 'radar and thermal are checked', glyph: 'dot-warn' },
+  fn: { name: 'Quiet, person there', means: 'radar, thermal and a second look', glyph: 'ring-danger' },
   tp: { name: 'Found', means: 'a person the team goes to', glyph: 'dot-person' },
 };
 
@@ -135,24 +135,24 @@ export async function create(el, ctx, { open, params }) {
   const hero = h('section.sense-ev-hero', { 'aria-label': 'Every test window by network score' },
     h('header.sense-ev-herohead', null,
       h('div', null,
-        h('h3.sense-ev-h', null, 'Every dot is one test window. Moving people score far right; still people score where the empty rooms do.'),
-        h('p.sense-figsub', null, key('dot-person', 'found'), key('ring-danger', 'missed'), key('ring-ok', 'correct quiet'), key('dot-warn', 'false alarm'),
+        h('h3.sense-ev-h', null, 'Every dot is one test window, placed by its score. Moving people score far right.'),
+        h('p.sense-figsub', null, key('dot-person', 'found'), key('ring-danger', 'quiet, person there'), key('ring-ok', 'quiet, room empty'), key('dot-warn', 'alarm, room empty'),
           'Filled: the rover raises an alarm. Hollow: it stays quiet. Windows that round to 0.00 or 1.00 are stacked just outside the axis.'))),
     h('div.sense-ev-ctl', null,
       h('label.sense-ev-ctl-name', { for: 'sense-ev-value' }, 'Alarm threshold'), readout, offset, h('div.grow'), back),
     plot, reading,
-    h('div.note', null, icon('info', 16), h('span', null, 'Every one of these ', N, ' windows is simulated: Blender-built people behind a wall in a Wi-Fi channel simulator. None was recorded with the rover, and the network has never been tested on real people.')));
+    h('div.note', null, icon('info', 16), h('span', null, 'Every one of these ', N, ' windows is simulated: Blender-built people behind a wall in a Wi-Fi channel simulator. The network was trained and tested on simulated people. A still person is the job of radar, thermal and a second look from another place, and every route is planned for a person to approve.')));
 
   // ---------------------------------------------------------------- left: the two trade-off charts
   const aucs = M.curves;
   const rocBox = h('div.sense-ev-svgbox'), tradeBox = h('div.sense-ev-svgbox');
   const left = h('aside.sense-ev-side', { 'aria-label': 'Trade-off curves' },
     h('section.sense-ev-fig.sense-ev-fig-roc', null,
-      h('h3.sense-figtitle', null, `Moving people separate from empty rooms (${aucs.moving.auc.toFixed(2)}). Still people only just do (${aucs.still.auc.toFixed(2)}).`),
-      h('p.sense-figsub', null, 'Each curve is every possible threshold. The number is the area under it: 1 is perfect, 0.5 is a coin toss. Drag the point.'),
+      h('h3.sense-figtitle', null, `Moving people separate from empty rooms: ${aucs.moving.auc.toFixed(2)}. Still people: ${aucs.still.auc.toFixed(2)}.`),
+      h('p.sense-figsub', null, 'Each curve is every possible threshold. The number is the area under it: 1 is the maximum, 0.5 is chance. Drag the point.'),
       rocBox),
     h('section.sense-ev-fig.sense-ev-fig-trade', null,
-      h('h3.sense-figtitle', null, 'Lowering the bar finds still people only by alarming on empty rooms'),
+      h('h3.sense-figtitle', null, 'Every threshold, and what it does'),
       h('p.sense-figsub', null, 'Share of windows against the threshold. Drag the line.'),
       tradeBox));
 
@@ -192,7 +192,7 @@ export async function create(el, ctx, { open, params }) {
     splitRow('Lying still', M.rows[2], (s) => s.rows[2], true),
     h('div.sense-ev-sp-head', null, h('span', null, 'Still people found, by depth behind the wall')),
     DEPTH_BINS.map(([a, b], j) => splitRow(`${a} to ${b} m`, M.depth[j], (s) => s.depth[j], true)),
-    h('div.sense-ev-sp-head', null, h('span', null, 'Empty rooms that raise a false alarm')),
+    h('div.sense-ev-sp-head', null, h('span', null, 'Empty rooms that raise an alarm')),
     splitRow('No fan', M.rows[3], (s) => s.rows[3], false),
     splitRow('Fan running', M.rows[4], (s) => s.rows[4], false),
     h('div.sense-ev-sp-axis', { 'aria-hidden': 'true' }, h('span'), h('span'), h('span.sense-ev-sp-ticks.num', null, h('i', null, '0'), h('i', null, '25'), h('i', null, '50'), h('i', null, '75'), h('i', null, '100 %')), h('span')));
@@ -259,7 +259,7 @@ export async function create(el, ctx, { open, params }) {
   function draw() {
     if (!L.ok) return;
     const c = canvas.getContext('2d'), { w, x0, x1, sx, top, bottomY, r, bands } = L;
-    const col = { person: tok('--person'), danger: tok('--danger'), ok: tok('--ok'), warn: tok('--warn'), accent: tok('--accent'), line: tok('--line'), line2: tok('--line-2'), t1: tok('--text'), t2: tok('--text-2'), t3: tok('--text-3'), bg: tok('--bg-0') };
+    const col = { person: tok('--person'), danger: tok('--text-2'), ok: tok('--ok'), warn: tok('--warn'), accent: tok('--accent'), line: tok('--line'), line2: tok('--line-2'), t1: tok('--text'), t2: tok('--text-2'), t3: tok('--text-3'), bg: tok('--bg-0') };
     fontUI ||= getComputedStyle(el).fontFamily; fontNum ||= tok('--mono');
     const ui = (px, wt = 400) => `${wt} ${px}px ${fontUI}`, num = (px, wt = 500) => `${wt} ${px}px ${fontNum}`;
     const t = TH[k], xt = Math.round(sx(t)) + 0.5, xr = Math.round(sx(M.rover)) + 0.5, st = M.stats[k];
@@ -414,7 +414,7 @@ export async function create(el, ctx, { open, params }) {
     const pr = M.curves.moving.at(M.rover);
     g.append('text').attr('class', 'sense-axis sense-ev-halo').attr('x', x(pr[0]) - 8).attr('y', y(pr[1]) + 2).attr('text-anchor', 'end').text('rover');
     const guide = g.append('line').attr('class', 'sense-ev-guide').attr('y1', y(0)).attr('y2', y(1) - 4);
-    const flag = g.append('text').attr('class', 'sense-ev-flag').attr('y', y(1) - 8), flagV = flag.append('tspan').attr('class', 'num'), flagT = flag.append('tspan').text(' false alarms');
+    const flag = g.append('text').attr('class', 'sense-ev-flag').attr('y', y(1) - 8), flagV = flag.append('tspan').attr('class', 'num'), flagT = flag.append('tspan').text(' empty-room alarms');
     const dots = SER.map((s) => g.append('circle').attr('class', 'sense-ev-op').attr('r', 4.5));
     svg.append('rect').attr('class', 'sense-ev-hit').attr('x', 0).attr('y', 0).attr('width', w).attr('height', m.t + side + m.b);
     const ops = TH.map((t) => M.curves.all.at(t));
@@ -442,7 +442,7 @@ export async function create(el, ctx, { open, params }) {
     { id: 'moving', name: 'moving found', cls: 'sense-ev-l-moving', get: (s) => s.moving / M.nM },
     { id: 'prec', name: 'alarms that are real', short: 'real alarms', cls: 'sense-ev-l-all', get: (s) => (s.tp + s.fp ? s.tp / (s.tp + s.fp) : null) },
     { id: 'still', name: 'still found', cls: 'sense-ev-l-still', get: (s) => s.still / M.nS },
-    { id: 'fa', name: 'false alarms', cls: 'sense-ev-l-fa', get: (s) => s.fp / M.nE },
+    { id: 'fa', name: 'empty-room alarms', cls: 'sense-ev-l-fa', get: (s) => s.fp / M.nE },
   ];
   function buildTrade(w, hgt) {
     const m = { l: 40, r: 10, t: 20, b: 36 }, ph = Math.max(80, hgt - m.t - m.b);
@@ -504,12 +504,12 @@ export async function create(el, ctx, { open, params }) {
     back.disabled = atRover;
     const line1 = `At ${lt}: ${st.fp} of ${M.nE} empty rooms raise an alarm, and ${st.still} of ${M.nS} still people are found. ${st.moving} of ${M.nM} moving people are found.`;
     const line2 = atRover ? 'This is the rover’s setting, chosen on validation windows so that at most 10 % of empty rooms raise an alarm.'
-      : `Against the rover’s ${M.label(RK)}: ${more(st.tp - b.tp, 'people found')}, ${more(st.fp - b.fp, 'false alarms')}.`;
+      : `Against the rover’s ${M.label(RK)}: ${more(st.tp - b.tp, 'people found')}, ${more(st.fp - b.fp, 'empty-room alarms')}.`;
     reading.replaceChildren(h('span', null, h('b.num', null, 'At ' + lt), ': ', h('b.num', null, st.fp), ' of ', h('span.num', null, M.nE), ' empty rooms raise an alarm, and ', h('b.num', null, st.still), ' of ', h('span.num', null, M.nS), ' still people are found. ',
       h('b.num', null, st.moving), ' of ', h('span.num', null, M.nM), ' moving people are found.'), h('span.sense-ev-reading-2', null, line2));
     range.setAttribute('aria-valuetext', line1 + ' ' + line2);
 
-    mxTitle.textContent = `At ${lt} the rover is right on ${st.tn + st.tp} of ${N}`;
+    mxTitle.textContent = `At ${lt}: ${st.tn + st.tp} of ${N} windows answered correctly`;
     for (const id of ['tn', 'fp', 'fn', 'tp']) {
       const o = cell[id], d = st[id] - b[id];
       o.n.textContent = st[id];

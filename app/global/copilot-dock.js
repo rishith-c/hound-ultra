@@ -2,6 +2,7 @@
 // current workspace. It is the same conversation as the Copilot workspace (one session), in a compact view.
 import { getSession } from '../workspaces/copilot/session.js';
 import { createChatView } from '../workspaces/copilot/chat.js';
+import { layerState } from '../workspaces/copilot/tools.js';
 
 export function init(ctx) {
   const { h, icon } = ctx.kit, bus = ctx.bus;
@@ -21,6 +22,7 @@ export function init(ctx) {
         h('button.btn.btn-ghost.btn-icon.btn-sm', { 'aria-label': 'Close the copilot', onclick: () => close() }, icon('close'))),
       chat.el);
     drawer.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(); } });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen && document.activeElement === document.body && !document.querySelector('.dialog')) close(); }); // a clicked suggestion is removed, which leaves focus on the page
     document.getElementById('overlays').append(drawer);
     void drawer.offsetWidth; // so the first open animates
   }
@@ -38,6 +40,7 @@ export function init(ctx) {
   const toggle = () => (isOpen ? close() : open());
   bus.on('copilot:open', (o) => open(o || {}));
   bus.on('copilot:close', close);
+  bus.on('twin:ready', () => setTimeout(() => { for (const [id, on] of layerState) bus.emit('twin:layer', { id, on }); }, 0)); // layers asked for before the 3-D view opened; after Mission has applied its own defaults
   bus.on('workspace', (id) => { if (id === 'copilot') close(); });
   window.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'j') { e.preventDefault(); toggle(); } });
   ctx.copilot = { open, close, toggle, session };

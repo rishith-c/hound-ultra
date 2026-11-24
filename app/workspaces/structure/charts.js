@@ -25,7 +25,7 @@ export function drawBetti(c, w, h, curve, p) {
   for (const t of [0, 1, 10, 100, 1000, 10000]) { if (t > vmax * 1.2) break; const y = Math.round(Y(t)) + 0.5; c.beginPath(); c.moveTo(L, y); c.lineTo(L + pw, y); c.stroke(); label(c, p, String(t), L - 6, y + 3.5, { align: 'right', mono: true, size: 10 }); }
   for (let r = 0; r <= rmax + 1e-6; r += 0.1) { const x = Math.round(X(r)) + 0.5; c.beginPath(); c.moveTo(x, T + ph); c.lineTo(x, T + ph + 4); c.stroke(); label(c, p, (2 * r * 100).toFixed(0), x, T + ph + 15, { align: 'center', mono: true, size: 10 }); }
   label(c, p, 'gaps narrower than this are sealed, cm', L + pw / 2, h - 2, { align: 'center' });
-  const series = [['b1', 'tunnels', p.t2], ['b0', 'pieces', p.accent], ['b2', 'sealed pockets', p.warn]]; const ends = [];
+  const series = [['b1', 'tunnels', p.t2], ['b0', 'pieces', p.accent], ['b2', 'sealed', p.warn]]; const ends = [];
   for (const [k, name, colr] of series) { c.beginPath(); curve.forEach((q, i) => { const x = X(q.r), y = Y(q[k]); i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.strokeStyle = colr; c.lineWidth = k === 'b2' ? 2 : 1.4; c.stroke(); for (const q of curve) { c.beginPath(); c.arc(X(q.r), Y(q[k]), k === 'b2' ? 2.6 : 1.8, 0, 6.3); c.fillStyle = colr; c.fill(); } const q = curve[curve.length - 1]; ends.push({ y: Y(q[k]), name: name + ' ' + q[k], colr, x: X(q.r) }); }
   ends.sort((a, b) => a.y - b.y); for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 12) ends[i].y = ends[i - 1].y + 12;
   for (const e of ends) label(c, p, e.name, e.x + 8, e.y + 3.5, { color: e.colr, size: 11 });
@@ -63,7 +63,7 @@ export function drawFragility(c, w, h, d, p) {
     const done = pts.filter((q) => q.n > 0); if (!done.length) continue;
     c.beginPath(); done.forEach((q, i) => { const x = X(q.pga), y = Y(q[key] / q.n); i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.strokeStyle = colr; c.lineWidth = 1.6; c.stroke();
     for (const q of done) { const [lo, hi] = wilson(q[key], q.n), x = X(q.pga); c.strokeStyle = colr; c.globalAlpha = 0.5; c.beginPath(); c.moveTo(x, Y(lo)); c.lineTo(x, Y(hi)); c.stroke(); c.globalAlpha = 1; c.beginPath(); c.arc(x, Y(q[key] / q.n), 3, 0, 6.3); c.fillStyle = colr; c.fill(); }
-    const q = done[done.length - 1]; label(c, p, key === 'shift' ? 'pile shifts' : 'void compromised', Math.min(X(q.pga) + 6, w - 92), Y(q[key] / q.n) + (key === 'shift' ? -7 : 13), { color: colr });
+    const q = done[done.length - 1]; const yq = Y(q[key] / q.n); label(c, p, key === 'shift' ? 'pile shifts' : 'void compromised', L + pw - 8, yq < T + 18 ? yq + 15 : yq - 8, { color: colr, align: 'right' });
   }
   if (d.mark != null) { const x = Math.round(X(d.mark)) + 0.5; c.strokeStyle = p.accent; c.setLineDash([2, 3]); c.beginPath(); c.moveTo(x, T); c.lineTo(x, T + ph); c.stroke(); c.setLineDash([]); }
 }

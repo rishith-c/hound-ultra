@@ -7,11 +7,11 @@ const FIRST = 60001;
 const HALF = { f: 0.0555, fFan: 0.0395, fNoFan: 0.065 };
 export const CASES = [
   { id: 'base', label: 'As modelled', note: 'All four sensors', s: {} },
-  { id: 'noth', label: 'No thermal camera', note: 'Thermal rates assumed', s: { thermal: { on: false } } },
-  { id: 'noradar', label: 'No radar', note: 'Radar rates assumed', s: { radar: { on: false }, micro: { on: false } } },
+  { id: 'noth', label: 'No thermal camera', note: 'Design-value thermal rates', s: { thermal: { on: false } } },
+  { id: 'noradar', label: 'No radar', note: 'Design-value radar rates', s: { radar: { on: false }, micro: { on: false } } },
   { id: 'wide', label: 'Double Wi-Fi range', note: '13 m, one wall', s: { csi: { range: 13 } } },
-  { id: 'two', label: 'Wi-Fi through two walls', note: 'Rates behind it assumed', s: { csi: { maxWalls: 2 } } },
-  { id: 'half', label: 'Half the Wi-Fi false alarms', note: '11.1 % to 5.6 %', s: { csi: HALF } },
+  { id: 'two', label: 'Wi-Fi through two walls', note: 'Design-value rates behind it', s: { csi: { maxWalls: 2 } } },
+  { id: 'half', label: 'Half the Wi-Fi empty-room alarms', note: '11.1 % to 5.6 %', s: { csi: HALF } },
   { id: 'still', label: 'Twice the still detection', note: '21 % to 43 %', s: { csi: { dStill: 0.428, depth: [[1.4, 0.57], [2.3, 0.38], [1e9, 0.334]] } } },
 ];
 
@@ -26,7 +26,7 @@ export default async function (pane, ctx) {
   pane.append(h('div.strategy-ex.wide-side', null, left, h('div.strategy-main', null, h('div.strategy-treewrap', null, cv), overlay.el), right));
   const seg = h('div.btn-group', { role: 'group', 'aria-label': 'Measure' }, ...[['hour', 'Per hour'], ['found', 'Found'], ['false', 'False alarms']].map(([id, t]) => h('button.btn.btn-sm', { type: 'button', 'aria-pressed': String(id === metric), onclick: (e) => { metric = id; for (const b of seg.children) b.setAttribute('aria-pressed', String(b === e.currentTarget)); hist.clear(); rebuild(); draw(true); } }, t)));
   const status = h('p', { 'aria-live': 'polite' }), runBtn = h('button.btn.btn-sm', { type: 'button', onclick: () => (pool ? stop() : run()) }, 'Measure again'), body = h('tbody'), point = h('p.strategy-point', null, 'Measuring.');
-  left.append(exhibitBrief(ctx.kit, { n: 5, title: 'The value of a sensor', sentences: ['A sensor is worth what it changes: who is found, how soon, and how many empty rooms the team is sent into.', 'So the page searches the same buildings again with one thing changed and measures the difference.'], sources: ['howard', 'koopman'], tags: ['live-algo', 'sim'], field: 'Rates must be measured on the real sensor. The Wi-Fi rates come from simulated windows, the radar and thermal rates are assumed.', unknown: 'How rates change in wet, steel or furnished buildings. Sensors are treated as independent, which flatters every addition.' }),
+  left.append(exhibitBrief(ctx.kit, { n: 5, title: 'The value of a sensor', sentences: ['A sensor is worth what it changes: who is found, how soon, and how many empty rooms the team is sent into.', 'So the page searches the same buildings again with one thing changed and measures the difference.'], sources: ['howard', 'koopman'], tags: ['live-algo', 'sim'], field: 'Rates must be measured on the real sensor. The Wi-Fi rates come from simulated windows, the radar and thermal rates are design values.', unknown: 'How rates change in wet, steel or furnished buildings. Sensors are treated as independent.' }),
     h('section.strategy-sec', null, h('h3', null, 'Measure'), seg, h('p', null, 'The planner is the greedy rule of exhibit 3, with the stopping threshold tuned for “as modelled” and kept for every case. A better sensor with its own threshold could do better.')));
   right.append(h('section.strategy-sec', null, h('h3', null, 'Measured what-ifs'), status, h('div.strategy-actions', null, runBtn)), h('section.strategy-sec', null, point, h('table.strategy-table', null, h('thead', null, h('tr', null, h('th', null, 'Sensors'), h('th.num', null, 'Per hour'), h('th.num', null, 'Change'), h('th.num', null, 'Found'), h('th.num', null, 'False'))), body), h('p.strategy-fine', null, 'Per hour: mean over worlds of people found divided by mission time. Change: paired difference on the same worlds, 95 % interval, in the chosen measure. Found: share of the people present. False: rooms the team entered with no one in them, per world. Seeds 60001 onward, not used for tuning. Six comparisons are made, so one in twenty intervals is expected to miss.')));
   const get = (id) => rows.get(id) || rows.set(id, new Map()).get(id);

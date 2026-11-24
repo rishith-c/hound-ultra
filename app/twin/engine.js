@@ -222,7 +222,14 @@ export async function createEngine(host, ctx, opts = {}) {
       canvas.remove(); overlay.remove(); host.querySelector(':scope > .twin-caption')?.remove(); host.classList.remove('twin-host', 'static');
     },
   };
-  resize(); frame(performance.now(), true);          // compile shaders and draw one frame before anyone sees the canvas
+  // Shaders are compiled off the main thread where the browser allows it, so the loading line keeps moving.
+  onProgress(0.97, 'Lighting the site'); await nextFrame();
+  try {
+    resize(); renderer.setRenderTarget(post.sceneRT); const compiled = renderer.compileAsync(scene, camera); renderer.setRenderTarget(null);   // the programs for the pass that is really drawn
+    await Promise.race([compiled, new Promise((r) => setTimeout(r, 6000))]);
+  } catch (e) { /* the first frame compiles the rest */ }
+  if (disposed) return api;
+  resize(); frame(performance.now(), true);          // draw one frame before anyone sees the canvas
   onProgress(1, 'Ready');
   if (ctx.bus) ctx.bus.emit('twin:ready', { layers: api.layers() });
   if (autostart) api.start();

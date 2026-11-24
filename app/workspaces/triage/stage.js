@@ -10,7 +10,7 @@ export function newEngine(ctx, emit, autoplay = true) { const e = createEngine({
 export async function advance(engine, until, alive = () => true) {
   for (let n = 0; n < 24000 && !engine.done; ) {
     const t0 = performance.now();
-    while (n++ < 24000 && !engine.done && performance.now() - t0 < 7) { if (until(engine.state)) return true; engine.step(); }
+    while (n++ < 24000 && !engine.done && performance.now() - t0 < 3) { if (until(engine.state)) return true; engine.step(); }
     await new Promise((r) => setTimeout(r, 0));
     if (!alive()) return false;
   }
@@ -55,7 +55,7 @@ export async function createStage(host, ctx, engine, { light = 'dawn' } = {}) {
   const frames = [];
   T.addUpdate((dt, time) => {
     const rd = reduced();
-    for (let i = 0; i < frames.length; i++) frames[i](rd ? 0 : dt, time);
+    for (let i = 0; i < frames.length; i++) frames[i](rd ? 0 : dt, time, dt);
     if (!down) { idle += dt; if (idle > 5) { const q = Math.exp(-dt * 0.8); rig.dragYaw *= q; rig.dragPitch *= q; rig.zoom = 1 + (rig.zoom - 1) * q; } }
     if (rig.snap || rd) { for (const k of KEYS) { cur[k] = goal[k]; vel[k] = 0; } rig.snap = false; }
     else {

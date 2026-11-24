@@ -119,6 +119,13 @@ export function keyMoments(ctx) {
   try { future = referenceRun(ctx).events.filter((e) => NOTABLE.has(e.code) && e.t > S.t + 0.5).map((e) => ({ t: e.t, code: e.code, label: momentLabel(e), text: e.text, source: 'scripted' })); } catch { /* seek targets from the log only */ }
   return [...live, ...future];
 }
+// The operator asks about a lead in a room that has none (yet). Returns the sentence that says so, or null.
+export function roomWithoutLead(text, ctx) {
+  const m = /\b(10[1-4]|109|11[0-2])\b/.exec(text), S = ctx.sim.state;
+  if (!m || !/\b(lead|why|detection|contact|reading|possible|sure|confident)\b/i.test(text) || S.detections.some((d) => d.room === m[1])) return null;
+  const c = S.coverage[m[1]];
+  return 'There is no lead in room ' + m[1] + ' at ' + fmtClock(S.t) + ': ' + (c.status === 'unsearched' ? 'the room has not been searched yet.' : c.status === 'blocked' ? 'the room is blocked and was not searched, which is not the same as clear.' : 'the room was searched and no one was detected (chance someone was missed: ' + pct(c.residual) + ' %).');
+}
 export function parseClock(s) { const m = /^(\d{1,3}):([0-5]\d)$/.exec(String(s).trim()); return m ? +m[1] * 60 + +m[2] : null; }
 export const normClock = (s) => { const t = parseClock(s); return t == null ? String(s) : fmtClock(t); };
 
@@ -235,7 +242,7 @@ export function sitrepLines(f) {
     ['Next', f.next],
   ];
 }
-export const SITREP_CAVEAT = 'Simulated exercise. Confidence is the fusion output; radar and thermal likelihoods are assumed design values. Not a medical assessment.';
+export const SITREP_CAVEAT = 'Simulated exercise. Confidence is the fusion output; radar and thermal likelihoods are design values. Not a medical assessment.';
 
 // ---------- the tools ----------
 // kind: ask (read only) | act (changes the mission) | view (changes what is on screen) | drill (a fault, on purpose)
@@ -248,7 +255,7 @@ tool({ name: 'get_mission_status', kind: 'ask', title: 'Mission status', llm: 'o
     const facts = { clock: f.as_of, phase: f.phase, phase_note: S.hold ? 'Every unit is holding.' : PHASE_INFO[S.phase].hint, clock_running: S.running, speed: S.speed + 'x', autoplay: S.autoplay,
       people_found: f.people.length, people_reached: f.people.filter((p) => p.status.startsWith('reached')).length, leads_open: f.open_leads.length, leads_closed: f.closed_leads.length,
       rooms_clear: f.search.rooms_clear, rooms_total: f.search.rooms_total, rooms_not_searched: f.search.not_searched.map((r) => r.room), units: f.units, route: f.route ? f.route.status : 'none', faults_active: f.faults_active, next: f.next };
-    const text = f.phase + ' at ' + f.as_of + '. ' + (f.people.length ? f.people.length + (f.people.length === 1 ? ' person' : ' people') + ' found (' + f.people.map((p) => p.where).join(', ') + ')' : 'No one found yet') + ', ' + f.open_leads.length + ' open lead' + (f.open_leads.length === 1 ? '' : 's') + '. HOUND-01 is ' + rover.state + ', battery ' + rover.battery_pct + ' %, link ' + rover.link_pct + ' %. ' + (f.faults_active.length ? 'Fault active: ' + f.faults_active.join(', ') + '. ' : '') + f.next;
+    const text = f.phase + ' at ' + f.as_of + '. ' + (f.people.length ? f.people.length + (f.people.length === 1 ? ' person' : ' people') + ' found (' + f.people.map((p) => p.where).join('; ') + ')' : 'No one found yet') + ', ' + f.open_leads.length + ' open lead' + (f.open_leads.length === 1 ? '' : 's') + '. HOUND-01 is ' + rover.state + ', battery ' + rover.battery_pct + ' %, link ' + rover.link_pct + ' %. ' + (f.faults_active.length ? 'Fault active: ' + f.faults_active.join(', ') + '. ' : '') + f.next;
     return { ok: true, facts, text };
   } });
 
@@ -267,9 +274,9 @@ tool({ name: 'explain_lead', kind: 'ask', title: 'Explain a lead', llm: 'why the
   run(a, ctx) {
     const S = ctx.sim.state, d = S.detections.find((x) => x.id === a.id);
     const steps = d.steps.map((s) => ({ at: fmtClock(s.t), sensor: LR[s.sensor]?.label || SENSOR_WORDS[s.sensor] || s.sensor, said: RESULT_WORDS[s.result] || s.result, note: s.note, factor: +s.lr.toFixed(2), ...(s.repeat ? { repeat_reading: 'counted at half weight' } : {}), source: s.assumed ? 'assumed' : 'measured in simulation', after_pct: pct(s.p), key: s.sensor, result: s.result }));
-    const facts = { ...leadFacts(d), verdict: d.reason, start_pct: pct(PRIOR), confirm_at_pct: pct(THRESHOLDS.confirmed), keep_open_above_pct: pct(THRESHOLDS.possible), steps, caution: 'Only the Wi-Fi network factor is measured (on simulated test windows). Every other factor is an assumed design value.' };
+    const facts = { ...leadFacts(d), verdict: d.reason, start_pct: pct(PRIOR), confirm_at_pct: pct(THRESHOLDS.confirmed), keep_open_above_pct: pct(THRESHOLDS.possible), steps, caution: 'The Wi-Fi network factor is measured (on simulated test windows). Every other factor is a design value.' };
     const up = steps.filter((s) => s.factor > 1.05).sort((x, y) => y.factor - x.factor)[0], down = steps.filter((s) => s.factor < 0.95).sort((x, y) => x.factor - y.factor)[0];
-    const text = d.id + ' is ' + (d.status === 'confirmed' ? 'a confirmed person' : d.status === 'possible' ? 'a possible person' : 'closed (' + d.kind + ')') + ' in ' + whereOf(d).replace('room ', 'room ') + ', ' + pct(d.p) + ' %. ' + d.reason + ' It started at ' + pct(PRIOR) + ' % (assumed) and ' + steps.length + ' reading' + (steps.length === 1 ? '' : 's') + ' moved it.' + (up ? ' Strongest for: ' + up.sensor + ' (' + up.note + ', ×' + up.factor + ').' : '') + (down ? ' Strongest against: ' + down.sensor + ' (' + down.note + ', ×' + down.factor + ').' : '');
+    const text = d.id + ' is ' + (d.status === 'confirmed' ? 'a confirmed person' : d.status === 'possible' ? 'a possible person' : 'closed (' + d.kind + ')') + (d.outdoor ? ' ' : ' in ') + whereOf(d) + ', ' + pct(d.p) + ' %. ' + d.reason + ' It started at ' + pct(PRIOR) + ' % (design value) and ' + steps.length + ' reading' + (steps.length === 1 ? '' : 's') + ' moved it.' + (d.status === 'possible' ? ' A lead is confirmed at ' + pct(THRESHOLDS.confirmed) + ' %.' : '') + (up ? ' Strongest for: ' + up.sensor + ' (' + up.note + ', ×' + up.factor + ').' : '') + (down ? ' Strongest against: ' + down.sensor + ' (' + down.note + ', ×' + down.factor + ').' : '');
     const follow = [{ label: 'Select ' + d.id, call: { tool: 'select', args: { type: 'lead', id: d.id } } }, { label: 'Open Evidence', call: { tool: 'open_workspace', args: { id: 'graph' } } }];
     if (commandState(ctx, 'investigate', { id: d.id }).ok) follow.unshift({ label: 'Second look at ' + d.id, call: { tool: 'investigate', args: { id: d.id } } });
     return { ok: true, facts, text, follow };
@@ -345,14 +352,17 @@ tool({ name: 'seek_to', kind: 'view', title: 'Seek the replay', llm: 'jump the m
     const m = MOMENTS.find((x) => x.id === a.event);
     if (m.id === 'start') return { t: 0, label: m.label };
     const hit = keyMoments(ctx).find((k) => k.code === m.code);
-    return hit ? { t: hit.t + 0.2, label: m.label, source: hit.source } : null;
+    return hit ? { t: hit.t + 0.2, label: m.label, source: hit.source, code: m.code } : null;
   },
   check(a, ctx) { const r = this.resolve(a, ctx); if (!r) return { ok: false, reason: 'That moment does not happen in this run.' }; if (r.t > referenceRun(ctx).end + 600) return { ok: false, reason: 'That is long after the mission ends.' }; return { ok: true }; },
   confirm(a, ctx) {
     const r = this.resolve(a, ctx), lost = ctx.sim.commandLog.filter((c) => c.t > r.t);
-    return lost.length ? { title: 'Seek back to ' + fmtClock(r.t) + '?', confirmLabel: 'Seek', lines: ['The mission is replayed from the start up to that moment.', lost.length + ' operator command' + (lost.length === 1 ? '' : 's') + ' given after it will be discarded: ' + lost.map((c) => c.name).join(', ') + '.'] } : null;
+    return lost.length ? { title: 'Seek back to ' + fmtClock(r.t) + '?', confirmLabel: 'Seek', lines: [lost.length + ' operator command' + (lost.length === 1 ? '' : 's') + ' given after it will be discarded: ' + lost.map((c) => c.name).join(', ') + '.', 'The mission is replayed from the start up to that moment.'] } : null;
   },
-  run(a, ctx) { const r = this.resolve(a, ctx); ctx.sim.seek(r.t); const S = ctx.sim.state; return { ok: true, facts: { moment: r.label, clock: fmtClock(S.t), phase: PHASE_INFO[S.phase].label, ...(r.source === 'scripted' ? { note: 'time taken from the scripted run' } : {}) }, text: 'Replay moved to ' + fmtClock(S.t) + ' (' + r.label + '). Phase: ' + PHASE_INFO[S.phase].label + '.' }; } });
+  run(a, ctx) {
+    const r = this.resolve(a, ctx); ctx.sim.seek(r.t); const S = ctx.sim.state;
+    if (r.code && !S.events.some((e) => e.code === r.code)) return { ok: true, facts: { moment: r.label, happened_in_this_run: false, clock: fmtClock(S.t), phase: S.hold ? 'All stop' : PHASE_INFO[S.phase].label, note: 'time taken from the scripted run' }, text: 'The replay is at ' + fmtClock(S.t) + ', when this happens in the scripted run (' + r.label.toLowerCase() + '). In this run it has not happened: ' + (S.hold ? 'the all stop given earlier is still active.' : 'your commands or a drill changed the timing.'), follow: S.hold ? [{ label: 'Resume', call: { tool: 'resume', args: {} } }, { label: 'Back to the start', call: { tool: 'seek_to', args: { event: 'start' } } }] : [] };
+    return { ok: true, facts: { moment: r.label, clock: fmtClock(S.t), phase: PHASE_INFO[S.phase].label, ...(r.source === 'scripted' ? { note: 'time taken from the scripted run' } : {}) }, text: 'Replay moved to ' + fmtClock(S.t) + ' (' + r.label + '). Phase: ' + PHASE_INFO[S.phase].label + '.' }; } });
 
 tool({ name: 'select', kind: 'view', title: 'Select a thing', llm: 'select/highlight/locate one thing (lead D#, person V#, room, unit, hazard) in every view',
   args: (e) => ({ anyOf: [obj({ type: { enum: ['lead'] }, id: { enum: ids(e.leads) } }), obj({ type: { enum: ['person'] }, id: { enum: ids(e.people) } }), obj({ type: { enum: ['room'] }, id: { enum: ids(e.rooms) } }), obj({ type: { enum: ['unit'] }, id: { enum: ids(e.units) } }), obj({ type: { enum: ['hazard'] }, id: { enum: ids(e.hazards) } })] }),
@@ -374,7 +384,7 @@ tool({ name: 'open_workspace', kind: 'view', title: 'Open a workspace', llm: 'op
 export const layerState = new Map(); // what the copilot and the palette asked the 3-D view for
 tool({ name: 'set_layer', kind: 'view', title: 'Show or hide a layer', llm: 'show (on=true) or hide (on=false) a layer of the 3-D view',
   args: () => obj({ layer: { enum: LAYERS.map((l) => l.id) }, on: { type: 'boolean' } }),
-  run(a, ctx) { const l = LAYERS.find((x) => x.id === a.layer); layerState.set(a.layer, a.on); ctx.bus.emit('twin:layer', { id: a.layer, on: a.on }); return { ok: true, facts: { layer: l.label, shown: a.on, what: l.does }, text: l.label + ' ' + (a.on ? 'on' : 'off') + ' in the 3-D view. ' + l.does, follow: ctx.shell.current() === 'mission' ? [] : [{ label: 'See it in Mission', call: { tool: 'open_workspace', args: { id: 'mission' } } }] }; } });
+  run(a, ctx) { const l = LAYERS.find((x) => x.id === a.layer); layerState.set(a.layer, a.on); ctx.bus.emit('twin:layer', { id: a.layer, on: a.on }); return { ok: true, facts: { layer: l.label, shown: a.on, what: l.does }, text: l.label + ' ' + (a.on ? 'on' : 'off') + ' in the 3-D view. ' + l.does + (ctx.shell.current() === 'mission' ? '' : ' Open Mission to see it.'), follow: ctx.shell.current() === 'mission' ? [] : [{ label: 'See it in Mission', call: { tool: 'open_workspace', args: { id: 'mission' } } }] }; } });
 
 tool({ name: 'inject_fault', kind: 'drill', title: 'Start a fault drill', llm: 'start a fault drill: linkLoss radio link lost, csiDropout Wi-Fi packets dropping, badWindow corrupt Wi-Fi window, thermalFail thermal camera offline, lowBattery rover battery low',
   args: () => obj({ id: { enum: Object.keys(FAULTS) } }), check: (a, ctx) => commandState(ctx, 'injectFault', a),

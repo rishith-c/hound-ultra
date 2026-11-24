@@ -22,7 +22,7 @@ export async function create(el, env) {
 
   // ---------- one window, both simulators ----------
   const cvC = h('canvas.forge-px.forge-win'), cvM = h('canvas.forge-px.forge-win'), cvF = h('canvas.forge-px.forge-win');
-  const meter = () => { const rows = MODELS.map(([m, name]) => { const bar = h('i'), v = h('b.num'), say = h('em'); return { m, bar, v, say, el: h('div.forge-pm', null, h('span', null, m === 'clean' ? 'Clean-trained' : 'Messy-trained'), h('div.forge-pm-bar', { style: { '--mark': TH[m] }, title: name + '; says PERSON above ' + TH[m].toFixed(2) }, bar), v, say) }; });
+  const meter = () => { const rows = MODELS.map(([m, name]) => { const bx = (el) => { el.style.setProperty('--mark', TH[m]); return el; }; const bar = h('i'), v = h('b.num'), say = h('em'); return { m, bar, v, say, el: h('div.forge-pm', null, h('span', null, m === 'clean' ? 'Clean-trained' : 'Messy-trained'), bx(h('div.forge-pm-bar', { title: name + '; says PERSON above ' + TH[m].toFixed(2) }, bar)), v, say) }; });
     return { el: h('div.forge-pms', null, rows.map((r) => r.el)), set(x, off) { rows.forEach((r) => { const p = pOf(r.m, x, off), yes = p > TH[r.m]; r.bar.style.width = (p * 100).toFixed(1) + '%'; r.bar.className = yes ? 'yes' : ''; r.v.textContent = p.toFixed(2); r.say.textContent = yes ? 'PERSON' : 'no one'; r.say.className = yes ? 'yes' : ''; }); } }; };
   const mC = meter(), mM = meter(), mF = meter();
   const cap = h('span.forge-win-cap'), truth = h('span.tag');

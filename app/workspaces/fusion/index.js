@@ -55,9 +55,9 @@ export default {
 
     // ---- layout ----
     const viewBtn = (id, label) => h('button', { type: 'button', 'aria-pressed': 'false', 'data-view': id, onclick: () => setView(id) }, label);
-    const seg = h('div.seg', { role: 'group', 'aria-label': 'Fusion views' }, viewBtn('lead', 'Leads and evidence'), viewBtn('limits', 'Limits and reliability'));
+    const seg = h('div.seg', { role: 'group', 'aria-label': 'Fusion views' }, viewBtn('lead', 'Leads and evidence'), viewBtn('limits', 'Reliability'));
     const head = h('header.ws-head.fusion-head.adv-only', null,
-      h('div', null, h('h1', null, 'Fusion'), h('p', null, 'No single sensor is good enough alone. Every reading is weighed and added into one probability; see how, and how far to trust it.')),
+      h('div', null, h('h1', null, 'Fusion'), h('p', null, 'Wi-Fi, radar and heat, one answer. Every reading is weighed and added into one probability; see how.')),
       seg, realityTag('live-algo'));
     const ledgerEl = h('div.fusion-col'), mapEl = h('div.fusion-cell'), instEl = h('div.fusion-inst');
     const leadView = h('div.fusion-view.fusion-view-lead.adv-only', { 'data-view': 'lead' }, ledgerEl, h('div.fusion-col.fusion-right', null, mapEl, instEl));

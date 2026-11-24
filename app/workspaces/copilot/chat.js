@@ -66,10 +66,9 @@ export function createChatView(ctx, session, { compact = false, onEngine } = {})
       h('div.row', null, h('span.tag.tag-accent', null, 'Live AI'), h('span.cop-foot', null, w.pending ? [h('span.spinner.sm'), ' ' + w.name + ' is re-wording the facts…'] : 'In the words of ' + w.name + ', on this computer')),
       w.rejected ? null : h('p', null, w.text),
       w.pending ? null : h('p.cop-foot', null, w.rejected ? (w.grounding?.unknown.length ? 'Thrown away: it wrote ' + w.grounding.unknown.map((u) => '“' + u + '”').join(', ') + ', which is not in the tool result.' : 'Thrown away: it came back empty.') : (w.grounding.checked ? 'Its ' + w.grounding.checked + ' numbers and ids match the tool result. ' : '') + 'A small model can still misread a fact; the text above and the panel are the record.'));
-    const who = null;
-    return h('div.cop-answer.' + x.status, null, x.call?.tool === 'write_sitrep' && a.by === 'tool' ? h('p', null, 'Situation report at ' + (x.result?.facts?.as_of || '') + ', written from the mission state. Check any line against the facts.') : lines.map((l) => h('p', null, l)), who ? h('p.cop-foot', null, who) : null,
+    return h('div.cop-answer.' + x.status, null, x.call?.tool === 'write_sitrep' && a.by === 'tool' ? h('p', null, 'Situation report at ' + (x.result?.facts?.as_of || '') + ', written from the mission state. Check any line against the facts.') : lines.map((l) => h('p', null, l)),
       x.held ? h('div.row', null, h('button.btn.btn-sm', { onclick: () => session.runHeld(x.id) }, 'Run it anyway: ' + formatCall(x.call))) : null,
-      wording, x.follow?.length && x.status === 'done' ? h('div.cop-follow', null, x.follow.map((f) => h('button.chip', { onclick: () => session.runCall(f.call, { label: f.label }) }, f.label))) : null);
+      wording, x.follow?.length && (x.status === 'done' || x.status === 'none') ? h('div.cop-follow', null, x.follow.map((f) => h('button.chip', { onclick: () => session.runCall(f.call, { label: f.label }) }, f.label))) : null);
   }
   function renderExchange(x) {
     let r = recs.get(x.id);
@@ -108,10 +107,10 @@ export function createChatView(ctx, session, { compact = false, onEngine } = {})
     send.disabled = session.busy; mic.style.display = session.voice.listen && session.canListen() ? '' : 'none'; mic.classList.toggle('is-on', session.voice.hearing); mic.setAttribute('aria-pressed', String(session.voice.hearing));
     hear.replaceChildren(...(session.voice.hearing ? [h('span.status.person.live', null, 'Listening'), h('span', null, session.voice.interim || 'Speak now. Release to send.'), session.voice.path === 'cloud' ? h('span.dim', null, 'Audio is going to your browser’s speech service.') : ''] : session.voice.error ? [h('span.c-warn', null, session.voice.error)] : []));
     const e = session.engine;
-    engine.replaceChildren(session.live ? realityTag('live-ai') : h('span.tag.tag-ok', { title: 'Patterns and rules written by hand. Real computation, no model.' }, 'Rule-based'),
-      h('span.cop-engine-name', null, e.status === 'loading' ? 'Loading model: ' + Math.round(e.progress * 100) + ' %' : session.label()),
+    engine.replaceChildren(session.live ? realityTag('live-ai') : h('span.tag.tag-ok', { title: 'Patterns and rules written by hand. Real computation, no model.' }, session.label()),
+      h('span.cop-engine-name', null, e.status === 'loading' ? 'Loading model: ' + Math.round(e.progress * 100) + ' %' : session.live ? session.label() : ''),
       e.status === 'loading' ? h('div.bar.grow', null, h('i', { style: { width: e.progress * 100 + '%' } })) : h('span.grow'),
-      session.live || e.status === 'loading' ? h('span.dim', null, 'Nothing leaves this computer') : h('button.cop-link', { onclick: () => onEngine?.() }, 'Load an on-device model'),
+      session.live || e.status === 'loading' ? h('span.dim', null, 'Nothing leaves this computer') : h('button.cop-link', { onclick: () => onEngine?.() }, compact ? 'Load a model' : 'Load an on-device model'),
       session.exchanges.length ? h('button.btn.btn-ghost.btn-sm', { onclick: () => session.clear(), 'aria-label': 'Clear the conversation' }, 'Clear') : '');
   }
   const off = session.on(render);

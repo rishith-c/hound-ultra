@@ -16,7 +16,7 @@ function pq(lam, u) { if (lam <= 0) return 0; let k = 0, p = Math.exp(-lam), s =
 
 export default function create(env) {
   const { h } = env, ui = env.ui;
-  const P = { hours: 2, area: 1, place: 'tunnel', npos: 7, spacing: 3, playing: false, playT: 0 };
+  const P = { hours: 2, area: 1, place: 'tunnel', npos: 7, spacing: 3, playing: false, playT: 0, lastT: 0 };
   let pile, dets = [], recon = new Float32Array(CNX * CNZ), shown = new Float32Array(CNX * CNZ), truthC, active, refField, M = {}, img = null, parts = [], needSolve = true;
 
   function layout() {
@@ -81,6 +81,8 @@ export default function create(env) {
     let se = 0, n = 0, sa = 0, sb = 0, saa = 0, sbb = 0, sab = 0;
     for (let q = 0; q < recon.length; q++) if (active[q]) { const a = recon[q], b = truthC[q]; se += (a - b) ** 2; n++; sa += a; sb += b; saa += a * a; sbb += b * b; sab += a * b; }
     M.rms = Math.sqrt(se / n); M.corr = (sab - sa * sb / n) / Math.sqrt(Math.max(1e-9, (saa - sa * sa / n) * (sbb - sb * sb / n)));
+    const g = [[], [], [], [], []]; for (let q = 0; q < recon.length; q++) if (active[q]) { const i = q % CNX, k = (q - i) / CNX; g[pile.voidId[pile.cellAt((i + 0.5) * CR, WORLD.z0 + (k + 0.5) * CR)]].push(recon[q]); }
+    const mean = g.map((a) => a.reduce((s, v) => s + v, 0) / Math.max(1, a.length)), sd = Math.sqrt(g[0].reduce((s, v) => s + (v - mean[0]) ** 2, 0) / g[0].length); M.contrast = {}; pile.voids.forEach((v, n) => { M.contrast[v.id] = (mean[n + 1] - mean[0]) / sd; }); // how far each void stands out of the picture’s own speckle
     img = L.gridImage(img, shown, CNX, CNZ, 'scan', 0.1, 1.5, { mask: active });
   }
   function setPile(p) {
@@ -124,7 +126,7 @@ export default function create(env) {
     if (img) { c.save(); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; c.globalAlpha = S.truth ? 0.8 : 0.95; c.drawImage(img, S.X(WORLD.x0), S.Z(WORLD.z0 + CNZ * CR), CNX * CR * S.s, CNZ * CR * S.s); c.restore(); }
     // service tunnel
     if (P.place === 'tunnel') { const y0 = S.Z(pile.tunnelZ + 0.42), y1 = S.Z(pile.tunnelZ - 0.2); c.fillStyle = L.col('--bg-0', 0.85); c.fillRect(S.X(WORLD.x0), y0, 24 * S.s, y1 - y0); c.setLineDash([5, 4]); c.strokeStyle = L.col('--sim', 0.6); c.lineWidth = 1; c.strokeRect(S.X(WORLD.x0) + 0.5, y0 + 0.5, 24 * S.s, y1 - y0); c.setLineDash([]);
-      if (!S.thumb) { c.font = L.font(11); c.fillStyle = L.tok('--sim'); c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText('service tunnel under the site (assumed)', S.X(WORLD.x0) + 8, (y0 + y1) / 2); } }
+      if (!S.thumb) { c.font = L.font(11); c.fillStyle = L.tok('--sim'); c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText('service tunnel under the site (assumed)', S.X(WORLD.x0) + 8, y0 - 8); } }
     // rays that carry a significant excess
     c.save(); c.lineWidth = 1;
     for (const d of dets) for (const b of d.bins) { if (!(b.z > 4) || b.Xref < 60) continue; c.strokeStyle = L.col('--accent', L.clamp((b.z - 3) / 60, 0.04, 0.22)); c.beginPath(); c.moveTo(S.X(d.x), S.Z(d.z)); c.lineTo(S.X(b.e[0]), S.Z(b.e[1])); c.stroke(); }
@@ -149,9 +151,9 @@ export default function create(env) {
     show.forEach((di, i) => { const d = dets[di];
       const box = { l: padL, t: top + i * (ph + gap), w: w - padL - padR, h: ph };
       const use = d.bins.filter((b) => b.Xref > 60 && b.exp > 0); let lo = 0.7, hi = 1.5; for (const b of use) { if (b.exp > 8) { hi = Math.max(hi, Math.min(3, b.ratio + b.err)); lo = Math.min(lo, Math.max(0, b.ratio - b.err)); } }
-      const ax = L.plot(c, box, { x: [-88, 88], y: [lo, hi], xl: i === n - 1 ? 'direction the muon came from (degrees from straight up; negative = from the left)' : '', yt: 3, xt: 9, xfmt: (v) => v + '°' });
+      const ax = L.plot(c, box, { x: [-88, 88], y: [lo, hi], xl: i === n - 1 ? 'direction the muon came from (degrees from straight up; negative = from the left)' : '', yt: 3, xt: 9, xTicks: i === n - 1 ? null : [], xfmt: (v) => v + '°' });
       // truth bands: directions that cross a void
-      if (R.truth) pile.voids.forEach((v, vi) => { let a = null, bb = null; for (const b of d.bins) if (b.inVoid[vi + 1] > 0.25) { if (a == null) a = b.deg; bb = b.deg; } if (a == null) return; c.fillStyle = L.col('--text', 0.05); c.fillRect(ax.X(a - 1), box.t + 1, ax.X(bb + 1) - ax.X(a - 1), box.h - 2); c.fillStyle = L.tok('--text-3'); c.font = L.font(11, 600); c.textAlign = 'center'; c.textBaseline = 'bottom'; c.fillText(v.id, (ax.X(a) + ax.X(bb)) / 2, box.t + box.h - 3); });
+      const used = []; if (R.truth) pile.voids.forEach((v, vi) => { let a = null, bb = null; for (const b of d.bins) if (b.inVoid[vi + 1] > 0.25) { if (a == null) a = b.deg; bb = b.deg; } if (a == null) return; c.fillStyle = L.col('--text', 0.05); c.fillRect(ax.X(a - 1), box.t + 1, ax.X(bb + 1) - ax.X(a - 1), box.h - 2); c.fillStyle = L.tok('--text-3'); c.font = L.font(11, 600); c.textAlign = 'center'; c.textBaseline = 'bottom'; const mx = (ax.X(a) + ax.X(bb)) / 2; if (used.some((u) => Math.abs(u - mx) < 14)) return; used.push(mx); c.fillText(v.id, mx, box.t + box.h - 3); });
       c.strokeStyle = L.col('--text-3', 0.9); c.setLineDash([3, 3]); c.beginPath(); c.moveTo(box.l, ax.Y(1)); c.lineTo(box.l + box.w, ax.Y(1)); c.stroke(); c.setLineDash([]);
       c.save(); c.beginPath(); c.rect(box.l, box.t, box.w, box.h); c.clip();
       c.beginPath(); c.moveTo(ax.X(use[0]?.deg ?? 0), ax.Y(1)); for (const b of use) c.lineTo(ax.X(b.deg), ax.Y(Math.max(1, b.ratio))); c.lineTo(ax.X(use[use.length - 1]?.deg ?? 0), ax.Y(1)); c.closePath();
@@ -165,7 +167,7 @@ export default function create(env) {
     });
   }
   function tick(dt) {
-    if (P.playing) { P.playT += dt; P.hours = toH(Math.min(1000, P.playT / 9 * 1000)); if (env.reduced()) { P.hours = 96; P.playT = 9; } if (P.playT >= 9) P.playing = false; els?.time.set(toV(P.hours)); expose(); env.refresh(); }
+    if (P.playing) { P.playT += dt; P.hours = toH(Math.min(1000, P.playT / 9 * 1000)); if (env.reduced()) { P.hours = 96; P.playT = 9; } if (P.playT >= 9) P.playing = false; els?.time.set(toV(P.hours)); if (!P.playing || P.playT - P.lastT > 0.22 || P.playT < P.lastT) { P.lastT = P.playT; expose(); env.refresh(); } }
     if (env.reduced()) { parts = []; return P.playing; }
     for (let k = 0; k < 2; k++) if (parts.length < 70) spawn();
     for (const p of parts) p.u += dt * 9 / Math.max(2, p.len);
@@ -174,8 +176,8 @@ export default function create(env) {
   }
   function verdicts() {
     const T = P.hours * 3600, out = {};
-    for (const v of pile.voids) { const snr = Math.sqrt(M.rate[v.id] * T), t3 = M.rate[v.id] > 0 ? 9 / M.rate[v.id] / 3600 : Infinity;
-      out[v.id] = { state: snr >= 3 ? 'seen' : snr >= 1.5 ? 'hint' : 'missed', snr, t3, text: isFinite(t3) && t3 < 5000 ? '3σ after ' + L.fmtDur(t3) : 'no muon path', why: 'Expected signal-to-noise now: ' + snr.toFixed(1) + 'σ, using every direction that crosses this void (the best any analysis could do).' }; }
+    for (const v of pile.voids) { const k = M.contrast[v.id], snr = Math.sqrt(M.rate[v.id] * T), t3 = M.rate[v.id] > 0 ? 9 / M.rate[v.id] / 3600 : Infinity;
+      out[v.id] = { state: k >= 1.5 ? 'seen' : k >= 0.8 ? 'hint' : 'missed', snr, t3, text: k.toFixed(1) + '× speckle', why: 'In the picture, this void differs from the rubble by ' + k.toFixed(1) + ' times the rubble’s own speckle. The counts alone, if you knew where to look, would reach 3σ after ' + (isFinite(t3) ? L.fmtDur(t3) : 'never') + '.' }; }
     out.person = { state: 'na', text: 'too little mass', why: 'A body is about 20 cm of water on a path through metres of rubble: a change of under 1 % in the count.' };
     return out;
   }
@@ -183,7 +185,7 @@ export default function create(env) {
     title: 'Muon tomography', hardware: 'Portable muon tracking detectors exist in research labs; none is built for rescue.',
     lede: 'Cosmic rays make muons high in the air, and about one passes through every square centimetre of ground each minute. They cross metres of concrete, but dense material stops more of them, so counting how many arrive from each direction weighs whatever lies along that line.',
     honest: 'a detector has to sit lower than what it images, so someone must find a cellar, sewer or borehole first. This section treats the pile as the same all the way back; a real 3-D image spreads the same muons over about ten times more bins, so multiply every time by ten. Scattering in the rubble and detector background are not modelled.',
-    assumed: 'Assumed: 2° angular bins, 20° acceptance across the section, 0.5 GeV detector threshold, 2 MeV lost per g/cm², the pile uniform along the unseen axis. The solid-pile reference uses the outer surface, as a drone scan would give it, at 1.8 g/cm³.',
+    assumed: 'Design values: 2° angular bins, 20° acceptance across the section, 0.5 GeV detector threshold, 2 MeV lost per g/cm², the pile uniform along the unseen axis. The solid-pile reference uses the outer surface, as a drone scan would give it, at 1.8 g/cm³.',
     sources: [
       { who: 'Morishima et al., Nature 552 (2017).', what: 'ScanPyramids: muons reveal a big void in Khufu’s pyramid.', url: 'https://doi.org/10.1038/nature24647' },
       { who: 'Shukla and Sankrith (2018).', what: 'The sea-level muon energy and angle formula used for the flux here.', url: 'https://arxiv.org/abs/1606.06907' },
@@ -198,7 +200,7 @@ export default function create(env) {
       { k: 'Image error', v: M.rms.toFixed(2) + ' g/cm³', sub: 'RMS against the true density deficit' },
       { k: 'Match to truth', v: 'r = ' + M.corr.toFixed(2), sub: 'correlation, 1 would be perfect', tone: M.corr > 0.5 ? 'ok' : M.corr > 0.25 ? 'warn' : 'bad' },
     ],
-    row: { sees: 'Density. Any void with enough missing matter, and anything heavy.', range: 'Metres to hundreds of metres of rock', time: 'Minutes for a room, hours for a pocket, in this model', cost: 'High', costNote: 'research instrument', ready: 2, readyNote: 'Fielded in archaeology, volcanoes and reactors. Never in a rescue.' },
-    summary: () => { const V = verdicts(); return pile.voids.filter((v) => V[v.id].state === 'seen').length + ' of 4 voids clear after ' + L.fmtDur(P.hours); },
+    row: { sees: 'Density. Any void with enough missing matter, and anything heavy.', range: 'Metres to hundreds of metres of rock', time: 'Minutes to hours in this model', cost: 'High', costNote: 'research instrument', ready: 2, readyNote: 'Used in archaeology, on volcanoes and at reactors. We found no use in a rescue.' },
+    summary: () => { const V = verdicts(); return pile.voids.filter((v) => V[v.id].state === 'seen').length + ' of 4 voids stand out after ' + L.fmtDur(P.hours); },
   };
 }

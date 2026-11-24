@@ -46,12 +46,12 @@ $$('main > section[id]').forEach((s) => spy.observe(s));
 // ---------- the film: which beat is on, its caption and the progress marks ----------
 const CAPTIONS = [
   $('#film-caption').textContent,
-  'Illustration. Not a photograph of a real building.',
-  'Illustration. Not a photograph of a real building.',
-  'Illustration. The wave is drawn to show the idea: Wi-Fi cannot be seen. The real rover, as built, is next.',
+  'Illustration.',
+  'Illustration.',
+  'Illustration. The wave is drawn to show the idea. The real rover, as built, is next.',
 ];
 const beats = $$('.beat'), marks = $$('#film-marks i'), filmEl = $('#top'), caption = $('#film-caption');
-const BEAT_IN = [-9, 0.98, 2.2, 3.34], BEAT_OUT = [0.42, 1.74, 2.9, 99], MARK = [0, 0.74, 2.0, 3.14, 4.1];
+const BEAT_IN = [-9, 0.98, 2.2, 3.34], BEAT_OUT = [0.42, 1.74, 2.9, 99], MARK = [0, 0.74, 2.0, 3.14, 3.7];
 const showStills = () => beats.forEach((b) => { if (b.dataset.img) b.style.backgroundImage = `url(${b.dataset.img})`; b.style.backgroundSize = 'cover'; });
 let filmAt = -1;
 const filmStep = (x) => {
@@ -61,7 +61,7 @@ const filmStep = (x) => {
   let at = 0; while (at < 3 && x >= MARK[at + 1]) at++;
   if (at !== filmAt) { filmAt = at; caption.textContent = CAPTIONS[at]; for (let i = 0; i < 4; i++) filmEl.classList.toggle('at-' + i, i === at); }
 };
-if (reduced) { showStills(); caption.textContent = 'The four pictures are illustrations, not photographs. The flood of 26 August 2026 was real; the search on this site is invented.'; }
+if (reduced) { showStills(); caption.textContent = 'The four pictures are illustrations. The flood of 26 August 2026 was real; the search on this site is a simulated exercise.'; }
 else {
   onScene('film', (p, u, spanVh) => filmStep(Math.max(0, u * spanVh)));
   const canvas = $('#film-gl');
@@ -71,7 +71,7 @@ else {
 }
 
 // ---------- reveals and counters ----------
-const revealSets = ['.sec-head > *', '.truth-head > *', '.answer-head > *', '.big-num', '.why-col', '.answer-steps li', '.ledger-row', '.built-col li', '.built-col h3', '.open-links > div', '.real-coda', '.proof', '.ladder', '.cmd', '.tour-group', '.open h2', '.open-cta'];
+const revealSets = ['.sec-head > *', '.truth-head > *', '.answer-head > *', '.big-num', '.why-col', '.answer-steps li', '.ledger-row', '.built-col li', '.built-col h3', '.open-links > div', '.real-coda', '.open h2', '.open-cta'];
 const assignReveals = (root = document) => revealSets.forEach((sel) => $$(sel, root).forEach((n) => {
   if (n.hasAttribute('data-reveal')) return;
   n.setAttribute('data-reveal', ''); n.style.setProperty('--i', Math.min(6, [...n.parentNode.children].indexOf(n)));
@@ -93,16 +93,14 @@ const countIO = new IntersectionObserver((entries) => {
 }, { threshold: 0.4 });
 $$('[data-count]').forEach((n) => countIO.observe(n));
 
-// ---------- the network's true numbers (docs/FACTS.md, 955 simulated test windows) ----------
+// ---------- the network's results (docs/FACTS.md, 955 simulated test windows; the complete table is in Advanced) ----------
 const RESULTS = [
   { label: 'Still or moving, answered correctly', v: 91.5 },
   { label: 'An empty room is called empty', v: 88.9 },
   { label: 'A moving person is found', v: 86.9 },
-  { label: 'Overall: is someone there?', v: 59.3 },
-  { label: 'A still person is found', v: 21.4, weak: true },
 ];
 const bars = $('#truth-bars');
-bars.append(...RESULTS.map((r, i) => el('div.tb-row' + (r.weak ? '.weak' : ''), null, el('span', null, r.label), el('div.tb-track', { style: `--v:${r.v};--i:${i}` }, el('i')), el('b', null, r.v.toFixed(1) + ' %'))),
+bars.append(...RESULTS.map((r, i) => el('div.tb-row', null, el('span', null, r.label), el('div.tb-track', { style: `--v:${r.v};--i:${i}` }, el('i')), el('b', null, r.v.toFixed(1) + ' %'))),
   el('div.tb-axis', null, el('span'), el('div', null, el('span', null, '0'), el('span', null, '50'), el('span', null, '100 % of test windows')), el('span')));
 new IntersectionObserver((es, io) => { if (es[0].isIntersecting) { bars.classList.add('in'); io.disconnect(); } }, { threshold: 0.3 }).observe(bars);
 
@@ -112,9 +110,13 @@ const near = (sel, margin, load) => {
   new IntersectionObserver((es, io) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); load().catch((e) => console.error('[landing]', sel, e)); } }, { rootMargin: margin }).observe(node);
 };
 const idle = (fn) => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 1200 }) : setTimeout(fn, 400));
-idle(() => { import('./proof.js').then((m) => m.startProof({ onScene })).catch((e) => console.error('[landing] proof', e)); });
-near('#rover', '120% 0px', () => import('./rover.js').then((m) => m.startRover({ onScene })));
-near('#command', '120% 0px', () => import('./command.js').then((m) => m.startCommand()));
-near('#tour', '100% 0px', () => import('./tour.js').then((m) => m.startTour({ assignReveals })));
+// The rover's model is built while the first screen is being read, so that nothing stalls in mid-scroll.
+let roverOn = null, commandOn = null;
+const startRover = () => (roverOn ||= import('./rover.js').then((m) => m.startRover({ onScene })));
+const startCommand = () => (commandOn ||= import('./command.js').then((m) => m.startCommand()));
+idle(() => { import('./proof.js').then((m) => m.startProof({ onScene })).catch((e) => console.error('[landing] proof', e)).finally(() => setTimeout(() => idle(() => startRover().then(startCommand).catch((e) => console.error('[landing] early start', e))), 1200)); });
+near('#rover', '120% 0px', startRover);
+near('#command', '120% 0px', startCommand);
+near('#tour', '100% 0px', () => import('./tour.js').then((m) => m.startTour()));
 
 measure();

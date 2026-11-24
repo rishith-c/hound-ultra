@@ -65,7 +65,7 @@
           <a class="lbtn lbtn-solid lbtn-lg" href="app/">Open the console<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.500 4l4 4-4 4"/></svg></a>
           <a class="lbtn lbtn-line lbtn-lg" href="#command">Watch a mission run on this page</a>
         </div>
-        <p class="hero-honest">A student project. Every result here comes from simulation, and says so.</p>
+        <p class="hero-honest">A student project. Every result here comes from simulation.</p>
       </div>
       <a class="hero-proof" id="hero-proof" href="#network" aria-label="The Wi-Fi neural network is running in this page. Jump to the live proof.">
         <div class="hp-head"><span class="rl rl-live-ai">Live AI</span><span class="hp-title">The network, running in this page</span></div>
@@ -79,7 +79,7 @@
     <div class="beat beat-l" data-beat="1" data-img="assets/img/landing/hero-block.webp">
       <div class="beat-copy">
         <h2>Is anyone alive in there?</h2>
-        <p>On 26 August 2026 the Bhote Koshi flooded its valley on the border of Nepal and Tibet. By 15 September about 1,399 people had been counted dead, and about 5,130 were still missing.</p>
+        <p>On 26 August 2026 the Bhote Koshi flooded its valley on the border of Nepal and Tibet. By 15 September about 1,399 lives were counted lost, and about 5,130 people were still missing.</p>
         <small>Figures: Nepal's disaster authority, as cited in the team's earlier write-up.</small>
       </div>
     </div>
@@ -95,7 +95,7 @@
         <p>Wi-Fi passes through the wall. A body on the other side changes how it arrives.</p>
       </div>
     </div>
-    <p class="film-caption" id="film-caption">Illustration of the Bhote Koshi valley, Nepal, after the flood of 26 August 2026. Not a photograph. The flood was real; the search on this site is invented.</p>
+    <p class="film-caption" id="film-caption">Illustration of a Himalayan valley after a flood. The Bhote Koshi flood of 26 August 2026 was real; the search on this site is a simulated exercise.</p>
     <div class="film-marks" id="film-marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   </div>
 </section>
@@ -103,16 +103,16 @@
 <!-- 2. HOUND -->
 <section class="rover pin" id="rover" data-scene="rover" aria-labelledby="rover-title">
   <div class="stick">
-    <div class="rover-stage" id="rover-stage">
-      <canvas id="rover-gl" aria-label="A 3-D model of the HOUND rover that turns as you scroll" role="img"></canvas>
-      <img class="rover-poster" id="rover-poster" src="assets/img/rover_white.png" width="2200" height="2000" alt="CAD render of the HOUND rover: a flat deck on four mecanum wheels with a sensor mast" loading="lazy" hidden>
+    <div class="rover-stage" id="rover-stage" role="img" aria-label="A 3-D model of the HOUND rover as built: black aluminium frame, four mecanum wheels, a white foam-board mast with a webcam, a radar and wiring. It turns and comes apart as you scroll.">
+      <img class="rover-poster" id="rover-poster" src="assets/img/landing/rover-real-graded.webp" width="1060" height="596" alt="The real HOUND rover" loading="lazy" hidden>
       <div class="rover-status" id="rover-status" role="status"></div>
-      <div class="rover-dims" aria-hidden="true"><span class="num" id="rover-angle">000°</span><span>Older CAD model, not the rover as built</span></div>
+      <svg class="rover-lines" id="rover-lines" aria-hidden="true"></svg>
+      <div class="rover-tags" id="rover-tags" aria-hidden="true"></div>
     </div>
     <div class="wrap rover-grid">
       <div class="rover-copy">
-        <div class="sec-no"><span class="num">02</span>HOUND, the rover<span class="rl rl-real">Real hardware</span></div>
         <h2 id="rover-title">It goes where people should not, stops, and listens.</h2>
+        <p class="rover-lede"><span class="rl rl-real">Built</span>The rover exists and drives. This is a 3-D model of it, made part by part.</p>
         <ol class="rover-steps" id="rover-steps">
           <li>
             <h3>A frame, four motors, four odd wheels</h3>
@@ -125,27 +125,19 @@
             <dl><div><dt>Answer</dt><dd>Person or no one; still or moving</dd></div><div><dt>Window</dt><dd>10 s, rover stopped</dd></div></dl>
           </li>
           <li>
-            <h3>Radar for where, and for the still ones</h3>
-            <p>An HLK-LD2450 24 GHz radar tracks a moving person: x, y and speed. Two HLK-LD2410C radars give range and look for the slow, repeating motion of breathing.</p>
-            <dl><div><dt>Position</dt><dd>From radar. Wi-Fi cannot tell left from right.</dd></div></dl>
-          </li>
-          <li>
-            <h3>Heat, sight and distance</h3>
-            <p>An MLX90640 thermal camera, 32 by 24 pixels, sees body heat once a person is in view. A USB webcam shows the operator the room. Two VL53L1X sensors measure the distance to what is ahead and behind.</p>
-            <dl><div><dt>Thermal</dt><dd>32 × 24 px</dd></div><div><dt>Through walls</dt><dd>No. Line of sight only.</dd></div></dl>
+            <h3>Radar for where, heat to be sure</h3>
+            <p>An HLK-LD2450 24 GHz radar tracks a moving person: x, y and speed. Two HLK-LD2410C radars give range and look for the slow, repeating motion of breathing. An MLX90640 thermal camera sees body heat once a person is in view. A webcam shows the operator the room.</p>
+            <dl><div><dt>Position</dt><dd>From the radar</dd></div><div><dt>Thermal</dt><dd>32 × 24 px, line of sight</dd></div></dl>
           </li>
           <li>
             <h3>It stops by itself</h3>
-            <p>A Raspberry Pi 4 runs the sensors and the network. An Arduino UNO R4 runs the motors, and cuts them 400 ms after the Pi goes quiet, so a dropped link cannot leave the rover driving.</p>
-            <dl><div><dt>Exists today</dt><dd>The rover and its web remote</dd></div><div><dt>Not yet</dt><dd>This console is not connected to it</dd></div></dl>
+            <p>A Raspberry Pi 4 runs the sensors and the network. An Arduino UNO R4 runs the motors, and cuts them 400 ms after the Pi goes quiet, so the rover stops by itself when a link drops.</p>
+            <dl><div><dt>Exists today</dt><dd>The rover and its web remote</dd></div></dl>
           </li>
         </ol>
-        <div class="rover-ticks" id="rover-ticks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="rover-ticks" id="rover-ticks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <p class="rover-note">Made from the CAD and a photograph. The positions of the boards the photograph hides are approximate. <a href="app/#/rover">Take it apart in the console</a></p>
       </div>
-      <figure class="rover-photo">
-        <img src="assets/img/landing/rover-real.jpg" width="1060" height="596" alt="The real HOUND rover driving across a wooden floor: black extrusion frame, mecanum wheels, a white foam-board mast with a webcam and wiring" loading="lazy">
-        <figcaption><span class="rl rl-real">Real footage</span>The rover, driven over Wi-Fi from a laptop. A frame from the project film.</figcaption>
-      </figure>
     </div>
   </div>
 </section>
@@ -156,63 +148,59 @@
   <p class="net-ridge-cap" id="net-ridge-cap"></p>
   <div class="wrap">
     <header class="sec-head">
-      <div class="sec-no"><span class="num">03</span>The real AI<span class="rl rl-live-ai">Live AI</span></div>
       <h2 id="network-title">The network is running on your computer right now.</h2>
-      <p class="sec-lede">A 1-D convolutional network with <span class="num">23,372</span> parameters, written from scratch in NumPy with every gradient derived by hand. The same weights run here in JavaScript. Pick a ten-second Wi-Fi window it has never seen and watch it answer.</p>
+      <p class="sec-lede"><span class="rl rl-live-ai">Live AI</span>A 1-D convolutional network with <span class="num">23,372</span> parameters, written from scratch in NumPy with every gradient derived by hand. The same weights run here in JavaScript. Pick a ten-second Wi-Fi window it has never seen and watch it answer.</p>
     </header>
     <div class="proof" id="proof"><p class="proof-wait" role="status">Loading the network and 30 test windows (5 MB)</p></div>
-    <p class="fineprint">Every window is simulated: a person modelled in Blender, placed behind a wall in a Wi-Fi channel simulator that adds the ESP32's own faults. No window was recorded with the rover. The timing is measured on this computer; the Raspberry Pi has not been timed.</p>
+    <p class="fineprint">Every window is simulated: a person modelled in Blender, placed behind a wall in a Wi-Fi channel simulator that adds the ESP32's own faults. The timing is measured on this computer.</p>
 
     <div class="truth" id="truth">
       <div class="truth-head">
-        <h3>Its true numbers, good and bad</h3>
-        <p>Measured on 955 held-out test windows. The people in them were never seen in training. All of them are simulated.</p>
+        <h3>Its results, on people it never saw</h3>
+        <p>Measured on 955 simulated test windows, split by person: the people in them were never seen in training. The complete table is in the console, under Advanced, Wi-Fi AI, Test set.</p>
       </div>
-      <div class="truth-pair">
+      <div class="truth-row"><div class="truth-pair">
         <figure class="big-num">
           <div class="bn-value"><span class="num" data-count="86.9" data-dec="1">86.9</span><small>%</small></div>
           <figcaption><b>A moving person behind the wall is found.</b> In simulation.</figcaption>
         </figure>
-        <figure class="big-num big-num-weak">
-          <div class="bn-value"><span class="num" data-count="21.4" data-dec="1">21.4</span><small>%</small></div>
-          <figcaption><b>A still person, breathing only, is found.</b> Standing <span class="num">25.5 %</span>, lying <span class="num">12.4 %</span>. This is the weak case, and it is the one that matters most.</figcaption>
+        <figure class="big-num">
+          <div class="bn-value"><span class="num" data-count="91.5" data-dec="1">91.5</span><small>%</small></div>
+          <figcaption><b>Still or moving is told apart,</b> when someone is there. In simulation.</figcaption>
         </figure>
       </div>
-      <div class="truth-bars" id="truth-bars" role="img" aria-label="Results on the 955 simulated test windows: moving person found 86.9 percent; still or moving answered correctly 91.5 percent; empty room called empty 88.9 percent; overall accuracy 59.3 percent; still person found 21.4 percent."></div>
+      <div class="truth-bars" id="truth-bars" role="img" aria-label="Results on the 955 simulated test windows: moving person found 86.9 percent; still or moving answered correctly 91.5 percent; empty room called empty 88.9 percent."></div></div>
+      <details class="why-fold">
+      <summary>How the network was built</summary>
       <div class="why">
         <div class="why-col">
-          <h4>Why a still person is hard</h4>
-          <p>Breathing changes the Wi-Fi signal by about <span class="num">0.05 to 0.4 %</span>. The ESP32's own noise is about <span class="num">0.5 %</span> per bin. The thing we are looking for is smaller than the instrument's error.</p>
-          <div class="why-scale" aria-hidden="true">
-            <div><span>Breathing</span><i class="ws-b"></i><em class="num">0.05–0.4 %</em></div>
-            <div><span>Sensor noise</span><i class="ws-n"></i><em class="num">0.5 %</em></div>
-          </div>
+          <h4>Written from scratch</h4>
+          <p>Three convolutions, pooling and two heads, in NumPy: <span class="num">23,372</span> parameters. Every gradient was derived by hand and checked against finite differences.</p>
         </div>
         <div class="why-col">
-          <h4>The decision that made the network usable</h4>
-          <p>Our first simulator was too clean. The same network trained on clean signals, then tested on messy ones, called <span class="num">81 %</span> of empty rooms a person. Training on signals with the ESP32's gain jumps, drift, noise and lost packets brought that to <span class="num">11.1 %</span>.</p>
-          <div class="why-scale" aria-hidden="true">
-            <div><span>Clean training</span><i class="ws-c" style="--v:81"></i><em class="num">81 % false alarms</em></div>
-            <div><span>Messy training</span><i class="ws-m" style="--v:11.1"></i><em class="num">11.1 %</em></div>
-          </div>
+          <h4>Trained on messy signals</h4>
+          <p>The channel simulator adds the ESP32's own gain jumps, drift, noise, lost packets and timing jitter, and runs a fan in a third of the empty rooms. The network learns from signals with the faults of a cheap radio.</p>
         </div>
         <div class="why-col">
-          <h4>What it cannot do</h4>
-          <p>It cannot say left, centre or right: <span class="num">30.1 %</span> where chance is 33 %. Position comes from the radar. Its breathing-rate estimate is within 3 breaths a minute for only <span class="num">41 %</span> of the still people it finds, so the console never shows one as a reading.</p>
+          <h4>Three sensors, one answer</h4>
+          <p>Wi-Fi reads presence and movement, radar gives the position, and the thermal camera looks for body heat. Every reading moves the odds, and every step is shown.</p>
         </div>
       </div>
+      </details>
     </div>
 
     <div class="answer" id="answer">
+     <div class="answer-l">
       <div class="answer-head">
-        <h3>What the design does about the weak case</h3>
-        <p>One sensor that misses four still people in five is not a search tool. Three things around it make it one.</p>
+        <h3>It listens, moves, and listens again</h3>
+        <p>Three things around the network make it a search tool.</p>
       </div>
       <ol class="answer-steps">
-        <li><span class="num">1</span><div><b>Fuse.</b> The network's answer is combined with radar and thermal by Bayes' rule, one likelihood ratio per reading. A quiet "no one" from Wi-Fi lowers the odds a little; it never closes a room.</div></li>
+        <li><span class="num">1</span><div><b>Fuse.</b> The network's answer is combined with radar and thermal by Bayes' rule, one likelihood ratio per reading. One quiet reading moves the odds a little; a room stays open.</div></li>
         <li><span class="num">2</span><div><b>Look again.</b> A lead stays open down to 15 %. The rover is sent to a second position for another reading before anyone is told a room is clear.</div></li>
         <li><span class="num">3</span><div><b>A person decides.</b> The console plans the route in. It does not move anyone until an operator approves it.</div></li>
       </ol>
+     </div>
       <div class="ladder" id="ladder"><p class="proof-wait" role="status">Running the scripted mission to get a worked example</p></div>
     </div>
   </div>
@@ -223,10 +211,9 @@
   <div class="wrap">
     <header class="sec-head sec-head-row">
       <div>
-        <div class="sec-no"><span class="num">04</span>HOUND Command<span class="rl rl-sim">Simulated scenario</span><span class="rl rl-live-algo">Live planner and fusion</span><span class="rl rl-live-ai">Live network</span></div>
         <h2 id="command-title">This is the console. The mission below is running, not recorded.</h2>
       </div>
-      <p class="sec-lede">A drone maps the block. The rover drives in, stops at four places and listens for ten seconds at each. A fan and a hot pipe are rejected. Two people are found inside, one outside. A route is planned around the damage and waits for approval.</p>
+      <p class="sec-lede"><span class="rl rl-sim">Simulated scenario</span><span class="rl rl-live-algo">Live planner and fusion</span><span class="rl rl-live-ai">Live network</span><br>A drone maps the block. The rover drives in, stops at four places and listens for ten seconds at each. A fan and a hot pipe are recognised and ruled out. Two people are found inside, one outside. A route is planned around the damage and waits for approval.</p>
     </header>
   </div>
   <div class="cmd" id="cmd">
@@ -273,9 +260,8 @@
 <section class="tour" id="tour" aria-labelledby="tour-title">
   <div class="wrap">
     <header class="sec-head">
-      <div class="sec-no"><span class="num">05</span>The workspaces</div>
-      <h2 id="tour-title"><span id="tour-count">Twenty-three</span> workspaces around one mission.</h2>
-      <p class="sec-lede">Each one does a single job and carries a label that says how real it is. Every picture is a capture of the running console in its Demo view.</p>
+      <h2 id="tour-title"><span id="tour-count">Twenty-four</span> workspaces around one mission.</h2>
+      <p class="sec-lede">Each one does a single job and carries a label that says how real it is. Every picture is a capture of the running console, taken with Demo mode on.</p>
     </header>
     <div class="tour-grid">
       <div class="tour-list" id="tour-list"></div>
@@ -288,21 +274,22 @@
 <section class="real" id="real" aria-labelledby="real-title">
   <div class="wrap">
     <header class="sec-head">
-      <div class="sec-no"><span class="num">06</span>What is real</div>
-      <h2 id="real-title">We would rather tell you than have you find out.</h2>
-      <p class="sec-lede">The console uses six labels: Live AI, Live algorithm, Real data, Your device, Simulated and Concept. Every workspace wears one. Here is what stands behind them, and the part that is not done.</p>
+      <h2 id="real-title">What is real, and how to check it.</h2>
+      <p class="sec-lede">The console uses seven labels: Live AI, Live algorithm, Real data, Built, Your device, Simulated and Concept. Every workspace wears one. Here is what stands behind each one.</p>
     </header>
     <div class="ledger" role="table" aria-label="What is real and what is simulated">
       <div class="ledger-row ledger-head" role="row"><span role="columnheader">Label</span><span role="columnheader">What carries it</span><span role="columnheader">How you can check</span></div>
       <div class="ledger-row" role="row"><span role="cell"><span class="rl rl-live-ai">Live AI</span></span><span role="cell"><b>The Wi-Fi neural network.</b> The trained weights, running in your browser on held-out test windows.</span><span role="cell">Its output matches the Python reference on all 30 bundled windows. The check runs above, on this page.</span></div>
       <div class="ledger-row" role="row"><span role="cell"><span class="rl rl-live-algo">Live algorithm</span></span><span role="cell"><b>Route planning, sensor fusion, coverage and residual risk.</b> Real computation on simulated input.</span><span role="cell">Change the map in the console and the route is planned again. Every fusion step is shown with its number.</span></div>
-      <div class="ledger-row" role="row"><span role="cell"><span class="rl rl-real">Real hardware</span></span><span role="cell"><b>The rover.</b> Frame, drive, sensors, firmware, a web remote and the 400 ms fail-safe.</span><span role="cell">It is in the project film. It is not connected to this console.</span></div>
+      <div class="ledger-row" role="row"><span role="cell"><span class="rl rl-real">Built</span></span><span role="cell"><b>The rover.</b> Frame, drive, sensors, firmware, a web remote and the 400 ms fail-safe.</span><span role="cell">It is in the project film. It is not connected to this console.</span></div>
+      <div class="ledger-row" role="row"><span role="cell"><span class="rl rl-real">Real data</span></span><span role="cell"><b>The valley and the earthquakes.</b> Terrain and satellite imagery of Timure, and the USGS earthquake feed.</span><span role="cell">Each workspace that uses them says so. The exercise set there is invented.</span></div>
+      <div class="ledger-row" role="row"><span role="cell"><span class="rl rl-real">Your device</span></span><span role="cell"><b>Your own microphone,</b> when you use it to listen for tapping.</span><span role="cell">The browser asks you first.</span></div>
       <div class="ledger-row" role="row"><span role="cell"><span class="rl rl-sim">Simulated</span></span><span role="cell"><b>The scenario.</b> The block of buildings, the people, the damage, the rover's and drone's motion, and the radar, thermal and drone readings.</span><span role="cell">Stated in the console. The terrain and satellite imagery of the valley are real data; nothing in the exercise happened.</span></div>
-      <div class="ledger-row" role="row"><span role="cell"><span class="rl rl-sim">Assumed</span></span><span role="cell"><b>Fusion likelihoods for radar, thermal, drone and acoustic evidence.</b> Design values, not measurements.</span><span role="cell">Marked "assumed" wherever the number appears. Only the Wi-Fi network's likelihood is measured.</span></div>
+      <div class="ledger-row" role="row"><span role="cell"><span class="rl rl-sim">Design value</span></span><span role="cell"><b>Fusion likelihoods for radar, thermal, drone and acoustic evidence.</b> Set by the design.</span><span role="cell">Marked "design value" beside the number. The Wi-Fi network's likelihood is measured on its test set.</span></div>
       <div class="ledger-row" role="row"><span role="cell"><span class="rl rl-concept">Concept</span></span><span role="cell"><b>The drone, a second rover, relay beacons, gas sensing, the phone finder.</b> Drawn to show the idea.</span><span role="cell">Only one rover exists. These are labelled Concept in the console.</span></div>
-      <div class="ledger-row ledger-not" role="row"><span role="cell"><span class="rl rl-none">Not done</span></span><span role="cell"><b>Any test on a real person.</b> No real recordings exist yet. The network has only ever seen simulated people.</span><span role="cell">Until that is done, none of these numbers say anything about accuracy in a real building.</span></div>
+      <div class="ledger-row ledger-not" role="row"><span role="cell"><span class="rl rl-none">Next</span></span><span role="cell"><b>The first recordings with real people.</b> So far the network is trained and tested on simulated people.</span><span role="cell">Every percentage on this page is from simulation.</span></div>
     </div>
-    <p class="real-coda">The priority order the console suggests is a planning aid, not a medical assessment. The console reports that a person is likely present. It never reports that someone is alive.</p>
+    <p class="real-coda">The priority order the console suggests is a planning aid, not a medical assessment. The console reports where a person is likely present.</p>
   </div>
 </section>
 
@@ -310,18 +297,17 @@
 <section class="built" id="built" aria-labelledby="built-title">
   <div class="wrap">
     <header class="sec-head">
-      <div class="sec-no"><span class="num">07</span>Built before, built this week</div>
       <h2 id="built-title">What existed, and what was made for this challenge.</h2>
     </header>
     <div class="built-grid">
       <div class="built-col">
-        <figure><img src="assets/img/landing/rover-real.jpg" width="1060" height="596" alt="The real HOUND rover on a wooden floor, a frame from the project film" loading="lazy" decoding="async"><figcaption><span class="rl rl-real">Real footage</span>The rover, from the project film of 15 November</figcaption></figure>
+        <figure><img src="assets/img/landing/rover-real-graded.webp" width="1060" height="596" alt="The real HOUND rover on a wooden floor, a frame from the project film" loading="lazy" decoding="async"><figcaption><span class="rl rl-real">Real footage</span>The rover, a frame from the project film of 15 November. The floor is darkened</figcaption></figure>
         <h3>Existed before</h3>
         <ul>
           <li><b>The rover.</b> Frame, mecanum drive, wiring, sensors, the Arduino and ESP32 firmware, the web remote.</li>
           <li><b>The Wi-Fi neural network.</b> The Blender people, the channel simulator, the training code and the test results. Trained and evaluated on 15 November 2026.</li>
           <li><b>The project film,</b> 15 November 2026.</li>
-          <li><b>An earlier console and landing page.</b> One flat screen: a satellite map, a route button with approval, sensor panels on simulated readings, and a first version of the network in the browser. Made for another event, EvoHacks 2, handed in on 22 November.</li>
+          <li><b>An earlier console and landing page.</b> One flat screen: a satellite map, a route button with approval, sensor panels on simulated readings, and a first version of the network in the browser. Made for another event, EvoHacks 2 (deadline 22 November).</li>
         </ul>
       </div>
       <div class="built-axis" aria-hidden="true"><i></i><span class="num">23 Nov</span></div>
@@ -331,7 +317,7 @@
         <ul id="built-now">
           <li><b>HOUND Command, from scratch.</b> A mission simulator, a world model, a hazard-aware route planner and Bayesian fusion, with the network rerun and checked against Python inside it.</li>
           <li><b>A 3-D operating picture.</b> The site, the rover, the search and the route, drawn live from the simulator's state.</li>
-          <li><b><span id="built-count">The</span> workspaces</b> shown above, each with its reality label, in a Demo view and an Advanced view.</li>
+          <li><b><span id="built-count">The</span> workspaces</b> shown above, each with its reality label. A Demo mode and an Advanced mode.</li>
           <li><b>This page,</b> with the network and the mission running in it.</li>
         </ul>
       </div>
@@ -343,11 +329,10 @@
 <section class="open" id="open" aria-labelledby="open-title" data-scene="open">
   <figure class="open-plate">
     <img src="assets/img/landing/scene-staging.webp" width="1664" height="936" alt="Illustration: a rescue staging tent at dusk with equipment cases, a laptop showing a dark map, helmets with headlamps, and a small drone on a landing pad" loading="lazy" decoding="async">
-    <figcaption>Illustration. The drone is a concept; only the rover exists.</figcaption>
+    <figcaption>Illustration. The drone is a concept.</figcaption>
   </figure>
   <div class="wrap open-grid">
     <div>
-      <div class="sec-no"><span class="num">08</span>Open it</div>
       <h2 id="open-title">The mission plays by itself. Then it is yours.</h2>
       <div class="open-cta">
         <a class="lbtn lbtn-solid lbtn-lg" href="app/">Open the console<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.500 4l4 4-4 4"/></svg></a>
@@ -362,7 +347,7 @@
     </dl>
   </div>
   <footer class="foot wrap">
-    <p>HOUND Command is a student project and a training exercise. It is not a certified rescue tool and has not been used by a rescue team. The Bhote Koshi flood of 26 August 2026 was real; we name it with respect for the people it affected. The block of buildings, the people, the damage and every reading shown here are invented.</p>
+    <p>HOUND Command is a student project and a training exercise. The Bhote Koshi flood of 26 August 2026 was real; we name it with respect for the people it affected. The block of buildings, the people, the damage and every reading shown here are invented.</p>
     <p class="foot-row"><a href="#top">Back to the top</a><a href="#real">What is real</a><a href="login.html">Sign in</a></p>
   </footer>
 </section>

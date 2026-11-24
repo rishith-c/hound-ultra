@@ -184,9 +184,9 @@ export function createGraphHero(host, ctx) {
   // ---------- words ----------
   function verdict(L) {
     const st = L.ch.steps, no = (k) => st.filter((s) => s.sensor === k && s.lr < 0.999).length, yes = (k) => st.filter((s) => s.sensor === k && s.lr > 1.001).length, ups = [...new Set(st.filter((s) => s.lr > 1.001).map((s) => s.sensor))], times = (n) => (n === 1 ? 'once' : n === 2 ? 'twice' : n === 3 ? 'three times' : n + ' times');
-    if (!L.person) { const why = st.filter((s) => s.lr < 0.999).sort((a, b) => a.lr - b.lr)[0]; return { t: 'Why is no one in ' + L.where + '?', s: why ? SHORT[why.sensor] + ': ' + (why.note || why.word).replace(/\.$/, '') + '. Now ' + pct(L.d.p) + '.' : 'The evidence fell away. Now ' + pct(L.d.p) + '.' }; }
+    if (!L.person) { const why = st.filter((s) => s.lr < 0.999).sort((a, b) => a.lr - b.lr)[0]; return { t: 'Why did we close the lead in ' + L.where + '?', s: (why ? (why.note || why.word).replace(/\.$/, '') + '. ' : '') + 'The chance of a person fell to ' + pct(L.d.p) + '.' }; }
     if (ups.includes('human')) { const b4 = st.filter((s) => s.sensor !== 'human'), k = b4.find((s) => s.lr > 1.001); return { t: 'Why do we believe someone is in ' + L.where + '?', s: (k ? SHORT[k.sensor] + ' alone: ' + pct(b4[b4.length - 1].p) + '. ' : '') + 'Then the team got there and saw for itself: ' + pct(L.d.p) + '.' }; }
-    if (no('csi') && !yes('csi')) return { t: 'Why do we believe someone is in ' + L.where + '?', s: 'The Wi-Fi network said no, ' + times(no('csi')) + '. ' + ups.map((k, i) => (i ? SHORT[k].toLowerCase() : SHORT[k])).join(' and ') + ' outvoted it: ' + pct(L.d.p) + '.' };
+    if (no('csi') && !yes('csi')) return { t: 'Why do we believe someone is in ' + L.where + '?', s: ups.map((k, i) => (i ? SHORT[k].toLowerCase() : SHORT[k])).join(' and ') + ' decided it: ' + pct(L.d.p) + '.' };
     return { t: 'Why do we believe someone is in ' + L.where + '?', s: ups.map((k, i) => (i ? SHORT[k].toLowerCase() : SHORT[k])).join(' and ') + ' agreed' + (L.groups.length > 1 ? ', ' + times(L.groups.length) : '') + ': ' + pct(L.d.p) + '.' };
   }
   const VANT = { S1: 'corridor by 102', S2: 'corridor, west', S3: 'inside the door', S4: 'room 111', V1: 'second viewpoint', V2: 'second viewpoint', V3: 'second viewpoint', aerial: 'drone pass', team: 'on site' };
@@ -194,10 +194,10 @@ export function createGraphHero(host, ctx) {
     leaders.replaceChildren(); leadLines = [];
     callouts.replaceChildren(...L.groups.slice(0, 3).map((G, gi) => {
       const rows = G.items.filter((it) => it.kind).map((it) => h('span.gh-r' + (it.kind === 1 ? '.up' : '.down'), null, h('i'), SHORT[it.s.sensor] || it.s.sensor, h('b.num', null, '×' + it.s.lr.toFixed(it.s.lr < 1 ? 2 : it.s.lr >= 20 ? 0 : 1))));
-      const li = h('li.gh-co', { style: { animationDelay: 500 + gi * 450 + 'ms' } }, h('div.gh-co-h', null, h('span.num', null, clock(G.t)), h('span', null, VANT[G.vantage] || G.vantage)), ...rows, h('b.gh-co-p' + (L.person && G.p > 0.5 ? '.hot' : ''), null, pct(G.p)));
+      const li = h('li.gh-co', { style: { animationDelay: 500 + gi * 450 + 'ms' } }, h('div.gh-co-h', null, h('span.num', null, clock(G.t)), h('span', null, VANT[G.vantage] || G.vantage)), ...rows, h('b.gh-co-p' + (L.person && G.p >= 0.85 ? '.hot' : ''), null, pct(G.p)));
       const path = document.createElementNS(svgNS, 'path'), dot = document.createElementNS(svgNS, 'circle'); dot.setAttribute('r', '3'); leaders.append(path, dot); leadLines.push({ G, li, path, dot }); return li;
     }));
-    if (L.ch.steps.some((s) => s.assumed)) callouts.prepend(h('li.gh-co-note', null, 'Weights assumed' + (L.ch.steps.some((s) => !s.assumed) ? ', except Wi-Fi: measured on simulated test windows' : '')));
+    if (L.ch.steps.some((s) => s.assumed)) callouts.prepend(h('li.gh-co-note', null, L.ch.steps.some((s) => !s.assumed) ? 'Wi-Fi weight measured on simulated test windows' : 'Design-value weights'));
   }
   function hold(li) {
     mode = 'rest'; clockT = 0; focus = li; now = end; const L = leads[li], v = verdict(L); title.textContent = v.t; sub.textContent = v.s; host.classList.add('is-rest'); host.classList.remove('is-play'); showCallouts(L);
@@ -228,7 +228,7 @@ export function createGraphHero(host, ctx) {
     const asp = host.clientWidth / Math.max(1, host.clientHeight);
     if (mode === 'rest' && leads[focus]) {
       const L = leads[focus]; tmp.set(0, 0, 0); for (const G of L.groups) tmp.add(G.c); tmp.multiplyScalar(1 / L.groups.length); 
-      const yaw = -0.34 + Math.sin(time * 0.1) * 0.14 + yawUser, top = Math.max(L.star.y, L.groups[L.groups.length - 1].c.y) + 2.5, dist = clamp(top * 2.35, 46, 72) * (asp < 1.75 ? 1.06 : 1), pit = 0.56 + pitchUser; wantTgt.set(L.star.x * 0.82 + tmp.x * 0.18 + 1.5, top * 0.43, L.star.z * 0.8 + tmp.z * 0.2);
+      const yaw = -0.34 + Math.sin(time * 0.1) * 0.14 + yawUser, top = Math.max(L.star.y, L.groups[L.groups.length - 1].c.y) + 2.5, dist = clamp(top * 2.35, 60, 74) * (asp < 1.75 ? 1.06 : 1), pit = 0.56 + pitchUser; wantTgt.set(L.star.x * 0.72 + tmp.x * 0.18 + 2, Math.max(7, top * 0.43), L.star.z * 0.8 + tmp.z * 0.2);
       wantPos.set(wantTgt.x + Math.sin(yaw) * Math.cos(pit) * dist, wantTgt.y + Math.sin(pit) * dist, wantTgt.z + Math.cos(yaw) * Math.cos(pit) * dist);
     } else {
       const x = clamp(clockT / PLAY), yaw = -0.62 + x * 1.15 + yawUser, pit = 0.60 - 0.22 * ease(x) + pitchUser, dist = 70 + 16 * ease(x) + (asp < 1.75 ? 5 : 0); wantTgt.set(2, 3.5 + 8.5 * ease(x * 1.25), -1);
@@ -252,7 +252,7 @@ export function createGraphHero(host, ctx) {
     sFill.style.transform = 'scaleX(' + (now / end).toFixed(4) + ')'; sKnob.style.transform = 'translateX(' + ((now / end) * scrubW).toFixed(1) + 'px)';
     renderer.render(scene, camera);
     if (mode === 'rest') for (const o of leadLines) {
-      tmp.copy(o.G.c).project(camera); const x = (tmp.x * 0.5 + 0.5) * hw, y = (-tmp.y * 0.5 + 0.5) * hh; if (!o.bx) { const r = o.li.getBoundingClientRect(), b = host.getBoundingClientRect(); o.bx = r.left - b.left - 10; o.by = r.top - b.top + 12; }
+      tmp.copy(o.G.c).project(camera); const x = (tmp.x * 0.5 + 0.5) * hw, y = (-tmp.y * 0.5 + 0.5) * hh; if (!o.bx) { o.bx = callouts.offsetLeft - 12; o.by = callouts.offsetTop + o.li.offsetTop + 13; }
       const op = y < 4 || y > hh || x > o.bx - 20 ? 0 : clamp((focusK - 0.55) / 0.35); o.path.setAttribute('d', 'M' + x.toFixed(1) + ',' + y.toFixed(1) + 'L' + Math.max(x + 14, o.bx - 70).toFixed(1) + ',' + o.by.toFixed(1) + 'H' + o.bx.toFixed(1)); o.path.style.opacity = op.toFixed(2); o.dot.setAttribute('cx', x.toFixed(1)); o.dot.setAttribute('cy', y.toFixed(1)); o.dot.style.opacity = op.toFixed(2);
     }
   }

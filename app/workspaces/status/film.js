@@ -9,14 +9,17 @@ export const MODE_WORDS = { idle: 'Standing by', drive: 'Driving', listen: 'List
 // seek: where the film starts; lead: seconds before it breaks; speed: simulated seconds per real second; hold or until: how long it is watched
 export const FILM = [
   { id: 'linkLoss', short: 'Link lost', title: 'The radio link dies', says: 'It must stop where it stands, and keep what it knows.', seek: 124, speed: 3, lead: 2.4, hold: 7, clear: true, after: 4.5, cam: 'follow' },
-  { id: 'csiDropout', short: 'Wi-Fi blinded', title: 'Wi-Fi goes blind', says: 'It must refuse the bad windows, never guess.', seek: 243, speed: 4, lead: 1.2, until: (n) => n('CSI_UNAVAILABLE'), max: 16, clear: true, after: 4, cam: 'follow' },
+  { id: 'csiDropout', short: 'Wi-Fi blinded', title: 'Wi-Fi goes blind', says: 'It must refuse the bad windows and listen again.', seek: 243, speed: 4, lead: 1.2, until: (n) => n('CSI_UNAVAILABLE'), max: 16, clear: true, after: 4, cam: 'follow' },
   { id: 'lowBattery', short: 'Battery low', title: 'The battery runs out', says: 'It must go home while it still can, then come back.', seek: 246, speed: 12, lead: 1, until: (n) => n('BATTERY_SWAPPED'), max: 26, after: 6, cam: 'cinematic' },
   { id: 'slide', short: 'Second slide', title: 'Debris falls on its route', says: 'It must find another way at once, or say there is none.', seek: 118, speed: 3, lead: 2.2, hold: 9, after: 0, cam: 'follow' },
 ];
 
 export async function createDrillFilm(host, ctx, { onUpdate }) {
-  const bus = createBus(), sim = createSim({ bus, nn: ctx.nn }), own = { ...ctx, bus, sim, selection: null, select(sel) { own.selection = sel; bus.emit('select', sel); } };
+  const bus = createBus(), memo = new WeakMap(), nn = { ...ctx.nn, infer(x, o) { if (o?.trace) return ctx.nn.infer(x, o); let r = memo.get(x); if (!r) memo.set(x, (r = ctx.nn.infer(x))); return r; } }, sim = createSim({ bus, nn }), own = { ...ctx, bus, sim, selection: null, select(sel) { own.selection = sel; bus.emit('select', sel); } };
   const twin = await createTwin(host, own, { interactive: true, quality: 'high', camera: 'follow', caption: false, autostart: false });
+  // Each drill starts by replaying the mission to its moment. The network gives the same answer to the same window (the
+  // self-tests prove it), so it is asked once per window here, one a frame, before the film starts.
+  for (const s of ctx.nn.samples) { nn.infer(s.x); await new Promise((r) => requestAnimationFrame(r)); }
   let k = 0, phase = 'idle', timer = 0, raf = 0, last = 0, from = 0, p0 = null, t0 = 0, on = false, moved = 0, acc = 0;
   const S = () => sim.state, since = () => S().events.slice(from), n = (code) => since().some((e) => e.code === code);
   function load(i) {
@@ -31,7 +34,7 @@ export async function createDrillFilm(host, ctx, { onUpdate }) {
     } else sim.command('injectFault', { id: d.id });
     p0 = u.pos.slice(); phase = 'fault'; timer = 0;
   }
-  function push() { const u = S().units[R1], d = FILM[k]; onUpdate({ k, d, phase, mode: MODE_WORDS[u.mode] || u.mode, link: u.link, battery: u.battery, moved, sinceT: phase === 'lead' ? 0 : S().t - t0, lines: phase === 'lead' ? [] : since().filter((e) => e.code !== 'PHASE' && e.code !== 'ROOM_CLEAR' && e.code !== 'LEAD_CLOSED') }); }
+  function push() { const u = S().units[R1], d = FILM[k]; onUpdate({ k, d, phase, mode: MODE_WORDS[u.mode] || u.mode, link: u.link, battery: u.battery, moved, t: S().t, sinceT: phase === 'lead' ? 0 : S().t - t0, lines: phase === 'lead' ? [] : since().filter((e) => e.code !== 'PHASE' && e.code !== 'ROOM_CLEAR' && e.code !== 'LEAD_CLOSED') }); }
   function frame(ts) {
     if (!on) return; raf = requestAnimationFrame(frame);
     const dt = Math.min(0.1, (ts - last) / 1000); last = ts; timer += dt; acc += dt; const d = FILM[k];

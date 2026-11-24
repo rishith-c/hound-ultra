@@ -49,7 +49,7 @@ export const block = (title, tagEl, ...body) => { const el = h('section.forge-bl
 export function kindMatrix(caption) {
   const cells = [], el = h('div.forge-cm', null, h('div.forge-cm-cap', null, caption), h('div.forge-cm-grid', null,
     h('span'), h('span.forge-cm-h', null, 'said no one'), h('span.forge-cm-h', null, 'said person'),
-    ...KIND.flatMap((k, r) => [h('span.forge-cm-r', null, k), ...[0, 1].map((c) => { const cell = h('span.forge-cm-c.num', { 'data-good': String((r === 0) === (c === 0)) }, '–'); cells.push(cell); return cell; })])));
+    ...KIND.flatMap((k, r) => [h('span.forge-cm-r', null, k), ...[0, 1].map((c) => { const cell = h('span.forge-cm-c.num', { 'data-good': String((r === 0) === (c === 0)) }, '…'); cells.push(cell); return cell; })])));
   el.set = (byKind) => { byKind.forEach((row, r) => { const n = row[0] + row[1] || 1; row.forEach((v, c) => { const cell = cells[r * 2 + c]; cell.textContent = v; cell.style.setProperty('--f', (v / n).toFixed(3)); }); }); };
   return el;
 }
@@ -67,7 +67,7 @@ export function aucOf(score, label) { const idx = Array.from(score, (_, i) => i)
 //   vlines / hlines: [{ at, color, dash, label }]   points: [{ x, y, color, r, label, ring }]   bands: [{ x0, x1, color }]
 export function plotter(canvas, pad = {}) {
   let spec = null, W = 0, H = 0, c2 = null;
-  const m = { l: 46, r: 14, t: 10, b: 34, ...pad };
+  const m = { l: 46, r: 14, t: 10, b: 34, ...pad }; m.l += 12;
   const sx = (v) => { const a = spec.x; const u = a.log ? (Math.log(v) - Math.log(a.min)) / (Math.log(a.max) - Math.log(a.min)) : (v - a.min) / (a.max - a.min); return m.l + u * (W - m.l - m.r); };
   const sy = (v) => { const a = spec.y; return H - m.b - ((v - a.min) / (a.max - a.min)) * (H - m.t - m.b); };
   function draw() {

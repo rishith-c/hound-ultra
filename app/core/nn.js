@@ -53,7 +53,7 @@ export async function loadNN(url = new URL('../../data/nn.json', import.meta.url
     categories: Object.keys(byCat),
     params: 23372,
     infer(x, opts) {
-      if (!Array.isArray(x) || x.length !== 52 || x[0].length !== 200) throw new Error('A Wi-Fi window must be 52 rows by 200 samples.');
+      if (!Array.isArray(x) || x.length !== 52 || x.some((r) => !r || r.length !== 200)) throw new Error('A Wi-Fi window must be 52 rows by 200 samples.');
       for (const row of x) for (let i = 0; i < row.length; i++) if (!Number.isFinite(row[i])) throw new Error('The Wi-Fi window contains a value that is not a number.');
       return forward(x, raw.weights, opts);
     },

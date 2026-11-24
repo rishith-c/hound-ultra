@@ -8,20 +8,21 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import * as L from './lib.js';
-const { h, realityTag, clamp, rng, TAU, fft } = L;
+import * as LZ from './exhibits/laser.js';
+const { h, realityTag, clamp, rng, TAU } = L;
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const ease = (t) => { t = clamp(t); return t * t * t * (t * (t * 6 - 15) + 10); };
 
 export const STOPS = [
   { id: 'insar', name: 'Orbit', at: '700 km', head: 'The ground moved. Radar saw it from space.', line: 'Every colour band is 28 mm of shift. Real valley, simulated shift.' },
-  { id: 'earthfm', name: 'Orbit', at: '700 km', head: 'A model of the Earth learns to read floods', line: 'Illustrative water on real terrain. Not a forecast.' },
+  { id: 'earthfm', name: 'Orbit', at: '700 km', head: 'A model of the Earth learns to read floods', line: 'Simulated water on the real valley.' },
   { id: 'passive', name: 'Sky', at: '1 km', head: 'A radar that never transmits', line: 'One mast lights the valley. What moves bends the echo.' },
   { id: 'seeds', name: 'Sky', at: '100 m', head: 'Sensors that fall like seeds', line: 'Thirty milligrams, no battery, carried by wind.' },
   { id: 'phones', name: 'Street', at: '20 m', head: 'Buried phones, whispering', line: 'Every phone that passes overhead hears a little more.' },
-  { id: 'legged', name: 'Street', at: '4 m', head: 'Where wheels stop, legs choose a step', line: 'A natural carrier for the sensors. Not a HOUND robot.' },
+  { id: 'legged', name: 'Street', at: '4 m', head: 'Where wheels stop, legs choose a step', line: 'A natural carrier for the sensors.' },
   { id: 'corners', name: 'Wall', at: '3 m', head: 'Light can be read around a corner', line: 'A laser spot on one wall carries echoes of the next room.' },
   { id: 'smell', name: 'Rubble', at: '1 m', head: 'Breath leaves a trail through stone', line: 'An electronic nose follows carbon dioxide, acetone and ammonia.' },
-  { id: 'insects', name: 'Rubble', at: '20 cm', head: 'The searcher is alive', line: 'A cockroach with a backpack. Field-tried in 2025; HOUND has none.' },
+  { id: 'insects', name: 'Rubble', at: '20 cm', head: 'The searcher is alive', line: 'A cockroach with a backpack, field-tried in 2025.' },
   { id: 'atoms', name: 'Rubble', at: '10 cm', head: 'An antenna made of atoms', line: 'The farthest idea here: a diamond that feels a magnetic field.' },
   { id: 'laser', name: 'Person', at: 'one heartbeat', head: 'And then, a heartbeat', line: 'A laser feels the chest move from across the street.' },
 ];
@@ -234,11 +235,14 @@ function site(T, renderer) {
 const smooth01 = (t) => { t = clamp(t); return t * t * (3 - 2 * t); };
 
 // ---------------------------------------------------------------- the last stop: a live averaged spectrum
+// Not a drawing of a heartbeat: the laser exhibit's own simulated recording and its own tested processing, worked out once at load.
 function heartScope() {
-  const N = 256, FS = 32, TRUE = 1.2, NOISE_SD = 0.7 /* assumed */, R = rng(8), avg = new Float64Array(N / 2), re = new Float64Array(N), im = new Float64Array(N), win = L.hann(N); let n = 0, ph = 0;
-  return { reset() { avg.fill(0); n = 0; }, get n() { return n; }, step() { for (let i = 0; i < N; i++) { ph += 1 / FS; const b = (ph * TRUE) % 1; re[i] = (0.55 * Math.exp(-((b - 0.1) ** 2) / 0.003) - 0.32 * Math.exp(-((b - 0.22) ** 2) / 0.006) + NOISE_SD * R.n()) * win[i]; im[i] = 0; } fft(re, im); for (let k = 0; k < N / 2; k++) avg[k] += re[k] * re[k] + im[k] * im[k]; n++; },
-    estimate() { let bk = 0, bv = 0; for (let k = Math.ceil(0.7 * N / FS); k < 2 * N / FS; k++) { let v = 0; for (let q = 1; q <= 3; q++) v += avg[k * q]; if (v > bv) { bv = v; bk = k; } } let s = 0, m = 0; for (let j = 3 * bk - 2; j <= 3 * bk + 2; j++) { const a = avg[j] * avg[j]; s += a * j; m += a; } return (s / m / 3) * FS / N * 60; },
-    draw(g, w, hh) { g.clearRect(0, 0, w, hh); if (!n) return; const kM = Math.floor(6 * N / FS), T = L.tokens(); let mx = 0, md = 0; for (let k = 4; k < kM; k++) { mx = Math.max(mx, avg[k]); md += avg[k] / (kM - 4); } g.beginPath(); for (let k = 4; k < kM; k++) { const x = (k - 4) / (kM - 5) * w, y = hh - 6 - Math.max(0, avg[k] / md - 0.6) / Math.max(2, mx / md - 0.6) * (hh - 14); k === 4 ? g.moveTo(x, y) : g.lineTo(x, y); } g.strokeStyle = T.person; g.lineWidth = 1.75; g.lineJoin = 'round'; g.stroke(); g.strokeStyle = L.rgba('ok', 0.7); g.setLineDash([2, 3]); for (let q = 1; q <= 4; q++) { const x = (q * TRUE * N / FS - 4) / (kM - 5) * w; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, hh - 4); g.stroke(); } g.setLineDash([]); } };
+  const P = { range: 30, surf: 'chest', vib: 2, hr: 72 }, rec = LZ.simulate(P, 60, 4), segs = LZ.segments(LZ.prefilter(rec.v).y), NB = segs[0].length, acc = new Float64Array(NB), avg = new Float64Array(NB), KM = 6 * 32, dB = [], cap = [];
+  segs.forEach((s, j) => { const K = j + 1; for (let k = 0; k < NB; k++) { acc[k] += s[k]; avg[k] = acc[k] / K; } const A = LZ.analyse(avg, K), t = LZ.tauOf(K), d = new Float32Array(KM); for (let k = 0; k < KM; k++) d[k] = 10 * Math.log10(Math.max(1e-6, A.W[k]));
+    dB.push(d); cap.push('Simulated recording, ' + t.toFixed(0) + ' s: ' + (A.z >= LZ.ZTHR ? A.bpm.toFixed(1) + ' a minute (truth ' + LZ.trueRate(rec.beats, 0, t).toFixed(1) + '). Not medical.' : 'nothing clear of the noise yet. Not medical.')); });
+  const truth = LZ.trueRate(rec.beats, 0, 60) / 60; let n = 0, lo = 99, hi = -99; const end = dB[dB.length - 1]; for (let k = 24; k < KM; k++) { lo = Math.min(lo, end[k]); hi = Math.max(hi, end[k]); }
+  return { reset() { n = 0; }, get n() { return n; }, get max() { return dB.length; }, get text() { return cap[n - 1] || ''; }, step() { n++; },
+    draw(g, w, hh) { g.clearRect(0, 0, w, hh); if (!n) return; const T = L.tokens(), d = dB[n - 1], k0 = 24, X = (k) => (k - k0) / (KM - 1 - k0) * w; g.beginPath(); for (let k = k0; k < KM; k++) { const y = hh - 8 - clamp((d[k] - lo) / (hi - lo)) * (hh - 16); k === k0 ? g.moveTo(X(k), y) : g.lineTo(X(k), y); } g.strokeStyle = T.person; g.lineWidth = 1.75; g.lineJoin = 'round'; g.stroke(); g.strokeStyle = L.rgba('ok', 0.7); g.setLineDash([2, 3]); for (let q = 1; q <= 4; q++) { const x = X(q * truth * 32); g.beginPath(); g.moveTo(x, 0); g.lineTo(x, hh - 4); g.stroke(); } g.setLineDash([]); } };
 }
 
 // ---------------------------------------------------------------- the dive
@@ -276,7 +280,7 @@ export async function createDive({ onStop }) {
     sx += (mx - sx) * Math.min(1, dt * 2.2); sy += (my - sy) * Math.min(1, dt * 2.2); const dist = curP.distanceTo(curL), dr = L.reduced() ? 0 : 1; right.subVectors(curL, curP).cross(UPV).normalize(); cam.position.copy(curP).addScaledVector(right, dr * dist * (0.035 * Math.sin(T0 * 0.21) + sx * 0.06)); cam.position.y += dr * dist * (0.012 * Math.sin(T0 * 0.17) - sy * 0.03); look.copy(curL); cam.near = useB ? Math.max(0.004, dist * 0.03) : 0.3; cam.far = useB ? 160 : 900; cam.setViewOffset(W, HH, -W * 0.07, HH * 0.02, W, HH); cam.lookAt(look); cam.updateProjectionMatrix();
     if (useB) B.ready(); rp.scene = useB ? B.scene : A.scene; (useB ? B : A).update(T0, cur, Math.max(0, local - (cross ? MOVE * 0.5 : MOVE * 0.35)), run);
     fin.uniforms.uT.value = T0; fin.uniforms.uFade.value = cross ? Math.pow(Math.sin(Math.PI * mv), 2.2) : 0; fin.uniforms.uExp.value = useB ? 1.22 : 1.08; bloom.strength = useB ? 0.5 : 0.34;
-    if (cur === 10 && T0 - scopeAt > 0.22 && heart.n < 40) { scopeAt = T0; heart.step(); heart.draw(sg, 640, 150); const e = heart.estimate(); scopeT.textContent = 'Simulated recording, ' + heart.n * 8 + ' s averaged, noise assumed: ' + e.toFixed(0) + ' a minute (truth 72). Not medical.'; }
+    if (cur === 10 && T0 - scopeAt > 0.3 && heart.n < heart.max) { scopeAt = T0; heart.step(); heart.draw(sg, 640, 150); scopeT.textContent = heart.text; }
     comp.render(dt);
   }
   const UPV = V(0, 1, 0);

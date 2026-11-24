@@ -1,6 +1,6 @@
 // Demo, scene three: every feature set in one typographic wall, in columns from "built" to "concept". A name that the code
 // check cannot find is struck out and says so. Each name opens its workspace.
-import { LEDGER, ALL, checkBuilt } from './ledger.js';
+import { ALL, checkBuilt } from './ledger.js';
 const ORDER = ['built', 'live-ai', 'live-algo', 'real-data', 'device', 'sim', 'concept'];
 export function createRealWall(host, ctx) {
   const { h, REALITY } = ctx.kit; let made = false, timers = [];
@@ -14,5 +14,5 @@ export function createRealWall(host, ctx) {
     paint();
   }
   function paint() { /* colours come from the tokens */ }
-  return { show() { make().then(() => requestAnimationFrame(() => host.classList.add('on'))); }, hide() { host.classList.remove('on'); timers.forEach(clearTimeout); timers = []; }, paint, total: () => LEDGER.length };
+  return { show() { make().then(() => requestAnimationFrame(() => host.classList.add('on'))); }, hide() { host.classList.remove('on'); timers.forEach(clearTimeout); timers = []; }, paint };
 }

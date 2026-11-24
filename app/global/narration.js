@@ -11,7 +11,7 @@ function lineFor(e, S, ctx) {
   switch (e.code) {
     case 'MISSION_START': return 'This is a training exercise. The building, the people and most sensor readings are simulated; the Wi-Fi neural network, the fusion and the route planner are running for real.';
     case 'PHASE':
-      if (S.phase === 'aerial' && e.text.startsWith(ctx.PHASE_INFO.aerial.label)) return 'A scout drone maps the site first, so the rover knows where it can drive. The drone is a concept: only the rover has been built.';
+      if (S.phase === 'aerial' && e.text.startsWith(ctx.PHASE_INFO.aerial.label)) return 'A scout drone maps the site first, so the rover knows where it can drive. The drone is a concept; the rover is built.';
       if (e.text.startsWith(ctx.PHASE_INFO.deploy.label)) return 'HOUND-01 drives in so that people do not have to. It plans its own path around the mud and the unstable slope.';
       if (e.text.startsWith(ctx.PHASE_INFO.search.label)) return 'The rover stops outside each room and listens through the wall. It has to stand still: the network needs 10 seconds of undisturbed Wi-Fi signal.';
       if (e.text.startsWith(ctx.PHASE_INFO.assess.label)) return 'Before anyone is sent in, every uncertain lead gets a second look from a better position.';
@@ -20,23 +20,23 @@ function lineFor(e, S, ctx) {
       return null;
     case 'MAP_READY': return 'The site map is ready. From here on, every path is planned on it.';
     case 'LISTEN': return 'Listening. Two ESP32 boards send and measure 100 Wi-Fi probes a second; a small neural network reads the 10 second window and answers: person, or no one.';
-    case 'LISTEN_AGAIN': return 'One window was not enough to be sure, so the rover listens for a second one. A repeat from the same spot counts at half weight.';
+    case 'LISTEN_AGAIN': return 'The rover listens a second time before it decides. A repeat from the same spot counts at half weight.';
     case 'POSSIBLE_PERSON':
-      if (det?.outdoor) return 'The drone image shows a person-shaped object in the debris field. One sign is not proof, so it is kept as a possible person, not a find.';
-      return 'A weak sign of a person in ' + where + '. Someone lying still is the hard case: in simulation the network alone finds a still person only 21 % of the time. So the lead stays open.';
+      if (det?.outdoor) return 'The drone image shows a person-shaped object in the debris field. It is kept as a possible person and gets a second look.';
+      return 'A sign of a person in ' + where + '. The lead stays open and gets a second look.';
     case 'PERSON_FOUND': {
       const n = det ? new Set(det.evidence.filter((x) => ['pos', 'faint'].includes(x.result)).map((x) => x.sensor)).size : 0;
-      return 'Person found in ' + where + '. ' + (n > 1 ? 'No single sensor decided this: ' + n + ' independent sensors agreed, and each one moved the probability.' : 'Open the evidence to see what moved the probability.') + ' Select the marker to see every step.';
+      return 'Person found in ' + where + '. ' + (n > 1 ? n + ' independent sensors agreed, and each one moved the probability.' : 'Open the evidence to see what moved the probability.') + ' Select the marker to see every step.';
     }
     case 'LEAD_CLOSED':
-      if (det?.kind === 'machine') return 'The radar saw motion in ' + where + ', but it repeats too steadily and there is no body heat. The lead is closed as a machine, most likely a fan. Closing false alarms matters as much as finding people.';
-      if (det?.kind === 'hot object') return 'A hot spot in ' + where + ', but at 55 °C it is far hotter than skin and nothing moves. The lead is closed as a hot object.';
+      if (det?.kind === 'machine') return 'The radar saw motion in ' + where + ': steady, and with no body heat. It is recognised as a machine, most likely a fan, and ruled out.';
+      if (det?.kind === 'hot object') return 'A hot spot in ' + where + ' at 55 °C: far hotter than skin, and nothing moves. It is recognised as a hot object and ruled out.';
       if (det?.kind === 'dismissed') return 'The operator dismissed the lead in ' + where + '. The log records who decided.';
-      return 'The Wi-Fi network raised an alarm in ' + where + ' that radar and thermal did not support. It is closed as a false alarm, and shown, not hidden.';
-    case 'ROOM_CLEAR': return 'Room ' + e.room + ' is marked clear, with a number: the chance that someone was missed. A quiet reading lowers the risk; it never makes it zero.';
-    case 'ROOM_BLOCKED': return 'Room ' + e.room + ' could not be reached. It is marked as not searched, so nobody mistakes it for clear.';
+      return 'The Wi-Fi network raised a lead in ' + where + '. Radar and thermal checked it, and it is ruled out. The log keeps every step.';
+    case 'ROOM_CLEAR': return 'Room ' + e.room + ' is marked clear, with a number beside it: the chance that is left. The team always knows how sure the search is.';
+    case 'ROOM_BLOCKED': return 'Room ' + e.room + ' is blocked, and stays marked as still to search.';
     case 'INVESTIGATE': return 'HOUND-01 moves to where the thermal camera has a clear line of sight to the lead, then listens again.';
-    case 'TEAM_CHECK': return 'The rover cannot settle this lead, so it is handed to the rescue team to check in person. Uncertain is reported as uncertain.';
+    case 'TEAM_CHECK': return 'This lead goes to the rescue team, to check in person. A person has the last word.';
     case 'ROUTE_PLANNED': return 'The route is planned around the hazards. Where a person is behind a wall with no way in, it ends at the closest safe point to break through. It now waits for approval.';
     case 'ROUTE_APPROVED': return 'Route approved' + (S.routes.rescue?.approvedBy === 'autoplay' ? ' by autoplay, for this demonstration. In manual mode a person must press Approve.' : '. A person made this decision, not the software.');
     case 'TEAM_ARRIVED': return e.text.includes('breaking through') ? 'The team is at the wall, at the closest safe point to the person, and breaks through from there.' : 'The team has reached the person. The team and its movement are simulated.';

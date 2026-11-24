@@ -9,6 +9,11 @@
   "w": 1680,
   "h": 1000
  },
+ "rover": {
+  "file": "assets/img/landing/ws-rover.jpg",
+  "w": 1680,
+  "h": 1000
+ },
  "triage": {
   "file": "assets/img/landing/ws-triage.jpg",
   "w": 1680,
@@ -106,6 +111,11 @@
  },
  "copilot": {
   "file": "assets/img/landing/ws-copilot.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "status": {
+  "file": "assets/img/landing/ws-status.jpg",
   "w": 1680,
   "h": 1000
  }

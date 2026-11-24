@@ -19,7 +19,7 @@ export async function create(el, env) {
   const Topt = fitT(), platt = fitPlatt();
   let calMode = 'temp', Tcur = Topt;
   const calCv = h('canvas.forge-plot'), calPlot = plotter(calCv, { l: 42, b: 34 });
-  const eceB = fig('–', '%', 'calibration error, as trained', T.n + ' test windows', 'page'), eceA = fig('–', '%', 'after the fix', 'fitted on validation only', 'page', 'ok');
+  const eceB = fig('…', '%', 'calibration error, as trained', T.n + ' test windows', 'page'), eceA = fig('…', '%', 'after the fix', 'fitted on validation only', 'page', 'ok');
   const tSl = slider('Temperature', { min: -1.6, max: 2.2, step: 0.01, value: Math.log(Topt), fmt: (v) => Math.exp(v).toFixed(2), oninput: (v) => { Tcur = Math.exp(v); calSeg.set('temp', false); calMode = 'temp'; drawCal(); } });
   const calSeg = seg('Calibration method', [['none', 'As trained'], ['temp', 'Temperature', 'Divide the logit by one number'], ['platt', 'Scale and offset', 'Two numbers: also shifts the balance between the classes']], calMode, (v) => { calMode = v; if (v === 'temp') { Tcur = Topt; tSl.set(Math.log(Topt)); } drawCal(); });
   const calNote = h('p.forge-p');
@@ -42,7 +42,7 @@ export async function create(el, env) {
   const pv = Float64Array.from(zv, sigmoid), pt = Float64Array.from(zt, sigmoid);
   const qOf = (scores, a) => { const s = Float64Array.from(scores).sort(), n = s.length, k = Math.ceil((n + 1) * (1 - a)); return k > n ? Infinity : s[k - 1]; };
   const bars = [...KIND, 'All windows'].map((name) => { const seg4 = [0, 1, 2, 3].map((j) => h('i.forge-set-' + j)); const lab = h('em.num'); return { el: h('div.forge-setrow', null, h('span', null, name), h('div.forge-setbar', null, seg4), lab), seg4, lab }; });
-  const covFig = fig('–', '%', 'of test windows: the set holds the truth', T.n + ' test windows', 'page', 'ok'), absStill = fig('–', '%', 'of still people: “not sure”', null, 'page', 'warn'), absMove = fig('–', '%', 'of moving people: “not sure”', null, 'page', 'person');
+  const covFig = fig('…', '%', 'of test windows: the set holds the truth', T.n + ' test windows', 'page', 'ok'), absStill = fig('…', '%', 'of still people: “not sure”', null, 'page', 'warn'), absMove = fig('…', '%', 'of moving people: “not sure”', null, 'page', 'person');
   const aSl = slider('Promise: right at least', { min: 60, max: 99, step: 1, value: 90, fmt: (v) => v + ' %', oninput: (v) => { alpha = 1 - v / 100; drawConf(); } });
   const cSeg = seg('Guarantee', [['marginal', 'Over all windows'], ['class', 'For each class', 'Empty rooms and people are calibrated separately, so each gets the promise']], cMode, (v) => { cMode = v; drawConf(); });
   const confNote = h('p.forge-p');
@@ -56,9 +56,9 @@ export async function create(el, env) {
     covFig.className = 'forge-fig ' + (cov / pt.length >= 1 - alpha - 0.02 ? 'ok' : 'warn');
     const c = U.conformal['0.1'];
     confNote.replaceChildren('Promised ' + pct(1 - alpha, 0) + '; measured ' + pct(cov / pt.length) + ' (empty rooms ' + pct(cov0 / n0, 0) + ', people ' + pct(cov1 / n1, 0) + '). ', cMode === 'marginal' ? 'The promise is an average: one class can pay for the other. ' : 'Now each class is held to the promise on its own. ',
-      'The price of keeping it is the amber share: answers the network hands back as “not sure”. ', src('py', 'at 90 %: coverage ' + pct(c.coverage) + ', not sure for ' + pct(c.abstain_by_kind[1], 0) + ' of still and ' + pct(c.abstain_by_kind[2], 0) + ' of moving people'));
+      'The price of keeping it is the grey share: answers the network hands back as “not sure”. ', src('py', 'at 90 %: coverage ' + pct(c.coverage) + ', not sure for ' + pct(c.abstain_by_kind[1], 0) + ' of still and ' + pct(c.abstain_by_kind[2], 0) + ' of moving people'));
   }
-  const confBlock = block('An answer with a guarantee: “person”, “no one” or “not sure”', realityTag('live-algo'),
+  const confBlock = block('An answer with a guarantee', realityTag('live-algo'),
     h('div.row.wrap', null, cSeg), aSl.el,
     h('div.forge-sets', null, h('div.forge-setlegend', null, h('span', null, h('i.forge-set-0'), 'no one'), h('span', null, h('i.forge-set-1'), 'person'), h('span', null, h('i.forge-set-2'), 'not sure'), h('span', null, h('i.forge-set-3'), 'neither'), h('span.grow'), h('span.dim', null, 'not sure')), bars.map((b) => b.el)),
     h('div.forge-figs', null, covFig, absStill, absMove), confNote);
@@ -69,7 +69,7 @@ export async function create(el, env) {
   function maha(hid, off) { let best = Infinity; const d = new Float64Array(32); for (let k = 0; k < 3; k++) { for (let i = 0; i < 32; i++) d[i] = hid[off + i] - mu[k * 32 + i]; let s = 0; for (let i = 0; i < 32; i++) { let r = 0; for (let j = 0; j < 32; j++) r += prec[i * 32 + j] * d[j]; s += d[i] * r; } if (s < best) best = s; } return best; }
   const energy = (z, i) => { const a = z[i * 2], b = z[i * 2 + 1], m = Math.max(a, b); return -(m + Math.log(Math.exp(a - m) + Math.exp(b - m))); };
   const prevA = h('canvas.forge-px.forge-win'), prevB = h('canvas.forge-px.forge-win'), histCv = h('canvas.forge-plot'), histPlot = plotter(histCv, { l: 30, b: 34 });
-  const det = fig('–', '%', 'of damaged windows flagged', bte.n + ' windows damaged here', 'page', 'danger'), fa = fig('–', '%', 'of empty rooms now called a person', null, 'page', 'person'), caught = fig('–', '%', 'of changed answers that were flagged', null, 'page');
+  const det = fig('…', '%', 'of damaged windows flagged', bte.n + ' windows damaged here', 'page', 'danger'), fa = fig('…', '%', 'of empty rooms now called a person', null, 'page', 'person'), caught = fig('…', '%', 'of changed answers that were flagged', null, 'page');
   const oSeg = seg('Kind of damage', Object.entries(CORRUPTIONS).map(([k, c]) => [k, c.label.split(' ')[0] === 'Missed' ? 'Gain step' : c.label.split(' ')[0], c.help]), oKind, (v) => { oKind = v; oSl.set(2); oLev = 2; drawOod(); });
   const oSl = slider('How bad', { min: 0, max: 4, step: 1, value: 2, fmt: (v) => O.levels[oKind][v] + ' ' + CORRUPTIONS[oKind].unit, oninput: (v) => { oLev = v; drawOod(); } });
   const oBody = h('tbody'), oHelp = h('p.forge-p');
@@ -96,7 +96,7 @@ export async function create(el, env) {
         if (kind !== oKind || lev !== oLev) { oAgain = true; continue; }
         const m = Float64Array.from({ length: bte.n }, (_, i) => maha(out.hidden, i * 32)); let flagged = 0, emptyP = 0, nEmpty = 0, changed = 0, changedCaught = 0;
         for (let i = 0; i < bte.n; i++) { const said = softmax2(out.person[i * 2], out.person[i * 2 + 1]) > thr ? 1 : 0, f = m[i] > O.thr_maha; if (f) flagged++; if (bte.kind[i] === 0) { nEmpty++; emptyP += said; } if (said !== cleanSaid[i]) { changed++; if (f) changedCaught++; } }
-        det.set((100 * flagged / bte.n).toFixed(0)); fa.set((100 * emptyP / nEmpty).toFixed(0)); caught.set(changed ? (100 * changedCaught / changed).toFixed(0) : '–'); caught.lastChild && (caught.querySelector('.forge-fig-l').textContent = changed ? 'of the ' + changed + ' changed answers were flagged' : 'no answer changed');
+        det.set((100 * flagged / bte.n).toFixed(0)); fa.set((100 * emptyP / nEmpty).toFixed(0)); caught.set(changed ? (100 * changedCaught / changed).toFixed(0) : '…'); caught.lastChild && (caught.querySelector('.forge-fig-l').textContent = changed ? 'of the ' + changed + ' changed answers were flagged' : 'no answer changed');
         const all = [...cleanM, ...m], lo = Math.floor(Math.log10(Math.max(1, Math.min(...all)))), hi = Math.ceil(Math.log10(Math.max(...all)) + 0.01), a = logHist(cleanM, lo, hi), b = logHist(m, lo, hi), ymax = Math.max(...a.map((p) => p[1]), ...b.map((p) => p[1])) * 1.15;
         const ticks = []; for (let e = lo; e <= hi; e++) ticks.push(Math.pow(10, e));
         histPlot.set({ x: { min: Math.pow(10, lo), max: Math.pow(10, hi), log: true, ticks, fmt: (v) => (v >= 1000 ? v / 1000 + 'k' : String(v)), label: 'distance from the training windows (Mahalanobis, squared)' }, y: { min: 0, max: ymax, ticks: [] },

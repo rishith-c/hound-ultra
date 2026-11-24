@@ -45,7 +45,7 @@ export default {
   labelNote: 'Prithvi is not running here: the 2023 model has about 100 million parameters. The live AI is a network of about a hundred parameters trained in this page, beside a classic water index. It learns from simulated scenes of this same valley, with other clouds and water levels, which is easier than a new place. Its score is not comparable with the published one. The image is simulated on the real elevation of the valley, and the flood is illustrative: not a forecast, and not a reconstruction of the real flood.',
   sentences: [
     'A foundation model for the Earth is one large network trained on years of satellite images with no labels, then taught a new job, such as mapping flood water, from a few hundred labelled examples.',
-    'NASA and IBM published one, Prithvi, in 2023; here a tiny stand-in does the same job on this valley, so you can see what the input is, what comes out, and exactly where it goes wrong.',
+    'NASA and IBM published one, Prithvi, in 2023; here a tiny stand-in does the same job on this valley, so you can see what the input is, what comes out, and where it needs a second look.',
   ],
   needs: 'A cloud-free look at the right moment, or a radar pass instead. Floods come with cloud, and an optical image cannot see through it; deep valleys add shadow that reads like water.',
   unknown: 'How well a model fine-tuned on a few hundred labelled floods holds up in a place and season it has never seen. The published score drops on a held-out country, and we found no score for a steep mountain valley like this one.',
@@ -59,7 +59,7 @@ export default {
   create({ stage, controls, readout }) {
     L.layout(stage, { cols: 'minmax(0, 1fr) minmax(0, 1fr)', rows: 'minmax(0, 1fr) 216px', areas: ['in out', 'score cause'] });
     const fIn = L.figure({ area: 'in', title: 'Input: what the satellite sees' }), fOut = L.figure({ area: 'out', title: 'Output: the flood map, checked against the truth' });
-    const fSc = L.figure({ area: 'score', title: 'Agreement with the truth' }), fCa = L.figure({ area: 'cause', title: 'What is still weak' });
+    const fSc = L.figure({ area: 'score', title: 'Agreement with the truth' }), fCa = L.figure({ area: 'cause', title: 'Where it differs' });
     stage.append(fIn.el, fOut.el, fSc.el, fCa.el);
     fOut.legend([{ label: 'water, found', color: 'accent' }, { label: 'water, missed', color: 'warn' }, { label: 'false water', color: 'danger' }]);
     const P = { stage: 12, cloud: 18, sun: 38, slope: false, method: 'net', view: 'natural', seed: 4 };
@@ -149,7 +149,7 @@ export default {
       const x0 = 8, bw = w - 78, rh = Math.min(46, (hh - 58) / 2.2); let y = 8;
       for (const [name, v, col, on] of rows) { L.text(g, name, x0, y + 11, { color: on ? 'text' : 'text2', size: 11.5, weight: on ? 600 : 500 }); g.fillStyle = L.tokens().bg3; g.fillRect(x0, y + 18, bw, 9); g.fillStyle = L.rgba(col, on ? 1 : 0.7); g.fillRect(x0, y + 18, bw * v, 9); L.text(g, v.toFixed(2), x0 + bw + 8, y + 27, { mono: true, size: 12, color: 'text' }); y += rh; }
       const px = Math.round(x0 + bw * PUBLISHED) + 0.5; g.strokeStyle = L.tokens().sim; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(px, 4); g.lineTo(px, y + 2); g.stroke(); g.setLineDash([]);
-      L.text(g, 'Prithvi, published: 0.83', px - 6, y + 16, { color: 'sim', size: 11, align: 'right' }); L.text(g, 'on real images of other floods (Sen1Floods11). Not measured here; shown for scale only.', x0, y + 32, { color: 'text3', size: 10.5 });
+      L.text(g, 'Prithvi, published: 0.83', px - 6, y + 16, { color: 'sim', size: 11, align: 'right' }); L.text(g, 'on other, real floods (Sen1Floods11): not comparable', x0, y + 32, { color: 'text3', size: 10.5 });
       L.text(g, '0', x0, hh - 4, { color: 'text3', size: 10.5, mono: true }); L.text(g, 'intersection over union with the truth', x0 + bw / 2, hh - 4, { color: 'text3', size: 10.5, align: 'center' }); L.text(g, '1', x0 + bw, hh - 4, { color: 'text3', size: 10.5, mono: true, align: 'right' });
     };
     fCa.draw = (g, w, hh) => {
@@ -158,7 +158,7 @@ export default {
       CAUSES.forEach((name, i) => { const a = J.cause[i] / tot, b = O.cause[i] / tot; L.text(g, name, lx - 10, y + rh / 2 + 1, { align: 'right', base: 'middle', size: 11.5, color: 'text2' });
         g.fillStyle = L.rgba('text3', 0.35); g.fillRect(lx, y + rh / 2 + 3, (bw * b) / mx, 3); g.fillStyle = L.tokens()[i < 3 ? 'warn' : 'text2']; g.fillRect(lx, y + rh / 2 - 6, Math.max(1, (bw * a) / mx), 8);
         L.text(g, (a * 100).toFixed(1) + ' %', lx + (bw * Math.max(a, b)) / mx + 6, y + rh / 2 + 1, { base: 'middle', mono: true, size: 11, color: 'text' }); y += rh; });
-      L.text(g, 'wrong pixels, as a share of the true flooded area. Thin grey bar: the other method.', lx, hh - 4, { color: 'text3', size: 10.5 });
+      L.text(g, 'share of the true flooded area; thin bar: other method', lx, hh - 4, { color: 'text3', size: 10.5 });
     };
 
     const sIoU = L.stat('agreement with truth (IoU)'), sMiss = L.stat('of the flood missed', { unit: '%' }), sFalse = L.stat('false water, vs. true area', { unit: '%' }), sArea = L.stat('flooded in the truth', { unit: 'km²' });
@@ -171,7 +171,7 @@ export default {
       fOut.setTitle(nm + ' finds ' + L.pct(J.tp / Math.max(1, S.nw)) + ' % of the flooded area, and adds ' + L.pct(J.fp / Math.max(1, S.nw)) + ' % that is not water');
       fOut.setNote('Truth: where the water is in the simulation, from the height of each cell above the river it drains to.');
       fSc.setTitle(S.net.iou > S.idx.iou + 0.02 ? 'The trained network scores above the untuned index, ' + S.net.iou.toFixed(2) + ' to ' + S.idx.iou.toFixed(2) : S.idx.iou > S.net.iou + 0.02 ? 'Here the hand-made index beats the tiny network, ' + S.idx.iou.toFixed(2) + ' to ' + S.net.iou.toFixed(2) : 'The index and the tiny network score about the same here');
-      fCa.setTitle(J.fp + J.fn ? 'What is still weak: most wrong pixels are ' + (worst === 4 ? 'scattered noise' : worst === 3 ? 'at the water edge' : CAUSES[worst]) : 'No wrong pixels in this draw');
+      fCa.setTitle(J.fp + J.fn ? 'Where it differs: most differing pixels are ' + (worst === 4 ? 'scattered noise' : worst === 3 ? 'at the water edge' : CAUSES[worst]) : 'No wrong pixels in this draw');
       fCa.setNote(''); fSc.setNote('The network trained on this same valley; the index cut-off was never tuned. The dashed mark is another model on real floods: not comparable.');
     }
     const redo = L.soon(compute);

@@ -13,14 +13,14 @@ export function createHero(root, ctx) {
   const line = h('p.th-line', null, 'Taller light, higher priority.'), clock = h('b', null, '0'), wayBtn = h('button.btn.btn-primary.btn-lg.th-go', { onclick: () => jump(HOLD) }, icon('route'), h('span', null, 'Show the way in'));
   const steps = h('div.th-steps', { role: 'group', 'aria-label': 'What matters most' }, ...M.PRESETS.map((p) => h('button', { 'aria-pressed': String(p.id === 'balanced'), onclick: () => choose(p) }, p.label)));
   const el = h('section.th.demo-only', { 'aria-label': 'Who to reach first' }, scene3d, h('div.th-shade'), tags,
-    h('div.th-low', null, h('div.th-title', null, h('div.row', null, realityTag('live-algo'), realityTag('sim')), h('h1', null, 'Who first?'), line), h('div.grow'), h('div.th-clock', null, h('div', null, h('span', null, '+'), clock, h('small', null, 'min')), h('span', null, 'waiting, assumed curve')), wayBtn),
+    h('div.th-low', null, h('div.th-title', null, h('div.row', null, realityTag('live-algo'), realityTag('sim')), h('h1', null, 'Who first?'), line), h('div.grow'), h('div.th-clock', null, h('div', null, h('span', null, '+'), clock, h('small', null, 'min')), h('span', null, 'waiting')), wayBtn),
     h('div.th-foot', null, steps, h('div.grow'), h('span.th-aid', null, 'Planning aid. Not a medical assessment.')));
   root.append(el);
 
-  let stage = null, loading = false, on = false, dead = false, people = [], weights = M.DEFAULT_WEIGHTS, u = 0, order = [], route = null, opening = null, cutU = 0, minutes = 0, said = '', head = { x: 0, z: 0 }, headYaw = 0, px = { x: 0, y: 0, on: true };
+  let stage = null, loading = false, on = false, dead = false, people = [], weights = M.DEFAULT_WEIGHTS, u = 0, still = HOLD, order = [], route = null, opening = null, cutU = 0, minutes = 0, said = '', head = { x: 0, z: 0 }, headYaw = 0, px = { x: 0, y: 0, on: true };
   const say = (t) => { if (t === said) return; said = t; line.classList.add('swap'); setTimeout(() => { line.textContent = t; line.classList.remove('swap'); }, reduced() ? 0 : 220); };
-  function jump(t) { u = t; }
-  function choose(p) { weights = p.w; [...steps.children].forEach((b) => b.setAttribute('aria-pressed', String(b.textContent === p.label))); if (!stage?.ok) return; score(); reroute(); if (u > HOLD) jump(WAIT); if (reduced()) settle(); }
+  function jump(t) { u = t; still = t === HOLD ? WAY - 0.3 : t === WAIT ? HOLD : t; }        // still: the one frame shown under reduced motion
+  function choose(p) { weights = p.w; [...steps.children].forEach((b) => b.setAttribute('aria-pressed', String(b.textContent === p.label))); if (!stage?.ok) return; score(); reroute(); if (u > HOLD || reduced()) jump(WAIT); if (reduced()) settle(); }
 
   function score() {
     for (const p of people) p.target = M.scoreTarget({ ...p.t, waitS: p.t.waitS + minutes * 60 }, weights).total;
@@ -46,7 +46,8 @@ export function createHero(root, ctx) {
         const t = M.describeTarget(e, det, from), sure = det.status === 'confirmed', rank = h('b.th-rank'), val = h('span.th-val'), tag = h('div.th-tag', { 'data-sure': String(sure) }, rank, h('div', null, h('span.th-where', null, det.outdoor ? 'Outdoors' : 'Room ' + det.room), h('span.th-sub', null, sure ? t.motion === 'still' ? 'person, still' : t.motion === 'moving' ? 'person, moving' : 'person' : 'possible, ' + Math.round(det.p * 100) + ' %')), val); tags.append(tag);
         return { t, beam: stage.beam(det.pos, sure ? '--person' : '--warn'), rank, val, tag, shown: 0, target: 0, top: new stage.THREE.Vector3() };
       });
-      people.reduce((a, b) => (b.t.det.pos[0] < a.t.det.pos[0] ? b : a)).tag.dataset.side = 'left';
+      const sx = (p) => p.t.det.pos[0] * Math.cos(-1) + p.t.det.pos[1] * Math.sin(-1);       // left to right as the wide shot sees it
+      people.reduce((a, b) => (sx(b) < sx(a) ? b : a)).tag.dataset.side = 'left';
       score(); reroute();
       const thru = people.find((p) => p.t.kind === 'break through' && M.approachSides(e, p.t.det, from).some((a) => a.usable));
       if (thru) { const a = M.approachSides(e, thru.t.det, from).find((x) => x.usable), d = thru.t.det.pos, L = Math.hypot(d[0] - a.foot[0], d[1] - a.foot[1]) || 1, dir = [(a.foot[0] - a.stand[0]) / M.ASSUMED.standOffM, (a.foot[1] - a.stand[1]) / M.ASSUMED.standOffM];
@@ -56,12 +57,12 @@ export function createHero(root, ctx) {
     } catch (err) { console.warn('[triage] the 3-D view could not start:', err); }
     finally { loading = false; }
   }
-  function wide(s) { const g = stage.rig.goal; g.x = 83; g.y = 4.2; g.z = -46; g.yaw = 0.02 + s * 0.011; g.pitch = 0.29; g.dist = 56; g.fov = 36; stage.rig.dof = 0; }
+  function wide(s) { const g = stage.rig.goal; g.x = 79; g.y = 3.6; g.z = -48; g.yaw = -1.06 + s * 0.011; g.pitch = 0.27; g.dist = 54; g.fov = 36; stage.rig.dof = 0; }
   function settle() { minutes = MAX_MIN; score(); for (const p of people) p.shown = p.target; }
 
   let lastScore = -1;
   function tick(dt) {
-    if (reduced()) { u = HOLD; settle(); } else { u += dt; if (u > LOOP) { u = 0; minutes = 0; } }
+    if (reduced()) { u = still; settle(); } else { u += dt; if (u > LOOP) { u = 0; minutes = 0; } }
     const rise = ease(u / RISE), w = ease((u - RISE) / (WAIT - RISE)), back = ease((u - CUT) / (LOOP - CUT));
     minutes = u < RISE ? 0 : MAX_MIN * w * (1 - back);
     if (Math.abs(minutes - lastScore) > 0.08) { lastScore = minutes; if (score() && u < HOLD) reroute(); const m = String(Math.round(minutes)); if (clock.textContent !== m) clock.textContent = m; }
@@ -75,8 +76,8 @@ export function createHero(root, ctx) {
     if (route) { route.alpha(away * (1 - close * 0.4)); route.to(route.length * way); }
     if (opening) { opening.box.alpha(close > 0.01 ? 1 - back : 0); opening.box.draw(ease((u - WAY - 0.8) / 2.6)); opening.bridge.alpha(close); opening.bridge.to(opening.bridge.length * ease((u - WAY - 3) / 1.6)); stage.project(opening.mid, px); opening.tag.style.transform = 'translate3d(' + px.x.toFixed(1) + 'px,' + px.y.toFixed(1) + 'px,0) translate(calc(-100% - 70px),-60%)'; opening.tag.style.opacity = (px.on ? ease((u - WAY - 3.2) / 0.8) * close : 0).toFixed(3); R.glass.x = opening.p.t.det.pos[0]; R.glass.z = -opening.p.t.det.pos[1]; R.glass.r = 5.2 * close; }
     if (u < HOLD || u > CUT) { wide(u); R.rate = 0.75; say(u < RISE ? 'Taller light, higher priority.' : 'Every minute of waiting lifts the light.'); }
-    else if (u < WAY && route) { route.at(route.length * way, head); const ex = head.x, ez = head.z; route.at(Math.min(route.length, route.length * way + 6), head); const y = Math.atan2(ex - head.x, ez - head.z); if (Math.abs(head.x - ex) + Math.abs(head.z - ez) > 0.5) headYaw = y; g.x = ex; g.y = 1; g.z = ez; g.yaw = headYaw * 0.5 + -0.3; g.pitch = 0.5; g.dist = 24; g.fov = 36; R.rate = 1.5; say('The planner draws the way in. Red still crosses a hazard.'); }
-    else if (opening) { const f = opening.a.foot; g.x = f[0]; g.y = 1; g.z = -f[1]; g.yaw = opening.yaw + 0.42 - (u - WAY) * 0.02; g.pitch = 0.42; g.dist = 9.5; g.fov = 36; R.rate = 1.5; R.dof = 0; say('No clear way in. Open the wall, from the best side.'); }
+    else if (u < WAY && route) { route.at(route.length * way, head); const ex = head.x, ez = head.z; route.at(Math.min(route.length, route.length * way + 6), head); const y = Math.atan2(ex - head.x, ez - head.z); if (Math.abs(head.x - ex) + Math.abs(head.z - ez) > 0.5) headYaw = y; g.x = ex; g.y = 1; g.z = ez; g.yaw = headYaw * 0.5 + -0.3; g.pitch = 0.5; g.dist = 24; g.fov = 36; R.rate = 1.5; say('The planner draws the way in. Red marks a hazard to cross with care.'); }
+    else if (opening) { const f = opening.a.foot; g.x = f[0]; g.y = 1; g.z = -f[1]; g.yaw = opening.yaw + 0.42 - (u - WAY) * 0.02; g.pitch = 0.42; g.dist = 9.5; g.fov = 36; R.rate = 1.5; R.dof = 0; say('Behind a wall. Open it, from the best side.'); }
   }
   return {
     show() { on = true; if (ctx.mode !== 'demo') return this.hide(); on = true; if (stage?.ok) { stage.start(); } else load(); },

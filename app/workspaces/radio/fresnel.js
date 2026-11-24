@@ -4,7 +4,7 @@ import { LAMBDA } from './lab.js';
 
 export const meta = {
   title: 'The Fresnel dither',
-  labels: ['live-algo', { text: 'HOUND design decision', cls: 'tag-accent', title: 'A design decision of the rover project (sensing/fresnel.py). The mecanum rover exists; the dither has not been run on it with a real person.' }, { text: 'Not yet tried on a real person', cls: 'tag-sim' }],
+  labels: ['live-algo', { text: 'HOUND design decision', cls: 'tag-accent', title: 'A design decision of the rover project (sensing/fresnel.py). The mecanum rover exists; the dither has not been run on it with a real person.' }, { text: 'Simulated person', cls: 'tag-sim' }],
   labelNote: 'The model below is the project’s own, running in this page. No recording exists yet.',
   plain: [
     'Whether Wi-Fi can feel a chest move depends on where the person is to within a few centimetres: in some spots breathing changes the signal strength, a few centimetres away it does not.',

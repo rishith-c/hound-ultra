@@ -27,8 +27,8 @@ export function mountDemo(root, { ctx, pool }) {
 
   const many = (k, N) => k + ' of ' + N + ' reached';
   function caption(s) {
-    const W = s.worlds, F = W[s.focus]; if (F) return [F.name + ': ' + many(F.finalReached, F.total) + ' by ' + clock(F.endT) + '.', F.finalReached < F.total ? 'Ground truth: known only because this is a simulation.' : ''];
-    if (s.hold > 0.35) { const worst = W.reduce((a, b) => (b.finalReached < a.finalReached ? b : a)), k = worst.total - worst.finalReached; return [worst.name + ', and ' + ['nobody is', 'one person is', 'two people are', 'three people are'][k] + ' never reached.', 'Ground truth: known only because this is a simulation.']; }
+    const W = s.worlds, F = W[s.focus]; if (F) return [F.name + ': ' + many(F.finalReached, F.total) + ' by ' + clock(F.endT) + '.', F.finalReached < F.total ? 'Scored against ground truth, in simulation.' : ''];
+    if (s.hold > 0.35) { const best = W.reduce((a, b) => (b.finalReached > a.finalReached ? b : a)), worst = W.reduce((a, b) => (b.finalReached < a.finalReached ? b : a)); return [best.name + ': ' + many(best.finalReached, best.total) + '. ' + worst.name + ': ' + worst.finalReached + ' of ' + worst.total + '.', 'Scored against ground truth, in simulation.']; }
     let last = null; for (const w of W) if (w.i && s.t >= w.forkT - 0.5 && s.t < w.forkT + 46 && (!last || w.forkT > last.forkT)) last = w;
     if (last) return [clock(last.forkT) + '  ' + last.name + '. A world splits off.', ''];
     return [s.t < 104 ? 'The drone maps the site.' : s.t < 200 ? 'The rover drives in.' : s.t < 420 ? 'It stops, and listens through walls.' : s.t < 480 ? 'A second look at every uncertain lead.' : 'The team goes in.', ''];

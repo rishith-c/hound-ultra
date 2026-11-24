@@ -30,10 +30,12 @@
 .th-steps button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .th .twin-leaders, .th .twin-overlay { display: none; }
 .th-title h1 { transition: opacity 0.22s; }
-.th-pct { font-family: var(--mono); font-size: 34px; color: var(--text); font-variant-numeric: tabular-nums; min-width: 92px; text-align: right; }
+.th .th-pct { font-size: 52px; color: var(--text); min-width: 112px; text-align: right; }
 .th-choices { display: grid; grid-auto-flow: column; gap: 12px; pointer-events: auto; }
 .th-choices[hidden] { display: none; }
 .th-choice { position: relative; min-width: 216px; min-height: 72px; padding: 0 24px; text-align: left; font: inherit; font-size: 20px; font-weight: 500; color: var(--text); background: color-mix(in srgb, var(--bg-0) 72%, transparent); border: 1px solid var(--line-3); border-radius: var(--r-1); cursor: pointer; overflow: hidden; transition: background-color 0.2s, border-color 0.2s, opacity 0.3s; }
 .th-choice:hover:not(:disabled), .th-choice:focus-visible { background: var(--text); color: var(--bg-0); border-color: var(--text); outline: none; }
 .th-choice i { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--accent); transform: scaleX(0); transform-origin: left; }
 .th-choice:disabled { cursor: default; } .th-choice[data-picked="no"] { opacity: 0.25; } .th-choice[data-picked="yes"] { border-color: var(--accent); } .th-choice:disabled i { display: none; }
+.th-dip { position: absolute; inset: 0; background: var(--bg-0); opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+.th-dip.on { opacity: 1; }

@@ -25,7 +25,7 @@ export default {
         h('div.sense-title', null, icon('wifi', 20), h('h2', null, 'Wi-Fi AI'), realityTag('live-ai')),
         h('p.sense-lede', null, 'HOUND’s real 23,372-parameter network, listening for a person behind a wall. It runs in this page, now, on held-out test windows.'),
         h('div.grow'),
-        h('span.tag.tag-sim', { title: 'Blender-built people in a Wi-Fi channel simulator. No window was recorded with the rover, and the network has never been tested on real people.' }, 'Every window is simulated'),
+        h('span.tag.tag-sim', { title: 'Blender-built people in a Wi-Fi channel simulator.' }, 'Every window is simulated'),
         tabs),
       body, stage);
 

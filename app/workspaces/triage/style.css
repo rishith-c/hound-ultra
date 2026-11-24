@@ -89,7 +89,7 @@
 .triage-maptop { position: absolute; left: 12px; right: 48px; top: 10px; display: flex; align-items: center; gap: 10px; pointer-events: none; }
 .triage-maptop > * { pointer-events: auto; }
 .triage-mapnote { font-size: var(--fs-12); color: var(--text-2); }
-.triage-legend { position: absolute; left: 12px; bottom: 24px; display: flex; flex-wrap: wrap; gap: 4px 14px; max-width: calc(100% - 150px); padding: 6px 10px; font-size: var(--fs-11); color: var(--text-2); pointer-events: none; background: var(--glass); border: 1px solid var(--glass-line); border-radius: var(--r-2); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+.triage-legend { flex: none; display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 7px 16px; font-size: var(--fs-11); color: var(--text-2); background: var(--bg-1); border-top: 1px solid var(--line); }
 .triage-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .triage-legend i { display: inline-block; width: 10px; height: 10px; }
 .lg-person { border-radius: 50%; background: var(--person); } .lg-possible { border: 2px solid var(--warn); transform: rotate(45deg) scale(0.8); }

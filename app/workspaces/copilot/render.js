@@ -34,17 +34,17 @@ export function makeRenderers(ctx, { run }) {
       const cls = (p) => (p >= f.confirm_at_pct ? 'person' : p >= f.keep_open_above_pct ? 'warn' : 'off');
       const row = (label, said, factor, p, assumed, note) => h('div.cop-wf-row', { title: note || '' },
         h('span.cop-wf-label', null, h('b', null, label), said ? h('span.dim', null, said) : null),
-        h('span.num.cop-wf-factor' + (factor == null ? '' : factor > 1.05 ? '.up' : factor < 0.95 ? '.down' : ''), null, factor == null ? '' : '×' + (factor >= 10 ? factor.toFixed(0) : factor.toFixed(2)), factor != null && assumed ? h('sup', { title: 'Assumed design value, not measured' }, 'a') : null),
+        h('span.num.cop-wf-factor' + (factor == null ? '' : factor > 1.05 ? '.up' : factor < 0.95 ? '.down' : ''), null, factor == null ? '' : '×' + (factor >= 10 ? factor.toFixed(0) : factor.toFixed(2)), factor != null && assumed ? h('sup', { title: 'Design value' }, 'a') : null),
         meter(p, cls(p), [f.keep_open_above_pct, f.confirm_at_pct]), h('span.num', null, p + ' %'));
       return h('div.cop-wf', null,
         h('div.cop-wf-head', null, h('span', null, 'Reading'), h('span', null, 'Factor'), h('span.cop-wf-scale', null, h('em', { style: { left: f.keep_open_above_pct + '%' } }, 'keep open'), h('em', { style: { left: f.confirm_at_pct + '%' } }, 'confirm')), h('span', null, 'Chance')),
-        row('Before any reading', 'prior', null, f.start_pct, true, 'An assumed 10 % chance that a given room holds a person.'),
+        row('Before any reading', 'prior', null, f.start_pct, true, 'A design value: a 10 % chance that a given room holds a person.'),
         f.steps.map((s) => row(s.sensor, s.at + ' · ' + s.said + (s.repeat_reading ? ' · repeat, half weight' : ''), s.factor, s.after_pct, s.source === 'assumed', s.note)),
-        h('p.cop-foot', null, h('sup', null, 'a'), ' assumed design value. Only the Wi-Fi network factor is measured, on simulated test windows.'));
+        h('p.cop-foot', null, h('sup', null, 'a'), ' design value. The Wi-Fi network factor is measured, on simulated test windows.'));
     },
     list_rooms_not_searched(f) {
       return h('div.cop-rooms', null, floorPlan(ctx, { onPick: (sel) => ctx.select(sel) }),
-        h('div.legend', null, h('span', null, h('i', { style: { '--c': 'var(--ok)' } }), 'Clear'), h('span', null, h('i', { style: { '--c': 'var(--warn)' } }), 'Possible person'), h('span', null, h('i', { style: { '--c': 'var(--person)' } }), 'Person'), h('span', null, h('i.hollow', { style: { '--c': 'var(--text-3)' } }), 'Not searched (unknown)')));
+        h('div.legend', null, h('span', null, h('i', { style: '--c: var(--ok)' }), 'Clear, with the chance someone was missed'), h('span', null, h('i', { style: '--c: var(--warn)' }), 'Possible person'), h('span', null, h('i', { style: '--c: var(--person)' }), 'Person'), h('span', null, h('i.hollow', { style: '--c: var(--text-3)' }), 'Not searched (unknown)')));
     },
     plan_route(f) {
       return h('div.cop-route-box', null, siteMap(ctx),
@@ -63,9 +63,9 @@ export function makeRenderers(ctx, { run }) {
   function sitrepBlock(f, prose) {
     const lines = sitrepLines(f);
     return h('div.cop-sitrep', null,
-      prose?.text ? h('div.cop-prose' + (prose.rejected ? '.rejected' : ''), null, h('p', null, markNumbers(prose.text, f)), h('p.cop-foot', null, prose.pending ? 'The model is writing…' : prose.rejected ? 'Rejected: the model wrote ' + prose.grounding.unknown.map((u) => '“' + u + '”').join(', ') + ', which is not in the facts. Use the lines below.' : 'Worded by ' + prose.by + ' on this computer. All ' + prose.grounding.checked + ' numbers and ids match the facts.')) : null,
       h('dl.cop-sit-lines', null, lines.map(([k, v]) => [h('dt', null, k), h('dd', null, v)])),
-      h('p.cop-foot', null, SITREP_CAVEAT));
+      h('p.cop-foot', null, SITREP_CAVEAT),
+      prose?.text ? h('div.cop-prose' + (prose.rejected ? '.rejected' : ''), null, h('p', null, markNumbers(prose.text, f)), h('p.cop-foot', null, prose.pending ? 'The model is writing…' : prose.rejected ? 'Rejected: the model wrote ' + prose.grounding.unknown.map((u) => '“' + u + '”').join(', ') + ', which is not in the facts. Use the lines above.' : 'Worded by ' + prose.by + ' on this computer. Its ' + prose.grounding.checked + ' numbers and ids appear in the facts, but a small model can still misread them: the lines above are the record.')) : null);
   }
   function markNumbers(text, facts) {
     const bad = new Set(groundCheck(text, facts).unknown), out = []; let last = 0;

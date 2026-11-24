@@ -51,13 +51,13 @@ export function createHero(map, M, ctx, ui) {
       if (k !== run.kMap && (d.map < 0 || k <= d.map)) { run.kMap = k; const L = race.map[k]; map.stage.next(L.pos, L.path); }
       const L = race.map[run.kMap], A = at(L, Math.min(t, end)); map.stage.rover(0, A.p, A.h); map.stage.listen(A.p, A.listen);
       run.kFix = lookAt(race.fixed, t, run.kFix); const F = race.fixed[run.kFix], B = at(F, Math.min(t, run.tFix, race.cap)); map.stage.rover(1, B.p, B.h);
-      if (t >= run.tFix && !run.saidFix) { run.saidFix = true; ui.caption('The fixed route heard the person first. The map keeps searching.'); }
+      if (t >= run.tFix && !run.saidFix) { run.saidFix = true; ui.caption('Heard on the fixed route. The map searches on.'); }
       if (t >= end) { run.phase = 'found'; run.hold = 0; run.end = end; finish(); }
       else ui.clocks(t, Math.min(t, run.tFix), race.successAt(race.map, t), race.successAt(race.fixed, Math.min(t, run.tFix)), null, t >= run.tFix ? true : null);
       film(L, time);
     } else {
       run.hold += dt; const k = clamp(run.hold / 1.2, 0, 1);
-      if (run.hold > 2.1 && !run.melted) { run.melted = true; hgt.fill(0); heat.fill(0); map.setField(hgt, heat, { secs: 1.6 }); ui.caption(run.ok ? 'Found: ' + (d.room ? d.room.name : 'outside') + ', ' + (d.moving ? 'moving' : 'still') + '. The hidden person, now shown.' : 'Not found in 20 minutes. The hidden person was ' + (d.room ? 'in ' + d.room.name : 'outside') + '.'); }
+      if (run.hold > 2.1 && !run.melted) { run.melted = true; hgt.fill(0); heat.fill(0); map.setField(hgt, heat, { secs: 1.6 }); ui.caption(run.ok ? 'Found: ' + (d.room ? d.room.name : 'outside') + ', ' + (d.moving ? 'moving' : 'still') + '. The hidden person, now shown.' : 'Time is up, 20 minutes. The hidden person was ' + (d.room ? 'in ' + d.room.name : 'outside') + '.'); }
       if (run.hold > 2.3) { run.found = clamp((run.hold - 2.3) / 1.1, 0, 1); map.stage.person(d.pos, run.found * run.found * (3 - 2 * run.found)); }
       // the fixed route's clock runs on to its own result
       const tf = Math.min(run.tFix, race.cap), shown = run.end + (tf - run.end) * clamp((run.hold - 1.4) / 2.2, 0, 1);
@@ -74,7 +74,7 @@ export function createHero(map, M, ctx, ui) {
       let top = 0; for (let c = 0; c < M.N; c++) { P[c] /= z; if (P[c] > top) top = P[c]; }
       for (let c = 0; c < M.N; c++) { const x = P[c] / top; hgt[c] = 5.5 * x; heat[c] = 0.3 + 0.62 * x; } map.setField(hgt, heat, { from: L.pos, secs: 1.3 });   // rescaled to its own peak
       ui.caption('Heard, ' + (d.room ? d.room.name : 'outside') + ', after ' + (d.map + 1) + (d.map ? ' looks.' : ' look.'));
-    } else ui.caption('Twenty minutes. Nothing heard.');
+    } else ui.caption('Time is up, 20 minutes.');
     ui.state('found'); ui.tally(tally);
   }
   function film(L, time) {

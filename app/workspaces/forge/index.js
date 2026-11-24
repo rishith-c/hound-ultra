@@ -10,9 +10,9 @@ const EXHIBITS = [
   { id: 'train', title: 'Train it yourself', file: './ex-train.js', fig: (d) => [fmtInt(d.repro.params), 'weights, from noise'] },
   { id: 'int8', title: 'Fits on a 4-dollar chip', file: './ex-int8.js', fig: (d) => [(d.int8.bytes.int8_total / 1000).toFixed(1) + ' kB', 'as 8-bit integers'] },
   { id: 'prune', title: 'How small can it get', file: './ex-prune.js', fig: (d) => [pct(d.prune.knee_one_shot, 0), 'of weights can go'] },
-  { id: 'doubt', title: 'Knowing when to ask again', file: './ex-doubt.js', fig: (d) => [pct(d.uncertainty.conformal['0.1'].abstain_by_kind[1], 0), 'of still people: “not sure”'] },
+  { id: 'doubt', title: 'Knowing when to ask', file: './ex-doubt.js', fig: (d) => [pct(d.uncertainty.conformal['0.1'].abstain_by_kind[1], 0), 'of still people: “not sure”'] },
   { id: 'spike', title: 'A spiking version', file: './ex-spike.js', fig: (d) => { const r = d.snn?.rows?.find((x) => x.T === 64); return r ? [pct(r.agree, 0), 'agreement at 64 steps'] : ['…', 'being measured']; } },
-  { id: 'clean', title: 'Clean vs. messy simulator', file: './ex-clean.js', fig: (d) => [pct(1 - d.clean.cells.clean_on_messy.empty_ok, 0), 'empty rooms alarm if trained clean'] },
+  { id: 'clean', title: 'Clean vs. messy simulator', file: './ex-clean.js', fig: (d) => [pct(1 - d.clean.cells.clean_on_messy.empty_ok, 0), 'false alarms, trained clean'] },
 ];
 
 export default {
@@ -21,7 +21,7 @@ export default {
     const href = new URL('./style.css', import.meta.url).href;
     if (!document.querySelector('link[href="' + href + '"]')) document.head.append(h('link', { rel: 'stylesheet', href }));
     root.classList.add('forge');
-    const demo = createDemo(root, ctx, () => { want = 'train'; ctx.setMode('advanced'); if (current) show('train'); });
+    const demo = createDemo(root, ctx, () => { want = 'train'; ctx.setMode('advanced'); bench().then(() => show('train')).then(() => adv.querySelector('.forge-view[data-exhibit="train"] .forge-run-go .btn-primary')?.click()); });
     const adv = h('div.forge-adv.adv-only'); root.append(adv);
     const proof = h('div.forge-proof', { title: 'Before anything else, tools/forge_export.py runs the project’s own test and must get the published confusion matrix.' });
     const stations = h('div.forge-stations', { role: 'tablist', 'aria-label': 'Exhibits' });

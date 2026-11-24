@@ -69,8 +69,9 @@ export function surface({ tex, scale = 0.8, bump = 0.9, dust = 0.75, tint = 0xff
       .replace('#include <map_fragment>', `triSample(); { vec3 base = mix(uTint, mix(uTint2, uTint, gT.g), uMask); float al = gT.r * 1.75; diffuseColor.rgb *= base * al * (0.62 + 0.76 * gM); }`)
       .replace('#include <normal_fragment_maps>', `{ vec3 on = normalize(vON) + gDN * uBump; vec3 vn = normalize(normalMatrix * on); normal = normalize(mix(normal, vn * (gl_FrontFacing ? 1.0 : -1.0), 1.0)); }
         { vec3 wn = inverseTransformDirection(normal, viewMatrix); float du = smoothstep(0.3, 0.95, wn.y) * uDust * smoothstep(0.2, 0.62, gT.r + gM * 0.5 - 0.12); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.33, 0.30, 0.265) * (0.8 + 0.5 * gT.r), du); roughnessFactor = min(1.0, roughnessFactor + du * 0.2); }`)
+      .replace('#include <opaque_fragment>', 'gl_FragColor = vec4(outgoingLight, diffuseColor.a);')   // keep alpha even when compiled while solid
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = clamp(roughnessFactor + (gT.r - 0.5) * 0.18, 0.05, 1.0);')
-      .replace('#include <emissivemap_fragment>', `{ float nv = 1.0 - abs(dot(normalize(vViewPosition), normal)); totalEmissiveRadiance += uHeat.rgb * uHeat.a * (0.16 + 0.75 * pow(nv, 2.6) + 0.22 * smoothstep(0.40, 0.16, gT.r)); totalEmissiveRadiance += vec3(0.20, 0.48, 0.80) * uXR * uGhost * (0.10 + 1.5 * pow(nv, 2.4)); if (uGhost > 0.001) diffuseColor.a = mix(1.0, 0.05 + 0.34 * pow(nv, 1.6), uGhost); }`);
+      .replace('#include <emissivemap_fragment>', `{ float nv = 1.0 - abs(dot(normalize(vViewPosition), normal)); totalEmissiveRadiance += uHeat.rgb * uHeat.a * (0.16 + 0.75 * pow(nv, 2.6) + 0.22 * smoothstep(0.40, 0.16, gT.r)); totalEmissiveRadiance += vec3(0.20, 0.48, 0.80) * uXR * uGhost * (0.035 + 0.85 * pow(nv, 2.4)); if (uGhost > 0.001) diffuseColor.a = mix(1.0, 0.05 + 0.34 * pow(nv, 1.6), uGhost); }`);
   };
   m.customProgramCacheKey = () => 'structure-surface';
   return m;
@@ -163,8 +164,8 @@ export function makeSky() {
 export function makeSurroundings(T) {
   const g = new THREE.Group(), r = rng(77);
   // ground: crushed yard, wet in the hollows away from the bay
-  const gm = surface({ tex: T.soil, scale: 0.34, bump: 0.62, dust: 0, tint: 0x37373a, rough: 0.98 }); const base = gm.onBeforeCompile;
-  gm.onBeforeCompile = (sh) => { base(sh); sh.fragmentShader = sh.fragmentShader.replace('roughnessFactor = clamp(', `float far = smoothstep(6.5, 11.0, length(vWP.xz)); float wet = smoothstep(0.455, 0.40, texture2D(uTex, vWP.xz * 0.024 + 0.31).r) * far; diffuseColor.rgb *= mix(1.0, 0.5, wet); gDN *= 1.0 - wet * 0.96; float lt = smoothstep(9.0, 3.0, length(vWP.xz * vec2(0.8, 0.95))); diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.5, 1.45, 1.38) + 0.012, lt); roughnessFactor = mix(roughnessFactor, 0.5, wet); roughnessFactor = clamp(`); };
+  const gm = surface({ tex: T.soil, scale: 0.34, bump: 0.62, dust: 0, tint: 0x2d2d31, rough: 0.98 }); const base = gm.onBeforeCompile;
+  gm.onBeforeCompile = (sh) => { base(sh); sh.fragmentShader = sh.fragmentShader.replace('roughnessFactor = clamp(', `float far = smoothstep(6.5, 11.0, length(vWP.xz)); float wet = smoothstep(0.455, 0.40, texture2D(uTex, vWP.xz * 0.024 + 0.31).r) * far; diffuseColor.rgb *= mix(1.0, 0.5, wet); gDN *= 1.0 - wet * 0.96; float lt = smoothstep(9.0, 3.0, length(vWP.xz * vec2(0.8, 0.95))); diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.5, 1.45, 1.38) + 0.012, lt); roughnessFactor = mix(roughnessFactor, 0.86, wet); roughnessFactor = clamp(`); };
   gm.customProgramCacheKey = () => 'structure-ground';
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600).rotateX(-Math.PI / 2), gm); ground.receiveShadow = true; ground.position.y = -0.004; g.add(ground);
   // neighbouring blocks in the haze, a few windows still lit

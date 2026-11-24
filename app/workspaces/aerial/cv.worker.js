@@ -60,7 +60,7 @@ function rxGlobal(px, w, h, mask) {
   let st = gaussStats(px, n, mask, null);
   if (!st) return { d, stats: null };
   const score = (st) => {
-    const iv = inv3(st.cov, 1e-3 * (st.cov[0] + st.cov[3] + st.cov[5]) / 3 + 1e-6); const m = st.mean;
+    const iv = inv3(st.cov, Math.max(1e-3, 1e-3 * (st.cov[0] + st.cov[3] + st.cov[5]) / 3 + 1e-6)); const m = st.mean;
     for (let i = 0, o = 0; i < n; i++, o += 4) {
       if (mask && !mask[i]) { d[i] = 0; continue; }
       const x = px[o] - m[0], y = px[o + 1] - m[1], z = px[o + 2] - m[2];

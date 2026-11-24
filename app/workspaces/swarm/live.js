@@ -2,8 +2,8 @@
 // (world, state, summary, failRelay) plus advance(dt, look). Without workers it steps the engine here instead.
 import { createSwarm, DT } from './engine.js';
 
-export function createLive(world, { n, strategy, startCharge }, { layout, seed, blockB }) {
-  const local = createSwarm(world, { n, strategy, startCharge, track: true }), S = local.state;
+export function createLive(world, { n, strategy, startCharge, pair, failAt }, { layout, seed, blockB }) {
+  const local = createSwarm(world, { n, strategy, startCharge, pair, track: true }), S = local.state;
   S.front = null; S.frontRev = 0; S.linkRev = 0;
   let wk = null;
   try { wk = new Worker(new URL('./live-worker.js', import.meta.url), { type: 'module' }); } catch (e) { wk = null; }
@@ -23,7 +23,7 @@ export function createLive(world, { n, strategy, startCharge }, { layout, seed, 
     else if (d.error) { error = d.error; console.error('[swarm] worker: ' + d.error); }
   };
   wk.onerror = (e) => { error = e.message || 'worker failed'; console.error('[swarm] worker: ' + error); };
-  wk.postMessage({ init: { layout, seed, blockB, n, strategy, startCharge } });
+  wk.postMessage({ init: { layout, seed, blockB, n, strategy, startCharge, pair, failAt } });
   function apply(f) {
     const kn = S.known; for (let i = 0; i < f.ch.length; i++) { kn[f.ch[i]] = f.cv[i]; S.changed.push(f.ch[i]); }
     A = f.pos; tA = f.t;

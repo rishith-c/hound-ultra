@@ -3,8 +3,8 @@
 // The path of every request, each step visible in the transcript:
 //   words -> interpreter (on-device model, or rules) -> ONE call -> schema check -> "allowed now?" check
 //         -> negation guard -> human confirmation (always for approve_route) -> tool runs -> facts
-//         -> answer (code-written; a model may re-phrase it, and the re-phrasing is thrown away if it mentions a
-//            number or id that is not in the facts).
+//         -> answer (always code-written; a loaded model may add a re-wording below it, marked as such and thrown
+//            away if it mentions a number or id that is not in the facts).
 import * as T from './tools.js';
 import { interpret } from './rules.js';
 import * as llm from './llm.js';
@@ -72,6 +72,7 @@ function create(ctx) {
       try { const r = await llm.route(text, ent); x.interp = { by: 'model', name: s.modelName, ms: r.ms, raw: r.raw, tokens: r.tokens }; x.call = r.call; }
       catch (e) { console.warn('[copilot] model route failed', e); const t0 = performance.now(), r = interpret(text, ent); x.interp = { by: 'rules', rule: r.rule, ms: performance.now() - t0, note: 'The model failed on this request, so the rule-based interpreter answered.' }; x.call = { tool: r.tool, args: r.args }; }
     } else { const t0 = performance.now(), r = interpret(text, ent); x.interp = { by: 'rules', rule: r.rule, ms: performance.now() - t0 }; x.call = { tool: r.tool, args: r.args }; }
+    x.missing = T.roomWithoutLead(text, ctx);
     return execute(x, text);
   };
   // A call made by a button (a follow-up chip, the palette). No interpretation, the same checks.
@@ -91,7 +92,14 @@ function create(ctx) {
       if (!v.ok) return close(x, 'refused', 'Refused. That is not a valid call for this console: ' + v.errors[0] + '. Nothing was done.');
     }
     const tool = T.toolByName(x.call.tool), args = x.call.args;
-    if (tool.name === 'none') return close(x, 'none', tool.run().text);
+    // Never answer about a different lead than the one asked for: the operator named a room that has no lead.
+    if (x.missing && (tool.name === 'explain_lead' || tool.name === 'investigate')) {
+      const d = ctx.sim.state.detections.find((q) => q.id === args.id);
+      x.checks.push({ name: 'Same room', ok: false, note: d.id + ' is not in the room you named (' + T.whereOf(d) + ')' });
+      x.follow = [{ label: 'List all leads', call: { tool: 'list_leads', args: { status: 'all' } } }];
+      return close(x, 'none', x.missing);
+    }
+    if (tool.name === 'none') return close(x, 'none', x.missing || tool.run().text);
     if (!resumed) {
       const c = tool.check(args, ctx);
       x.checks.push({ name: 'Allowed now', ok: c.ok, note: c.ok ? 'The mission state allows it' : c.reason, unsafe: !!c.unsafe });
@@ -110,7 +118,7 @@ function create(ctx) {
     }
     let res;
     try { res = tool.run(args, ctx); } catch (e) { console.error('[copilot] tool failed', e); return close(x, 'error', 'The tool failed: ' + (e.message || e) + '. Nothing else was done.'); }
-    x.result = res; x.follow = res.follow || []; x.answer = { text: res.text, by: 'tool' };
+    x.result = res; x.follow = res.follow || []; x.answer = { text: (x.missing && tool.name === 'list_leads' ? x.missing + ' ' : '') + res.text, by: 'tool' };
     if (!res.ok) return close(x, 'refused');
     if (s.live && s.reword && text && T.PHRASED.has(tool.name)) {
       x.status = 'phrasing'; x.wording = { text: '', pending: true, name: s.modelName }; changed();

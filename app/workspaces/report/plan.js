@@ -141,7 +141,7 @@ export function buildingPlan(S, R) {
     for (const hzd of R.hazards) { if (hzd.kind !== 'gas') continue; const ys = hzd.poly.map((p) => p[1]), xs = hzd.poly.map((p) => p[0]); if (Math.min(...xs) < r.rect[0] + 6 && Math.max(...xs) > r.rect[0] && Math.max(...ys) > r.rect[3] - 2 && Math.min(...ys) > r.rect[1] + 5) top = Math.min(top, Math.min(...ys)); }
     const y = v.Y(top) + 15;
     if (r.corridor) { if (r.id === 'C-EW') g += '<text x="' + f(v.X(51.4)) + '" y="' + f(v.Y(45.1) + 3.500) + '" class="report-p-t report-p-t-s report-p-t-mute">Corridor</text>'; else if (r.id === 'C-N') g += '<text x="' + f(v.X(64)) + '" y="' + f(v.Y(56.6)) + '" text-anchor="middle" class="report-p-t report-p-t-s report-p-t-mute">Stair</text>'; continue; }
-    const st = { clear: 'clear, miss ' + (c.residual * 100).toFixed(0) + ' %', lead: 'possible person', person: 'person found', blocked: 'not searched', unsearched: 'not searched' }[c?.status] || '';
+    const st = { clear: 'clear, ' + (c.residual * 100).toFixed(0) + ' % left', lead: 'possible person', person: 'person found', blocked: 'not searched', unsearched: 'not searched' }[c?.status] || '';
     const nm = /^Classroom/.test(r.name) ? '' : r.name.replace(/ \d+$/, '');
     g += '<g class="report-p-click" data-sel="room:' + r.id + '"><text x="' + f(x) + '" y="' + f(y) + '" class="report-p-t report-p-t-room">' + r.id + '</text>' + (nm ? '<text x="' + f(x + 34) + '" y="' + f(y) + '" class="report-p-t report-p-t-s">' + esc(nm) + '</text>' : '') + '<text x="' + f(x) + '" y="' + f(y + 14) + '" class="report-p-t report-p-t-s report-p-t-st-' + (c?.status || 'unsearched') + '">' + st + '</text></g>';
   }
@@ -178,7 +178,7 @@ export function buildingPlan(S, R) {
 // ---------- the whole site, small ----------
 export function sitePlan(S, R, scale = 2.55) {
   const id = 'rps', v = view(0, 0, world.SITE.w, world.SITE.h, scale, { l: 1, r: 1, t: 1, b: 1 });
-  let g = '<svg xmlns="http://www.w3.org/2000/svg" class="report-plan" viewBox="0 0 ' + f(v.W) + ' ' + f(v.H) + '" width="' + f(v.W) + '" height="' + f(v.H) + '" role="img" aria-label="Plan of the whole exercise site, 120 by 90 metres">' + defs(id);
+  let g = '<svg xmlns="http://www.w3.org/2000/svg" class="report-plan" viewBox="0 0 ' + f(v.W) + ' ' + f(v.H) + '" width="' + f(v.W) + '" height="' + f(v.H) + '" style="overflow:hidden" role="img" aria-label="Plan of the whole exercise site, 120 by 90 metres">' + defs(id);
   for (let x = 20; x < 120; x += 20) g += '<line x1="' + f(v.X(x)) + '" x2="' + f(v.X(x)) + '" y1="1" y2="' + f(v.h + 1) + '" class="report-p-grid"/>';
   for (let y = 20; y < 90; y += 20) g += '<line y1="' + f(v.Y(y)) + '" y2="' + f(v.Y(y)) + '" x1="1" x2="' + f(v.w + 1) + '" class="report-p-grid"/>';
   for (const sw of S.map.swaths) g += '<rect x="' + f(v.X(sw.x0)) + '" y="' + f(v.Y(sw.y + sw.half)) + '" width="' + f(Math.max(0, sw.x1 - sw.x0) * v.s) + '" height="' + f(sw.half * 2 * v.s) + '" class="report-p-swath"/>';

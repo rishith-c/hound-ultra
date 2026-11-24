@@ -60,7 +60,7 @@ export default function create(env) {
     cv = L.gridImage(cv, field, CNX, CNZ, 'scan', 0.15, 1);
     let near = 0; ch.forEach((c, j) => { if (Math.hypot(c.x - tap.x, c.z - tap.z) < Math.hypot(ch[near].x - tap.x, ch[near].z - tap.z)) near = j; });
     M = { len: M.len, x: b.x, z: b.z, t0: b.t0, err: votes.length > 5 ? Math.hypot(b.x - tap.x, b.z - tap.z) : NaN, n: picks.length, fit: bs, spread: sw * CR * CR, near };
-    M.ok = M.err < 1.5; wf = null;
+    M.ok = M.err < 1; wf = null;
   }
   const med = (a) => { const b = Array.from(a).sort((x, y) => x - y); return b[b.length >> 1]; };
   function controls() {
@@ -98,14 +98,14 @@ export default function create(env) {
   function pointer(kind, p) { if (kind === 'down' || kind === 'hover') { const on = Math.hypot(tap.x - p.x, tap.z - p.z) * p.S.s < 14; if (kind === 'down') drag = on; return on; } if (kind === 'move' && drag && p.x !== undefined) { const x = L.clamp(p.x, pile.extent[0] + 1, pile.extent[1] - 1); tap = { x, z: L.clamp(p.z, -0.15, pile.surfAt(x) - 0.4) }; T = W.travel(slow, tap.x, tap.z); P.t = 1; measure(); } if (kind === 'up') drag = false; return true; }
   function verdicts() {
     const out = {}; for (const v of pile.voids) out[v.id] = { state: 'na', text: 'silent', why: 'A fibre hears people, not spaces.' };
-    out.person = isNaN(M.err) ? { state: 'missed', text: 'too quiet', why: 'Too few channels heard the knock.' } : M.err < 1.5 ? { state: 'seen', text: M.err.toFixed(1) + ' m off', why: 'Distance from the solved point to the true tap.' } : { state: M.err < 3 ? 'hint' : 'missed', text: M.err.toFixed(1) + ' m off', why: 'The fitted point is too far from the true tap.' };
+    out.person = isNaN(M.err) ? { state: 'missed', text: 'too quiet', why: 'Too few channels heard the knock.' } : M.err < 1 ? { state: 'seen', text: M.err.toFixed(1) + ' m off', why: 'Distance from the solved point to the true tap.' } : { state: M.err < 3 ? 'hint' : 'missed', text: M.err.toFixed(1) + ' m off', why: 'The fitted point is too far from the true tap.' };
     return out;
   }
   return {
-    title: 'A fibre as a microphone', hardware: 'DAS interrogators are sold for pipelines and seismology. One wired into rubble is a concept.',
+    title: 'A fibre as a microphone', hardware: 'DAS interrogators have been used to record earthquakes. One wired into rubble is a concept.',
     lede: 'Laser pulses sent down a glass fibre scatter back from every metre of it, and a vibration shifts the light that returns. Reading those shifts turns one cable into a microphone every few centimetres, and the moment each stretch hears a knock draws a curve that points to the person.',
     honest: 'the fibre has to be in the rubble already or be pushed in, it has to touch what it listens to, and the person has to make a sound. How well a loose cable couples to broken concrete is the big unknown; switch to dangling to see why it matters.',
-    assumed: 'Assumed: channels every 0.25 m, gauge length 1 to 10 m, a 450 Hz knock, coupling noise levels, coda of about 25 ms. Wave speeds as in the pile model; the solver knows the floor slab from drawings and one speed for the rubble, and searches above the floor only.',
+    assumed: 'Design values: channels every 0.25 m, gauge length 1 to 10 m, a 450 Hz knock, coupling noise levels, coda of about 25 ms. Wave speeds as in the pile model; the solver knows the floor slab from drawings and one speed for the rubble, and searches above the floor only.',
     sources: [
       { who: 'Lindsey et al., Geophys. Res. Lett. 44 (2017).', what: 'Fiber-optic network observations of earthquake wavefields: existing cable used as a dense seismic array.', url: 'https://doi.org/10.1002/2017GL075722' },
       { who: 'Zhan, Seismol. Res. Lett. 91 (2020).', what: 'Distributed acoustic sensing turns fiber-optic cables into sensitive seismic antennas.', url: 'https://doi.org/10.1785/0220190112' },
@@ -120,7 +120,7 @@ export default function create(env) {
       { k: 'Along the floor', v: isNaN(M.err) ? 'not heard' : Math.abs(M.x - tap.x).toFixed(2) + ' m', sub: 'sideways error; height is the weak part', tone: Math.abs(M.x - tap.x) < 0.5 ? 'ok' : 'warn' },
       { k: 'Fibre', v: M.len.toFixed(0) + ' m', sub: 'one channel every 0.25 m (assumed)' },
     ],
-    row: { sees: 'Anyone who knocks or shouts near the cable.', range: 'A few metres either side of a fibre that can run kilometres', time: 'Seconds once it is in place', cost: 'High', costNote: 'the interrogator; the fibre is cheap', ready: 3, readyNote: 'Fielded on pipelines and for earthquakes. Not in a collapse.' },
+    row: { sees: 'Anyone who knocks or shouts near the cable.', range: 'A few metres either side of the fibre', time: 'Seconds once it is in place', cost: 'High', costNote: 'the interrogator; the fibre is cheap', ready: 3, readyNote: 'Used for earthquakes. We found no use in a collapse.' },
     summary: () => (isNaN(M.err) ? 'too quiet to place' : 'the tap, ' + M.err.toFixed(1) + ' m off, ' + M.n + ' channels'),
   };
 }

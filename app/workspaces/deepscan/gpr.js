@@ -93,12 +93,12 @@ export default function create(env) {
     // gain with depth (as every radargram is shown), then colour: white = positive, blue = negative
     if (!migCv) { migCv = document.createElement('canvas'); migCv.width = nx; migCv.height = nz; }
     const c = migCv.getContext('2d'), im = c.createImageData(nx, nz), px = im.data, acc = L.rgbOf('--accent');
-    let clip = 0; const gained = tmp; for (const q of maskList) { const i = q % nx, k = (q - i) / nx, d = Math.max(0, pile.surf[i] - (z0 + (k + 0.5) * res)); gained[q] = mig[q] * Math.min(40, Math.exp(0.6 * d)) * (0.4 + d); }
+    let clip = 0; const gained = tmp; for (const q of maskList) { const i = q % nx, k = (q - i) / nx, d = Math.max(0, pile.surf[i] - (z0 + (k + 0.5) * res)); gained[q] = mig[q] * Math.min(40, Math.exp(0.3 * d)) * (0.4 + d); }
     const samp = []; for (let n = 0; n < maskList.length; n += 7) samp.push(Math.abs(gained[maskList[n]])); samp.sort((a, b) => a - b); clip = samp[Math.floor(samp.length * 0.985)] || 1;
     for (const q of maskList) { const i = q % nx, k = (q - i) / nx, o = ((nz - 1 - k) * nx + i) * 4, v = gained[q] / clip, a = Math.min(1, Math.abs(v)); if (v > 0) { px[o] = 244; px[o + 1] = 248; px[o + 2] = 255; } else { px[o] = acc[0]; px[o + 1] = acc[1]; px[o + 2] = acc[2]; } px[o + 3] = 255 * Math.pow(a, 1.25) * 0.95; }
     c.putImageData(im, 0, 0);
     // the raw B-scan, gained with time
-    const gb = new Float32Array(ant.length * NT); let m2 = []; for (let a = 0; a < nA; a++) for (let k = 0; k < NT; k++) { const g = Math.min(40, Math.exp(0.75 * k * DT * 0.065)) * (0.4 + k * DT * 0.065); gb[a * NT + k] = total[a * NT + k] * g; if ((a * NT + k) % 11 === 0) m2.push(Math.abs(gb[a * NT + k])); }
+    const gb = new Float32Array(ant.length * NT); let m2 = []; for (let a = 0; a < nA; a++) for (let k = 0; k < NT; k++) { const g = Math.min(40, Math.exp(0.5 * k * DT * 0.065)) * (0.4 + k * DT * 0.065); gb[a * NT + k] = total[a * NT + k] * g; if ((a * NT + k) % 11 === 0) m2.push(Math.abs(gb[a * NT + k])); }
     m2.sort((a, b) => a - b); const cl = m2[Math.floor(m2.length * 0.985)] || 1; const view = new Float32Array(ant.length * NT); for (let a = 0; a < ant.length; a++) for (let k = 0; k < NT; k++) view[k * ant.length + a] = a < nA ? gb[a * NT + k] : 0;
     bscan = L.gridImage(bscan, view, ant.length, NT, 'bipolar', -cl, cl, { flip: false });
   }
@@ -138,31 +138,31 @@ export default function create(env) {
     c.save(); c.translate(l - 34, (t + b) / 2); c.rotate(-Math.PI / 2); c.textAlign = 'center'; c.textBaseline = 'bottom'; c.fillStyle = L.tok('--text-3'); c.fillText('echo delay (there and back)', 0, 0); c.restore();
     // where theory says each hidden thing should draw its curve, at the assumed speed
     if (R.truth && acq >= ant.length) { c.save(); c.beginPath(); c.rect(l, t, r - l, b - t); c.clip(); c.setLineDash([4, 4]); c.lineWidth = 1;
-      const curve = (px, pz, label, colr) => { c.strokeStyle = L.col(colr, 0.85); c.beginPath(); let st = false, ax = 0, ay = 1e9; for (const A of ant) { if (Math.abs(A.x - px) > 4.5) continue; const tw = 2 * Math.hypot(A.x - px, A.z - pz) / P.v, y = t + tw / 120 * (b - t), x = X(A.x); if (st) c.lineTo(x, y); else { c.moveTo(x, y); st = true; } if (y < ay) { ay = y; ax = x; } } c.stroke(); c.setLineDash([]); L.tagLabel(c, ax, ay, label, { dx: 12, dy: -12, color: colr }); c.setLineDash([4, 4]); };
+      const curve = (px, pz, label, colr) => { c.strokeStyle = L.col(colr, 0.85); c.beginPath(); let st = false, ax = 0, ay = 1e9; for (const A of ant) { if (Math.abs(A.x - px) > 4.5) continue; const tw = 2 * Math.hypot(A.x - px, A.z - pz) / P.v, y = t + tw / 120 * (b - t), x = X(A.x); if (st) c.lineTo(x, y); else { c.moveTo(x, y); st = true; } if (y < ay) { ay = y; ax = x; } } c.stroke(); c.setLineDash([]); L.tagLabel(c, ax, ay, label, { dx: ax > r - 130 ? -12 : 12, dy: -12, color: colr, align: ax > r - 130 ? 'right' : 'left' }); c.setLineDash([4, 4]); };
       for (const v of pile.voids) { let top = v.poly[0]; for (const q of v.poly) if (q[1] > top[1]) top = q; curve(v.id === 'D' ? v.c[0] : top[0], top[1], 'roof of void ' + v.id, '--text-2'); }
       curve(pile.person.x, 0.25, 'the person', '--person'); c.restore(); }
     // focus curve inset
-    if (focus.length) { const bw = 176, bh = 74, bx = r - bw - 10, by = t + 10; c.fillStyle = L.col('--bg-1', 0.9); c.fillRect(bx, by, bw, bh); c.strokeStyle = L.tok('--line-3'); c.strokeRect(bx + 0.5, by + 0.5, bw, bh);
+    if (focus.length) { const bw = 176, bh = 74, bx = r - bw - 10, by = b - bh - 10; c.fillStyle = L.col('--bg-1', 0.96); c.fillRect(bx, by, bw, bh); c.strokeStyle = L.tok('--line-3'); c.strokeRect(bx + 0.5, by + 0.5, bw, bh);
       let mx = 0, mn = 1e9; for (const f of focus) { mx = Math.max(mx, f[1]); mn = Math.min(mn, f[1]); } const fx = (v) => bx + 10 + (v - 0.08) / 0.12 * (bw - 20), fy = (s) => by + bh - 20 - (s - mn) / (mx - mn || 1) * (bh - 40);
       c.beginPath(); focus.forEach((f, i) => { if (i) c.lineTo(fx(f[0]), fy(f[1])); else c.moveTo(fx(f[0]), fy(f[1])); }); c.strokeStyle = L.tok('--text-2'); c.lineWidth = 1.25; c.stroke();
       c.strokeStyle = L.tok('--accent'); c.beginPath(); c.moveTo(fx(P.v), by + 18); c.lineTo(fx(P.v), by + bh - 16); c.stroke();
       c.font = L.font(11, 600); c.fillStyle = L.tok('--text'); c.textAlign = 'left'; c.textBaseline = 'top'; c.fillText('Floor-slab echo against speed', bx + 8, by + 5);
-      c.font = L.font(10.5); c.fillStyle = L.tok('--text-3'); c.textBaseline = 'bottom'; c.fillText('0.08', bx + 8, by + bh - 3); c.textAlign = 'right'; c.fillText('0.20 m/ns', bx + bw - 8, by + bh - 3); c.textAlign = 'center'; c.fillStyle = L.tok('--accent'); c.fillText('best ' + best.toFixed(3), L.clamp(fx(best), bx + 50, bx + bw - 60), by + bh - 3); }
+      c.font = L.font(11); c.fillStyle = L.tok('--text-3'); c.textBaseline = 'bottom'; c.fillText('0.08', bx + 8, by + bh - 3); c.textAlign = 'right'; c.fillText('0.20 m/ns', bx + bw - 8, by + bh - 3); c.textAlign = 'center'; c.fillStyle = L.tok('--accent'); c.fillText('best ' + best.toFixed(3), L.clamp(fx(best), bx + 50, bx + bw - 60), by + bh - 3); }
     if (acq < ant.length) { c.font = L.font(12, 500); c.fillStyle = L.tok('--text-2'); c.textAlign = 'left'; c.textBaseline = 'top'; c.fillText('Scanning: trace ' + acq + ' of ' + ant.length, l + 10, t + 8); }
     c.restore();
   }
   function verdicts() {
     const out = {};
     for (const id of ['A', 'B', 'C', 'D', 'person']) { const r = M[id]; if (!r) { out[id] = { state: 'na', text: 'scanning' }; continue; }
-      out[id] = { state: r.snr >= 8 ? 'seen' : r.snr >= 4 ? 'hint' : 'missed', text: r.snr >= 4 ? 'echo ' + r.snr.toFixed(0) + '× noise' : 'lost in noise', why: 'Peak of this target’s focused echo against the focused noise and small-debris clutter. Above 8× it stands out; under 4× it cannot be told from speckle.' }; }
-    if (out.person.state === 'seen') out.person.text = 'bright, ' + M.person.snr.toFixed(0) + '× noise';
+      out[id] = { state: r.snr >= 12 && id !== 'person' ? 'seen' : r.snr >= 4 ? 'hint' : 'missed', text: r.snr >= 4 ? 'echo ' + r.snr.toFixed(0) + '× noise' : 'lost in noise', why: 'Peak of this target’s focused echo against the focused noise and small-debris clutter. Each target is migrated alone, so this is its best case. Above 12× it stands out; under 4× it cannot be told from speckle.' }; }
+    if (M.person && out.person.state === 'hint') { out.person.text = 'an echo, unlabelled'; out.person.why += ' Nothing in the echo says it is a person.'; }
     return out;
   }
   return {
     title: 'Ground radar, focused', hardware: 'Ground-penetrating radar is a commercial tool. A unit that scans a rubble surface on its own is not.',
     lede: 'A radar pulse sent into the pile bounces off every change of material, and a single buried edge draws a curve across the scan, a hyperbola, because the antenna hears it early when overhead and late from the side. Migration runs that geometry backwards: it adds up the samples along each possible curve, and the curves fold onto the things that made them.',
     honest: 'real rubble is full of reinforcing bar and broken edges, so a real scan carries far more clutter than this one, and wet concrete swallows the pulse within a metre or two. This model has single echoes only, straight rays, and an antenna that keeps contact with the surface.',
-    assumed: 'Assumed: permittivity 5 for loose rubble, 7 for slab, 50 for a person; loss 0.3 to 1.7 nepers per metre by moisture; a Ricker pulse; receiver noise fixed. The scan is 0.2 m between traces, 120 ns long.',
+    assumed: 'Design values: permittivity 5 for loose rubble, 7 for slab, 50 for a person; loss 0.3 to 1.7 nepers per metre by moisture; a Ricker pulse; receiver noise fixed. The scan is 0.2 m between traces, 120 ns long.',
     sources: [
       { who: 'Schneider, Geophysics 43 (1978).', what: 'Integral formulation for migration in two and three dimensions: the Kirchhoff summation used here.', url: 'https://doi.org/10.1190/1.1440828' },
       { who: 'Stolt, Geophysics 43 (1978).', what: 'Migration by Fourier transform, the fast frequency-domain form of the same idea.', url: 'https://doi.org/10.1190/1.1440826' },
@@ -171,7 +171,7 @@ export default function create(env) {
     setPile, controls, drawStage, drawReadout, tick, verdicts,
     stageTitle: () => (P.ap < 0.05 ? 'Raw echoes, drawn under the antenna' : 'Echoes focused by migration'), stageNote: () => acq < ant.length ? 'scanning the surface' : 'aperture ' + P.ap.toFixed(1) + ' m · speed ' + P.v.toFixed(3) + ' m/ns',
     readoutTitle: () => ['Every edge in the pile draws a hyperbola in the raw scan', 'B-scan: one column per antenna position, time running down. White and blue are the two polarities.'],
-    results: () => { const found = ['A', 'B', 'C', 'D'].filter((id) => M[id]?.snr >= 8), err = found.length ? found.reduce((a, id) => a + M[id].err, 0) / found.length : NaN;
+    results: () => { const found = ['A', 'B', 'C', 'D'].filter((id) => M[id]?.snr >= 12), err = found.length ? found.reduce((a, id) => a + M[id].err, 0) / found.length : NaN;
       return [
         { k: 'Assumed speed', v: P.v.toFixed(3) + ' m/ns', sub: 'truth: 0.134 in rubble, 0.113 in slab, 0.300 in a void' },
         { k: 'Floor-slab speed', v: best.toFixed(3) + ' m/ns', sub: 'slab depth known from street level' },
@@ -179,6 +179,6 @@ export default function create(env) {
         { k: 'Scan', v: ant.length + ' traces', sub: (ant.length * 0.2).toFixed(0) + ' m of surface, about ten minutes on foot' },
       ]; },
     row: { sees: 'Edges between materials: roofs of voids, slabs, metal, a water-rich body.', range: '1 to 4 m in dry rubble; under 1 m when soaked', time: 'Minutes', cost: 'Medium', costNote: 'commercial units', ready: 4, readyNote: 'Routine in surveying. On a collapse it needs a flat, dry path.' },
-    summary: () => ['A', 'B', 'C', 'D'].filter((id) => M[id]?.snr >= 8).length + ' of 4 voids, ' + (M.person?.snr >= 8 ? 'and the person' : 'not the person') + ', ' + P.wet + ' rubble',
+    summary: () => ['A', 'B', 'C', 'D'].filter((id) => M[id]?.snr >= 12).length + ' of 4 voids, ' + 'and an echo off the person' + ', ' + P.wet + ' rubble',
   };
 }

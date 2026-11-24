@@ -17,11 +17,12 @@ export function createHero(root, ctx, { onDrill }) {
     h('div.th-low', null, h('div.th-title', null, h('div.row', null, realityTag('live-algo'), realityTag('sim')), head, line), h('div.grow'), choiceBox),
     h('div.th-foot', null, dots, h('div.grow'), drillBtn));
   root.append(el);
+  const dip = h('div.th-dip'); el.insertBefore(dip, el.querySelector('.th-low'));
   const tag = h('div.th-tag', null, h('b.th-rank.th-pct'), h('div', null, h('span.th-where'), h('span.th-sub'))); tags.append(tag);
   const tP = tag.querySelector('.th-pct'), tW = tag.querySelector('.th-where'), tS = tag.querySelector('.th-sub');
 
   let stage = null, loading = false, on = false, spare = null, spareAt = null, moment = -1, mode = 'load', clock = 0, acc = 0, lead = null, ribbon = null, old = null, chosen = 0, shownP = 0, frame = 0, back = 1.6, busy = 0, glass = 0;
-  const px = { x: 0, y: 0, on: true }, pt = { x: 0, z: 0 }, v = { v: null };
+  const px = { x: 0, y: 0, on: true }, pt = { x: 0, z: 0 }, spot = { x: 0, z: 0 }, v = { v: null };
   const set = (n, t) => { if (n.textContent !== t) n.textContent = t; };
   let wordsT = 0; function words(a, b) { clearTimeout(wordsT); head.classList.add('swap'); line.classList.add('swap'); wordsT = setTimeout(() => { head.textContent = a; line.textContent = b; head.classList.remove('swap'); line.classList.remove('swap'); }, reduced() ? 0 : 220); }
   function ask(a, b) { choices[0].firstChild.textContent = a; choices[1].firstChild.textContent = b; choices.forEach((c) => { c.disabled = false; c.dataset.picked = ''; }); choiceBox.hidden = false; mode = 'ask'; clock = 0; }
@@ -33,7 +34,7 @@ export function createHero(root, ctx, { onDrill }) {
     const e = newEngine(ctx, null, false); await advance(e, open);
     for (let i = 0; i < 6; i++) { const d = e.state.detections.find((x) => x.status === 'possible' && !x.needsTeam); if (!d) break; e.command('investigate', { id: d.id }); e.step(); await advance(e, (S) => open(S) || S.phase !== 'assess'); }
     if (e.state.phase === 'assess') { e.command('finishAssess'); await advance(e, (S) => S.phase === 'plan'); }
-    e.command('planRoute', { avoid: { ...ALL, slope: false } }); return e;
+    return e;
   }
   async function load() {
     if (loading || stage) return; loading = true;
@@ -47,8 +48,8 @@ export function createHero(root, ctx, { onDrill }) {
   async function goto(i) {
     if (!stage?.ok || busy) return; busy = 1; mode = 'load'; choiceBox.hidden = true;
     words(i ? 'The route is ready.' : 'The search so far.', 'Playing to the decision.');
-    let e; try { e = i ? await (spareAt || makeRoute()) : await (spare || makeLead()); } finally { busy = 0; } if (i) spareAt = null; else spare = null;
-    busy = 0; begin(i, e);
+    let e; try { e = i ? await (spareAt || makeRoute()) : await (spare || makeLead()); dip.classList.add('on'); await new Promise((r) => setTimeout(r, reduced() ? 0 : 420)); if (i) e.command('planRoute', { avoid: { ...ALL, slope: false } }); } finally { busy = 0; } if (i) spareAt = null; else spare = null;
+    busy = 0; begin(i, e); stage.rig.snap = true; requestAnimationFrame(() => requestAnimationFrame(() => dip.classList.remove('on')));
   }
   function begin(i, e) {
     moment = i; [...dots.children].forEach((b, k) => b.setAttribute('aria-pressed', String(k === i)));
@@ -69,7 +70,7 @@ export function createHero(root, ctx, { onDrill }) {
     const hz = M.allHazards(S), ex = M.exposureAlong(path, hz), slope = ex.by.filter((b) => /slope/i.test(b.hz.name + b.hz.id + (b.hz.kind || ''))).reduce((a, b) => a + b.m, 0);
     old?.dispose(); old = ribbon; ribbon = stage.ribbon(path, '--accent', { width: 0.34, hot: (p) => hz.some((z) => M.inside(p, z.poly)) }); ribbon.to(0); ribbon.info = { total: ex.total, slope, length: S.routes.rescue.length };
     // the worst stretch is what the camera looks at
-    let best = null; for (const s of ex.spans) if (!best || s.to - s.from > best.to - best.from) best = s; const sp = ex.spans.filter((s) => /slope/i.test(s.hz.name + s.hz.id)).sort((a, b) => b.to - b.from - (a.to - a.from))[0]; ribbon.mid = ((sp || best)?.from + (sp || best)?.to) / 2 || ribbon.length * 0.7;
+    let best = null; for (const s of ex.spans) if (!best || s.to - s.from > best.to - best.from) best = s; const sp = ex.spans.filter((s) => /slope/i.test(s.hz.name + s.hz.id)).sort((a, b) => b.to - b.from - (a.to - a.from))[0]; if (!old) ribbon.at(((sp || best)?.from + (sp || best)?.to) / 2 || ribbon.length * 0.7, spot);
     return ribbon.info;
   }
   function answer(i, human) {
@@ -78,15 +79,15 @@ export function createHero(root, ctx, { onDrill }) {
     if (moment === 0 && i === 1) { e.command('investigate', { id: lead.id }); mode = 'look'; words('Looking again.', who + 'The rover moves to a better position and listens.'); }
     else if (moment === 0) {
       const r = e.plan(S.units['TEAM-1'].pos, lead.pos, { nearest: true }); if (r.ok) { ribbon = stage.ribbon(r.path, '--accent', { width: 0.3 }); ribbon.to(0); }
-      mode = 'send'; words('A team walks ' + (r.ok ? r.length.toFixed(0) : '?') + ' m on a ' + pct(lead.p) + ' lead.', who + 'At ' + pct(lead.p) + ', ' + Math.round((1 - lead.p) * 100) + ' rooms in 100 like this are empty.');
+      mode = 'send'; words('A team walks ' + (r.ok ? r.length.toFixed(0) : '?') + ' m on a ' + pct(lead.p) + ' lead.', who + 'A second look first takes about a minute, and the odds get firmer.');
     } else if (i === 1) { e.command('rejectRoute'); e.command('planRoute', { avoid: { ...ALL } }); const was = ribbon.info, r = draw(S); mode = 'back'; words('Slope: ' + was.slope.toFixed(0) + ' m down to ' + r.slope.toFixed(0) + ' m.', who + (r.length - was.length > 0.5 ? (r.length - was.length).toFixed(0) + ' m longer. ' : 'Hardly longer. ') + 'The rule was off; now it is on.'); }
-    else { e.command('approveRoute'); mode = 'ride'; words(ribbon.info.slope.toFixed(0) + ' m on ground that can move.', who + 'The planner obeyed its rules. One rule was switched off.'); }
+    else { e.command('approveRoute'); mode = 'ride'; words(ribbon.info.slope.toFixed(0) + ' m on ground that can move.', who + 'One rule was switched off. Switch it on for a safer way.'); }
   }
   const NAMES = { csi: 'Wi-Fi network', radar: 'radar', micro: 'presence radar', thermal: 'thermal camera', aerial: 'drone', human: 'team' };
   function agree(d) { // the last reading of each sensor, in words
     const last = {}; for (const e of d.evidence) if (NAMES[e.sensor]) last[e.sensor] = e.result;
     const yes = Object.keys(last).filter((k) => last[k] === 'pos').map((k) => NAMES[k]), say = yes.length > 1 ? 'The ' + yes.slice(0, -1).join(', ') + ' and ' + yes[yes.length - 1] + ' agree.' : 'The ' + (yes[0] || 'sensors') + ' decided it.';
-    return say + (last.csi === 'neg' ? ' Wi-Fi alone missed them.' : '');
+    return say;
   }
   const hold = () => { mode = 'hold'; clock = 0; };
   function placeBack() { // how far behind the rover the viewer can stand without a wall between
@@ -95,19 +96,20 @@ export function createHero(root, ctx, { onDrill }) {
     back = Math.max(0.5, back - 0.35);
   }
 
-  function tick(dt, time) {
-    const R = stage.rig, g = R.goal, S = stage.engine.state; clock += dt; frame++;
+  function tick(dt, time, real) {
+    const R = stage.rig, g = R.goal, S = stage.engine.state; clock += real; frame++;
     R.drift = reduced() ? 0 : Math.sin(time * 0.31) * 0.02 + Math.sin(time * 0.83) * 0.006;
     if (mode === 'ask') { const k = Math.max(0, Math.min(1, clock / ASK_S)); choices[1].lastChild.style.transform = 'scaleX(' + k.toFixed(4) + ')'; if (clock > ASK_S) answer(1, false); }
-    else if (mode === 'look') { acc += Math.min(dt, 0.05) * PACE; while (acc >= 0.1 && lead.status === 'possible' && !stage.engine.done) { stage.engine.step(); acc -= 0.1; } if (frame % 12 === 0) placeBack();
+    else if (mode === 'look') { acc += Math.min(real, 0.05) * (reduced() ? 40 : PACE); while (acc >= 0.1 && lead.status === 'possible' && !stage.engine.done) { stage.engine.step(); acc -= 0.1; } if (frame % 12 === 0) placeBack();
       if (lead.status !== 'possible') { const c = lead.status === 'confirmed'; words(c ? pct(lead.p) + '. A person.' : 'Ruled out, ' + pct(lead.p) + '.', c ? agree(lead) : lead.reason || ''); tS.textContent = c ? 'person, confirmed by sensors' : 'ruled out'; hold(); } }
     else if (mode === 'send') { ribbon?.to(ribbon.length * ease(clock / 6)); if (clock > 7) hold(); }
     else if (mode === 'back') { old?.alpha(0.5 * (1 - ease(clock / 1.6))); ribbon.to(ribbon.length * ease((clock - 0.6) / 4)); if (clock > 5.4) hold(); }
     else if (mode === 'ride') { if (clock > 5) hold(); }
-    else if (mode === 'hold' && clock > HOLD_S && !busy) goto(moment === 0 ? 1 : 0);
+    else if (mode === 'hold' && clock > HOLD_S && !busy && !reduced()) goto(moment === 0 ? 1 : 0);
     if (mode === 'hold' && clock > 1.5 && moment === 0 && !spareAt) spareAt = makeRoute();
     if (mode === 'hold' && clock > 1.5 && moment === 1 && !spare) spare = makeLead();
 
+    if (reduced()) ribbon?.to(ribbon.length);
     R.glass.r += (glass - R.glass.r) * (reduced() ? 1 : 1 - Math.exp(-dt * 2.2));
     if (moment === 0 && lead) {
       shownP += (lead.p - shownP) * (reduced() ? 1 : 1 - Math.exp(-dt * 3)); set(tP, pct(shownP));
@@ -121,7 +123,7 @@ export function createHero(root, ctx, { onDrill }) {
       v.v.set(L[0], mode === 'hold' && lead.status === 'confirmed' ? 1.35 : 1.95, -L[1]); stage.project(v.v, px); tag.style.transform = 'translate3d(' + px.x.toFixed(1) + 'px,' + px.y.toFixed(1) + 'px,0) translate(26px,-80%)'; tag.style.opacity = px.on && mode !== 'load' ? '1' : '0';
     } else {
       tag.style.opacity = '0'; glass = 0; R.dof = 0;
-      if (ribbon) { if (mode === 'ask') ribbon.to(ribbon.length * ease(clock / 5)); ribbon.at(ribbon.mid, pt); const near = mode === 'ride' || (mode === 'hold' && chosen === 0); const k = mode === 'ask' ? ease(clock / ASK_S) : 1; g.x = pt.x - (near ? 0 : 8); g.y = 1; g.z = pt.z + (near ? 0 : 5); g.yaw = 0.55 + (near ? 0.35 : 0) + time * 0.006 % 1 * 0.2; g.pitch = near ? 0.3 : 0.5; g.dist = near ? 20 : 46 - 8 * k; g.fov = 38; R.rate = 0.8; }
+      if (ribbon) { if (mode === 'ask') ribbon.to(ribbon.length * ease(clock / 5)); const near = mode === 'ride' || (mode === 'hold' && chosen === 0); const k = mode === 'ask' ? ease(clock / ASK_S) : 1; g.x = spot.x - (near ? 0 : 5); g.y = 1; g.z = spot.z + (near ? 0 : 3); g.yaw = near ? -0.02 : 0.1; g.pitch = near ? 0.5 : 0.56; g.dist = near ? 21 : 44 - 7 * k; g.fov = 38; R.rate = 0.8; }
     }
   }
   return {

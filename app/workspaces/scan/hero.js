@@ -15,7 +15,7 @@ export function createHero(view, d, { reduced = false, html }) {
 
   // which second of the capture is on screen at story time t: each pass gets its share, transits are skipped
   const seg = [];
-  if (d.passes) { const w = { aerial: 5.4, orbit: 2.4, close: 1.9, interior: 2.1 }; let t = 0.1; const tot = d.passes.reduce((s, p) => s + (w[p.id] || 3), 0); for (const p of d.passes) { const len = ((w[p.id] || 3) / tot) * (tScan - 0.7); seg.push({ a: t, b: t + len, t0: p.t0, t1: p.t1, p }); t += len; } }
+  if (d.passes) { const w = { aerial: 5.4, orbit: 2.4, close: 1.9, interior: 2.1 }; let t = 0; const tot = d.passes.reduce((s, p) => s + (w[p.id] || 3), 0); for (const p of d.passes) { const len = ((w[p.id] || 3) / tot) * (tScan - 0.7); seg.push({ a: t, b: t + len, t0: seg.length || !site ? p.t0 : p.t0 + (p.t1 - p.t0) * 0.07, t1: p.t1, p }); t += len; } }
   const capAt = (t) => { for (const s of seg) if (t < s.b) return s.t0 + (s.t1 - s.t0) * clamp((t - s.a) / (s.b - s.a)); return null; };
   const passAt = (t) => seg.find((s) => t < s.b);
 
@@ -23,7 +23,7 @@ export function createHero(view, d, { reduced = false, html }) {
   const K = [];
   const key = (t, tgt, dist, az, el) => { const a = (az * Math.PI) / 180, e = (el * Math.PI) / 180, D = dist * k; K.push([t, tgt[0] + D * Math.sin(a) * Math.cos(e), tgt[1] + D * Math.cos(a) * Math.cos(e), tgt[2] + D * Math.sin(e), tgt[0], tgt[1], tgt[2]]); };
   const at = (x, y, z) => K.push([x[0], ...y, ...z]);
-  key(0, [F[0] - 4 * k, F[1] - 2 * k, z0 + 14], 90, 316, 10); key(5.5, [F[0] + 2 * k, F[1], z0 + 5], 72, 334, 24);
+  key(0, [F[0] - 12 * k, F[1] - 12 * k, z0 + 13], site ? 122 : 90, 320, 13); key(2.6, [F[0] - 9 * k, F[1] - 9 * k, z0 + 11], site ? 124 : 84, 324, 17); key(5.5, [F[0] + 5 * k, F[1], z0 + 6], site ? 98 : 80, 334, 24);
   if (d.traj) { key(8.6, [F[0] + 10 * k, F[1] + 6 * k, z0 + 1], 42, 356, 27); key(tScan - 0.5, [F[0] + 8 * k, F[1] + 4 * k, z0 + 1], 46, 366, 30); }
   key(tOpen - 2.6, [F[0] + 4 * k, F[1] + 2 * k, z0 + 0.6], 46, 382, 38); key(tOpen, [F[0] + 6 * k, F[1] + 2 * k, z0 + 0.4], 45, 390, 42);
   list.forEach(({ v }, q) => { const t = tOpen + 0.9 + q * EACH, az = v.access && v.access.from !== 'above' ? (Math.atan2(v.access.pos[0] - v.centre[0], v.access.pos[1] - v.centre[1]) * 180) / Math.PI : 160; const A = site ? (v.centre[0] > 88 ? 342 : 396) : az; const size = Math.max(v.length, v.width, 2) / k; key(t + 0.5, v.centre, 17 + size * 1.9 * Math.min(1, k * 2), A + 6, 35); key(t + EACH - 0.6, v.centre, 15 + size * 1.8 * Math.min(1, k * 2), A - 4, 32); });
@@ -50,28 +50,28 @@ export function createHero(view, d, { reduced = false, html }) {
   const U = view.U, E = view.E, top = Math.min(b.max[2], z0 + 11), low = d.cut.z;
 
   function apply(t) {
-    U.uBand.value = 1.9 - 1.62 * span(t, tOpen - 2.4, tOpen - 0.4) + (big ? 1.6 * span(t, tVoid + 1.6, tVoid + 3) : 0);
+    U.uBand.value = 1.9 - 1.62 * span(t, tOpen - 2.4, tOpen - 0.4) + (big && !site ? 1.6 * span(t, tVoid + 1.6, tVoid + 3) : 0);
     const cap = t < tScan - 0.6 ? capAt(t) : null, s = passAt(t);
     U.uAgeK.value = s ? (s.b - s.a) / (s.t1 - s.t0) : 1; // the dust settles in screen seconds, whatever the replay speed
     if (cap != null) view.setReplay(cap); else if (S.live) view.setReplay(null);
-    S.live = cap != null; S.points = view.frameCount;
-    const open = span(t, tScan + 0.2, tOpen - 1.0), close = big ? span(t, tVoid + 1.6, tVoid + 6.0) : 0, y = top + (low - top) * open + (top - low) * close * 1.0;
-    U.uCutOn.value = t > tScan && t < tVoid + 6.1 ? 1 : 0; U.uCutY.value = y;
-    U.uOpen.value = span(t, tScan + 2.0, tOpen - 0.8) * (1 - span(t, tVoid + 2.4, tVoid + 5.2)); U.uLit.value = 1;
+    S.live = cap != null; S.cap = cap; S.pass = s ? s.p.id : null; S.drawn = view.frameCount; S.points = d.fullAt ? d.fullAt(view.frameCount) : view.frameCount;
+    const open = span(t, tScan + 0.2, tOpen - 1.0), close = big && !site ? span(t, tVoid + 1.6, tVoid + 6.0) : 0, y = top + (low - top) * open + (top - low) * close * 1.0;
+    U.uCutOn.value = t > tScan && (site || t < tVoid + 6.1) ? 1 : 0; U.uCutY.value = y;
+    U.uOpen.value = span(t, tScan + 2.0, tOpen - 0.8) * (site ? 1 : 1 - span(t, tVoid + 2.4, tVoid + 5.2)); U.uLit.value = 1;
     let found = 0, vol = 0;
     for (const m of view.voidMeshes) m.solid.material.uniforms.uFill.value = m.ghost.material.uniforms.uFill.value = -1e6;
     list.forEach(({ v, i }, q) => {
       const t0 = tOpen + 0.9 + q * EACH, f = span(t, t0, t0 + 1.8), m = view.voidMeshes[i]; if (!m) return;
       const inside = q === 0 ? span(t, tVoid + 4.2, tVoid + 6.4) : span(t, tVoid + 1.0, tVoid + 3.0), fill = m.y0 - 0.1 + (m.y1 - m.y0 + 0.2) * f;
       m.solid.material.uniforms.uFill.value = m.ghost.material.uniforms.uFill.value = f > 0.001 ? fill : -1e6;
-      m.solid.material.uniforms.uAlpha.value = 0.24 * (1 - inside * (q === 0 ? 0.3 : 0.8)); m.ghost.material.uniforms.uAlpha.value = 0.085 * (1 - inside * (q === 0 ? 0.5 : 1));
-      m.halo.material.opacity = 0.10 * f * (1 - inside);
+      m.solid.material.uniforms.uAlpha.value = 0.62 * (1 - inside * (q === 0 ? 0.35 : 0.8)); m.ghost.material.uniforms.uAlpha.value = 0.20 * (1 - inside * (q === 0 ? 0.5 : 1));
+      m.halo.material.opacity = 0.26 * f * (1 - inside * (q === 0 ? 0.35 : 1));
       if (i < 4) U.uVoidI.value[i] = f * (q === 0 ? 1 + 1.1 * inside : 1 - 0.8 * inside) * (0.92 + 0.08 * Math.sin(t * 1.3 + q));
       if (f > 0.55) { found++; vol += v.volume; }
       const tg = tags[q], show = f > 0.35 && t < tVoid + (q === 0 ? 3.4 : 1.4), here = t < t0 + EACH || t > tVoid - 1.4; tg.hidden = !show; const cls = 'scan-tag-film' + (here && show ? ' on' : ''); if (tg.cls !== cls) { tg.cls = cls; tg.el.className = 'scan-tag ' + cls; }
     });
     S.found = found; S.volume = vol;
-    E.uFade.value = reduced ? 1 : clamp(t / 0.8) * (1 - span(t, total - 0.8, total));
+    E.uFade.value = reduced ? 1 : clamp(t / 0.3) * (1 - span(t, total - 0.8, total));
     const act = t < tScan ? 'scan' : t < tOpen ? 'open' : t < tVoid ? 'voids' : 'inside';
     let cpt = act;
     if (act === 'scan') cpt = s ? s.p.id : 'all'; else if (act === 'voids') cpt = 'void' + Math.max(0, Math.min(list.length - 1, Math.floor((t - tOpen - 0.9) / EACH)));

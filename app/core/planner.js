@@ -86,15 +86,20 @@ export function planPath(grid, from, to, { nearest = false } = {}) {
   let pts = cells.map((c) => grid.toPoint(c));
   pts[0] = from.slice();
   if (reached && !grid.blocked[key(...grid.toCell(to))]) pts[pts.length - 1] = to.slice();
-  // Remove corners where a straight line is just as safe (never cut through a costlier cell than the path used).
+  // Remove corners only where the straight line is clear and costs no more than the piece of route it replaces.
+  const lineCost = (a, b) => {
+    const l = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(l / (grid.res * 0.25)));
+    let sum = 0;
+    for (let k = 0; k < n; k++) { const t = (k + 0.5) / n, c = grid.toCell([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); sum += (l / n) * grid.cost[key(c[0], c[1])]; }
+    return sum;
+  };
+  const upTo = new Float64Array(pts.length);
+  for (let k = 1; k < pts.length; k++) upTo[k] = upTo[k - 1] + lineCost(pts[k - 1], pts[k]);
   const out = [pts[0]];
   let i = 0;
   while (i < pts.length - 1) {
     let j = pts.length - 1;
-    const maxTo = new Float32Array(pts.length); // highest cell cost on the planned path between i and k
-    let m = 1;
-    for (let k = i; k <= j; k++) { const c = grid.toCell(pts[k]); m = Math.max(m, grid.cost[key(c[0], c[1])]); maxTo[k] = m; }
-    while (j > i + 1 && !gridClear(grid, pts[i], pts[j], maxTo[j])) j--;
+    while (j > i + 1 && !(gridClear(grid, pts[i], pts[j]) && lineCost(pts[i], pts[j]) <= upTo[j] - upTo[i] + 1e-6)) j--;
     out.push(pts[j]); i = j;
   }
   return { ok: true, reached, gap, path: out, length: pathLength(out), cost: gScore[gk] * grid.res, expanded };

@@ -18,7 +18,7 @@ export function mountCf(pane, app) {
     for (const p of [0.01, 0.05, 0.2, 0.5, 0.8, 0.95, 0.99, 0.999]) s += '<line class="gridline" x1="' + X(p).toFixed(1) + '" x2="' + X(p).toFixed(1) + '" y1="' + (top - 4) + '" y2="' + (H - 22) + '"/><text x="' + X(p).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + (p * 100 >= 99.5 ? '99.9' : p * 100) + ' %</text>';
     for (const [p, cls, word] of [[thresholds.possible, 'warn', 'lead stays open'], [thresholds.confirmed, 'person', 'confirmed']]) s += '<line class="tl-th ' + cls + '" x1="' + X(p).toFixed(1) + '" x2="' + X(p).toFixed(1) + '" y1="' + (top - (cls === 'person' ? 18 : 34)) + '" y2="' + (H - 22) + '"/><text class="tl-th-t ' + cls + '" x="' + (X(p) + 4).toFixed(1) + '" y="' + (top - (cls === 'person' ? 8 : 24)) + '">' + word + ' ≥ ' + (p * 100).toFixed(0) + ' %</text>';
     let prev = PRIOR;
-    s += '<text class="tl-ld-l" x="8" y="' + (top + 15) + '">Before any reading</text><text class="tl-ld-lr" x="8" y="' + (top + 29) + '">prior, assumed</text><circle class="tl-ld-dot" cx="' + X(prev).toFixed(1) + '" cy="' + (top + 11) + '" r="3"/>';
+    s += '<text class="tl-ld-l" x="8" y="' + (top + 15) + '">Before any reading</text><text class="tl-ld-lr" x="8" y="' + (top + 29) + '">prior</text><circle class="tl-ld-dot" cx="' + X(prev).toFixed(1) + '" cy="' + (top + 11) + '" r="3"/>';
     steps.forEach((st, i) => {
       const y = top + (i + 1) * rowH, x0 = X(prev), x1 = X(st.p), up = st.lr > 1.0001, flat = Math.abs(st.lr - 1) < 1e-4;
       const says = SAYS[st.sensor]?.[st.result] || (st.result === 'blind' ? 'could not see' : st.result);
@@ -66,7 +66,7 @@ export function mountCf(pane, app) {
         h('span.tl-cf-txt', null, ...r.parts.map((p) => h('span', null, p.text, p.assumed ? h('i', null, 'assumed weight') : null)), h('small', null, r.parts.map((p) => p.takes).filter(Boolean).join(' '))))),
       t.none ? h('p.tl-cf-alt', null, 'No change of one or two readings gets there. It would take evidence worth ×' + (t.factor >= 10 ? t.factor.toFixed(0) : t.factor.toFixed(1)) + ' on the odds' + (t.factor < 1 ? ' (that is, against a person)' : '') + '.') : null,
       h('p.tl-cf-alt', null, 'Without new evidence: move the ' + t.line.name + ' from ' + (t.line.from * 100).toFixed(0) + ' % ' + t.line.dir + ' ' + (t.line.to * 100).toFixed(t.line.to > 0.99 ? 1 : 0) + ' %' + (t.prior > 0.001 && t.prior < 0.999 ? ', or start from a prior of ' + (t.prior * 100).toFixed(t.prior < 0.1 ? 1 : 0) + ' % instead of ' + (PRIOR * 100).toFixed(0) + ' %.' : '.')))),
-      h('p.caption', null, 'Computed by re-running the console’s fusion (fuse and classify in app/core/fusion.js) on edited evidence: every single change is tried, then every pair. Only the Wi-Fi network’s weight is measured (on simulated test windows); the others are assumed design values. Method: counterfactual explanation, Wachter, Mittelstadt and Russell, 2017.'));
+      h('p.caption', null, 'Computed by re-running the console’s fusion (fuse and classify in app/core/fusion.js) on edited evidence: every single change is tried, then every pair. The Wi-Fi network’s weight is measured on simulated test windows; the others are design values. Method: counterfactual explanation, Wachter, Mittelstadt and Russell, 2017.'));
   }
   app.on('tab', (id) => { if (id === 'cf') paint(); });
   app.on('cursor', paint); app.on('lead', paint); app.on('branches', paint); app.on('time', paint);

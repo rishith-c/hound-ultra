@@ -90,21 +90,21 @@ export default function create(env) {
       c.strokeStyle = L.col('--text-2', 0.9); c.lineWidth = 1; c.strokeRect(x - 5.5, top + 0.5, 11, y0 - top - 3);
       c.strokeStyle = L.col('--danger', 0.55); c.beginPath(); c.moveTo(x + 0.5, top + 3); c.lineTo(x + 0.5, y0 - 5); c.stroke();
       for (const yy of [yl, yu]) { const g = c.createRadialGradient(x, yy, 0, x, yy, 9); g.addColorStop(0, 'rgba(240,248,255,0.95)'); g.addColorStop(0.35, L.col('--accent', 0.7)); g.addColorStop(1, L.col('--accent', 0)); c.fillStyle = g; c.beginPath(); c.arc(x, yy, 9, 0, 6.283); c.fill(); }
-      L.tagLabel(c, x + 6, yu, 'two atom clouds, 1 m apart', { dx: 16, dy: -16, color: '--text-2', align: a.x > 16 ? 'right' : 'left' });
+      L.tagLabel(c, x + 6, yu, 'two atom clouds, 1 m apart', { dx: a.x > 16 ? -22 : 16, dy: -16, color: '--text-2', align: a.x > 16 ? 'right' : 'left' });
     }
     c.restore();
   }
   function drawReadout(R) {
     const { c, w, h: hh } = R, X = R.SX, t = 14, b = hh - 30, n = st.length, nUse = Math.max(1, Math.round(P.sweep * n));
     let lo = -3 * P.sigma, hi = 3 * P.sigma; for (let s = 0; s < n; s++) { lo = Math.min(lo, data[s] - P.sigma, sig[s]); hi = Math.max(hi, data[s] + P.sigma, sig[s]); } const pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
-    const Y = (v) => t + (hi - v) / (hi - lo) * (b - t), l = Math.max(0, X(st[0].x) - 14), r = Math.min(w, X(st[n - 1].x) + 14);
+    const Y = (v) => t + (hi - v) / (hi - lo) * (b - t), l = Math.max(34, X(st[0].x) - 14), r = Math.min(w - 14, X(st[n - 1].x) + 14);
     c.save(); c.font = L.font(11); c.lineWidth = 1;
     for (const v of L.ticks(lo, hi, 5)) { const y = Math.round(Y(v)) + 0.5; c.strokeStyle = L.col('--line', 1); c.beginPath(); c.moveTo(l, y); c.lineTo(r, y); c.stroke(); c.fillStyle = L.tok('--text-3'); c.textAlign = 'right'; c.textBaseline = 'middle'; c.fillText((v > 0 ? '+' : '') + v + (v === 0 ? ' E' : ''), l - 6, y); }
     for (let xm = 2; xm <= 22; xm += 2) { const x = Math.round(X(xm)) + 0.5; c.strokeStyle = L.tok('--line-2'); c.beginPath(); c.moveTo(x, b); c.lineTo(x, b + 4); c.stroke(); c.fillStyle = L.tok('--text-3'); c.textAlign = 'center'; c.textBaseline = 'top'; c.fillText(xm + ' m', x, b + 6); }
     c.strokeStyle = L.tok('--line-2'); c.strokeRect(Math.round(l) + 0.5, t + 0.5, Math.round(r - l), b - t);
     // the band noise alone can fill
     c.fillStyle = L.col('--text', 0.045); c.fillRect(l + 1, Y(3 * P.sigma), r - l - 2, Y(-3 * P.sigma) - Y(3 * P.sigma));
-    c.fillStyle = L.tok('--text-3'); c.textAlign = 'right'; c.textBaseline = 'bottom'; c.fillText('inside this band, noise alone could do it (±3σ)', r - 8, Y(-3 * P.sigma) - 3);
+    c.fillStyle = L.tok('--text-3'); c.textAlign = 'right'; c.textBaseline = 'top'; c.fillText('inside this band, noise alone could do it (±3σ)', r - 8, Y(-3 * P.sigma) + 4);
     const line = (arr, style, width, dash) => { c.beginPath(); for (let s = 0; s < n; s++) { const x = X(st[s].x), y = Y(arr[s]); if (s) c.lineTo(x, y); else c.moveTo(x, y); } c.strokeStyle = style; c.lineWidth = width; c.setLineDash(dash || []); c.stroke(); c.setLineDash([]); };
     if (R.truth) { pile.voids.forEach((v, vi) => { line(parts[vi], L.col('--text-2', 0.55), 1, [3, 3]); let k = 0; for (let s = 1; s < n; s++) if (parts[vi][s] < parts[vi][k]) k = s; c.fillStyle = L.tok('--text-2'); c.font = L.font(11, 600); c.textAlign = 'center'; c.textBaseline = 'top'; c.fillText(v.id, X(st[k].x), Y(parts[vi][k]) + 4); });
       line(sig, L.col('--text', 0.75), 1.25); }
@@ -124,9 +124,9 @@ export default function create(env) {
   }
   return {
     title: 'Quantum gravity mapping', hardware: 'One research gradiometer has done this outdoors. It is the size of a cart.',
-    lede: 'A void is missing mass, so gravity directly above it is a few parts in ten billion weaker. A gradiometer drops two clouds of laser-cooled atoms a metre apart and compares how they fall, which cancels vibration and leaves the pull of what is underneath.',
-    honest: 'the instrument must stand still and upright for minutes at every station on a surface that is rubble, the outer shape and average density of the pile must be known to subtract them, and a heavy slab pulls the reading the other way. The unknown slabs are the largest error here, larger than the sensor.',
-    assumed: 'Assumed: everything extends 2 m either side of the section; the pile surface is known and subtracted at 1.8 g/cm³; averaging time follows the published 466 E/√Hz; two minutes to move between stations. Sensor heights (0.5 m and 1.5 m) follow the Birmingham instrument.',
+    lede: 'A void is missing mass, so gravity directly above it is a few parts in a billion weaker. A gradiometer drops two clouds of laser-cooled atoms a metre apart and compares how they fall, which cancels vibration and leaves the pull of what is underneath.',
+    honest: 'the instrument must stand still and upright for minutes at every station on a surface that is rubble, the outer shape and average density of the pile must be known to subtract them, and a heavy slab pulls the reading the other way. Here the unknown slabs add an error about as large as the sensor’s own.',
+    assumed: 'Design values: everything extends 2 m either side of the section; the pile surface is known and subtracted at 1.8 g/cm³; averaging time follows the published 466 E/√Hz; two minutes to move between stations. Sensor heights (0.5 m and 1.5 m) follow the Birmingham instrument.',
     sources: [{ who: 'Stray et al., Nature 602 (2022).', what: 'University of Birmingham: an atom-interferometer gravity gradiometer finds a 2 m tunnel under a road, 20 E in ten minutes.', url: 'https://doi.org/10.1038/s41586-021-04315-3' }],
     _demo: () => ({ P, st, sig, data, fit, noise, parts, m, M, active, CR, CNX, CNZ, invert, measure, survey, surveyHours }),
     setPile(p) { pile = p; P.sweep = 1; P.sweeping = false; survey(); }, controls, drawStage, drawReadout, tick, verdicts,

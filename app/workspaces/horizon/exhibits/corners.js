@@ -325,7 +325,7 @@ export default {
       const ang = Math.atan2(AP_C - SENSOR.y, XW - SENSOR.x); g.save(); g.translate(X(SENSOR.x), Y(SENSOR.y)); g.rotate(ang); g.fillStyle = T.bg4; g.strokeStyle = T.text2; g.lineWidth = 1; g.beginPath(); g.rect(-13, -8, 22, 16); g.fill(); g.stroke(); g.fillStyle = T.accent; g.fillRect(9, -5, 3, 4); g.fillStyle = T.text2; g.fillRect(9, 1, 3, 4); g.restore();
       // labels
       const lab = (str, x, y, tx, ty, color = 'text2') => L.callout(g, str, X(x), Y(y), X(x) + tx, Y(y) + ty, { color });
-      lab('laser and detector (concept)', SENSOR.x - 0.06, SENSOR.y + 0.02, -24, -16, 'text2');
+      lab('laser and detector (concept)', SENSOR.x - 0.06, SENSOR.y + 0.02, -24, -36, 'text2');
       const headX = P.px + 0.75 * 0.93 * BU[0], headY = P.py + 0.75 * 0.93 * BU[1];
       lab('person: truth (simulated)', headX + 0.07, headY - 0.07, 22, -24, 'person');
       lab('slab', CLUTTER[0].cx - 0.03, CLUTTER[0].cy - 0.4, -14, -22, 'text2'); lab('wall stub', CLUTTER[1].cx - 0.2, CLUTTER[1].cy + 0.14, -8, 24, 'text2');
@@ -443,7 +443,7 @@ export default {
       L.slider({ label: 'Scan points along the wall', min: 8, max: 128, step: 4, value: P.M, onInput: any((v) => { P.M = v; }) }).el,
       L.slider({ label: 'Photons per scan point (exposure)', min: 1.5, max: 5, step: 0.05, value: Math.log10(P.ph), format: (v) => fmtN(10 ** v), hint: 'Mean photons returning from the hidden room at each scan point. Assumed: no published budget for a person.', onInput: any((v) => { P.ph = 10 ** v; }) }).el,
       L.slider({ label: 'Length of wall scanned', min: 0.4, max: 2.4, step: 0.1, value: P.len, unit: 'm', format: (v) => v.toFixed(1), hint: 'The published room-sized scans cover 2 m of wall.', onInput: any((v) => { P.len = v; }) }).el,
-      L.slider({ label: 'Ambient light and dark counts', min: 1, max: 5.5, step: 0.05, value: Math.log10(P.amb), format: (v) => fmtN(10 ** v) + ' per point', hint: 'Counts at each scan point that did not come from the pulse. Assumed.', onInput: any((v) => { P.amb = 10 ** v; }) }).el,
+      L.slider({ label: 'Ambient light and dark counts', min: 1, max: 5.5, step: 0.05, value: Math.log10(P.amb), format: (v) => fmtN(10 ** v) + ' per point', hint: 'Counts at each scan point that did not come from the pulse.', onInput: any((v) => { P.amb = 10 ** v; }) }).el,
       L.seg({ label: 'Reconstruction', value: P.method, options: [{ value: 'bp', label: 'Filtered backprojection', hint: 'Smear every time bin back over the circle of places it could have come from.' }, { value: 'fk', label: 'f-k migration', hint: 'Treat the echoes as a wave field and run it backwards in the frequency domain (Lindell et al. 2019).' }], onChange: any((v) => { P.method = v; }) }).el,
       L.toggle({ label: 'Show the true arrival times', value: P.curves, onChange: (v) => { P.curves = v; fRas.redraw(); } }).el,
       L.row(L.button({ label: 'Fire again', icon: 'reset', primary: true, hint: 'A new draw of photon noise, and one pulse in slow motion.', onClick: fire })));

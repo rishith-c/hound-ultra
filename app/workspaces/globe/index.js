@@ -77,7 +77,7 @@ export default {
     const detailBody = h('div.globe-detail-body');
     const detailPanel = h('section.globe-detail.glass', { 'aria-label': 'Selected earthquake or feed summary' }, detailBody,
       h('div.globe-notes', null,
-        h('p.note.quiet', null, icon('info', 14), h('span', null, 'Magnitude is the energy released, not the damage. Damage depends on depth, distance to people, the ground and how buildings are built. That is why HOUND does not guess how many people need finding.')),
+        h('p.note.quiet', null, icon('info', 14), h('span', null, 'Magnitude is the energy released, not the damage. Damage depends on depth, distance to people, the ground and how buildings are built. HOUND starts from what the sensors find.')),
         h('p.note', null, icon('info', 14), h('span', null, 'This shows the console can be pointed at a real event. The search exercise in the other workspaces is simulated.'))));
 
     // ---------- middle: nothing but the globe, and messages when the feed fails ----------
@@ -112,7 +112,7 @@ export default {
     const demoUi = h('div.globe-demo.demo-only', null,
       h('section.globe-demo-title', null, h('div.row', null, realityTag('real-data')),
         h('h1', null, 'A week of earthquakes.'),
-        h('p', null, 'Everything USGS located in seven days, replayed. Magnitude is energy, not damage. The search exercise itself is simulated.'),
+        h('p', null, 'Everything USGS located in seven days, replayed. Magnitude is the energy released. The search exercise is simulated.'),
         h('div.row', null, h('button.btn.btn-primary.btn-lg', { type: 'button', onclick: () => ctx.shell.open('area') }, 'Go to the valley'), demoNow)),
       h('div.globe-demo-figs', null, figN.el, figBig.el, figNear.el),
       h('p.globe-demo-credit', null, 'USGS · NASA Blue Marble, Black Marble · Bird (2003)'));

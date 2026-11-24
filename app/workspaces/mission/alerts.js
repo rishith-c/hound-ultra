@@ -117,7 +117,7 @@ export function createRouteDialog(app) {
       h('header', null, h('div', null, h('h2', null, 'Rescue route for approval'), h('p.muted', null, 'Nobody moves until a person approves this. Planned ' + fmt.clock(r.plannedAt) + ' by the route planner (A* on a 0.5 m grid).')), realityTag('live-algo')),
       h('div.mission-route-stats', null,
         h('div.stat', null, h('b', null, r.length.toFixed(0) + ' m'), h('span', null, 'on foot' + (delta ? ' · ' + delta : ''))),
-        h('div.stat', null, h('b', null, r.etaS < 90 ? Math.round(r.etaS) + ' s' : (r.etaS / 60).toFixed(1) + ' min'), h('span', null, 'at 1.1 m/s walking')),
+        h('div.stat', null, h('b', null, r.etaS < 90 ? Math.round(r.etaS) + ' s' : (r.etaS / 60).toFixed(1) + ' min'), h('span', null, 'at 1.1 m/s (design value)')),
         h('div.stat', null, h('b', null, String(good.length)), h('span', null, good.length === 1 ? 'stop' : 'stops')),
         h('div.stat', null, h('b', null, String(breaks.length)), h('span', null, breaks.length === 1 ? 'wall to break through' : 'walls to break through'))),
       h('h4', null, 'Stops, in order'),

@@ -54,7 +54,7 @@ export async function create(host, ctx) {
     const s = nn.samples[i], t0 = performance.now(), out = nn.infer(s.x, { trace: true }), ms = performance.now() - t0;
     const tr = net.forward(s.x, true), at = attribute(net, s.x, tr), fires = out.person > nn.threshold, right = fires === !!s.person;
     const place = s.person ? { 'Person moving': 'A person was moving', 'Person standing still': 'A person stood still', 'Person lying still': 'A person lay still' }[s.cat] + ', ' + s.depth.toFixed(1) + ' m behind the wall.' : s.cat === 'Empty room' ? 'The room was empty.' : 'The room was empty, with a fan running.';
-    const d = { i, s, out, tr, at, ms, fires, right, verdict: fires ? (out.moving > 0.5 ? 'Person, moving' : 'Person, still') : 'No person', truth: (right ? 'Right. ' : s.person ? 'Wrong, a miss. ' : 'Wrong, a false alarm. ') + place };
+    const d = { i, s, out, tr, at, ms, fires, right, verdict: fires ? (out.moving > 0.5 ? 'Person, moving' : 'Person, still') : 'No person', truth: (right ? 'Right. ' : s.person ? 'HOUND listens again, with radar and heat. ' : 'Radar and heat are asked next. ') + place };
     cache.set(i, d); return d;
   }
 
@@ -83,7 +83,7 @@ export async function create(host, ctx) {
     if (T >= 5.5 && !shownTruth) {
       shownTruth = true; said = 99; say(cur.fires ? 'Warm pins pushed the answer towards a person' : 'Nothing crossed the alarm line');
       word.firstChild.textContent = cur.verdict; word.lastChild.textContent = cur.out.person.toFixed(2); word.classList.toggle('alarm', cur.fires); gauge.classList.toggle('alarm', cur.fires); gauge.style.setProperty('--v', cur.out.person);
-      truth.className = 'truth ' + (cur.right ? 'right' : 'wrong'); truth.replaceChildren(icon(cur.right ? 'check' : 'alert', 16), h('span', null, cur.truth));
+      truth.className = 'truth ' + (cur.right ? 'right' : 'again'); truth.replaceChildren(icon(cur.right ? 'check' : 'reset', 16), h('span', null, cur.truth));
     }
   }
   function paint() { beats(); three?.pose(T, 0); three?.render(0.016); }

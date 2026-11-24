@@ -230,7 +230,7 @@ export default {
       fMap.setTitle(TITLES[P.view]());
       fMap.setNote((dem.real ? 'Real elevation around Timure, Nepal (8.6 km across, north up). ' : 'The elevation file did not load: this is an invented valley. ') + 'The ground shift, the blocks and the damage are invented; no real event is shown.');
       fPro.setTitle('Along A to B, the fringes give the shift back to within ' + L.fix(S.rms * 1000, 0) + ' mm, over the ' + L.pct(S.unFrac) + ' % that could be unwrapped');
-      fPro.setNote('Scatterer motion, noise and air delay are assumed. Atmosphere and unwrapping mistakes are the error. Raise the delay, or switch to X band, to watch it fail.');
+      fPro.setNote('Scatterer motion, noise and air delay are design values. Atmosphere and unwrapping mistakes are the error. Raise the delay, or switch to X band, to watch it change.');
       fBlk.setTitle(nd ? 'Coherence loss flags ' + S.tp + ' of ' + nd + ' damaged blocks, with ' + S.fp + ' false alarm' + (S.fp === 1 ? '' : 's') : 'No block was damaged in this draw');
       fBlk.setNote(W.blocks.length + ' invented blocks, each a 3 by 3 cell average. The ringed dot is the exercise site.');
     }
