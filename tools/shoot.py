@@ -32,7 +32,7 @@ import argparse, base64, fcntl, functools, http.server, json, os, socket, struct
 import urllib.parse, urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SLOTS = int(os.environ.get("HOUND_SHOOT_SLOTS", "5"))      # browsers allowed at once on this machine
+SLOTS = int(os.environ.get("HOUND_SHOOT_SLOTS", "4"))      # browsers allowed at once on this machine
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -218,7 +218,7 @@ class Page:
         return r.get("result", {}).get("value")
 
     def shot(self, path):
-        data = self.call("Page.captureScreenshot", {"format": "png", "captureBeyondViewport": False})["data"]
+        data = self.call("Page.captureScreenshot", {"format": "png", "captureBeyondViewport": False, "optimizeForSpeed": True}, timeout=150)["data"]
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         with open(path, "wb") as f:
             f.write(base64.b64decode(data))
