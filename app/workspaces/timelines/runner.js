@@ -175,7 +175,7 @@ export async function runSpec(spec, nn, { onProgress } = {}) {
     let i = 0, j = 0, steps = 0, autoDone = spec.autoT == null;
     if (F) snap();
     const expect = spec.expectEnd || 660;
-    while (!e.done && S.t < maxT - 1e-9) {
+    while ((spec.until != null || !e.done) && S.t < maxT - 1e-9) {   // the live clock keeps running after the mission ends, so a check runs to the same moment
       while (i < log.length && log[i].t <= S.t + 1e-9) { e.command(log[i].name, log[i].args); i++; }
       if (!autoDone && S.t >= spec.autoT - 1e-9) { autoDone = true; if (!S.autoplay) e.command('setAutoplay', { on: true }); if (S.hold && !pending.some((x) => x.name === 'resume')) e.command('resume'); }
       while (j < pending.length && pending[j].t <= S.t + 1e-9) apply(pending[j++]);

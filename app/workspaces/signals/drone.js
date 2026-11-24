@@ -70,6 +70,7 @@ export function create(root, ctx) {
     stDepth.replaceChildren(p.depth.toFixed(p.depth < 0.1 ? 3 : 2), h('small', null, '%')); stZone.replaceChildren(String(p.zone), h('small', null, Math.round(p.frac * 100) + ' % across'));
     stRub.replaceChildren(p.rub.toFixed(1), h('small', null, 'm, −' + (LOSS[band] * p.rub).toFixed(0) + ' dB')); stEx.replaceChildren(p.excess.toFixed(2), h('small', null, 'm = ' + (p.excess / p.lam).toFixed(1) + ' waves'));
     verdict.replaceChildren(p.best < NOISE51 * 2 ? h('span', null, h('b', null, 'Too much rubble. '), 'Even at the best spot the echo is weaker than the noise that remains after averaging.')
+      : mid && p.depth < NOISE51 * 2 ? h('span', null, h('b', null, 'Right angle, faint echo. '), 'The chest is mid-zone, but from here the rubble leaves the breathing below the line that counts as seen.')
       : mid ? h('span', null, h('b', null, 'Good spot. '), 'The chest sits in the middle of a zone, so each breath changes how the echo adds to the direct signal.')
         : h('span', null, h('b', null, 'Blind spot. '), 'The chest sits on a zone edge, where the echo is already at its strongest or weakest and a small movement changes almost nothing. Move the drone a few centimetres.'));
   }
@@ -203,9 +204,10 @@ export function create(root, ctx) {
     // the received signal: its slow swing with breathing plus noise, at 30 samples a second
     traceAcc += dt; const p = physics();
     while (traceAcc > 1 / 30) { traceAcc -= 1 / 30; const tt = t - traceAcc, v = 100 * p.a * (Math.cos(p.phi + (p.dPhi / 2) * Math.sin(tt * 1.6)) - Math.cos(p.phi)) + NOISE51 * gauss(rng); trace[tracePos] = v; tracePos = (tracePos + 1) % trace.length; }
-    draw(); drawInset(); drawScope(); drawSweep();
+    if (!reducedMotion() || drag || ts - lastDraw > 500) { lastDraw = ts; draw(); drawInset(); drawScope(); drawSweep(); }
     if (shown) raf = requestAnimationFrame(tick);
   }
+  let lastDraw = 0;
   function startPass() { visits = []; pass = { i: 0, hold: 0 }; passBtn.textContent = 'Stop the pass'; passBtn.classList.remove('btn-primary'); changed(); }
   function stopPass() { if (!pass) return; pass = null; passBtn.textContent = 'Fly the pass: eight hover points'; passBtn.classList.add('btn-primary'); }
 

@@ -100,5 +100,5 @@ still). Of those 30, the network is right on 20; it misses most still people, as
 200 simulated missions, `monteCarlo({ runs: 200 })`, random Wi-Fi windows, seeds 1000 + 7919 i. Three hidden people and
 two decoys each time: **600 of 600 people found or flagged for a team check, none missed; 284 confirmed by sensors alone,
 316 flagged as possible and confirmed by the team on foot; no decoy or empty room was ever confirmed as a person.**
-Cost of that caution: 34 team visits across the 200 missions found no one (about one mission in six). Mean mission time 693 s simulated. All of it is simulation; likelihoods for radar, thermal and people on foot
+Cost of that caution: 34 team visits across the 200 missions found no one (about one mission in six). Mean mission time 697 s simulated (re-measured after the planner fix of 23 November; the counts did not change). All of it is simulation; likelihoods for radar, thermal and people on foot
 are assumed values.

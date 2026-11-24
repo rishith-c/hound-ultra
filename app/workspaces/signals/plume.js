@@ -225,7 +225,7 @@ export function create(root, ctx) {
   }
 
   // ----- motion -----
-  let statT = 0;
+  let statT = 0, lastDraw = 0;
   function tick(ts) {
     raf = 0; const dt = Math.min(0.05, (ts - lastT) / 1000 || 0.016); lastT = ts;
     if (!ready) { build(); warm = 150; }
@@ -237,7 +237,7 @@ export function create(root, ctx) {
       const [ux, uy] = wind();
       for (const tr of tracers) { const k = cell(tr.p); tr.q = tr.p.slice(); const vx = ux * gxX[k] + uy * gxY[k], vy = ux * gyX[k] + uy * gyY[k]; tr.p = [tr.p[0] + vx * dt * 6, tr.p[1] + vy * dt * 6]; tr.age -= dt; if (tr.age < 0 || !open[cell(tr.p)] || tr.p[0] < 0 || tr.p[0] > LX || tr.p[1] < 0 || tr.p[1] > LY || pointInPoly(tr.p, BLOCK)) { tr.p = [rng() * LX, rng() * LY]; tr.q = tr.p.slice(); tr.age = 2 + rng() * 3; } }
     } else tracers.length = 0;
-    draw(); drawTrace(); if (ts - statT > 250) { statT = ts; renderStats(); }
+    if (!reducedMotion() || ts - lastDraw > 500) { lastDraw = ts; draw(); drawTrace(); } if (ts - statT > 250) { statT = ts; renderStats(); }
     if (shown) raf = requestAnimationFrame(tick);
   }
   const at = (e) => { const r = map.canvas.getBoundingClientRect(); return [(e.clientX - r.left - tf.ox) / tf.s, LY - (e.clientY - r.top - tf.oy) / tf.s]; };
