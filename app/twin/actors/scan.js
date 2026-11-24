@@ -195,7 +195,12 @@ void main() {
   }
   float hh = p.y;
   p.y += uDrop * 0.6 * k * k * k - s * 0.1;
+  p.xz += (fract(sin(vec2(dot(position.xz, vec2(12.9898, 78.233)), dot(position.xz, vec2(39.346, 11.135)))) * 43758.5453) - 0.5) * 0.14;   // off the scan lattice
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
+  // a flat roof seen edge-on packs many lines into one pixel: keep only as many points as the pixels can show
+  float graze = abs(normalize((modelMatrix * vec4(p, 1.0)).xyz - cameraPosition).y), flatTop = max(aD.z, step(4.6, hh));
+  float lines = 0.15 * uPx / -mv.z / uScale, keep = clamp(lines * 0.8 * mix(1.0, graze * 1.1, flatTop), 0.08, 1.0);
+  float thin = smoothstep(r - 0.12, r + 0.02, keep);
   float raw = uSize * uPx / -mv.z, px = clamp(raw, 1.15 * uScale, 2.2 * uScale);
   gl_PointSize = px * mix(1.0, 1.0 - 0.4 * s, 1.0 - uPlain);
   // height: deep steel on the ground, cool at the eaves, pale and warm on top
@@ -204,7 +209,7 @@ void main() {
   c = mix(c, vec3(0.66, 0.57, 0.46), smoothstep(3.7, 7.2, hh));
   c *= 0.3 + 1.5 * aD.x;
   c = mix(c, uScan * 1.15, k * k * 0.8);
-  vCol = vec4(c, uOpacity * (1.0 - s) * clamp(raw / (1.15 * uScale), 0.35, 1.0));
+  vCol = vec4(c, uOpacity * thin * mix(1.0, 0.75, flatTop) * (1.0 - s) * clamp(raw / (1.15 * uScale), 0.35, 1.0));
   gl_Position = projectionMatrix * mv;
   float bias = 0.03 + 0.0012 * -mv.z;                                           // clear of the surface it lies on, at any range
   vec4 q = projectionMatrix * vec4(mv.xy, mv.z + bias, 1.0); gl_Position.z = q.z / q.w * gl_Position.w;

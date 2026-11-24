@@ -1,6 +1,6 @@
 # Requests from the status agent
 
-Both were found by the new self-tests (tests/index.html). The tests stay red until the fix is in; I have not weakened them.
+The first two were found by the new self-tests (tests/index.html). The tests stay red until the fix is in; I have not weakened them.
 
 ## 1. app/core/planner.js: the corner-removal pass can cross far more hazardous ground than the route A* chose
 
@@ -32,6 +32,13 @@ refusing (`nn-shape`).
 ```js
 if (!Array.isArray(x) || x.length !== 52 || x.some((r) => !r || r.length !== 200)) throw new Error('A Wi-Fi window must be 52 rows by 200 samples.');
 ```
+
+## 4. Seen in other workspaces (details in orchestration/reports/status.md)
+
+- aerial/index.js:816: TypeError reading 'bright' of undefined (renderScore, from runBench).
+- copilot/model-comparison.json: 404.
+- docs/FACTS.md mentions the console's Bluetooth button; no code in app/ uses Bluetooth.
+- Faint text and unnamed canvases per workspace: table in the report (worst: Report 87, Timelines 38, Wi-Fi AI 30, Drone imagery 21).
 
 ## 3. app/index.html: link the web app manifest (one line, optional)
 

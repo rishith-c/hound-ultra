@@ -282,7 +282,8 @@
 .film-tags { display: flex; gap: 6px; margin-bottom: 12px; min-height: 20px; }
 .film-head { font: 400 var(--fs-40)/1.04 var(--font-display); letter-spacing: -0.005em; text-wrap: balance; margin: 0; }
 .film-line { margin-top: 8px; font-size: var(--fs-16); line-height: 1.4; color: var(--text-2); text-wrap: pretty; }
-.film-p { display: none; font: 400 112px/0.78 var(--font-display); font-variant-numeric: lining-nums tabular-nums; color: var(--person); white-space: nowrap; padding-bottom: 8px; }
+.film-p { display: none; font: 400 112px/0.78 var(--font-display); font-variant-numeric: lining-nums tabular-nums; color: var(--text); transition: color 260ms linear; white-space: nowrap; padding-bottom: 8px; }
+.mission-film.sure .film-p { color: var(--person); }
 .mission-film.find .film-p { display: block; animation: mission-fade 500ms var(--ease-in-out); }
 .film-inst { flex: none; position: relative; opacity: 0; transition: opacity 320ms var(--ease-in-out); }
 .film-inst.on { opacity: 1; }

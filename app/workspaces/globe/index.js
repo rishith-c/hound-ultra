@@ -25,7 +25,8 @@ export default {
     };
     let rows = [], vis = [], reduced = ctx.kit.reducedMotion(), stepAcc = 0, refreshTimer = 0, loadSeq = 0;
     const offPrefs = ctx.bus.on('prefs', () => { reduced = ctx.kit.reducedMotion(); });
-    matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change', () => { reduced = ctx.kit.reducedMotion(); });
+    const motion = matchMedia('(prefers-reduced-motion: reduce)'), onMotion = () => { reduced = ctx.kit.reducedMotion(); };
+    motion.addEventListener?.('change', onMotion);
 
     // ---------- stage: canvas, leader lines, labels, tooltip ----------
     const stage = h('div.globe-stage');
@@ -168,8 +169,7 @@ export default {
       Object.assign(frameBox, { l: f.left - a.left, t: f.top - a.top, r: f.right - a.left, b: f.bottom - a.top });
       scene.setFrame((frameBox.l + frameBox.r) / 2, (frameBox.t + frameBox.b) / 2, Math.min(f.height, f.width * 1.3));
     };
-    new ResizeObserver(fitFrame).observe(free);
-    new ResizeObserver(fitFrame).observe(stage);
+    const sizes = [new ResizeObserver(fitFrame), new ResizeObserver(fitFrame)]; sizes[0].observe(free); sizes[1].observe(stage);
 
     // ---------- labels on the globe ----------
     const P = {};
@@ -321,7 +321,7 @@ export default {
       g.fillStyle = accent; g.beginPath(); g.roundRect(x - 4.5, 0, 9, 11, 2.5); g.fill();
       void W;
     }
-    new ResizeObserver(bakePlot).observe(plot);
+    sizes.push(new ResizeObserver(bakePlot)); sizes[2].observe(plot);
 
     const nearDot = (x, y) => { let best = null, bd = 7; if (S.data) for (const q of S.data.quakes) { const dd = Math.hypot(q.px - x, q.py - y); if (dd < bd) { bd = dd; best = q; } } return best; };
     let drag = null;
@@ -530,7 +530,6 @@ export default {
     ctx.bus.on('mode', () => { if (S.shown) enterMode(); });
     const offEscape = ctx.bus.on('escape', () => { if (S.shown && S.sel) select(null); });
     root.__globe = { scene, state: S, select, setTime, load };   // a handle for the automated checks
-    void offPrefs; void offEscape;
 
     scene.setSun(Date.now());
     renderHead(); rebuildRows(); renderList(true); renderDetail(); syncPlay();
@@ -544,6 +543,7 @@ export default {
         if (S.data && !S.loading && Date.now() - S.data.fetchedAt > 5 * 60e3) load();
       },
       onHide() { S.shown = false; S.playing = false; syncPlay(); scene.stop(); clearInterval(refreshTimer); hideTip(); },
+      dispose() { this.onHide(); loadSeq++; offPrefs(); offEscape(); motion.removeEventListener?.('change', onMotion); sizes.forEach((o) => o.disconnect()); scene.dispose(); delete root.__globe; },
       onParams(p) { if (p && FEEDS[p.feed]) switchFeed(p.feed); },
     };
   },

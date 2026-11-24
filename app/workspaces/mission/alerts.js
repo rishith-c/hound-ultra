@@ -53,7 +53,7 @@ export function createAlerts(app) {
       else if (ev.code === 'LEAD_CLOSED' && d) small('closed', 'Lead closed in ' + whereOf(d), d.reason + ' Final chance of a person: ' + (d.p * 100).toFixed(0) + ' %.', { type: 'detection', id: d.id });
       else if (ev.code === 'POSSIBLE_PERSON' && d) small('warn', 'Possible person in ' + whereOf(d), (d.p * 100).toFixed(0) + ' %. Not enough to be sure, and too much to ignore. It will get a second look before anyone is sent in.', { type: 'detection', id: d.id });
       else if (ev.code === 'TEAM_CHECK' && d) small('warn', 'Handed to the rescue team', ev.text, { type: 'detection', id: d.id });
-      else if (ev.code === 'BATTERY_LOW' || ev.code === 'WINDOW_REJECTED' || ev.code === 'CSI_UNAVAILABLE' || ev.code === 'NO_PATH' || ev.code === 'ROOM_BLOCKED') small('warn', { BATTERY_LOW: 'Battery low', WINDOW_REJECTED: 'Wi-Fi window rejected', CSI_UNAVAILABLE: 'Searching without Wi-Fi', NO_PATH: 'No safe path', ROOM_BLOCKED: 'Room not searched' }[ev.code], ev.text, ev.room ? { type: 'room', id: ev.room } : ev.unit ? { type: 'unit', id: ev.unit } : null);
+      else if (ev.code === 'BATTERY_LOW' || ev.code === 'WINDOW_REJECTED' || ev.code === 'CSI_UNAVAILABLE' || ev.code === 'NO_PATH' || ev.code === 'ROOM_BLOCKED') small('warn', { BATTERY_LOW: 'Battery low', WINDOW_REJECTED: 'Wi-Fi window set aside', CSI_UNAVAILABLE: 'Searching without Wi-Fi', NO_PATH: 'No safe path', ROOM_BLOCKED: 'Room still to search' }[ev.code], ev.text, ev.room ? { type: 'room', id: ev.room } : ev.unit ? { type: 'unit', id: ev.unit } : null);
     },
     clear() { for (const c of [...cards]) close(c); },
   };
@@ -117,14 +117,14 @@ export function createRouteDialog(app) {
       h('header', null, h('div', null, h('h2', null, 'Rescue route for approval'), h('p.muted', null, 'Nobody moves until a person approves this. Planned ' + fmt.clock(r.plannedAt) + ' by the route planner (A* on a 0.5 m grid).')), realityTag('live-algo')),
       h('div.mission-route-stats', null,
         h('div.stat', null, h('b', null, r.length.toFixed(0) + ' m'), h('span', null, 'on foot' + (delta ? ' · ' + delta : ''))),
-        h('div.stat', null, h('b', null, r.etaS < 90 ? Math.round(r.etaS) + ' s' : (r.etaS / 60).toFixed(1) + ' min'), h('span', null, 'at 1.1 m/s (assumed)')),
+        h('div.stat', null, h('b', null, r.etaS < 90 ? Math.round(r.etaS) + ' s' : (r.etaS / 60).toFixed(1) + ' min'), h('span', null, 'at 1.1 m/s walking')),
         h('div.stat', null, h('b', null, String(good.length)), h('span', null, good.length === 1 ? 'stop' : 'stops')),
         h('div.stat', null, h('b', null, String(breaks.length)), h('span', null, breaks.length === 1 ? 'wall to break through' : 'walls to break through'))),
       h('h4', null, 'Stops, in order'),
       h('ol.mission-route-stops', null, ...legs.map((l, i) => { const d = S.detections.find((q) => q.id === l.det); if (l.ok) n++;
         return h('li' + (l.ok ? '' : '.bad'), null, h('i.mission-route-n', null, l.ok ? String(n) : '!'),
           h('div.grow', null, h('b', null, d.room ? world.roomById(d.room).name : 'Debris field, outdoors'), h('span.tag.' + (d.status === 'confirmed' ? 'tag-person' : 'tag-warn'), null, d.status === 'confirmed' ? 'Person ' + (d.p * 100).toFixed(0) + ' %' : 'Possible ' + (d.p * 100).toFixed(0) + ' %'),
-            h('p', null, !l.ok ? 'No way to this stop: ' + l.reason : l.reached ? 'Walk in. ' + l.length.toFixed(0) + ' m from the stop before.' : 'Break through: the route ends at the wall, ' + l.gap.toFixed(1) + ' m from the person. ' + l.length.toFixed(0) + ' m from the stop before.')),
+            h('p', null, !l.ok ? 'Not routed yet: ' + l.reason : l.reached ? 'Walk in. ' + l.length.toFixed(0) + ' m from the stop before.' : 'Break through: the route ends at the wall, ' + l.gap.toFixed(1) + ' m from the person. ' + l.length.toFixed(0) + ' m from the stop before.')),
           h('div.mission-route-move', null, h('button.btn.btn-ghost.btn-sm.btn-icon', { disabled: i === 0, 'aria-label': 'Visit this stop earlier', onclick: () => reorder(order, i, -1) }, '↑'), h('button.btn.btn-ghost.btn-sm.btn-icon', { disabled: i === legs.length - 1, 'aria-label': 'Visit this stop later', onclick: () => reorder(order, i, 1) }, '↓'))); })),
       h('p.mission-sub', null, 'Suggested order: still people first, then moving people, then unconfirmed leads. It is a planning aid, not a medical assessment. Change it if you know better.'),
       h('h4', null, 'What the route goes around'),

@@ -1,21 +1,23 @@
 // The valley film (Demo mode): a flight down the real Bhote Koshi valley at first light, with the illustrative surge
-// from the same flood model the Advanced view uses running ahead of the camera, settling over the search block.
+// from the same flood model the Advanced view uses running ahead of the camera. It ends, and holds, on the broken block.
 //   Real data       elevation (Mapzen terrain tiles on AWS), imagery (Esri World Imagery), rivers and buildings (OpenStreetMap).
 //   Live algorithm  the flood reach (terrain.js), the sun's position, the terrain's shadow.
+//   Simulated       the search block, its damage, the dust and the light under the rubble (the exercise is invented).
 //   Drawn           tree sprites where the image is green, building heights (assumed), river bed cut 1 m so water shows, mist.
 import * as THREE from 'three';
 import { BLOCK, toUnit } from './geo.js';
 import { createStreamer, farDem } from './film-tiles.js';
-import { detailTexture, heightTextures, boxBlur, treeAtlas, extrude, rng } from './film-assets.js';
+import { detailTexture, heightTextures, boxBlur, treeAtlas, extrude, ruin, rng } from './film-assets.js';
 import * as G from './film-glsl.js';
 
 const EARTH = 40075016.686, lerp = (a, b, t) => a + (b - a) * t, clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const sm = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const smoother = (t) => t * t * t * (t * (t * 6 - 15) + 10);
 
-export const FILM = { surge: 15, base: 1.7, settle: 3.2, length: 72, flight: 31, orbitAt: 25, orbitDone: 35, dayStart: 452, dayEnd: 632 };
+export const FILM = { open: 1.2, surge: 15, base: 1.7, settle: 3.2, flight: 15, pushAt: 9, arrive: 18, still: 18.9, dayStart: 452, dayEnd: 500 };
 
 export function createFilm(host, { dem, model, osm, frame, SITE, BUILDING, OBSTACLES, siteCenter, path, joinAt, sunAt, onInfo = () => {}, onFail = () => {}, reduced = () => false }) {
+  const bornAt = performance.now();
   const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', stencil: false });
   renderer.autoClear = false; renderer.outputColorSpace = THREE.LinearSRGBColorSpace; renderer.info.autoReset = false;
   host.append(renderer.domElement); renderer.domElement.className = 'area-film-canvas'; renderer.domElement.tabIndex = 0; renderer.domElement.setAttribute('aria-label', 'Film flight over the real Bhote Koshi valley. Drag to look around, scroll to move closer.');
@@ -43,6 +45,11 @@ export function createFilm(host, { dem, model, osm, frame, SITE, BUILDING, OBSTA
     const soft = boxBlur(boxBlur(heights, n, 1), n, 1), m = new Float32Array(N2); for (const k of sCell) m[k] = 1;
     const w = boxBlur(boxBlur(m, n, 3), n, 3); for (let k = 0; k < N2; k++) if (w[k] > 0.004) { const t = Math.min(1, w[k] * 14); heights[k] += (soft[k] - heights[k]) * t; }
   }
+  { // the drawn school stands on a level pad, as a real one on a slope would: the ground under it is cut and filled (drawn, not data)
+    const a = xz(frame.ll([BUILDING.rect[0], BUILDING.rect[3]])), b = xz(frame.ll([BUILDING.rect[2], BUILDING.rect[1]])), at = (x, z) => heights[(((z - NZ) / cs) | 0) * n + (((x - NX) / cs) | 0)];
+    let s = 0; for (const x of [a[0], (a[0] + b[0]) / 2, b[0]]) for (const z of [a[1], (a[1] + b[1]) / 2, b[1]]) s += at(x, z); const pad = s / 9, i0 = ((a[0] - NX) / cs) | 0, j0 = ((a[1] - NZ) / cs) | 0;
+    for (let j = j0 - 8; j < j0 + 14; j++) for (let i = i0 - 8; i < i0 + 14; i++) { const x = NX + (i + 0.5) * cs, z = NZ + (j + 0.5) * cs, d = Math.hypot(Math.max(a[0] - x, 0, x - b[0]), Math.max(a[1] - z, 0, z - b[1])), k = j * n + i; heights[k] += (pad - heights[k]) * (1 - sm(12, 36, d)); }
+  }
   const bedRaw = new Float32Array(N2), mask = new Float32Array(N2), flX = new Float32Array(N2), flZ = new Float32Array(N2);
   const sdX = new Float32Array(sCell.length), sdZ = new Float32Array(sCell.length);
   for (let q = 0; q < sCell.length; q++) { let a = q, b = q; for (let g = 0; g < 8; g++) { if (a > 0 && sS[a - 1] < sS[a]) a--; if (b < sCell.length - 1 && sS[b + 1] > sS[b]) b++; } const dx = (sCell[b] % n) - (sCell[a] % n), dz = ((sCell[b] / n) | 0) - ((sCell[a] / n) | 0), l = Math.hypot(dx, dz) || 1; sdX[q] = dx / l; sdZ[q] = dz / l; }
@@ -66,7 +73,7 @@ export function createFilm(host, { dem, model, osm, frame, SITE, BUILDING, OBSTA
     uH: { value: near.h }, uFH: { value: zeroH }, uShadow: { value: null }, uDet: { value: det }, uFloor: { value: floorTex },
     uNB: { value: new THREE.Vector3(NX, NZ, size) }, uFB: { value: farB }, uSun: { value: new THREE.Vector3(0, 1, 0) }, uSunCol: { value: new THREE.Vector3() }, uSkyCol: { value: new THREE.Vector3() }, uHzCol: { value: new THREE.Vector3() }, uCam: { value: new THREE.Vector3() },
     uTime: { value: 0 }, uHasFar: { value: 0 }, uFront: { value: -9999 }, uSettle: { value: FILM.settle }, uBase: { value: FILM.base }, uSurgeH: { value: FILM.surge },
-    uInvVP: { value: new THREE.Matrix4() }, uRight: { value: new THREE.Vector3() }, uUp: { value: new THREE.Vector3() }, uFwd: { value: new THREE.Vector3() }, uFrame: { value: 0 },
+    uInvVP: { value: new THREE.Matrix4() }, uRight: { value: new THREE.Vector3() }, uUp: { value: new THREE.Vector3() }, uFwd: { value: new THREE.Vector3() }, uFrame: { value: 0 }, uGlow: { value: new THREE.Vector4(0, 0, 0, 0) },
   };
   const mat = (v, f, extra = {}, opt = {}) => new THREE.ShaderMaterial({ vertexShader: v, fragmentShader: f, uniforms: { ...U, ...extra }, ...opt });
   const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(46, 1, 4, 60000); scene.matrixAutoUpdate = false;
@@ -137,6 +144,10 @@ export function createFilm(host, { dem, model, osm, frame, SITE, BUILDING, OBSTA
   const sprayMat = mat(G.SPRAY_VERT, G.SPRAY_FRAG, { uFP: { value: fp }, uScale: { value: 800 }, uSprayOn: { value: 0 } }, { transparent: true, depthWrite: false });
   { const r = rng(3), P = 620, a = new Float32Array(P * 4); for (let i = 0; i < a.length; i++) a[i] = r(); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(P * 3), 3)); g.setAttribute('aR', new THREE.BufferAttribute(a, 4)); const o = new THREE.Points(g, sprayMat); o.frustumCulled = false; o.renderOrder = 8; scene.add(o); }
 
+  const dustMat = mat(G.DUST_VERT, G.SPRAY_FRAG, { uScale: sprayMat.uniforms.uScale, uDustOn: { value: 0 } }, { transparent: true, depthWrite: false });
+  { const r = rng(9), P = 130, a = new Float32Array(P * 4); for (let i = 0; i < a.length; i++) a[i] = r(); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(P * 3), 3)); g.setAttribute('aR', new THREE.BufferAttribute(a, 4)); const o = new THREE.Points(g, dustMat); o.frustumCulled = false; o.renderOrder = 9; scene.add(o); }
+  for (const [size, gain, test] of [[0.9, 7, true], [5.5, 0.10, false]]) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(3), 3)); const o = new THREE.Points(g, mat(G.GLOW_VERT, G.GLOW_FRAG, { uScale: sprayMat.uniforms.uScale, uGlowSize: { value: size }, uGlowGain: { value: gain } }, { transparent: true, depthWrite: false, depthTest: test, blending: THREE.AdditiveBlending })); o.frustumCulled = false; o.renderOrder = 10; scene.add(o); }
+
   // main-river seeds in order, for the front's position and the figures
   const seeds = []; for (let q = 0; q < sCell.length; q++) seeds.push(q); seeds.sort((a, b) => sS[a] - sS[b]);
   const joinLL = xz(osm.rivers.find((r) => r.main).g[0]);
@@ -148,11 +159,11 @@ export function createFilm(host, { dem, model, osm, frame, SITE, BUILDING, OBSTA
   // ------------------------------------------------------------------ buildings, the block, its boundary
   const bl = osm.buildings.filter((b) => { const [x, z] = xz(b.g[0]); return Math.hypot(x, z) > 78; }).map((b) => { const ring = b.g.map(xz); let base = 1e9, X = 0, Z = 0, hi = -1e9; for (const p of ring) { const y = ground(p[0], p[1]); base = Math.min(base, y); hi = Math.max(hi, y); X += p[0]; Z += p[1]; } let ar = 0; for (let i = 0; i < ring.length - 1; i++) ar += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1]; ar = Math.abs(ar / 2); const st = ar > 160 ? 3 : ar > 60 ? 2 : 1; return { ring, base: (base + hi) / 2, h: st * 3 + 0.6, id: b.id % 1e6, kind: 0 }; });
   const sPt = (p) => xz(frame.ll(p)), rc = (r) => [[r[0], r[1]], [r[2], r[1]], [r[2], r[3]], [r[0], r[3]]];
-  const block = [{ ring: rc(BUILDING.rect).map(sPt), h: BUILDING.wallHeight * 1.0, id: 11, kind: 1 }, ...OBSTACLES.filter((o) => o.kind === 'building').map((o, i) => ({ ring: o.poly.map(sPt), h: o.h, id: 31 + i, kind: 1 }))];
-  for (const b of block) { let s = 0; for (const p of b.ring) s += ground(p[0], p[1]); b.base = s / b.ring.length; }
-  const debris = []; { const r = rng(41); for (const o of OBSTACLES) if (o.kind === 'rubble') { const xs = o.poly.map((p) => p[0]), ys = o.poly.map((p) => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), in2 = (x, y) => { let c = false; for (let i = 0, j = o.poly.length - 1; i < o.poly.length; j = i++) { const a = o.poly[i], b = o.poly[j]; if ((a[1] > y) !== (b[1] > y) && x < ((b[0] - a[0]) * (y - a[1])) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
-    for (let q = 0; q < (x1 - x0) * (y1 - y0) * 1.1; q++) { const x = x0 + r() * (x1 - x0), y = y0 + r() * (y1 - y0); if (!in2(x, y)) continue; const a = r() * 3.14, L = 0.4 + r() * r() * 2.4, Wd = L * (0.3 + r() * 0.6), ring = [[-1, -1], [1, -1], [1 - r() * 0.5, 1], [-1, 1 - r() * 0.5]].map(([i, j]) => sPt([x + (i * Math.cos(a) * L - j * Math.sin(a) * Wd) * 0.5, y + (i * Math.sin(a) * L + j * Math.cos(a) * Wd) * 0.5])), c = sPt([x, y]); debris.push({ ring, base: ground(c[0], c[1]), h: 0.2 + r() * r() * 1.7, id: q + 77, kind: 1 }); } } }
-  const bGeo = extrude([...bl, ...block, ...debris]);
+  const block = [{ ring: rc(BUILDING.rect).map(sPt), h: BUILDING.wallHeight * 1.0, id: 11, kind: 1 }, ...OBSTACLES.filter((o) => o.kind === 'building' && o.id !== 'bldg-c').map((o, i) => ({ ring: o.poly.map(sPt), h: o.h, id: 31 + i, kind: 1 }))];
+  for (const b of block) { let s = 0, lo = 1e9; for (const p of b.ring) { const y = ground(p[0], p[1]); s += y; lo = Math.min(lo, y); } b.base = b.id === 11 ? s / b.ring.length : lo + 0.5; }   // on the slope, the other two are dug into the hill
+  const CAV = [80.6, 56.2], cavP = sPt(CAV); U.uGlow.value.set(cavP[0], block[0].base + 0.75, cavP[1], 0);
+  const broken = ruin({ rect: BUILDING.rect, h: BUILDING.wallHeight, base: block[0].base, to: sPt, hit: [79.5, 54], reach: 22, cavity: CAV, cuts: [53, 62, 66, 75].flatMap((x) => [[x, 30, x, 42], [x, 46, x, 58]]).concat([[44, 42, 84, 42], [44, 46, 84, 46]]) });
+  const bGeo = extrude([...bl, ...block.slice(1)], broken);
   add(bGeo, mat(G.BLD_VERT, G.BLD_FRAG, {}, { side: THREE.DoubleSide }), 0);
   const castMat = mat(G.CAST_VERT, G.CAST_FRAG, { uCast: { value: 0.5 } }, { transparent: true, depthWrite: false, side: THREE.DoubleSide, stencilWrite: true, stencilFunc: THREE.EqualStencilFunc, stencilRef: 0, stencilZPass: THREE.IncrementStencilOp });
   add(bGeo, castMat, 5);
@@ -225,28 +236,31 @@ export function createFilm(host, { dem, model, osm, frame, SITE, BUILDING, OBSTA
     const low = (x, z) => { let m = 1e9; for (let y = -60; y <= 60; y += 30) for (let w = -60; w <= 60; w += 30) m = Math.min(m, ground(x + w, z + y)); return m; };
     for (let i = 0; i < PN; i++) {
       const u = i / (PN - 1), d = lerp(d0, d1, u); const ah = lerp(3400, 560, sm(0.0, 0.40, u)); at(d, q); at(d + ah, a); chain[i] = d - joinAt;
-      const alt = lerp(lerp(1380, 150, sm(0.02, 0.44, u)), 185, sm(0.80, 1, u));
+      const alt = lerp(lerp(1380, 250, sm(0.02, 0.44, u)), 230, sm(0.80, 1, u));
       riv[i] = low(q[0], q[1]); pX[i] = q[0]; pZ[i] = q[1]; tX[i] = a[0]; tZ[i] = a[1]; tY[i] = low(a[0], a[1]) + lerp(420, 18, sm(0.0, 0.40, u));
       let top = -1e9; for (let y = -150; y <= 150; y += 30) for (let w = -150; w <= 150; w += 30) if (w * w + y * y < 150 * 150) top = Math.max(top, ground(q[0] + w, q[1] + y) + 42 - Math.hypot(w, y) * 0.62);
       raw[i] = Math.max(riv[i] + alt, top);
     }
     const blur = (src, w) => { const o = new Float32Array(PN); for (let i = 0; i < PN; i++) { let s = 0, c = 0; for (let k = -w; k <= w; k++) { const j = clamp(i + k, 0, PN - 1), g = 1 - Math.abs(k) / (w + 1); s += src[j] * g; c += g; } o[i] = s / c; } return o; };
     pY = blur(raw, 22); pX = blur(pX, 12); pZ = blur(pZ, 12); tX = blur(tX, 16); tY = blur(tY, 22); tZ = blur(tZ, 16);
-    for (let i = 0; i < PN; i++) pY[i] = Math.max(pY[i], ground(pX[i], pZ[i]) + 55);
+    for (let i = 0; i < PN; i++) pY[i] = Math.max(pY[i], ground(pX[i], pZ[i]) + 120);
   }
   const samp = (arr, f) => { const i = clamp(f | 0, 0, PN - 2), t = f - i, a = arr[Math.max(0, i - 1)], b = arr[i], c = arr[i + 1], d = arr[Math.min(PN - 1, i + 2)]; return 0.5 * (2 * b + (c - a) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (3 * b - a - 3 * c + d) * t * t * t); };
 
-  const P = new THREE.Vector3(), L = new THREE.Vector3(), O = new THREE.Vector3(), OT = new THREE.Vector3(10, 26, 70), UPV = new THREE.Vector3(), dir = new THREE.Vector3(), off = new THREE.Vector3(), frustum = new THREE.Frustum(), vp = new THREE.Matrix4(), tmp = new THREE.Vector3();
+  const P = new THREE.Vector3(), L = new THREE.Vector3(), O = new THREE.Vector3(), OT = new THREE.Vector3(16, 5, 2), UPV = new THREE.Vector3(), dir = new THREE.Vector3(), off = new THREE.Vector3(), frustum = new THREE.Frustum(), vp = new THREE.Matrix4(), tmp = new THREE.Vector3();
   const ctl = { yaw: 0, pitch: 0, zoom: 1, vy: 0, vp: 0, tYaw: 0, tPitch: 0, tZoom: 1, last: -1e9, roll: 0, cRoll: 0 };
-  let t = 0, running = false, raf = 0, last = 0, dead = false, startedAt = 0, frameNo = 0, lastInfo = 0, slow = 0, fast = 0, minutes = FILM.dayStart, wetHa = 0, lastSun = -1;
+  let t = FILM.open, running = false, raf = 0, last = 0, dead = false, startedAt = 0, frameNo = 0, lastInfo = 0, slow = 0, fast = 0, minutes = FILM.dayStart, wetHa = 0, lastSun = -1;
+  const END = { az: 2.78, r: 56, y: 21 };
+  let rate = 1, want = 1, dip = 1, dipTo = -1, firstAt = 0;
   const progress = (tt) => { const u = clamp(tt / FILM.flight, 0, 1); return u < 1 ? 0.5 * u + 0.5 * (u * u * (3 - 2 * u)) : 1; };
   function pose(tt) {
     const f = progress(tt) * (PN - 1.001);
     P.set(samp(pX, f), samp(pY, f), samp(pZ, f)); L.set(samp(tX, f), samp(tY, f), samp(tZ, f));
     const sway = Math.sin(tt * 0.33) * 26; P.x += sway * 0.8; P.z += sway * 0.25;
-    const k = smoother(clamp((tt - FILM.orbitAt) / (FILM.orbitDone - FILM.orbitAt), 0, 1)), hold = Math.max(0, tt - FILM.orbitAt);
-    const a = -2.62 - hold * 0.0120, r = lerp(400, 235, smoother(clamp((tt - 32) / 30, 0, 1))), hy = lerp(160, 74, smoother(clamp((tt - 32) / 30, 0, 1)));
-    O.set(Math.sin(a) * r, 0, Math.cos(a) * r); O.y = Math.max(hy, ground(O.x, O.z) + 60);
+    // the push-in: from the river course round to the uphill side of the block, then a hold with a slow sway
+    const k = smoother(clamp((tt - FILM.pushAt) / (FILM.arrive - 2 - FILM.pushAt), 0, 1)), e = smoother(clamp((tt - FILM.pushAt) / (FILM.arrive - FILM.pushAt), 0, 1)), hold = Math.max(0, tt - FILM.arrive);
+    const a = END.az - 0.5 * (1 - e) + 0.045 * Math.sin(hold * 0.11), r = lerp(330, END.r, e), hy = lerp(150, END.y, e);
+    O.set(OT.x + Math.sin(a) * r, 0, OT.z + Math.cos(a) * r); O.y = Math.max(hy, ground(O.x, O.z) + lerp(60, 7, e));
     P.lerp(O, k); L.lerp(OT, k);
     // the hand on the camera
     const idle = performance.now() - ctl.last > 5000; if (idle) { ctl.tYaw *= 0.985; ctl.tPitch *= 0.985; ctl.tZoom += (1 - ctl.tZoom) * 0.015; }
@@ -256,7 +270,7 @@ export function createFilm(host, { dem, model, osm, frame, SITE, BUILDING, OBSTA
       if (k > 0.5) P.set(L.x + Math.sin(az) * Math.cos(el) * l2, L.y + Math.sin(el) * l2, L.z + Math.cos(az) * Math.cos(el) * l2);
       else { const e2 = Math.atan2(off.y, flat) + ctl.pitch; L.set(P.x - Math.sin(az) * Math.cos(e2) * len, P.y - Math.sin(e2) * len, P.z - Math.cos(az) * Math.cos(e2) * len); }
     }
-    const g = ground(P.x, P.z) + 22; if (P.y < g) P.y = g;
+    const g = ground(P.x, P.z) + lerp(22, 8, k); if (P.y < g) P.y = g;
     // a gentle bank into the bends
     const f2 = Math.min(PN - 1.001, f + 6), h1 = Math.atan2(samp(tX, f) - samp(pX, f), samp(tZ, f) - samp(pZ, f)), h2 = Math.atan2(samp(tX, f2) - samp(pX, f2), samp(tZ, f2) - samp(pZ, f2));
     let bend = h2 - h1; if (bend > Math.PI) bend -= 2 * Math.PI; if (bend < -Math.PI) bend += 2 * Math.PI;
@@ -272,17 +286,20 @@ export function createFilm(host, { dem, model, osm, frame, SITE, BUILDING, OBSTA
   }
   function drive(tt) {
     U.uTime.value += 0; const k = pose(tt);
-    minutes = lerp(FILM.dayStart, FILM.dayEnd, smoother(clamp(tt / 30, 0, 1))); light(minutes);
+    minutes = lerp(FILM.dayStart, FILM.dayEnd, smoother(clamp(tt / FILM.arrive, 0, 1))); light(minutes);
     // the front runs ahead of the camera, then on down the valley past the block
-    const f = progress(tt) * (PN - 1.001), camS = samp(chain, f), lead = lerp(900, 560, sm(3, 14, tt)), past = Math.max(0, tt - (FILM.flight - 6)) * 118;
-    const front = tt < FILM.flight - 6 ? camS + lead : samp(chain, progress(FILM.flight - 6) * (PN - 1.001)) + lead + past; U.uFront.value = front - 2 + sm(0, 5, tt) * 2;
-    U.uSurgeH.value = lerp(FILM.surge, FILM.settle + 1, sm(FILM.orbitDone + 2, 60, tt)); U.uSettle.value = FILM.settle;
+    const f = progress(tt) * (PN - 1.001), camS = samp(chain, f), lead = lerp(lerp(900, 620, sm(2, 6, tt)), 1250, sm(6, 10, tt)), T1 = FILM.flight - 5;
+    // after T1 the front leaves the camera and passes the block a little before the camera arrives
+    const F1 = samp(chain, progress(T1) * (PN - 1.001)) + 1250, v = Math.max(118, (siteS - F1) / (FILM.arrive - 2.5 - T1)), front = tt < T1 ? camS + lead : F1 + (tt - T1) * v; U.uFront.value = front - 2 + sm(0, 5, tt) * 2;
+    U.uSurgeH.value = lerp(FILM.surge, FILM.settle + 1, sm(FILM.arrive + 6, 60, tt)); U.uSettle.value = FILM.settle;
     const c = atS(front), alive = front > -800 && front < model.sMax - 40 ? 1 : 0; sprayMat.uniforms.uSprayOn.value += (alive - sprayMat.uniforms.uSprayOn.value) * 0.1;
     for (let i = 0; i < 8; i++) { const q = atS(front - 8 - i * 11), k2 = sCell[q]; fp[i].set(NX + ((k2 % n) + 0.5) * cs, NZ + (((k2 / n) | 0) + 0.5) * cs, bed[k2] + Math.min(11, 3 + i * 3), Math.atan2(sdZ[q], sdX[q])); }
     void c;
-    lineMat.uniforms.uLine.value = sm(FILM.orbitAt + 5, FILM.orbitDone + 3, tt);
-    const fin = reduced() ? 1 : sm(0.1, 1.6, tt) * (1 - sm(FILM.length - 1.4, FILM.length - 0.1, tt)); finalMat.uniforms.uFade.value = fin;
-    finalMat.uniforms.uExposure.value = lerp(1.15, 0.80, sm(5, 18, tt)); airMat.uniforms.uMist.value = lerp(lerp(0.95, 0.17, sm(4, 11, tt)), 0.07, sm(22, 36, tt)); castMat.uniforms.uCast.value = 0.55 * sm(0.08, 0.3, U.uSun.value.y);
+    lineMat.uniforms.uLine.value = sm(10.5, 14, tt) * (1 - sm(13.6, 15.2, tt));
+    dustMat.uniforms.uDustOn.value = sm(12, 16, tt);
+    { const p = (c) => Math.exp(-(((tt - c) / 0.42) ** 2)); U.uGlow.value.w = 0.14 * sm(16.5, 18.2, tt) + 0.6 * (p(18.9) + p(20.7)); } // two pulses, then it stays faint
+    const fin = reduced() ? 1 : dip; finalMat.uniforms.uFade.value = fin;
+    finalMat.uniforms.uExposure.value = lerp(1.15, 1.5, sm(10, 17, tt)); airMat.uniforms.uMist.value = lerp(lerp(0.95, 0.17, sm(2.5, 7, tt)), 0.07, sm(9, 16, tt)); castMat.uniforms.uCast.value = 0.55 * sm(0.08, 0.3, U.uSun.value.y);
     return { k, front };
   }
   function cull() {
@@ -307,13 +324,17 @@ export function createFilm(host, { dem, model, osm, frame, SITE, BUILDING, OBSTA
     if (now - lastInfo > 240) { lastInfo = now; let c = 0; const { cells, rel, s } = model; void rel; const H1 = U.uSurgeH.value, S1 = FILM.settle, B0 = FILM.base, fr = r.front; for (let i = 0; i < cells.length; i++) { const k = cells[i], nd = need[k]; if (nd > FILM.surge) break; const x = fr - s[k]; const h = x < -14 ? B0 : B0 + sm(-14, 70, x) * (S1 - B0 + (H1 - S1) * Math.exp(-Math.max(x, 0) / 1500)); if (nd < h) c++; } wetHa = (Math.max(0, c - baseCount) * model.cellArea) / 1e4; info.ha = wetHa; }
     onInfo(info);
   }
-  function frameOnce() { if (dead || !main) return; if (reduced()) t = 58; const r = drive(t); draw(); report(performance.now(), r); }
+  function frameOnce() { if (dead || !main) return; if (reduced()) t = FILM.still; const r = drive(t); draw(); firstAt ||= performance.now(); report(performance.now(), r); }
   function tick(now) {
+    if (reduced()) { running = false; api.start(); return; }
     raf = requestAnimationFrame(tick);
-    const dt = Math.min(0.05, (now - last) / 1000); last = now; frameNo++; U.uFrame.value = frameNo % 64;
+    const dt = clamp((now - last) / 1000, 0, 0.05); last = now; frameNo++; U.uFrame.value = frameNo % 64;
     stream.upload(now, 3);
-    t += dt; U.uTime.value += dt; if (t > FILM.length) { t = 0; U.uFront.value = -9999; }
-    const r = drive(t); draw(); report(now, r);
+    // under the opening title the film only drifts; "Fly to the block" runs it fast to the end, or plays the push-in again
+    const calm = document.documentElement.dataset.intro ? (t < 3.5 ? 0.3 : 0.02) : want; rate += (calm - rate) * Math.min(1, dt * 3); if (t > FILM.arrive - 2.5) want = 1;
+    if (dipTo >= 0) { dip -= dt * 3.2; if (dip <= 0) { dip = 0; t = dipTo; dipTo = -1; } } else if (dip < 1) dip = Math.min(1, dip + dt * 2.4);
+    t += dt * rate; U.uTime.value += dt;
+    const r = drive(t); draw(); report(now, r); firstAt ||= performance.now();
     // adaptive sharpness: drop when frames run long, come back when there is room
     if (frameNo > 90) { if (dt > 0.0205) { slow++; fast = 0; } else { fast++; slow = Math.max(0, slow - 0.35); } if (slow > 26 && quality > 0.72) { quality *= 0.86; slow = 0; resize(); } }
   }
@@ -328,13 +349,15 @@ export function createFilm(host, { dem, model, osm, frame, SITE, BUILDING, OBSTA
   buildPath(); resize(); stream.start();
   const ro = new ResizeObserver(() => resize()); ro.observe(host);
   let still = 0;
-  return {
-    canvas: cv, renderer, seek(v) { t = v; }, get time() { return t; }, get quality() { return quality; }, stream, info,
+  const api = {
+    canvas: cv, renderer, END, OT, seek(v) { t = v; }, get time() { return t; }, get firstAt() { return firstAt; }, bornAt, get quality() { return quality; }, stream, info,
     start() { if (running || dead) return; resize();
-      if (reduced()) { clearInterval(still); still = setInterval(() => { stream.upload(performance.now(), 16); shadowRow = -1; frameOnce(); if (stream.idle) clearInterval(still); }, 350); return; }
+      clearInterval(still); if (reduced()) { still = setInterval(() => { stream.upload(performance.now(), 16); shadowRow = -1; frameOnce(); if (stream.idle) clearInterval(still); }, 350); return; }
       running = true; last = performance.now(); raf = requestAnimationFrame(tick); },
     stop() { running = false; cancelAnimationFrame(raf); clearInterval(still); },
-    restart() { t = 0; ctl.tYaw = ctl.tPitch = 0; ctl.tZoom = 1; },
-    resize, destroy() { dead = true; this.stop(); ro.disconnect(); stream.destroy(); renderer.dispose(); cv.remove(); },
+    restart() { want = 1; dipTo = FILM.open; ctl.tYaw = ctl.tPitch = 0; ctl.tZoom = 1; },
+    fly() { ctl.tYaw = ctl.tPitch = 0; ctl.tZoom = 1; if (t > FILM.arrive - 2.5) { want = 1; dipTo = FILM.pushAt + 0.6; } else want = t < FILM.pushAt ? 3 : 1; },
+    resize, destroy() { dead = true; this.stop(); ro.disconnect(); stream.destroy(); renderer.dispose(); renderer.forceContextLoss(); cv.remove(); },
   };
+  return api;
 }

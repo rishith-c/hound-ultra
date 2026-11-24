@@ -1,7 +1,7 @@
 // What a water level does to what is mapped: buildings in the water, road sections under water, buildings whose
-// road link to the valley's main road is cut, and the same counted per search sector.
+// road or path link south out of the mapped area is cut, and the same counted per search sector.
 // Inputs are real (OpenStreetMap buildings and roads, the elevation grid); the water level is the illustrative model.
-import { haversine } from './geo.js';
+import { BOUNDS, haversine } from './geo.js';
 
 export const CROSSING_CLEARANCE = 4;   // assumed: a road crossing the channel is lost once the water there is this deep (m)
 export const ROAD_DEPTH = 0.3;         // assumed: a road is impassable under this much water (m)
@@ -45,12 +45,11 @@ export function buildImpacts(dem, model, slope, osm, frame, SITE) {
     }
     if (way.edges.length) ways.push(way);
   }
-  // the way out: the southern end of the main road (NH42 runs down the valley towards Syabrubesi and Kathmandu)
-  let exit = -1;
-  for (const w of osm.roads) if (w.kind === 'primary' || w.kind === 'trunk') for (const p of w.g) { const i = nodeIdx.get(p[0] + ',' + p[1]); if (i != null && (exit < 0 || p[1] < nodes[exit][1])) exit = i; }
+  // the way out: every mapped road or path node within 250 m of the grid's south edge, down the valley. (The main road
+  // itself is a short unconnected piece in this OpenStreetMap extract, so it cannot be used as the exit.)
+  const exits = []; for (let i = 0; i < nodes.length; i++) if (nodes[i][1] < BOUNDS.south + 250 / frame.mLat) exits.push(i);
   const reachFrom = (dryOnly) => {
-    const seen = new Uint8Array(nodes.length); if (exit < 0) return seen;
-    const q = [exit]; seen[exit] = 1;
+    const seen = new Uint8Array(nodes.length), q = exits.slice(); for (const i of exits) seen[i] = 1;
     while (q.length) { const v = q.pop(); for (const ei of adj[v]) { const e = edges[ei]; if (dryOnly && e.wet) continue; const o = e.a === v ? e.b : e.a; if (!seen[o]) { seen[o] = 1; q.push(o); } } }
     return seen;
   };
@@ -101,5 +100,5 @@ export function buildImpacts(dem, model, slope, osm, frame, SITE) {
     for (let i = 0; i < model.cells.length; i++) { const sec = cellSector[i]; if (sec < 0) continue; const k = model.cells[i]; if (model.need[k] < levelAt(h, k)) sectors[sec].wetCells++; }
     return { wet, cut, changes, roadWet, cuts, cutFC: { type: 'FeatureCollection', features: lines } };
   }
-  return { sectors, buildings, linked, total: buildings.length, compute, sectorAt, roadCount: ways.length, hasExit: exit >= 0 };
+  return { sectors, buildings, linked, total: buildings.length, compute, sectorAt, roadCount: ways.length, hasExit: exits.length > 0 };
 }

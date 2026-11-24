@@ -1,0 +1,382 @@
+app/workspaces/mission/inspector.js:102: ) + (s.assumed ? 
+app/workspaces/mission/inspector.js:104: ) + (s.assumed ? 
+app/workspaces/mission/inspector.js:138: assumed design value
+app/workspaces/mission/inspector.js:145: , { title: LR[e.sensor]?.assumed === false ? 
+app/workspaces/mission/inspector.js:145: This weight is an assumed design value. The sensor has not been characterised yet.
+app/workspaces/mission/inspector.js:158: chance someone was missed
+app/workspaces/mission/inspector.js:160: chance a person is here (assumed start value)
+app/workspaces/mission/inspector.js:173: The 10 % starting value is assumed. Residual risk is computed from the same fusion weights as the leads.
+app/workspaces/mission/inspector.js:185: radio link. The link model (distance and walls) is assumed.
+app/workspaces/mission/inspector.js:220: . The rover stops here and listens for 10 seconds per window, because the network cannot listen while the wheels turn.
+app/workspaces/mission/inspector.js:254: That item does not exist at this point in the mission. Showing the live sensors instead.
+app/workspaces/mission/stepper.js:29:  still uncertain.
+app/workspaces/mission/alerts.js:120: at 1.1 m/s (assumed)
+app/workspaces/mission/alerts.js:132: . The planner counts that ground as slower and riskier, but does not block it.
+app/workspaces/mission/film.js:118: at 1.1 m/s, assumed
+app/workspaces/mission/film.js:179: ); set(t.w, it.s.assumed ? 
+app/workspaces/mission/index.js:64: The cost grid is what the route planner sees: red cannot be crossed, amber costs more.
+app/workspaces/mission/index.js:203: , e); app.twinFailed = true; twinHost.hidden = true; twinHost.replaceChildren(); viewSeg.children[0].title = 
+app/workspaces/mission/map2d.js:8: Chance someone was missed
+app/workspaces/sense/evalview.js:144:  windows is simulated: Blender-built people behind a wall in a Wi-Fi channel simulator. None was recorded with the rover, and the network has never been tested on real people.
+app/workspaces/sense/evalview.js:174: , which does not match the published 
+app/workspaces/sense/evalview.js:195: Empty rooms that raise a false alarm
+app/workspaces/sense/evalview.js:417:  false alarms
+app/workspaces/sense/evalview.js:445: false alarms
+app/workspaces/sense/story.js:175: ) }); // brackets under the axis: which rooms are right, which are false alarms const by = y0 + 4, upW = x0 + pw - xc, wide = upW > 96; if (cut > 0) add(
+app/workspaces/sense/story.js:411: The simulator adds the ESP32’s own faults: gain jumps, drift, noise, lost packets, jitter. Train the same network without them and it fails on the same 
+app/workspaces/sense/story.js:425: All of them are simulated. No real recordings exist yet.
+app/workspaces/sense/story.js:427:  false alarms
+app/workspaces/sense/story.js:438:  of the time: breathing is smaller than the ESP32’s own noise. So one Wi-Fi answer counts as weak evidence.
+app/workspaces/sense/story.js:444:  start and the radar and thermal ratios are assumed.
+app/workspaces/sense/story.js:452: All evidence here comes from simulation: Blender-built people in a channel simulator. No real recordings exist yet.
+app/workspaces/sense/index.js:28: Blender-built people in a Wi-Fi channel simulator. No window was recorded with the rover, and the network has never been tested on real people.
+app/workspaces/sense/hero.js:57: Wrong, a false alarm. 
+app/workspaces/sense/bench.js:46: Dim every part of the window that the answer does not depend on. From 323 re-runs of the network with one patch hidden each time.
+app/workspaces/sense/bench.js:154: False alarm.
+app/workspaces/sense/bench.js:154: A moving person was there. In simulation 13 % of moving people are missed.
+app/workspaces/sense/bench.js:154: A still person was there. This is the weak case: in simulation only 21 % of still people are found.
+app/workspaces/sense/bench.js:195: Wi-Fi window rejected: ${(emptyFrac * 100).toFixed(0)} % of its time bins are empty (limit 35 %).
+app/workspaces/sense/bench.js:209: False alarms
+app/workspaces/sense/bench.js:209: People missed
+app/workspaces/sense/bench.js:211: It misses most still people, as the full test predicts. 
+app/workspaces/fusion/ledger.js:18: Thermal cannot see through the wall
+app/workspaces/fusion/ledger.js:23: Measured on the 955 simulated test windows: the network says "person" for 326 of 685 person windows (47.6 %) and for 30 of 270 empty ones (11.1 %). 47.6 ÷ 11.1 = ×4.29.
+app/workspaces/fusion/ledger.js:24: Measured on the 955 simulated test windows: the network stays quiet for 52.4 % of person windows and 88.9 % of empty ones. 52.4 ÷ 88.9 = ×0.59. A quiet network is weak evidence, because it misses most still people.
+app/workspaces/fusion/ledger.js:25: Counts for nothing (×1). The Wi-Fi reading was not usable here, and the network never guesses.
+app/workspaces/fusion/ledger.js:26: Assumed design value ×6: a tracked moving target is taken to be six times more likely when a person is there. The radar has not been characterised yet.
+app/workspaces/fusion/ledger.js:27: Assumed ×0.7: no moving target lowers the chance a little. It cannot do more, because a still person would not show either.
+app/workspaces/fusion/ledger.js:29: Assumed ×3: small rhythmic motion in one range gate is what breathing looks like, but other slow movement can do the same.
+app/workspaces/fusion/ledger.js:30: Assumed ×0.8: no breathing-sized motion. Weak, because the presence radar only reaches about 4.5 m (assumed).
+app/workspaces/fusion/ledger.js:31: Assumed ×8: a warm shape in clear view. The strongest reading any sensor on the rover can give, but it needs a line of sight.
+app/workspaces/fusion/ledger.js:32: Assumed ×3: a warm edge partly hidden by furniture.
+app/workspaces/fusion/ledger.js:33: Assumed ×0.5: the camera had a clear view and saw no warm shape.
+app/workspaces/fusion/ledger.js:34: Counts for nothing (×1): the thermal camera could not see this spot, and fusion says so instead of guessing.
+app/workspaces/fusion/ledger.js:35: Assumed ×0.3: motion that repeats this steadily looks like a machine, not a person.
+app/workspaces/fusion/ledger.js:36: Assumed ×0.1: far hotter than skin (28 to 37 °C), so the heat is not a body.
+app/workspaces/fusion/ledger.js:37: Assumed ×6: the drone image detector marked a person-shaped object. The drone is a concept and this detection is simulated.
+app/workspaces/fusion/ledger.js:38: Assumed ×0.9: nothing person-shaped in the drone image. Weak, because rubble hides people from above.
+app/workspaces/fusion/ledger.js:39: Assumed ×7: tapping or a voice was heard.
+app/workspaces/fusion/ledger.js:40: Assumed ×0.9: nothing heard. Weak, because a hurt person may be silent.
+app/workspaces/fusion/ledger.js:41: Assumed ×0.02: a rescuer looked and found no one. In this exercise the team is simulated.
+app/workspaces/fusion/ledger.js:42: Assumed ×200: a rescuer on site saw the person. In this exercise the team is simulated.
+app/workspaces/fusion/ledger.js:70: , null, t.assumed ? 
+app/workspaces/fusion/ledger.js:85: Closing a lead at 15 % would still leave a real person behind about one time in seven. A second look costs time; a missed person costs far more. So closing needs less than 15 %, confirming needs 85 %, and everything between gets a
+app/workspaces/fusion/ledger.js:152: , null, SHORT[e.sensor] || LR[e.sensor]?.label || e.sensor), assumed ? h(
+app/workspaces/fusion/ledger.js:153: A design value, not a measurement. This sensor has not been characterised yet.
+app/workspaces/fusion/ledger.js:162: Chance someone was missed
+app/workspaces/fusion/ledger.js:227:  Nothing was measured here, so the number is the prior (assumed).
+app/workspaces/fusion/ledger.js:244: Assumed design value 
+app/workspaces/fusion/breathing.js:75: Wrong estimates land anywhere in the band
+app/workspaces/fusion/index.js:58: Limits and reliability
+app/workspaces/fusion/index.js:66: ); root.append(heroEl, head, leadView, limitsView); const parts = { lead: [createLedger(ledgerEl, ctx, api), createMap(mapEl, ctx, api), createInstruments(instEl, ctx, api)], limits: [createBreathing(breathEl, ctx), createMonteCar
+app/workspaces/fusion/index.js:108: , id: sel.id }; for (const p of parts.lead) p.dirty?.(); }), // The Limits view does not depend on the mission clock, so only the lead view is redrawn on a tick. ctx.bus.on(
+app/workspaces/fusion/hero.js:49: Weak signals, one answer
+app/workspaces/fusion/hero.js:115: starting chance assumed
+app/workspaces/fusion/hero.js:118: Wi-Fi alone missed it 
+app/workspaces/fusion/hero.js:121:  + (st.assumed ? 
+app/workspaces/fusion/montecarlo.js:43: , runs: n }); } catch { inline(n, t0); } } // If a worker cannot start, run on the page instead (slower to respond, same result). async function inline(n, t0) { try { const { monteCarlo } = await import(
+app/workspaces/fusion/montecarlo.js:59:  people were missed
+app/workspaces/fusion/montecarlo.js:59: nobody was missed
+app/workspaces/fusion/montecarlo.js:80: One mission is one story. The Wi-Fi network misses most still people, so the same search can go differently each time. This runs the whole mission again and again, each time drawing a random held-out test window at every stop, and
+app/workspaces/fusion/montecarlo.js:84: never raised, or wrongly closed. This is the failure that matters.
+app/workspaces/fusion/montecarlo.js:85: People and decoys stay where they are in every run; radar and thermal likelihoods are assumed. So this measures how the fusion logic copes with an unreliable network in this scenario, not how the rover would do in a real building.
+app/workspaces/fusion/montecarlo.js:99: Wilson 95 % interval for the true rate of missing this person, given 
+app/workspaces/fusion/montecarlo.js:103: the fan, the hot pipe, or a false alarm
+app/workspaces/fusion/montecarlo.js:109: wrongly confirmed: 
+app/workspaces/fusion/instruments.js:20: 24 GHz, reach 6 m (assumed)
+app/workspaces/fusion/instruments.js:106: Field drawn toward the target: the simulator does not model where the radar points.
+app/workspaces/fusion/instruments.js:184:  and aim assumed.
+app/workspaces/fusion/map.js:9: chance missed
+app/workspaces/fusion/map.js:19: Probability map: where a person may be, or was missed
+app/workspaces/fusion/map.js:224: chance someone was missed
+app/workspaces/fusion/map.js:224: prior, nothing measured (assumed)
+app/workspaces/report/paper.js:27:  + (c.info ? (c.assumed ? 
+app/workspaces/report/paper.js:30: >' + chart + '<span>Running probability. Lines at ' + pct(R.thresholds.possible) + ' (possible) and ' + pct(R.thresholds.confirmed) + ' (confirmed). A repeat reading from the same place counts at half weight (assumed).</span></div
+app/workspaces/report/paper.js:36: ; else if (a.failed) reach = 
+app/workspaces/report/paper.js:85: One block per person located and per lead that is still open, numbered in the order they were first sensed. Positions are sensor estimates with their uncertainty. 
+app/workspaces/report/paper.js:94: >(×' + d.lr.toFixed(2) + (d.assumed ? ', assumed' : ', measured') + ')</span>').join('<br>') : 'Operator decision') + '</td><td class=
+app/workspaces/report/paper.js:100: <div class="report-callout report-callout-ok"><b>Every room was listened to from at least one stop.</b> That is not the same as cleared: the sensors reached only part of most rooms, and a still person is easy to miss (section 8).<
+app/workspaces/report/paper.js:101: Worst first. Residual risk is the chance that a room holds a person the search missed.
+app/workspaces/report/paper.js:102:  chance of holding a person (assumed). For the part of a room the sensors reached, that chance is lowered by the negative readings; for the part they did not reach it stays at 
+app/workspaces/report/paper.js:102: . Only the Wi-Fi likelihood is measured (on simulated test windows). The prior and the radar and thermal likelihoods are assumed design values, so read these percentages as a ranking, not as measured risk.</p>
+app/workspaces/report/paper.js:103: <th>Room</th><th>Status</th><th>Sensor reach</th><th>Chance someone was missed</th><th>Note</th>
+app/workspaces/report/paper.js:106: >Does not apply</span>' : bar(c.residual, c.status === 'lead' ? 'warn' : 'danger') + '<span class=
+app/workspaces/report/paper.js:147: >Faults are injected on purpose from System check. They are drills on a simulated rover, not failures of real hardware.</p>'); } // ----- 8 limits ----- push(h2('s8', '8', 'Limits of the sensing', '') + '<div class=
+app/workspaces/report/paper.js:153: <div class="report-limit-figs">
+app/workspaces/report/paper.js:154: <ol class="report-limit-list">
+app/workspaces/report/plan.js:219: Person located (dashed ring: position uncertainty)
+app/workspaces/report/index.js:68: Detections with every fusion step, coverage, routes, hazards, all events, faults, the command log and the limits. Ground truth is not in it.
+app/workspaces/report/marking.js:76: Not assessed. The mission data cannot set a worksite triage category.
+app/workspaces/report/hero.js:18: What the sensors cannot promise, and who approved what.
+app/workspaces/report/model.js:19:  }; // The sensing limits, word for word from docs/FACTS.md. Static on purpose: they do not change with the mission. export const LIMITS = { figures: [ { v: 
+app/workspaces/report/model.js:26: An empty room raises a false alarm
+app/workspaces/report/model.js:27: no real recordings exist yet
+app/workspaces/report/model.js:30: The Wi-Fi network was trained and tested only on simulated people: 955 held-out simulated test windows, split by person. No real recordings exist yet. It has not been tested on real people.
+app/workspaces/report/model.js:31: A still person is the weak case.
+app/workspaces/report/model.js:31: The network alone finds a still person 21.4 % of the time in simulation, against 86.9 % for a moving person. A room marked clear can still hold someone lying still. This is why the rover also uses radar and thermal, takes a second
+app/workspaces/report/model.js:32: False alarms happen.
+app/workspaces/report/model.js:32: In simulation the network calls 11.1 % of empty rooms a person. Leads that other sensors did not support are listed in section 3 so the team can see why they were closed.
+app/workspaces/report/model.js:34: Wi-Fi cannot give direction.
+app/workspaces/report/model.js:34: Wi-Fi amplitude cannot say left, centre or right (30.1 % where chance is 33 %). Positions in this report come from the radar, the thermal camera or the drone image, with the uncertainty shown.
+app/workspaces/report/model.js:35: Radar, thermal and drone likelihoods are assumed.
+app/workspaces/report/model.js:108:  ? nearestWall(leg.access) : null; access = { n: leg.n, kind: leg.kind, length: leg.length, point: leg.access, gap: leg.gap || 0, arrivedAt: leg.arrivedAt ?? null, wall, fromRoom: world.roomAt(leg.access)?.name || null }; } else i
+app/workspaces/report/model.js:136:  sure). Others in the same room cannot be ruled out.
+app/workspaces/report/model.js:246: Highest chance of a miss
+app/workspaces/report/model.js:277: Limits of the sensing
+app/workspaces/report/markdown.js:34: , c.info ? (c.assumed ? 
+app/workspaces/report/markdown.js:39:  + d.lr.toFixed(2) + (d.assumed ? 
+app/workspaces/report/markdown.js:43: Chance someone was missed
+app/workspaces/structure/film.js:33: Weak ties assumed; seed chosen by search. Not an engineering assessment.
+app/workspaces/structure/film.js:160: One shore does not help here: still 
+app/workspaces/structure/film.js:164:  g, assumed. 
+app/workspaces/structure/index.js:59: Which supports fail
+app/workspaces/structure/index.js:61: Fail the supports
+app/workspaces/structure/index.js:77: Kinetic energy of the pile since the supports failed
+app/workspaces/structure/index.js:209: Fail the supports
+app/workspaces/structure/index.js:231: Cannot shore here
+app/workspaces/structure/index.js:270: The bay is still standing. Press “Fail the supports” to collapse it.
+app/workspaces/structure/index.js:276:  in all. Fail a line of supports and rigid-body physics decides where every piece lands.
+app/workspaces/structure/index.js:278: What is about to fail
+app/workspaces/structure/index.js:278: pins that break on a hard impact (assumed)
+app/workspaces/structure/index.js:322: person-sized: a 50 cm sphere fits and the pocket is over 0.3 m³ (assumed)
+app/workspaces/structure/index.js:361: What is still overhead is standing frame. It cannot be lifted off; go in from the side.
+app/workspaces/structure/index.js:424: Part of the frame that is assumed to stand. It is held fixed in this model and cannot be lifted.
+app/workspaces/structure/index.js:463: An aftershock does not ask first. The settled pile is copied 
+app/workspaces/structure/index.js:485: almost all of it. Aftershock ground motion at one address cannot be predicted, so this is a what-if, and the tremor here is two sine waves, not a recorded earthquake.
+app/workspaces/structure/index.js:519: here each shore is rigid and anchored and never fails; the page only compares the load it carries with the guide’s rated working load. Real shores are built to a pattern by trained crews and are checked by a structures specialist.
+app/workspaces/structure/index.js:540: A vine robot grows from its tip like a plant; a snake robot crawls on sixteen joints. The planner floods the pile’s air from every open face at once, under each robot’s own limits, and reports which voids each could reach and by w
+app/workspaces/structure/index.js:554: no way in within its limits
+app/workspaces/structure/charts.js:40: ; c.fillRect(X(0), Y(max), X(0.3) - X(0), Y(0.25) - Y(max)); // a person fits, a rescuer cannot walk in label(c, p, 
+app/workspaces/structure/robots.js:6: Body 8 cm across (assumed); passes a 10 cm gap
+app/workspaces/structure/robots.js:6: Bends no tighter than about 13 cm radius: at most 45° per 10 cm of growth (assumed)
+app/workspaces/structure/robots.js:6: 12 m of body on the reel (assumed)
+app/workspaces/structure/robots.js:8: Needs a surface under it or a gap narrow enough to brace in; bridges at most 30 cm of open air (assumed)
+app/workspaces/structure/robots.js:8: 6 m tether (assumed)
+app/workspaces/structure/robots.js:10: Wheels on a surface the whole way; cannot climb a 10 cm step in this model
+app/workspaces/structure/physics.js:68: ; // columns: two segments each when the line fails (it breaks there), one fixed piece when it stands for (let s = 0; s < 2; s++) for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { const yb = s * STOREY, name = 
+app/workspaces/structure/physics.js:73: , name, level: s, density: RHO.concrete, p: [xs[i], yb + HC / 2, zs[j]], boxes: [{ o: [0, 0, 0], h: [COL / 2, HC / 2, COL / 2] }], meta: { i, j, s } }); else { // a ground-storey column on the failed line bursts at mid-height: a s
+app/workspaces/structure/physics.js:99:  && j === failLine) continue; // the connection at the failed line is what failed const moment = scenario === 
+app/workspaces/structure/physics.js:114:  ? bay.j === failLine : (failLine === 1 || bay.j === (failLine === 0 ? 0 : 1))); if (rnd() > (s ? 0.4 : 0.62) || hit) continue; // no infill where the frame is about to fail: a wall there would prop it const yb = s * STOREY, T = 0
+app/workspaces/horizon/dive.js:18: Illustrative water on real terrain. Not a forecast.
+app/workspaces/horizon/index.js:5: ; const { h, icon, realityTag, tokens, rgba, text, TAU, clamp } = lib; // Order here does not matter; exhibits are sorted by readiness once loaded. A missing or broken file is skipped. const FILES = [
+app/workspaces/horizon/index.js:39: Reload the page. If this stays, the exhibit files are missing.
+app/workspaces/horizon/index.js:58: The hardware. HOUND does not have it.
+app/workspaces/horizon/exhibits/legged.js:105: ); sA.set(L.pct(S.w.f)); sB.set(L.pct(S.l.f)); sC.set(L.pct(S.wrongW, 1)); sD.set(L.pct(S.wrongL, 1)); sE.set(S.bl + 
+app/workspaces/horizon/exhibits/legged.js:106:  can reach on the sensed map. Wheel step limit 3 cm and leg limits assumed.
+app/workspaces/horizon/exhibits/smell.js:120: A smell does not need a line of sight or a sound: it seeps through gaps that block a camera, and it is there while a person is unconscious, as long as they breathe.
+app/workspaces/horizon/exhibits/smell.js:319: wrong: the truth is 
+app/workspaces/horizon/exhibits/smell.js:374: guessing: 5 %
+app/workspaces/horizon/exhibits/smell.js:391:  m, 5 % false alarms
+app/workspaces/horizon/exhibits/smell.js:394:  %): the honest hard case
+app/workspaces/horizon/exhibits/smell.js:398: Each dot is one held-out sniff, placed by the two strongest patterns in the seven readings; rings are the ones it got wrong. Shading is the answer on this plane.
+app/workspaces/horizon/exhibits/smell.js:401: 220 simulated people at each distance against 1,500 decoys and empty voids, at this airflow, time and noise. The threshold lets 5 % of the decoys through.
+app/workspaces/horizon/exhibits/atoms.js:51: Weaker fields stop splitting the line
+app/workspaces/horizon/exhibits/insects.js:199: How well any of this works in a real collapse. The published tests are in laboratory arenas; the 2025 field use found no one. Here the walking speed, the sensor range and the position drift are assumed, and the pile is a flat cros
+app/workspaces/horizon/exhibits/insects.js:360: Heat sensor range (assumed)
+app/workspaces/horizon/exhibits/earthfm.js:48: NASA and IBM published one, Prithvi, in 2023; here a tiny stand-in does the same job on this valley, so you can see what the input is, what comes out, and exactly where it goes wrong.
+app/workspaces/horizon/exhibits/earthfm.js:50: A cloud-free look at the right moment, or a radar pass instead. Floods come with cloud, and an optical image cannot see through it; deep valleys add shadow that reads like water.
+app/workspaces/horizon/exhibits/earthfm.js:62: What is still weak
+app/workspaces/horizon/exhibits/earthfm.js:101: cannot see water
+app/workspaces/horizon/exhibits/earthfm.js:170: The flood is illustrative: not a forecast, not a reconstruction.
+app/workspaces/horizon/exhibits/seeds.js:131: How they fall between buildings: the published tests were over open ground, and this simulation has no building wakes. How many survive rubble, mud and shade is assumed here, not measured. Nobody has shown that a temperature map o
+app/workspaces/horizon/exhibits/seeds.js:249: failed or on a roof
+app/workspaces/horizon/exhibits/seeds.js:329:  drops per size; band: middle 80 %; dashed: no seeds, one flat guess). At 160 seeds the hot spot is placed within 8 m in 
+app/workspaces/horizon/exhibits/seeds.js:335: , null, b))))); const assumed = L.h(
+app/workspaces/horizon/exhibits/seeds.js:336: Assumed in this simulation: fall speeds spread by 12 %; gusts of 22 % and turbulence of 15 % of the wind; wind rising with height to the power 0.2; 80 % of seeds in shade and 40 % in rubble fail; a wall in the way halves the radio
+app/workspaces/horizon/exhibits/seeds.js:348: ), dead = cnt(
+app/workspaces/horizon/exhibits/seeds.js:351: Where the rebuilt map is wrong: 
+app/workspaces/horizon/exhibits/laser.js:133: A clear line of sight to skin, or to a surface that moves with the person. A steady platform: here a tripod works and a hovering drone does not. Tens of seconds on one spot. Dust, smoke, heavy clothing and a person who shifts all 
+app/workspaces/horizon/exhibits/laser.js:134: Nobody has shown this through a rubble pile, and light does not pass through concrete. Whether a slab that a person lies against moves enough to measure is our speculation: the 0.03 µm used here is a guess, and published work is o
+app/workspaces/horizon/exhibits/laser.js:368:  µm (assumed)
+app/workspaces/horizon/exhibits/laser.js:371: The instrument measures its own shaking too, and a shaking beam drags the spot across the surface. The four names are assumed levels.
+app/workspaces/horizon/exhibits/phones.js:20: Enough passing phones turn a crowd of rescuers and neighbours into one large antenna, and the pattern of strong and weak whispers points to where to dig.
+app/workspaces/horizon/exhibits/phones.js:22: Phones that keep whispering when their owner cannot touch them, a battery that lasts, consent built in from the start, and rubble dry and open enough to let 2.4 GHz out.
+app/workspaces/horizon/exhibits/phones.js:85:  dB a metre, assumed). Blue glow: where the estimate puts a phone. The estimate is told the true loss rate, which a real search would not know.
+app/workspaces/horizon/exhibits/phones.js:86: Dashed: the assumed loss for 0.5, 2 and 4 m of cover.
+app/workspaces/horizon/exhibits/phones.js:91: Rubble loss (assumed)
+app/workspaces/horizon/exhibits/insar.js:175: , dot: false }); L.scaleBar(g, x0 + 12, y0 + side - 12, px / W.cs, { metres: 1000 }); // key under the map: colour scale, look direction, what the radar cannot see const ky = y0 + side + 28, kx = x0, kw = Math.min(150, side * 0.26
+app/workspaces/horizon/exhibits/insar.js:231: The ground shift, the blocks and the damage are invented; no real event is shown.
+app/workspaces/horizon/exhibits/insar.js:233: Scatterer motion, noise and air delay are assumed. Atmosphere and unwrapping mistakes are the error. Raise the delay, or switch to X band, to watch it fail.
+app/workspaces/horizon/exhibits/insar.js:234:  false alarm
+app/workspaces/horizon/exhibits/corners.js:446: Counts at each scan point that did not come from the pulse. Assumed.
+app/workspaces/horizon/exhibits/passive.js:54: A transmitter still on the air after the disaster, a clean copy of its signal, and enough rejection that the direct signal does not bury echoes thousands of times weaker.
+app/workspaces/forge/ex-clean.js:3: ; import { pct, plotter, paintWindow, src, honest, method, sources, block, kindMatrix, slider, seg, KIND } from 
+app/workspaces/forge/ex-clean.js:51: The network has only ever seen simulated people, so the simulator is the teacher. This is the design decision the project rests on: the simulator must reproduce the cheap receiver’s faults, or the network learns a world that does 
+app/workspaces/forge/ex-clean.js:56: Both networks have the same 23,372 weights and training code; only the training data differs. Each uses its own threshold, set for 10 % false alarms on its own validation data (
+app/workspaces/forge/index.js:13: Knowing when it does not know
+app/workspaces/forge/index.js:15: false alarms if trained clean
+app/workspaces/forge/index.js:32: HOUND’s real 23,372-weight Wi-Fi network on the bench: train it from noise in this page, shrink it for a microcontroller, and measure when it does not know.
+app/workspaces/forge/ex-int8.js:102: The run failed: 
+app/workspaces/forge/ex-train.js:2: ; import { tok, pct, fmtInt, kindMatrix, byKind, ratesOf, thresholdAt, plotter, paint, signed, src, honest, method, sources, block, raf, seg } from 
+app/workspaces/forge/ex-train.js:48: People found on the validation windows, at 10 % false alarms
+app/workspaces/forge/ex-train.js:57:  test windows from people neither network trained on. Each network uses its own threshold (10 % false alarms on validation).
+app/workspaces/forge/ex-train.js:193: . That is too large: something is wrong.
+app/workspaces/forge/ex-prune.js:39: Global magnitude pruning of the six weight matrices (biases kept), no retraining for the solid curves. For each level the PERSON threshold is set again on validation (10 % false alarms), as the project does, then the level is scor
+app/workspaces/forge/ex-prune.js:59:  (cut only: the page does not retrain).
+app/workspaces/forge/ex-spike.js:46: , null, honest(
+app/workspaces/forge/ex-doubt.js:113: False alarms
+app/workspaces/forge/ex-doubt.js:117: Knowing when it does not know
+app/workspaces/forge/ex-doubt.js:118: A detector that is wrong should at least say “I am not sure”. Three tools from the research on trustworthy machine learning, each fitted on the validation windows and then checked on the 955 test windows it never saw.
+app/workspaces/forge/lib/ui.js:19: A gentle introduction to conformal prediction and distribution-free uncertainty quantification
+app/workspaces/forge/lib/pool.js:3: ; export function createPool(dec, size) { const n = size || Math.max(1, Math.min(8, (navigator.hardwareConcurrency || 4) - 2)); const workers = [], pending = new Map(); let seq = 0, dead = false; for (let i = 0; i < n; i++) { cons
+app/workspaces/forge/lib/corrupt.js:7: Dead subcarriers
+app/workspaces/forge/lib/corrupt.js:8: Missed gain step
+app/workspaces/area/film-tiles.js:27:  }); } renderer.resetState(); return m; } function pump() { while (!dead && active < 14 && queue.length) { const job = queue.shift(); active++; fetch(job.url, { mode: 
+app/workspaces/area/terrain.js:4: s method). // floodModel() an illustrative flood on the real terrain. NOT a forecast and NOT a reconstruction. // shadowGrid() which cells the terrain shades for a given sun position. // horizonAt() the terrain horizon seen from o
+app/workspaces/area/impacts.js:4: ; export const CROSSING_CLEARANCE = 4; // assumed: a road crossing the channel is lost once the water there is this deep (m) export const ROAD_DEPTH = 0.3; // assumed: a road is impassable under this much water (m) const ROAD_WORD
+app/workspaces/area/index.js:14: ; document.head.append(l); } const SURGE = { height: 15, speed: 600, front: 260, tail: 1900 }; // metres, metres per second on screen (assumed, sped up) const MODE_WORDS = { idle: 
+app/workspaces/area/index.js:41: The saved OpenStreetMap extract for Timure is missing. Reload the page to try again.
+app/workspaces/area/index.js:62: , fail: null }; // slope shading is painted once: amber from 25 degrees, orange from 35, red from 45 { const c = M.canvases.slope.getContext(
+app/workspaces/area/index.js:147: An illustrative simulation on the real terrain. Not a forecast, and not a reconstruction of the real event.
+app/workspaces/area/index.js:154: How this is worked out, and its limits
+app/workspaces/area/index.js:156: Limits: the elevation data is about 30 m wide per measurement, so the channel, embankments and buildings are not resolved. There is no flow, no time and no debris in this model. A road is counted as under water at 
+app/workspaces/area/index.js:156:  m (both assumed). A building is “cut off” when its nearest mapped road or path could reach the south edge of this grid, and no longer can. Only 
+app/workspaces/area/index.js:157:  m wave with an assumed shape, moved at 
+app/workspaces/area/index.js:184: Flood water (illustrative model)
+app/workspaces/area/index.js:438:  && !silent) { S.fail = null; el.banner.hidden = true; } S.view.resize(); pushAll(); credit(); if (cam) S.view.easeTo(kind === 
+app/workspaces/area/index.js:440:  ? { ...M.home, center: cam.center, zoom: cam.zoom } : cam, 0); if (S.shown) { S.view.start(); syncAnimation(); } S.switching = false; } async function fallBack(why) { S.fail = why; el.banner.replaceChildren(icon(
+app/workspaces/area/index.js:449: ) { const dead = views.map; S.view = null; views.map = null; dead.destroy(); mapHost.replaceChildren(); } S.switching = false; await useView(
+app/workspaces/area/demo.js:14: A flood has hit a mountain village. Rescuers cannot see inside the buildings.
+app/workspaces/area/demo.js:19: Timure, Nepal, from real elevation and satellite imagery. The water is illustrative, not a forecast or a reconstruction.
+app/workspaces/area/map.js:41: This browser cannot draw the 3-D map (no WebGL).
+app/workspaces/area/map.js:114:  && seen[id].ok === 0 && seen[id].bad >= 6) { failed = true; onFail(id === 
+app/workspaces/radio/fresnel.js:7: Not yet tried on a real person
+app/workspaces/radio/fresnel.js:11: HOUND cannot move the person, so it moves itself. Its mecanum wheels slide the receiver sideways 3.1 cm at a time, a quarter of a wavelength, until one stop brings the breathing out.
+app/workspaces/radio/fresnel.js:187: For this person no stop is enough: the echo is too weak
+app/workspaces/radio/fdtd.js:14: ; const EPS0 = 8.8541878128e-12, S = 0.6; export const BODY_EPS = 50, BODY_SIGMA = 1.7; // assumed: water-like tissue at 2.4 GHz const VERT = 
+app/workspaces/radio/rf.js:13: ; const K0 = (2 * Math.PI) / LAMBDA, EPS0 = 8.8541878128e-12, FGHZ = F0 / 1e9; export const FRIIS = LAMBDA / (4 * Math.PI); // amplitude at 1 m between unit-gain antennas export const RUBBLE_DB_PER_M = 6; // assumed export const M
+app/workspaces/radio/index.js:41: HOUND has two ESP32 radios and three small radars. Ray-traced planning, imaging radar on a track, reflecting surfaces and 802.11bf are not built.
+app/workspaces/radio/index.js:55: , null, meta.honest), meta.unknown ? h(
+app/workspaces/radio/twin.js:13: HOUND Command does not plan with a ray tracer today. This exhibit shows what one would give it.
+app/workspaces/radio/twin.js:340: Loss at head-on incidence, from the slab equations with ITU-R P.2040-4 permittivity. Thicknesses are assumed. Rubble: 
+app/workspaces/radio/twin.js:340:  dB per metre, assumed.
+app/workspaces/radio/bf.js:4: s own inverse FFT. // Frame and phase names follow the overview paper (Du et al.); the final standard text was not read. No frame fields // or timings are shown: the time axis is illustrative. import { C0, F0, DF, SUB, SUB_SORTED,
+app/workspaces/radio/bf.js:7: ; const TAU = Math.PI * 2; const ECHO = 0.5, SNR_DB = 25, NFFT = 65536; // assumed: echo at half the direct amplitude, 25 dB SNR per subcarrier const CSI_SNR_DB = 28, WALK = 0.5, STEP_S = 0.1; // assumed: CSI noise, walking speed 
+app/workspaces/radio/bf.js:19: one channel in the bands above 45 GHz, per the overview; carrier assumed 60.48 GHz here
+app/workspaces/radio/bf.js:201: Phase and frame names follow the overview paper (Du et al.); the final standard text was not read. Timing is illustrative, not from the standard: the overview says only that a short interframe space (SIFS) separates the frames.
+app/workspaces/radio/bf.js:222: The echo’s phase turns once for every wavelength of extra path. Near the limit, whether two peaks show depends on it: counted over 16 phases, noise-free, closed form.
+app/workspaces/radio/bf.js:228:  m, so it cannot tell echoes apart by distance. Its network reads how the channel changes over time instead.
+app/workspaces/radio/sar.js:196: Spacing limit λ / 4
+app/workspaces/radio/sar.js:207: Assumed in this simulation
+app/workspaces/radio/sar.js:209: Reflectors are points; echoes fall as 1 / R². Bending of the rays inside the slab is ignored. Rover positions are exact, which a real rover cannot promise.
+app/workspaces/radio/person.js:18: ml/simulate_csi.py and ml/csi_window.py: the channel simulator and windowing the network was trained with. Measured on 955 simulated test windows: moving person found 86.9 %, still person 21.4 %
+app/workspaces/radio/person.js:299: False alarm: the room is empty.
+app/workspaces/radio/person.js:304: Every one of those is a false alarm.
+app/workspaces/radio/person.js:308: false alarms
+app/workspaces/radio/lab.js:155: [radio] frame failed
+app/workspaces/radio/ris.js:260: The panel must see both the transmitter and the rover, and a controller must know where both are to set the phases. A 64-element panel is a weak mirror, as the link budget below shows.
+app/workspaces/radio/ris.js:278: Plan view, one row of elements half a wavelength apart. The rubble is a thin opaque screen with one slit (Kirchhoff physical optics), so the gap diffracts; reflections off rubble and floor are left out. The direct wave also leaks 
+app/workspaces/radio/ris.js:301: Assumed loss of the direct path where it crosses the rubble
+app/workspaces/radio/ris.js:311: What reaches the rover without the surface: the leak through the rubble at the assumed loss, plus what diffracts through the gap
+app/workspaces/radio/ris.js:320: Path gain between antennas of unit gain. Assumed: element size λ/2 by λ/2, unit element gain. λ = 
+app/workspaces/radio/ris.js:341:  dB of rubble assumed).
+app/workspaces/radio/sparse.js:13: It works until it does not: with too few samples, too many reflectors, or a model that is slightly wrong, the answer falls apart quickly.
+app/workspaces/radio/sparse.js:21: The scene must really be a few point reflectors, and the model of the wall, the rover positions and the frequencies must be exact. Neither holds in a collapsed room. It also needs the same coherent wideband radar and millimetre od
+app/workspaces/radio/sparse.js:157: Off the grid, no column of A matches a reflector. At 3 GHz a range error of 2.5 cm is a quarter turn of phase, so the nearest pixel fits badly and the solver spreads the echo over many wrong pixels.
+app/workspaces/radio/sparse.js:178: Assumed in this simulation
+app/workspaces/radio/sparse.js:205: L1 does not hold at any share for this scene
+app/workspaces/radio/sparse.js:205:  % of the samples, then fails
+app/workspaces/rover/materials.js:90: rover: merge failed in 
+app/workspaces/rover/facts.js:4: Tracks a moving person: x, y and speed. It gives the position that Wi-Fi strength cannot.
+app/workspaces/rover/facts.js:19: Routed from the photograph where it can be seen, simplified where it cannot.
+app/workspaces/rover/advanced.js:55: s own mixing, ramp and limits const D = { t: [0, 0, 0], c: [0, 0, 0], w: [0, 0, 0, 0], head: 0, keys: new Set() }, WN = [[
+app/workspaces/rover/advanced.js:62:  steps/s limit (
+app/workspaces/rover/advanced.js:74: The motor board stops the wheels on its own. It does not need the Pi, the laptop or the network.
+app/workspaces/aerial/index.js:223: Drawn by this page. Not a photograph.
+app/workspaces/aerial/index.js:223: An illustration made by an image generator for this project. Not a photograph of a real place or event.
+app/workspaces/aerial/index.js:623: The run failed: 
+app/workspaces/aerial/index.js:671: The analysis worker did not start, so this method cannot run in this browser.
+app/workspaces/aerial/index.js:744: . Lower the threshold to see weaker leads.
+app/workspaces/aerial/index.js:824: , null, ...rows)); // the misses of the selected row let missBox = h(
+app/workspaces/aerial/index.js:830: , null, miss.length + 
+app/workspaces/aerial/index.js:833: , null, miss.length + 
+app/workspaces/aerial/index.js:924: A neural network looks for people. A colour test looks for what does not belong.
+app/workspaces/aerial/concepts.js:32: Two ideas not built yet
+app/workspaces/aerial/concepts.js:35: Colour fails on earth-tone clothing and in shadow; warmth does not. It fails on sun-warmed rubble and under thick cover. Not built.
+app/workspaces/aerial/hero.js:311: Missed by both
+app/workspaces/aerial/hero.js:426: Decoys. Colour flags them; the network does not.
+app/workspaces/aerial/hero.js:426: Someone in mud-brown clothing: missed by both.
+app/workspaces/aerial/detect.worker.js:37: using ceil() in shape computation is not yet supported for MaxPool
+app/workspaces/aerial/detect.worker.js:41: WebGPU cannot run this model\'s pooling layers yet (tested), so it runs on the processor.
+app/workspaces/aerial/scenes.js:1013: , RF); // drawn at half size on a grid locked to the ground, then enlarged: a soft penumbra that does not move with the frame const hx = 2 * Math.floor(-sx / 2) - 2, hy = 2 * Math.floor(-sy / 2) - 2, hw = (w >> 1) + 3, hh = (h >> 
+app/workspaces/aerial/scenes.js:1176:  + (i + 1), cx: r1(b.cx), cy: r1(b.cy), l: r1(b.hl * 2), w: r1(b.hw * 2), rot: r3(b.rot), h: r1(R.chance(0.15) ? R.range(4.8, 5.6) : R.range(2.6, 3.5)), state, seed: ns(), tone: R.int(0, 3), missing: state === 
+app/workspaces/aerial/scenes.js:1486: , seed: ns(), tone: 0, missing: 0 }, extra); }; const aw = Math.min(16, (bA[2] - bA[0]) * 0.62); O.push(roof(
+app/workspaces/aerial/scenes.js:1518: , { h: 4.4, seed: sBs, missing: 0.03 })); O.push(roof(
+app/workspaces/aerial/scenes.js:1519: , { h: 4.4, seed: sBn, missing: 0.02, torn: [scale(neI, 1.18)], near: [scale(neI, 2.0)] })); O.push(roof(
+app/workspaces/aerial/scenes.js:1520: , missing: 0.24 })); // deep mud around C, debris field, collapsed corner O.push({ t: 
+app/workspaces/scan/bake.js:40: The bake does not fit.
+app/workspaces/scan/index.js:413: Beams that hit nothing in range, left the site or were too weak give no point
+app/workspaces/scan/index.js:437: The drone and its scanner are a concept: HOUND has no lidar today. Range noise is assumed at 8 to 20 mm and weak returns are dropped. People are not in the scan.
+app/workspaces/scan/index.js:455: Most points wrong in one place: 
+app/workspaces/scan/index.js:457: The rules and limits were adjusted by hand while looking at this very site, so the score above flatters them. One simulated site with clean geometry: a real scan has moving people, glass, dust and registration error, and would sco
+app/workspaces/scan/index.js:458: A file you load has no known labels, so the classes cannot be scored here. Hide and show classes to check them by eye.
+app/workspaces/scan/index.js:495:  (assumed 2.0 × 0.6 m)
+app/workspaces/scan/index.js:495: How many 2.0 × 0.6 m rectangles pack onto the floor that has the headroom. The size of a person lying down is assumed.
+app/workspaces/scan/index.js:503: The search limits were adjusted by hand while looking at this site, which was also built by hand. The 0.6 m limit was added after comparing the list with the model, so the share that is really empty flatters it. The list shows the
+app/workspaces/scan/index.js:528: The planner’s map is drawn from the building plan; the scan is what was actually seen. Furniture and debris show up only in the scan. Rooms behind the blocked corridor were never entered, so the scan cannot vouch for their floor. 
+app/workspaces/scan/index.js:539: ; S.error = null; if (f.size > 700 * 1024 * 1024) { fail(
+app/workspaces/scan/index.js:540: ); return; } let buffer; try { buffer = await f.arrayBuffer(); } catch { fail(
+app/workspaces/scan/index.js:607:  } }))))); } function fail(msg) { if (demo()) film.say.textContent = 
+app/workspaces/swarm/scene.js:373: 3-D view of the sandbox site. Drag to orbit, scroll to zoom, click a robot to follow it or a beacon to fail it.
+app/workspaces/swarm/index.js:68: Fail the busiest beacon
+app/workspaces/swarm/index.js:73: Radio link (amber: weak)
+app/workspaces/swarm/index.js:77: Fail a beacon
+app/workspaces/swarm/index.js:270: , weakest == null ? 
+app/workspaces/swarm/index.js:270:  : weakest.toFixed(0) + 
+app/workspaces/swarm/index.js:270:  dBm are unusable (assumed radio).
+app/workspaces/swarm/index.js:288: How well its sensors suit this lead (assumed scores)
+app/workspaces/swarm/index.js:292: Each reading multiplies the odds. The Wi-Fi network\'s rates are measured on simulated test windows; every other likelihood is assumed.
+app/workspaces/swarm/index.js:430: Concept, assumed
+app/workspaces/swarm/index.js:434: Simulated, assumed rates
+app/workspaces/swarm/index.js:435: Two 10 s Wi-Fi windows, radar and thermal from a new position, fused with Bayes\' rule. The Wi-Fi network answers with its measured rates: 86.9 % for a moving person, 21.4 % for a still one, 11.1 % false alarms.
+app/workspaces/swarm/index.js:436: Radar, thermal, drone image, machine signature: the same assumed values as the Fusion workspace.
+app/workspaces/swarm/index.js:437: Assumed weights
+app/workspaces/swarm/director.js:6: , t = 0, lastEv = 0, lead = null, seenLeads = new Set(), failed = false, failAsked = false, done = false, speed = 4, want = 4, total = 0, sinceLead = 9, confirmed = false, relay = null, az = out, tries = 0, nextTry = 0, lost = [],
+app/workspaces/swarm/director.js:45: ) { if (!failed && t > 1) tryFail(); if (t > 16 && !confirmed) { go(S.m.coverage > 0.9 ? 
+app/workspaces/swarm/engine.js:7:  motion and sensors, the people and decoys. // Assumed: the radio model, the power draw, the sensor reach and every likelihood except the Wi-Fi network
+app/workspaces/swarm/engine.js:483:  failed, now through 
+app/workspaces/swarm/engine.js:497: s own are (assumed). const c = r.kind === 
+app/global/palette.js:185: Limit the search
+app/global/sound.js:9: ; } catch { return false; } }; function context() { if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); master = ac.createGain(); master.gain.value = 0.5; const limit = ac.createDynamicsCompressor(); limit.th
+app/global/a11y.js:63: , files: 0, total: 0, done: 0, failed: 0, message: 
+app/global/a11y.js:73: ) tell({ done: m.done, total: m.total, failed: m.failed }); if (m.type === 
+app/global/a11y.js:78: ); } catch { return false; } }; async function post(urls) { const w = (await navigator.serviceWorker.ready).active; tell({ total: urls.length, done: 0, failed: 0 }); w.postMessage({ type: 
+app/global/narration.js:26: A weak sign of a person in 
+app/global/narration.js:32: , but it repeats too steadily and there is no body heat. The lead is closed as a machine, most likely a fan. Closing false alarms matters as much as finding people.
+app/global/narration.js:35:  that radar and thermal did not support. It is closed as a false alarm, and shown, not hidden.
+app/global/narration.js:39: The rover cannot settle this lead, so it is handed to the rescue team to check in person. Uncertain is reported as uncertain.
+app/shell.js:18: How several weak sensors add up to one confident answer.
+app/shell.js:27: Train the network in your browser, shrink it for a microcontroller, and measure when it does not know.
+app/shell.js:42:  }, ]; // Optional app-wide add-ons. Each exports init(ctx). Missing files are skipped silently. const GLOBALS = [
+app/shell.js:237: , null, missing ? `${m.title} is not built yet` : `${m.title} could not start`), h(
+index.html:82: On 26 August 2026 the Bhote Koshi flooded its valley on the border of Nepal and Tibet. By 15 September about 1,399 people had been counted dead, and about 5,130 were still missing.
+index.html:98: Illustration of the Bhote Koshi valley, Nepal, after the flood of 26 August 2026. Not a photograph. The flood was real; the search on this site is invented.
+index.html:130: From radar. Wi-Fi cannot tell left from right.
+index.html:139: A Raspberry Pi 4 runs the sensors and the network. An Arduino UNO R4 runs the motors, and cuts them 400 ms after the Pi goes quiet, so a dropped link cannot leave the rover driving.
+index.html:140: This console is not connected to it
+index.html:178: . This is the weak case, and it is the one that matters most.
+index.html:195: 81 % false alarms
+index.html:200: What it cannot do
+index.html:201: It cannot say left, centre or right:
+index.html:208: What the design does about the weak case
+index.html:209: One sensor that misses four still people in five is not a search tool. Three things around it make it one.
+index.html:214: The console plans the route in. It does not move anyone until an operator approves it.
+index.html:299: Frame, drive, sensors, firmware, a web remote and the 400 ms fail-safe.
+index.html:299: It is in the project film. It is not connected to this console.
+index.html:301: Marked "assumed" wherever the number appears. Only the Wi-Fi network's likelihood is measured.
+index.html:303: No real recordings exist yet. The network has only ever seen simulated people.
+landing/main.js:49: Illustration. Not a photograph of a real building.
+landing/main.js:50: Illustration. Not a photograph of a real building.
+landing/main.js:51: Illustration. The wave is drawn to show the idea: Wi-Fi cannot be seen. The real rover, as built, is next.
+landing/main.js:99: , v: 88.9 }, { label: 
+landing/main.js:102: , v: 21.4, weak: true }, ]; const bars = $(
+landing/main.js:105:  + (r.weak ? 
+landing/tour.js:11: The neural network that senses people through walls, running live, with its explanation and its limits.
+landing/tour.js:12: How several weak sensors add up to one confident answer, step by step.
+landing/rover.js:33:  }); } catch (e) { return fail(
+landing/proof.js:10: A decoy that moves
+landing/proof.js:74: Five situations, six windows each. A filled square is a right answer, an outline is a wrong one.
+landing/proof.js:181: ; // Every one of the 30 windows plays once. Right answers first, then wrong ones in their true proportion (one in three). const right0 = [], wrong0 = []; for (const c of [
+landing/proof.js:236:  + (s.assumed ? 
+landing/proof.js:236: ), null, s.assumed ? 
+landing/proof.js:253: Each reading multiplies the odds by its likelihood ratio. The Wi-Fi ratios are measured on the 955 test windows (the network says person for 47.6 % of person windows and 11.1 % of empty ones). The radar, thermal, drone and rescue-

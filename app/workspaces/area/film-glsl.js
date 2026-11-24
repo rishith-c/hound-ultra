@@ -60,7 +60,7 @@ export const NEAR_VERT = COMMON + /* glsl */ `
 attribute float aSkirt; varying vec3 vW;
 void main() { vec4 w = modelMatrix * vec4(position, 1.); w.y = nearH(w.xz) - aSkirt * 60.; vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`;
 export const NEAR_FRAG = COMMON + /* glsl */ `
-uniform sampler2D uNrm, uA, uB, uC, uD; uniform vec4 uRC, uRD; uniform float uWetTop;
+uniform sampler2D uNrm, uA, uB, uC, uD; uniform vec4 uRC, uRD, uGlow; uniform float uWetTop;
 varying vec3 vW;
 vec4 over(vec4 a, vec4 b, float k) { return a * (1. - b.a * k) + vec4(b.rgb * k, b.a * k); }
 void main() {
@@ -80,6 +80,9 @@ void main() {
   float lum = dot(img, vec3(0.3, 0.6, 0.1));
   img *= mix(1.25, 0.80, smoothstep(0.015, 0.24, lum));
   img = mix(vec3(dot(img, vec3(0.3, 0.6, 0.1))), img, 0.70);
+  // mud and broken ground round the drawn school (part of the simulated exercise)
+  float md = smoothstep(46., 18., length(vW.xz - uGlow.xz + vec2(9., -8.) + (texture2D(uDet, vW.xz / 60.).xy - 0.5) * 34.));
+  img = mix(img, vec3(0.115, 0.096, 0.074) * (0.45 + 1.1 * texture2D(uDet, vW.xz / 8.3).b), md * 0.88);
   // small bumps from the photograph itself
   float px = uNB.z / 4096.; vec2 du = vec2(px / uNB.z * 1.4, 0.);
   float lx = dot(texture2D(uB, uv + du.xy).rgb - texture2D(uB, uv - du.xy).rgb, vec3(0.33)), lz = dot(texture2D(uB, uv + du.yx).rgb - texture2D(uB, uv - du.yx).rgb, vec3(0.33));
@@ -169,13 +172,13 @@ void main() {
   vec3 R = reflect(-V, N); R.y = abs(R.y); vec3 H = normalize(V + uSun);
   // the reflected sky is cut down by the valley walls round the water
   vec3 refl = skyCol(normalize(R + vec3(0., 0.35, 0.))) * mix(0.34, 0.62, sh); c = mix(c, refl * mix(0.8, 0.5, surge), fres * mix(0.8, 0.22, surge));
-  c += uSunCol * sh * pow(max(dot(N, H), 0.), mix(420., 60., rough)) * mix(5., 0.55, rough);
+  c += uSunCol * sh * pow(max(dot(N, H), 0.), mix(420., 60., rough)) * mix(2.2, 0.45, rough);
   // foam: the breaking front, streaks carried behind it, and a wet edge against the banks
   float fn = w1.a * 0.55 + w2.a * 0.45, streak = w0.a * 0.6 + w1.b * 0.4;
   float crest = exp(-pow((x - 30.) / 46., 2.)); float foam = max(min(1., near * 1.25) * smoothstep(0.27, 0.52, fn + near * 0.18), crest * smoothstep(0.08, 0.34, fn));
   foam = max(foam, surge * smoothstep(0.60, 0.78, streak * 0.55 + fn * 0.42) * exp(-max(x, 0.) / 900.) * 0.6);
   foam = max(foam, smoothstep(1.2, 0.15, depth) * smoothstep(0.22, 0.52, fn) * (0.35 + 0.55 * surge));
-  foam = max(foam, (1. - surge) * smoothstep(0.50, 0.72, fn * 0.6 + w1.b * 0.45) * 0.55);
+  foam = max(foam, (1. - surge) * smoothstep(0.50, 0.72, fn * 0.6 + w1.b * 0.45) * 0.28);
   vec3 foamC = mix(vec3(0.62, 0.63, 0.62), vec3(0.56, 0.51, 0.45), surge) * (0.62 + 0.7 * w2.b) * mix(1., 1.75, crest);
   c = mix(c, foamC * (uSunCol * sh * (0.35 + 0.65 * max(dot(N, uSun), 0.)) + uSkyCol * mix(vec3(1.05), vec3(1.25, 1.1, 0.95), surge)), clamp(foam, 0., 1.));
   gl_FragColor = vec4(c, smoothstep(0.02, 0.5, depth));
@@ -187,21 +190,21 @@ attribute vec4 aR; uniform vec4 uFP[8]; uniform float uScale, uSprayOn; varying 
 void main() {
   float life = fract(uTime * (0.34 + 0.3 * aR.w) + aR.x); int k = int(aR.y * 7.99); vec4 f = uFP[k];
   vec2 dir = vec2(cos(f.w), sin(f.w)), side = vec2(-dir.y, dir.x);
-  vec2 p = f.xy + side * (aR.z - 0.5) * 34. + dir * (life * 16. - 6.) + (aR.wx - 0.5) * 12.;
+  vec2 p = f.xy + side * (aR.z - 0.5) * 74. + dir * (life * 16. - 6.) + (aR.wx - 0.5) * 12.;
   float y = f.z + 3. + (aR.w * 24. + 4.) * 4. * life * (1. - life) * (0.6 + 0.6 * aR.x);
   vec4 v = viewMatrix * vec4(p.x, y, p.y, 1.); gl_Position = projectionMatrix * v;
-  gl_PointSize = min(130., (8. + 20. * life) * uScale / -v.z); vA = uSprayOn * smoothstep(0., 0.12, life) * (1. - life) * (1. - life) * 0.46; vL = sunAt(p);
+  gl_PointSize = min(130., (5. + 13. * life) * uScale / -v.z); vA = uSprayOn * smoothstep(0., 0.12, life) * (1. - life) * (1. - life) * 0.26; vL = sunAt(p);
 }`;
 export const SPRAY_FRAG = COMMON + /* glsl */ `
 varying float vA, vL;
-void main() { vec2 q = gl_PointCoord * 2. - 1.; float r = dot(q, q); if (r > 1.) discard; float n = texture2D(uDet, gl_PointCoord * 0.16 + vA).a; float a = vA * (1. - r) * (0.35 + n); gl_FragColor = vec4(vec3(0.66, 0.63, 0.58) * (uSunCol * vL * 0.75 + uSkyCol), a); }`;
+void main() { vec2 q = gl_PointCoord * 2. - 1.; float r = dot(q, q); if (r > 1.) discard; float n = texture2D(uDet, gl_PointCoord * 0.16 + vA).a; float a = vA * (1. - r) * (0.35 + n); gl_FragColor = vec4(vec3(0.70, 0.67, 0.62) * (uSunCol * vL * 0.75 + vec3(dot(uSkyCol, vec3(0.4))) * 1.1), a); }`;
 
 // ---------------------------------------------------------------- trees, buildings, site line
 export const TREE_VERT = COMMON + /* glsl */ `
 attribute vec4 iPos; attribute vec4 iCol; uniform vec3 uRight, uUp; varying vec2 vUv2; varying vec3 vC, vP; varying float vK, vFoot;
 void main() {
   float d = distance(iPos.xyz, uCam), k = smoothstep(2300., 1500., d), size = iPos.w * k;
-  vec3 up = normalize(mix(vec3(0., 1., 0.), uUp, 0.5));
+  vec3 up = normalize(mix(vec3(0., 1., 0.), uUp, 0.28));
   vec3 p = iPos.xyz + uRight * position.x * size * 0.5 + up * (position.y * 0.5 + 0.44) * size;
   p.x += sin(uTime * 1.3 + iPos.x) * 0.012 * size * max(position.y, 0.);
   vUv2 = vec2((floor(iCol.a) + position.x * 0.5 + 0.5) / 3., position.y * 0.5 + 0.5); vC = iCol.rgb; vP = iPos.xyz; vK = k; vFoot = position.y * 0.5 + 0.5;
@@ -215,14 +218,14 @@ void main() {
   float sh = sunAt(vP.xz), wrap = max(0., dot(N, uSun) * 0.75 + 0.25), through = pow(max(dot(uFwd, uSun), 0.), 3.) * 0.95 * t.r;
   vec3 alb = vC * (0.55 + 1.9 * t.r);
   float ao = mix(0.55, 1.05, smoothstep(0.0, 0.8, vFoot));
-  vec3 c = alb * ((uSunCol * wrap * sh + uSkyCol * (0.55 + 0.45 * N.y)) * ao + uSunCol * through * sh * vec3(1.1, 1.15, 0.5));
+  vec3 c = alb * ((uSunCol * wrap * sh + uSkyCol * (0.95 + 0.6 * N.y)) * ao + uSunCol * through * sh * vec3(1.1, 1.15, 0.5));
   gl_FragColor = vec4(c, clamp(a, 0., 1.));
 }`;
 export const BLD_VERT = COMMON + /* glsl */ `
 attribute vec4 aInf; attribute vec2 aUv; varying vec3 vW, vN; varying vec4 vI; varying vec2 vU;
 void main() { vW = position; vN = normal; vI = aInf; vU = aUv; gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.); }`;
 export const BLD_FRAG = COMMON + /* glsl */ `
-varying vec3 vW, vN; varying vec4 vI; varying vec2 vU;
+uniform vec4 uGlow; varying vec3 vW, vN; varying vec4 vI; varying vec2 vU;
 void main() {
   float r = vI.x, kind = floor(vI.y + 0.5); vec3 alb; float ao = 1.; vec4 d = texture2D(uDet, (abs(vN.y) > 0.5 ? vW.xz : vU) / 5.3);
   vec3 N = normalize(vN);
@@ -234,8 +237,19 @@ void main() {
     vec2 g = vec2(vU.x / 2.9, vU.y / 3.0), f = fract(g); float win = step(0.28, f.x) * step(f.x, 0.72) * step(0.34, f.y) * step(f.y, 0.78) * step(0., vU.y); alb = mix(alb, vec3(0.035, 0.045, 0.055), win); ao *= smoothstep(-2., 3.5, vU.y) * 0.5 + 0.5;
   } else { alb = kind == 2. ? vec3(0.215, 0.212, 0.205) : vec3(0.20, 0.196, 0.188); alb *= 0.5 + 1.0 * d.b; N = normalize(N + (d.xyy - 0.5) * 0.35);
     if (kind == 3.) { vec2 f = fract(vec2(vU.x / 3.4, vU.y / 3.1)); float win = step(0.22, f.x) * step(f.x, 0.78) * step(0.32, f.y) * step(f.y, 0.80) * step(0., vU.y); alb = mix(alb, vec3(0.03), win); ao *= smoothstep(-1., 3., vU.y) * 0.5 + 0.5; } }
-  gl_FragColor = vec4(shade(alb, N, sunAt(vW.xz), ao), 1.);
+  vec3 gl = uGlow.xyz - vW; float gd = dot(gl, gl); // the weak light under the rubble, on the blocks round it
+  gl_FragColor = vec4(shade(alb, N, sunAt(vW.xz), ao) + (alb * 0.6 + 0.04) * vec3(1., 0.50, 0.17) * uGlow.w * (0.45 + 0.55 * max(dot(N, gl) / sqrt(gd + 0.01), 0.)) * 9. / (1. + gd * 1.1), 1.);
 }`;
+// dust over the collapsed corner, and the light itself (a core the rubble hides in part, and a faint halo)
+export const DUST_VERT = COMMON + /* glsl */ `
+attribute vec4 aR; uniform vec4 uGlow; uniform float uScale, uDustOn; varying float vA, vL;
+void main() {
+  float life = fract(uTime * (0.035 + 0.04 * aR.w) + aR.x); vec2 p = uGlow.xz + (aR.yz - 0.5) * 26. + vec2(1., 0.45) * life * 11. + sin(uTime * 0.3 + aR.xy * 40.) * 0.8;
+  vec4 v = viewMatrix * vec4(p.x, uGlow.y + 0.4 + life * (3. + 7. * aR.w), p.y, 1.); gl_Position = projectionMatrix * v;
+  gl_PointSize = min(170., (1.4 + 5. * life) * uScale / -v.z); vA = uDustOn * smoothstep(0., 0.2, life) * (1. - life) * 0.12; vL = sunAt(p);
+}`;
+export const GLOW_VERT = /* glsl */ `uniform vec4 uGlow; uniform float uScale, uGlowSize; void main() { vec4 v = viewMatrix * vec4(uGlow.xyz, 1.); gl_Position = projectionMatrix * v; gl_PointSize = min(400., uGlowSize * uScale / -v.z); }`;
+export const GLOW_FRAG = /* glsl */ `uniform vec4 uGlow; uniform float uGlowGain; void main() { vec2 q = gl_PointCoord * 2. - 1.; float a = max(0., 1. - dot(q, q)); gl_FragColor = vec4(vec3(1., 0.56, 0.22) * uGlow.w * uGlowGain * a * a * a, 1.); }`;
 export const CAST_VERT = COMMON + /* glsl */ `
 attribute vec4 aInf; varying float vF;
 void main() { // the building's footprint pushed along the ground away from the sun

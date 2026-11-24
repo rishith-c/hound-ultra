@@ -30,6 +30,9 @@ export default {
     const stage = h('div.area-stage.adv-only'), mapHost = h('div.area-map'), schemHost = h('div.area-schem', { hidden: true });
     stage.append(mapHost, schemHost);
     const loading = h('div.area-loading', { role: 'status' }, h('div.spinner'), h('p', null, 'Reading the elevation tiles for the valley…'));
+    // Demo opens on a picture of the film's own first frame while the elevation loads; the film fades in over it
+    const poster = ctx.mode === 'demo' ? h('img.area-poster', { src: new URL('./data/first-frame.jpg', import.meta.url).href, alt: '' }) : null;
+    if (poster) { root.append(poster); import('./film.js').catch(() => {}); }
     root.append(stage, loading);
 
     // ------------------------------------------------------------------ data
@@ -144,13 +147,13 @@ export default {
       h('p.note.warn', null, 'An illustrative simulation on the real terrain. Not a forecast, and not a reconstruction of the real event.'),
       h('label.area-field', null, h('span', null, 'Water level above the river'), (el.stageVal = h('b.num', null, '+0.0 m'))), el.stageRange,
       h('div.row', null, (el.surgeBtn = h('button.btn.grow', { onclick: () => (S.surge ? endSurge() : startSurge()) }, 'Send a surge down the valley')), h('button.btn.btn-ghost', { onclick: () => { endSurge(); setStage(0); } }, 'Drain')),
-      h('div.area-stats', null, stat('fArea', 'hectares under water'), stat('fRoad', 'of mapped road under water'), stat('fWet', 'mapped buildings in the water'), stat('fCut', 'more cut off from the main road')),
+      h('div.area-stats', null, stat('fArea', 'hectares under water'), stat('fRoad', 'of mapped road under water'), stat('fWet', 'mapped buildings in the water'), stat('fCut', 'more cut off from the south')),
       (el.fBlock = h('p.area-line')),
       h('div', null, h('h4.area-h4', null, 'Area under water by water level'), chart('curve', 86, 'Line chart: hectares under water against water level above the river'), h('div.area-axis', null, h('span', null, 'hectares'), h('span', null, 'water level above the river'))),
       h('div', null, h('h4.area-h4', null, 'Road sections under water'), (el.cuts = h('div.area-list'))),
       h('details.area-how', null, h('summary', null, 'How this is worked out, and its limits'),
         h('p', null, 'The mapped river is laid on the elevation grid (' + dem.n + ' by ' + dem.n + ' cells of ' + dem.cs.toFixed(1) + ' m). Each cell near it gets its height above the nearest point of the river. A priority flood from the river then finds the lowest water level at which water can reach each cell without climbing over higher ground.'),
-        h('p', null, 'Limits: the elevation data is about 30 m wide per measurement, so the channel, embankments and buildings are not resolved. There is no flow, no time and no debris in this model. A road is counted as under water at ' + ROAD_DEPTH + ' m of water, and a river crossing at ' + CROSSING_CLEARANCE + ' m (both assumed). A building is “cut off” when its nearest mapped road or path no longer connects to the south end of the main road.'),
+        h('p', null, 'Limits: the elevation data is about 30 m wide per measurement, so the channel, embankments and buildings are not resolved. There is no flow, no time and no debris in this model. A road is counted as under water at ' + ROAD_DEPTH + ' m of water, and a river crossing at ' + CROSSING_CLEARANCE + ' m (both assumed). A building is “cut off” when its nearest mapped road or path could reach the south edge of this grid, and no longer can. Only ' + impacts.linked + ' of ' + impacts.total + ' mapped buildings have such a link in OpenStreetMap; the rest are not counted.'),
         h('p', null, 'The surge is a ' + SURGE.height + ' m wave with an assumed shape, moved at ' + SURGE.speed + ' m a second on screen so it can be watched. A real flood wave is far slower.')));
 
     el.exRange = range({ min: 1, max: 2, step: 0.05, value: M.exaggeration, 'aria-label': 'Terrain height exaggeration', oninput: (e) => { M.exaggeration = +e.target.value; fill(e.target); el.exVal.textContent = M.exaggeration.toFixed(2) + '×'; S.view?.setExaggeration(M.exaggeration); } });
@@ -494,15 +497,15 @@ export default {
     const full = () => { lastEx = 0; panelKey = ''; onTick(); };
     const offs = [ctx.bus.on('tick', onTick), ctx.bus.on('reset', full), ctx.bus.on('seek', full), ctx.bus.on('select', full),
       ctx.bus.on('escape', () => { if (!S.shown) return; S.view?.cancelFlight(); if (S.measuring) (S.pts.length && !S.lineDone ? clearLine() : setMeasuring(false)); }),
-      ctx.bus.on('prefs', () => { redrawCharts(); syncAnimation(); })];
+      ctx.bus.on('prefs', () => { redrawCharts(); syncAnimation(); if (ctx.mode === 'demo') enterMode(); })];
     root.addEventListener('keydown', (e) => { if (e.key === 'Enter' && S.measuring && S.pts.length > 1 && !S.lineDone && e.target.tagName !== 'BUTTON') finishLine(); });
     function redrawCharts() { drawStageCurve(el.curve, model, S.stage, T.MAX_STAGE); drawHorizon(el.horizon, horizon, sunPath, M.sun); refreshProfile(); }
-    new ResizeObserver(() => { if (S.shown) { applyPadding(); redrawCharts(); } }).observe(root);
+    const sizeWatch = new ResizeObserver(() => { if (S.shown) { applyPadding(); redrawCharts(); } }); sizeWatch.observe(root);
 
     // ------------------------------------------------------------------ start
     renderSectors(); renderExercise(); setSun(S.minutes); setStage(0); fill(el.exRange);
     // Demo is the film; the working map is only started when Advanced is first opened, so the two never run together.
-    const demo = createDemo(root, ctx, { dem, model, osm, frame, SITE, BUILDING, OBSTACLES, siteCenter, path: flightPath.path, joinAt: flightPath.joinAt, blockNeed,
+    const demo = createDemo(root, ctx, { dem, model, osm, frame, SITE, BUILDING, OBSTACLES, siteCenter, path: flightPath.path, joinAt: flightPath.joinAt, blockNeed, poster,
       sunAt: (min) => sunPosition(nptDate(today.dayUtcMs, min), siteCenter[1], siteCenter[0]) });
     let advanced = null;
     function openAdvanced() {
@@ -526,6 +529,7 @@ export default {
         S.shown = true; enterMode();
       },
       onHide() { S.shown = false; demo.stop(); cancelAnimationFrame(raf); raf = 0; S.view?.animateFlood(false); S.view?.stop(); root.classList.remove('flying'); el.caption.hidden = true; },
+      dispose() { this.onHide(); offs.forEach((f) => f?.()); sizeWatch.disconnect(); demo.dispose(); for (const v of Object.values(views)) v?.destroy(); S.view = null; delete root.__area; },
       onParams(p) { if (p?.stage != null) setStage(Math.max(0, Math.min(T.MAX_STAGE, +p.stage))); },
     };
   },

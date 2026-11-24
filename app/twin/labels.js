@@ -22,7 +22,7 @@ export function createLabels(overlay, camera, { select, occluded, safe = { left:
     main.textContent = text ?? ''; sub.textContent = opts.sub ?? ''; el.append(main, sub); layer.append(el);
     const leader = opts.plain || opts.leader === false ? null : document.createElementNS(SVG, 'line');
     const dot = leader ? document.createElementNS(SVG, 'circle') : null;
-    if (leader) { dot.setAttribute('r', '2.5'); if (tone) { leader.setAttribute('class', 't-' + tone); dot.setAttribute('class', 't-' + tone); } svg.append(leader, dot); }
+    if (leader) { leader.style.display = dot.style.display = 'none'; dot.setAttribute('r', '2.5'); if (tone) { leader.setAttribute('class', 't-' + tone); dot.setAttribute('class', 't-' + tone); } svg.append(leader, dot); }
     const L = {
       el, pos: new THREE.Vector3(), visible: true, shown: false, w: 0, h: 0, dirty: true, slot: -1, ox: 0, oy: 0, tone,
       through: !!opts.through || tone === 'person' || tone === 'warn', priority: opts.priority ?? 5, maxDist: opts.maxDist ?? Infinity, minDist: opts.minDist ?? 0, always: !!opts.always, plain: !!opts.plain, leader, dot, sel: opts.sel || null,

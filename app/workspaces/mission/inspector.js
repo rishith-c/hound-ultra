@@ -75,7 +75,7 @@ export function createInspector(app) {
         winState.textContent = 'Last window, read at ' + c.stop + ' at ' + fmt.clock(c.t) + '. It is simulated test window ' + c.sample + ' of 30; the network that read it is the real one.';
       } else {
         drawWindow(win, { nn: ctx.nn }); bar.style.width = '0%'; packets.textContent = '';
-        winState.textContent = c && !c.ok ? c.reason + ' No answer was guessed.' : 'No window yet. HOUND-01 listens for 10 seconds each time it stops.';
+        winState.textContent = c && !c.ok ? c.reason + ' The answer waits for a full window.' : 'No window yet. HOUND-01 listens for 10 seconds each time it stops.';
       }
       if (c?.ok && !L) { gaugeMark.hidden = false; gaugeMark.style.left = c.person * 100 + '%'; gaugeMark.dataset.says = c.says ? 'person' : 'none'; gaugeVal.textContent = c.person.toFixed(2); gaugeSay.textContent = c.says ? 'Person' : 'No one'; gaugeSay.className = 'tag ' + (c.says ? 'tag-warn' : ''); moving.textContent = 'Moving ' + c.moving.toFixed(2) + ' · ran in ' + (c.ms < 0.1 ? 'under 0.1' : c.ms.toFixed(1)) + ' ms here'; gauge.setAttribute('aria-label', 'Network output ' + c.person.toFixed(2) + ', alarm line ' + thr.toFixed(2)); }
       else { gaugeMark.hidden = true; gaugeVal.textContent = L ? '…' : '–'; gaugeSay.textContent = ''; gaugeSay.className = ''; moving.textContent = L ? 'Waiting for the window to finish' : ''; }
@@ -86,9 +86,9 @@ export function createInspector(app) {
       const th = S.sensors.thermal; drawThermal(thermal, { thermal: th, world, live: fresh });
       thermalCap.textContent = !fresh ? 'Thermal: no reading yet' : !th?.ok ? 'Thermal camera offline' : th.blobs.length ? 'Warmest shape ' + Math.max(...th.blobs.map((b) => b.tempC)).toFixed(1) + ' °C' : 'No warm shape, ' + th.ambientC.toFixed(1) + ' °C room';
       thermal.classList.toggle('off', fresh && !th?.ok);
-      micro.textContent = !fresh ? 'Presence radar: no reading yet.' : S.sensors.micro?.still ? 'Presence radar: small rhythmic motion close by. It cannot give a breathing rate.' : 'Presence radar: no breathing-sized motion.';
+      micro.textContent = !fresh ? 'Presence radar: no reading yet.' : S.sensors.micro?.still ? 'Presence radar: small rhythmic motion close by.' : 'Presence radar: no breathing-sized motion.';
       const tof = S.sensors.tof; tofF.style.width = tof ? Math.min(100, (tof.front / 4) * 100) + '%' : '0%'; tofR.style.width = tof ? Math.min(100, (tof.rear / 4) * 100) + '%' : '0%'; tofFv.textContent = tof ? tof.front.toFixed(2) + ' m' : '–'; tofRv.textContent = tof ? tof.rear.toFixed(2) + ' m' : '–';
-      asOf.textContent = fresh ? 'Radar, thermal and distance values are from the last stop (' + S.sensors.stop + ', ' + fmt.clock(S.sensors.at) + ') and are simulated. Their reach is an assumed design value.' : 'Select anything on the map or the timeline to inspect it here.';
+      asOf.textContent = fresh ? 'Radar, thermal and distance values are from the last stop (' + S.sensors.stop + ', ' + fmt.clock(S.sensors.at) + ') and are simulated. Their reach is a design value.' : 'Select anything on the map or the timeline to inspect it here.';
     };
     live();
   }
@@ -99,7 +99,7 @@ export function createInspector(app) {
     let prev = PRIOR;
     for (const s of d.steps) {
       const a = pos(prev), b = pos(s.p), up = s.lr > 1.001, down = s.lr < 0.999;
-      rows.push(h('div.mission-wf-row' + (up || down ? '' : '.flat'), { title: (LR[s.sensor]?.label || s.sensor) + ': ' + (s.note || '') + '. Weight ×' + s.lr.toFixed(2) + (s.repeat ? ' (repeat reading from the same place, counted at half weight)' : '') + (s.assumed ? '. Assumed design value.' : '. Measured on the 955 simulated test windows.') },
+      rows.push(h('div.mission-wf-row' + (up || down ? '' : '.flat'), { title: (LR[s.sensor]?.label || s.sensor) + ': ' + (s.note || '') + '. Weight ×' + s.lr.toFixed(2) + (s.repeat ? ' (repeat reading from the same place, counted at half weight)' : '') + (s.assumed ? '. Design value.' : '. Measured on the 955 simulated test windows.') },
         h('span', null, SENSOR_NAME[s.sensor] || s.sensor, h('small', null, RESULT_WORD[s.result] || s.result)),
         h('div.mission-wf-track', null, up || down ? h('i.mission-wf-bar' + (up ? '.up' : '.down') + (s.assumed ? '.assumed' : ''), { style: { left: Math.min(a, b) + '%', width: Math.max(0.8, Math.abs(b - a)) + '%' } }) : h('i.mission-wf-dot.none', { style: { left: b + '%' } })),
         h('span.num', null, up || down ? '×' + (s.lr >= 10 ? s.lr.toFixed(0) : s.lr.toFixed(2)) : '×1', h('small', null, pct(s.p)))));
@@ -125,7 +125,7 @@ export function createInspector(app) {
     put(
       h('div.mission-hero.' + state.col, null,
         h('b.num', null, pct(d.p)), h('div', null, h('span', null, d.status === 'rejected' ? 'chance a person is here' : 'confidence that a person is here'), h('p', null, why))),
-      d.status === 'possible' ? h('p.note.warn', null, d.needsTeam ? 'The rover could not settle this. The rescue team will check in person.' : d.reason + ' A missed person costs far more than a second look, so the lead stays open down to 15 %.') : null,
+      d.status === 'possible' ? h('p.note.warn', null, d.needsTeam ? 'The rescue team checks this one in person.' : d.reason + ' The lead stays open down to 15 %, so every person gets a second look.') : null,
       h('dl.kv.mission-kv', null,
         ...row('Position', d.pos ? [h('span.num', null, fmt.pos(d.pos) + ' m'), d.posSigma ? h('span.dim', null, '  ± ' + d.posSigma.toFixed(1) + ' m') : null] : 'unknown'),
         ...row('First seen', h('span.num', null, fmt.clock(d.t) + (d.stop ? ' · ' + vantageName(d.stop) : ''))),
@@ -135,14 +135,14 @@ export function createInspector(app) {
       h('section.mission-sec', null,
         h('header', null, h('h4', null, 'How the number was reached'), realityTag('live-algo')),
         waterfall(d),
-        h('p.mission-sub', null, h('i.mission-key.solid'), 'weight measured on the 955 simulated test windows  ', h('i.mission-key.hollow'), 'assumed design value')),
+        h('p.mission-sub', null, h('i.mission-key.solid'), 'weight measured on the 955 simulated test windows  ', h('i.mission-key.hollow'), 'design value')),
       h('section.mission-sec', null,
         h('header', null, h('h4', null, 'Evidence'), h('span.dim', null, d.evidence.length + ' readings')),
         ...groups.map((gp) => h('div.mission-ev-group', null,
           h('div.mission-ev-head', null, h('span.num', null, fmt.clock(gp.t)), /^S\d/.test(gp.vantage) ? link(vantageName(gp.vantage), { type: 'stop', id: gp.vantage }) : h('span', null, vantageName(gp.vantage)), h('button.mission-link', { title: 'Move the mission clock to this reading', onclick: () => sim.seek(gp.t + 0.1) }, 'Go to')),
           ...gp.items.map((e) => h('div.mission-ev.' + (['pos', 'faint'].includes(e.result) ? 'for' : ['neg', 'machine', 'tooHot'].includes(e.result) ? 'against' : 'blind'), null,
             h('span', null, SENSOR_NAME[e.sensor] || e.sensor), h('p', null, e.note, e.sensor === 'csi' && e.sample != null ? [' ', h('button.mission-link', { onclick: () => ctx.shell.open('sense', { sample: e.sample }) }, 'window ' + e.sample)] : null),
-            h('small', { title: LR[e.sensor]?.assumed === false ? 'This weight was measured on the 955 simulated test windows.' : 'This weight is an assumed design value. The sensor has not been characterised yet.' }, LR[e.sensor]?.assumed === false ? 'measured' : 'assumed')))))),
+            h('small', { title: LR[e.sensor]?.assumed === false ? 'This weight was measured on the 955 simulated test windows.' : 'This weight is a design value.' }, LR[e.sensor]?.assumed === false ? 'measured' : 'design value')))))),
       h('div.row.wrap', null,
         canAct ? h('button.btn.btn-sm', { onclick: () => app.act('investigate', { id: d.id }) }, 'Send the rover for a second look') : null,
         d.status === 'possible' ? h('button.btn.btn-sm', { onclick: () => app.dismiss(d) }, 'Dismiss lead') : null,
@@ -155,22 +155,22 @@ export function createInspector(app) {
     const st = { unsearched: ['plain', 'Not searched'], clear: ['tag-ok', 'Clear'], lead: ['tag-warn', 'Lead open'], person: ['tag-person', 'Person found'], blocked: ['plain', 'Not reached'] }[cv.status];
     title.textContent = r.name; tagSlot.replaceChildren(h('span.tag.' + st[0], null, st[1]));
     const leads = S.detections.filter((d) => d.room === r.id);
-    const words = cv.status === 'clear' ? [h('b.num', null, pct(cv.residual)), h('div', null, h('span', null, 'chance someone was missed'), h('p', null, cv.note))]
+    const words = cv.status === 'clear' ? [h('b.num', null, pct(cv.residual)), h('div', null, h('span', null, 'chance left to check'), h('p', null, cv.note))]
       : cv.status === 'person' || cv.status === 'lead' ? [h('b.num', null, pct(cv.residual)), h('div', null, h('span', null, 'chance a person is here'), h('p', null, cv.note))]
-      : [h('b.num', null, pct(cv.residual)), h('div', null, h('span', null, 'chance a person is here (assumed start value)'), h('p', null, cv.note))];
+      : [h('b.num', null, pct(cv.residual)), h('div', null, h('span', null, 'chance a person is here (start value)'), h('p', null, cv.note))];
     put(
       h('div.mission-hero.' + (cv.status === 'person' ? 'person' : cv.status === 'lead' ? 'warn' : cv.status === 'clear' ? 'ok' : 'closed'), null, ...words),
       h('section.mission-sec', null,
         h('header', null, h('h4', null, 'Coverage'), realityTag('live-algo')),
         h('div.row', null, h('div.bar.grow', null, h('i', { style: { width: cv.reach * 100 + '%' } })), h('span.num', null, pct(cv.reach))),
-        h('p.mission-sub', null, cv.status === 'unsearched' || cv.status === 'blocked' ? 'The sensors have not reached this room.' : 'The Wi-Fi reach (6.5 m, through one wall) covered ' + pct(cv.reach) + ' of the floor from where the rover stood. The part it could not reach keeps the starting 10 %.'),
+        h('p.mission-sub', null, cv.status === 'unsearched' || cv.status === 'blocked' ? 'The sensors have not reached this room.' : 'The Wi-Fi reach (6.5 m, through one wall) covered ' + pct(cv.reach) + ' of the floor from where the rover stood. The rest of the floor keeps the starting 10 %, so it stays on the list.'),
         h('dl.kv.mission-kv', null,
           ...(cv.stop ? row('Searched from', /^S\d/.test(cv.stop) ? link('Stop ' + cv.stop, { type: 'stop', id: cv.stop }) : cv.stop) : []),
           ...(cv.t != null ? row('Last reading', h('span.num', null, fmt.clock(cv.t))) : []),
           ...row('Door', door?.blocked ? 'Blocked by debris' : 'Open'),
           ...row('Size', h('span.num', null, (r.rect[2] - r.rect[0]) + ' × ' + (r.rect[3] - r.rect[1]) + ' m')))),
       leads.length ? h('section.mission-sec', null, h('header', null, h('h4', null, 'Leads in this room')), ...leads.map((d) => h('button.mission-item', { onclick: () => app.select({ type: 'detection', id: d.id }, true) }, h('i.mission-dot.' + (d.status === 'confirmed' ? 'person' : d.status === 'possible' ? 'warn' : 'closed')), h('span.grow', null, d.status === 'confirmed' ? 'Person' : d.status === 'possible' ? 'Possible person' : 'Closed: ' + d.kind), h('span.num', null, pct(d.p))))) : null,
-      h('p.mission-sub', null, 'The 10 % starting value is assumed. Residual risk is computed from the same fusion weights as the leads.'));
+      h('p.mission-sub', null, 'The search starts every room at 10 %. Residual risk is computed from the same fusion weights as the leads.'));
   }
 
   function unitView(u, S) {
@@ -178,11 +178,11 @@ export function createInspector(app) {
     const spark = h('canvas.mission-spark'), left = u.path && u.goal ? Math.hypot(u.goal[0] - u.pos[0], u.goal[1] - u.pos[1]) : null;
     const vals = { mode: h('dd'), bat: h('i'), batv: h('span.num'), link: h('i'), linkv: h('span.num'), pos: h('dd.num'), head: h('dd.num'), odo: h('dd.num'), alt: h('dd.num') };
     put(
-      h('p.mission-lede', null, u.kind === 'rover' ? 'The rover exists as hardware: four stepper motors on mecanum wheels, a Raspberry Pi 4 and an Arduino that stops the motors by itself 400 ms after the Pi goes quiet. This console is not connected to it. Its motion here is simulated.' : u.kind === 'drone' ? 'A concept. Only one rover has been built. The scout drone and its survey are simulated to show how a map from above would feed the search.' : 'The rescue team and its movement are simulated. In this exercise the team walks only a route a person has approved.'),
+      h('p.mission-lede', null, u.kind === 'rover' ? 'The rover exists as hardware: four stepper motors on mecanum wheels, a Raspberry Pi 4 and an Arduino that stops the motors by itself 400 ms after the Pi goes quiet. Its motion here is simulated.' : u.kind === 'drone' ? 'A concept. The scout drone and its survey are simulated to show how a map from above would feed the search.' : 'The rescue team and its movement are simulated. In this exercise the team walks only a route a person has approved.'),
       h('dl.kv.mission-kv', null, h('dt', null, 'Doing now'), vals.mode,
         ...(u.kind === 'rover' ? [h('dt', null, 'Battery'), h('dd.row', null, h('div.bar.grow', null, vals.bat), vals.batv), h('dt', null, 'Radio link'), h('dd.row', null, h('div.bar.grow', null, vals.link), vals.linkv)] : []),
         h('dt', null, 'Position'), vals.pos, h('dt', null, 'Heading'), vals.head, ...(u.kind === 'drone' ? [h('dt', null, 'Height'), vals.alt] : []), h('dt', null, u.kind === 'team' ? 'Walked' : u.kind === 'drone' ? 'Flown' : 'Driven'), vals.odo),
-      u.kind === 'rover' ? h('section.mission-sec', null, h('header', null, h('h4', null, 'Battery and link over the mission'), realityTag('sim')), spark, h('p.mission-sub', null, h('i.mission-key.solid'), 'battery  ', h('i.mission-key.line'), 'radio link. The link model (distance and walls) is assumed.')) : null,
+      u.kind === 'rover' ? h('section.mission-sec', null, h('header', null, h('h4', null, 'Battery and link over the mission'), realityTag('sim')), spark, h('p.mission-sub', null, h('i.mission-key.solid'), 'battery  ', h('i.mission-key.line'), 'radio link, modelled from distance and walls.')) : null,
       h('div.row.wrap', null,
         h('button.btn.btn-sm', { onclick: () => app.setCamera('follow') }, 'Follow with the camera'),
         u.kind === 'rover' ? h('button.btn.btn-sm', { onclick: () => ctx.select(null) }, 'Live sensors') : null));
@@ -205,10 +205,10 @@ export function createInspector(app) {
     put(
       h('p.mission-lede', null, hz.block ? 'The planner treats this area as a wall. No route for the rover or the team may cross it.' : 'Crossing is allowed but costs ' + hz.cost + ' times a normal step, so routes go around whenever a way round exists.'),
       hz.t != null ? h('p.note.danger', null, 'Appeared at ' + fmt.clock(hz.t) + ' as a drill. Every active route was planned again.') : null,
-      hz.kind === 'gas' ? h('p.note', null, 'Gas sensing is a concept. The rover has no gas sensor.') : null,
+      hz.kind === 'gas' ? h('p.note', null, 'Gas sensing is a concept.') : null,
       h('dl.kv.mission-kv', null, ...row('Kind', { slope: 'Unstable slope', collapse: 'Collapse risk', mud: 'Deep mud', gas: 'Possible gas' }[hz.kind] || hz.kind), ...row('Area', h('span.num', null, area.toFixed(0) + ' m²')), ...row('Planner weight', h('span.num', null, hz.block ? 'blocked' : '×' + hz.cost)),
         ...(r ? row('Rescue route', crossed ? 'Crosses this area' : avoided ? 'Goes around it' : 'Not near it') : [])),
-      h('p.mission-sub', null, 'The hazard areas are part of the invented exercise. The planner weights are design choices, not measurements.'));
+      h('p.mission-sub', null, 'The hazard areas are part of the invented exercise. The planner weights are design choices.'));
   }
   const inPoly = (p, poly) => { let inside = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, yi] = poly[i], [xj, yj] = poly[j]; if ((yi > p[1]) !== (yj > p[1]) && p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi) inside = !inside; } return inside; };
 
@@ -217,7 +217,7 @@ export function createInspector(app) {
     title.textContent = 'Stop ' + s.id; tagSlot.replaceChildren(h('span.tag.' + (listening ? 'tag-accent' : done ? 'tag-ok' : 'plain'), null, listening ? 'Listening now' : done ? 'Done' : 'Not reached yet'));
     const leads = S.detections.filter((d) => d.evidence.some((e) => e.vantage === s.id));
     put(
-      h('p.mission-lede', null, s.label + '. The rover stops here and listens for 10 seconds per window, because the network cannot listen while the wheels turn.'),
+      h('p.mission-lede', null, s.label + '. The rover stops here and listens for 10 seconds per window, standing still for the clearest signal.'),
       h('section.mission-sec', null, h('header', null, h('h4', null, 'Rooms covered from here')), ...s.covers.map((id) => { const cv = roomCover(S, id); return h('button.mission-item', { onclick: () => app.select({ type: 'room', id }, true) }, h('i.mission-dot.' + (cv.status === 'person' ? 'person' : cv.status === 'lead' ? 'warn' : cv.status === 'clear' ? 'ok' : 'closed')), h('span.grow', null, world.roomById(id).name), h('span.dim', null, cv.status === 'clear' ? pct(cv.residual) + ' chance missed' : { unsearched: 'not searched', lead: 'lead open', person: 'person found', blocked: 'not reached' }[cv.status])); })),
       h('section.mission-sec', null, h('header', null, h('h4', null, 'Wi-Fi windows read here'), realityTag('live-ai')),
         reads.length ? reads.map((r) => h('div.mission-read', null, h('span.num', null, fmt.clock(r.t)), r.ok ? [h('div.mission-gauge.small', null, h('i.mission-gauge-thr', { style: { left: ctx.nn.threshold * 100 + '%' } }), h('i.mission-gauge-mark', { 'data-says': r.says ? 'person' : 'none', style: { left: r.person * 100 + '%' } })), h('span.num', null, r.person.toFixed(2)), h('span.tag.' + (r.says ? 'tag-warn' : 'plain'), null, r.says ? 'Person' : 'No one')] : h('span.dim', null, r.reason || 'No Wi-Fi reading'))) : h('p.mission-sub', null, 'No window has been read here yet.')),

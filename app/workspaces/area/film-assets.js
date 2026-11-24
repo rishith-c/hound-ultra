@@ -100,8 +100,37 @@ export function treeAtlas(renderer) {
 }
 
 // Extruded footprints in one geometry. list: [{ ring: [[x, z], ...] (closed or open), h, base, id, kind }]
-export function extrude(list) {
-  const pos = [], nor = [], inf = [], uvw = [];   // inf: random, kind (0 roof, 1 wall, 2 block B roof, 3 block B wall), base, height
+// A broken single-storey building, drawn for the simulated exercise: jagged walls, roof slabs that sag and fall toward
+// one collapsed corner, and a heap of loose blocks there. `to` maps site metres to film metres.
+export function ruin({ rect, h, base, to, hit, reach, cavity, cuts }) {
+  const out = { pos: [], nor: [], inf: [], uvw: [] }, r = rng(77), e = new THREE.Euler(), m = new THREE.Matrix4(), v = new THREE.Vector3(), w = new THREE.Vector3();
+  const F = [[[1, 0, 0], [0, 1, 0], [0, 0, 1]], [[-1, 0, 0], [0, 1, 0], [0, 0, -1]], [[0, 1, 0], [0, 0, 1], [1, 0, 0]], [[0, -1, 0], [0, 0, 1], [-1, 0, 0]], [[0, 0, 1], [0, 1, 0], [-1, 0, 0]], [[0, 0, -1], [0, 1, 0], [1, 0, 0]]];
+  function box(x, y, bottom, sx, sy, sz, kind, tx = 0, ty = 0, tz = 0) { // sx and sz along site x and y, sy up
+    const c = to([x, y]), id = r(); m.makeRotationFromEuler(e.set(tx, ty, tz));
+    for (const [n, a, b] of F) { const q = [];
+      for (const [i, j] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { v.set((n[0] + a[0] * i + b[0] * j) * sx / 2, (n[1] + a[1] * i + b[1] * j) * sy / 2, (n[2] + a[2] * i + b[2] * j) * sz / 2).applyMatrix4(m); q.push([c[0] + v.x, base + bottom + sy / 2 + v.y, c[1] + v.z]); }
+      w.set(n[0], n[1], n[2]).applyMatrix4(m); const flat = Math.abs(w.y) > 0.5;
+      for (const i of [0, 1, 2, 0, 2, 3]) { const p = q[i]; out.pos.push(p[0], p[1], p[2]); out.nor.push(w.x, w.y, w.z); out.inf.push(id, kind, base, h); out.uvw.push(Math.abs(n[0]) > 0.5 ? p[2] : p[0], flat ? -1 : p[1] - base); } }
+  }
+  const harm = (x, y) => clamp01(1 - Math.hypot(x - hit[0], y - hit[1]) / reach + (r() - 0.5) * 0.16);
+  const [x0, y0, x1, y1] = rect;
+  const wall = (ax, ay, bx, by, deep) => { const L = Math.hypot(bx - ax, by - ay), c = Math.ceil(L / 1.4), along = Math.abs(bx - ax) > 0.1; for (let i = 0; i < c; i++) { const f = (i + 0.5) / c, x = ax + (bx - ax) * f, y = ay + (by - ay) * f, d = harm(x, y), top = d > 0.3 ? h * Math.max(0.1, 1 - d * (0.5 + 0.9 * r())) : h, s = L / c + 0.01; box(x, y, -deep, along ? s : 0.3, top + deep, along ? 0.3 : s, 3); } };
+  wall(x0, y0, x1, y0, 7); wall(x0, y1, x1, y1, 7); wall(x0, y0, x0, y1, 7); wall(x1, y0, x1, y1, 7);
+  for (const c of cuts) wall(...c, 0.6);
+  box((x0 + x1) / 2, (y0 + y1) / 2, -0.7, x1 - x0, 0.75, y1 - y0, 2);
+  const nx = 12, ny = 8, px = (x1 - x0) / nx, py = (y1 - y0) / ny;
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const x = x0 + (i + 0.5) * px, y = y0 + (j + 0.5) * py, d = harm(x, y);
+    if (d < 0.26) box(x, y, h + (r() - 0.5) * 0.04, px + 0.02, 0.24, py + 0.02, 2, (r() - 0.5) * 0.012, 0, (r() - 0.5) * 0.012);
+    else if (d < 0.52) box(x, y, h - (d - 0.26) * 5 - 0.3, px, 0.24, py, 2, (r() - 0.35) * 0.5, (r() - 0.5) * 0.2, (r() - 0.65) * 0.6);
+    else if (r() < 0.62) box(x, y, 0.5 + r() * 1.0, px * (0.6 + 0.4 * r()), 0.24, py * (0.6 + 0.4 * r()), 2, (r() - 0.5) * 1.1, r() * 3, (r() - 0.5) * 1.1); }
+  for (let q = 0; q < 620; q++) { const a = r() * 6.283, d = Math.sqrt(r()) * reach * 0.62, x = hit[0] + Math.cos(a) * d, y = hit[1] + Math.sin(a) * d; if (Math.hypot(x - cavity[0], y - cavity[1]) < 1.1) continue;
+    const s = 0.22 + r() * r() * 1.5, pile = 1.5 * Math.exp(-d * d / 42); box(x, y, pile * r() - 0.1, s, s * (0.25 + r() * 0.5), s * (0.5 + r() * 0.7), r() < 0.7 ? 2 : 3, (r() - 0.5) * 1.4, r() * 6, (r() - 0.5) * 1.4); }
+  return out;
+}
+const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+export function extrude(list, start) {
+  const { pos, nor, inf, uvw } = start || { pos: [], nor: [], inf: [], uvw: [] };   // inf: random, kind (0 roof, 1 wall, 2 block B roof, 3 block B wall), base, height
   const put = (x, y, z, nx, ny, nz, r, k, b, h, u, v) => { pos.push(x, y, z); nor.push(nx, ny, nz); inf.push(r, k, b, h); uvw.push(u, v); };
   for (const o of list) {
     let ring = o.ring.map((p) => p.slice()); if (ring.length > 3 && Math.hypot(ring[0][0] - ring[ring.length - 1][0], ring[0][1] - ring[ring.length - 1][1]) < 0.05) ring.pop();

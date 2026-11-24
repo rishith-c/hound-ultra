@@ -5,7 +5,7 @@ import { pointInPoly, pointInRect, rectCenter, mulberry32 } from '../../core/geo
 export const MAP_LAYERS = [
   { id: 'hazards', label: 'Hazards', on: true },
   { id: 'coverage', label: 'Searched area', on: true },
-  { id: 'heat', label: 'Chance someone was missed', on: false },
+  { id: 'heat', label: 'Chance left to check', on: false },
   { id: 'route', label: 'Rescue route', on: true },
   { id: 'trail', label: 'Trails and planned paths', on: true },
   { id: 'scan', label: 'Drone survey', on: true },

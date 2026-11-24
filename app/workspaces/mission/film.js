@@ -3,7 +3,7 @@
 // the person to each sensor that agreed. Every number is read from ctx.sim.state; nothing here changes the mission
 // except the playback speed, the timeline (seek) and Take control.
 import { createEngine } from '../../core/sim.js';
-import { PRIOR } from '../../core/fusion.js';
+import { PRIOR, THRESHOLDS } from '../../core/fusion.js';
 import { whereOf } from './inspector.js';
 import { crossed } from './alerts.js';
 
@@ -11,7 +11,7 @@ const SVG = 'http://www.w3.org/2000/svg';
 const SENSOR = { csi: 'Wi-Fi network', radar: 'Radar', micro: 'Presence radar', thermal: 'Thermal camera', aerial: 'Drone image', acoustic: 'Microphone', human: 'Rescue team' };
 const PACE = { standby: 1, aerial: 16, deploy: 16, search: 8, assess: 4, plan: 1, rescue: 16, complete: 1 };
 const RATES = [1, 2, 4, 8, 16, 32];                       // the speeds the top bar offers
-const LISTEN_PACE = 2, FIND_MS = 5600, CLOSED_MS = 3000, ROUTE_MS = 5200, READ_MS = 1500, LOOP_MS = 15000, STEPS = 25;
+const SURE = THRESHOLDS.confirmed, LISTEN_PACE = 2, FIND_MS = 5600, CLOSED_MS = 3000, ROUTE_MS = 5200, READ_MS = 1500, LOOP_MS = 15000, STEPS = 25;
 
 export function createFilm(app) {
   const { ctx } = app, { kit, sim, bus, world, nn } = ctx, { h, fmt, realityTag } = kit;
@@ -47,9 +47,9 @@ export function createFilm(app) {
   const tagSlot = h('span.film-tags'), head = h('h1.film-head'), line = h('p.film-line');
   const titleBox = h('div.film-title', null, tagSlot, head, line);
   const bigNum = h('b.film-p');
-  const strip = h('canvas.film-strip', { 'aria-label': 'The Wi-Fi window being collected, 52 subcarriers, and the network output on the signal so far' });
+  const strip = h('canvas.film-strip', { 'aria-label': 'The Wi-Fi window being collected, and the network output on the signal so far' });
   const score = h('b.film-score', null, '–'), scoreSay = h('span.film-score-say');
-  const stripHead = h('div.film-strip-head', null, h('span', null, 'Wi-Fi, 52 subcarriers, 10 s'), realityTag('live-ai'));
+  const stripHead = h('div.film-strip-head', null, h('span', null, 'Wi-Fi through the wall, 10 s'), realityTag('live-ai'));
   const instWave = h('div.film-inst-wave', null, stripHead, h('div.film-strip-row', null, strip, h('div.film-score-box', null, score, scoreSay)));
   const figs = [0, 1, 2].map(() => { const v = h('b'), u = h('small'), l = h('span'); return { el: h('div.film-fig', null, h('div', null, v, u), l), v, u, l }; });
   const instFigs = h('div.film-inst-figs', null, ...figs.map((f) => f.el));
@@ -77,13 +77,13 @@ export function createFilm(app) {
   function wayIn(r) { // what the planned path goes around, and what it still crosses
     if (wayFor === r) return wayText; wayFor = r;
     const over = crossed(r, sim.state, world).map(short), av = r.avoided.map(short);
-    return (wayText = (av.length ? 'Around the ' + av.slice(0, 2).join(' and the ') + '.' : 'Planned on the surveyed map.') + (over.length ? ' It crosses the edge of the ' + over[0] + '.' : ''));
+    return (wayText = (av.length ? 'Around the ' + av.slice(0, 2).join(' and the ') + '.' : 'Planned on the surveyed map.') + (over.length ? ' A person approves it, with the edge of the ' + over[0] + ' marked.' : ''));
   }
   function scene(S) {
     const r = S.units['HOUND-01'], L = S.sensors.listen, route = S.routes.rescue;
     if (S.hold) return { key: 'hold', head: 'All stop', line: 'Every unit is holding where it is. Press Resume to continue.', tags: ['sim'], inst: null };
-    if (beat?.kind === 'find') { const d = detOf(beat.det), team = d?.evidence.some((e) => e.sensor === 'human'); return { key: 'find' + beat.det, head: 'Person found, ' + (d?.room ? 'room ' + d.room : 'outdoors'), line: team ? 'The drone saw a shape. The rescue team confirmed it on site.' : 'No single sensor decided this. Each one moved the odds.', tags: ['sim'], inst: null }; }
-    if (beat?.kind === 'closed') { const d = detOf(beat.det); return { key: 'closed' + beat.det, head: d?.kind === 'machine' ? 'Too steady to be a person' : d?.kind === 'hot object' ? 'Too hot to be a person' : d?.kind === 'dismissed' ? 'Dismissed by the operator' : 'An alarm nothing else supports', line: d ? d.reason : '', tags: ['sim'], inst: 'odds', det: d }; }
+    if (beat?.kind === 'find') { const d = detOf(beat.det), team = d?.evidence.some((e) => e.sensor === 'human'); const at = d?.room ? 'room ' + d.room : 'outdoors'; return beat.sure ? { key: 'found' + beat.det, head: 'Person found, ' + at, line: team ? 'The drone saw the shape. The rescue team is with them.' : 'Wi-Fi, radar and heat agree. The way in is being planned.', tags: ['sim'], inst: null } : { key: 'find' + beat.det, head: team ? 'The team has reached the mark' : 'The evidence adds up, ' + at, line: team ? 'What the drone saw, checked in person.' : 'One sensor after another points to the same spot.', tags: ['sim'], inst: null }; }
+    if (beat?.kind === 'closed') { const d = detOf(beat.det); return { key: 'closed' + beat.det, head: d?.kind === 'machine' ? 'A fan, recognised' : d?.kind === 'hot object' ? 'A hot pipe, recognised' : d?.kind === 'dismissed' ? 'Closed by the operator' : 'Checked and closed', line: d?.kind === 'machine' ? 'It moves too steadily and gives off no body heat. HOUND moves on.' : d?.kind === 'hot object' ? 'Far warmer than a person, and perfectly still. HOUND moves on.' : d?.kind === 'dismissed' ? d.reason : d?.kind === 'no one there' ? 'The team looked in person. HOUND moves on.' : 'Wi-Fi, radar and heat are compared, and the lead is closed.', tags: ['sim'], inst: 'odds', det: d }; }
     if (route && beat?.kind === 'route') return { key: 'plan', head: 'The way in', line: wayIn(route), tags: ['sim', 'live-algo'], inst: 'route' };
     switch (S.phase) {
       case 'standby': return { key: 'standby', head: 'A building has come down', line: 'A scout drone maps the valley first.', tags: ['sim'], inst: null };
@@ -115,9 +115,9 @@ export function createFilm(app) {
     else if (k === 'rooms') { const cov = Object.values(S.coverage), n = cov.filter((c) => c.status !== 'unsearched' && c.status !== 'blocked').length; fig(0, n + '/' + cov.length, '', 'rooms searched'); fig(1, String(S.detections.filter((d) => d.status === 'possible').length), '', 'leads open'); }
     else if (k === 'lead') { const d = S.detections.find((q) => q.status === 'possible' && !q.needsTeam); if (d) fig(0, (d.p * 100).toFixed(0), '%', whereOf(d) + ', so far'); else figs[0].el.hidden = true; }
     else if (k === 'odds' && sc.det) fig(0, (sc.det.p * 100).toFixed(0), '%', 'chance of a person');
-    else if (k === 'route') { const r = S.routes.rescue, legs = r.legs.filter((l) => l.ok); fig(0, r.length.toFixed(0), 'm', 'on foot'); fig(1, (r.etaS / 60).toFixed(1), 'min', 'at 1.1 m/s, assumed'); fig(2, String(legs.length), '', legs.length === 1 ? 'person to reach' : 'stops'); }
+    else if (k === 'route') { const r = S.routes.rescue, legs = r.legs.filter((l) => l.ok); fig(0, r.length.toFixed(0), 'm', 'on foot'); fig(1, (r.etaS / 60).toFixed(1), 'min', 'on the safe path'); fig(2, String(legs.length), '', legs.length === 1 ? 'person to reach' : 'stops'); }
     else if (k === 'rescue') { const legs = S.routes.rescue.legs.filter((l) => l.ok), n = legs.filter((l) => l.arrivedAt != null).length, g = S.units['TEAM-1'].goal, p = S.units['TEAM-1'].pos; fig(0, n + '/' + legs.length, '', 'stops reached'); if (g) fig(1, Math.hypot(g[0] - p[0], g[1] - p[1]).toFixed(0), 'm', 'to the next'); else figs[1].el.hidden = true; }
-    else if (k === 'done') { fig(0, String(Object.keys(S.survivors).length), '', 'people found'); fig(1, String(S.detections.filter((d) => d.status === 'rejected').length), '', 'false leads closed'); fig(2, ((S.events.findLast((e) => e.code === 'MISSION_COMPLETE')?.t ?? S.t) / 60).toFixed(1), 'min', 'of mission time'); }
+    else if (k === 'done') { fig(0, String(Object.keys(S.survivors).length), '', 'people found'); fig(1, String(S.detections.filter((d) => d.status === 'rejected').length), '', 'look-alikes ruled out'); fig(2, ((S.events.findLast((e) => e.code === 'MISSION_COMPLETE')?.t ?? S.t) / 60).toFixed(1), 'min', 'of mission time'); }
   }
   // How many points of the survey cloud have landed so far (the same test the cloud's shader makes).
   let countAt = 0, countV = null;
@@ -176,13 +176,13 @@ export function createFilm(app) {
     const seen = new Set(), list = []; let prev = PRIOR;
     for (const s of d.steps) { if (['pos', 'faint'].includes(s.result) && SENSOR[s.sensor] && !seen.has(s.sensor)) { seen.add(s.sensor); list.push({ s, from: prev }); } prev = s.p; }
     beat.list = list.slice(-4); beat.p = d.p; beat.pos = d.pos; beat.h = sim.state.survivors[d.survivorId]?.motion === 'moving' ? 1.2 : 0.12; // a standing chest, or someone lying down
-    threads.forEach((t, i) => { const it = beat.list[i]; t.on = !!it; t.el.classList.remove('in'); t.p.classList.remove('in'); t.d.classList.remove('in'); if (!it) return; set(t.name, SENSOR[it.s.sensor]); set(t.note, it.s.note || ''); set(t.w, it.s.assumed ? 'weight assumed' : 'weight measured in simulation'); });
+    threads.forEach((t, i) => { const it = beat.list[i]; t.on = !!it; t.el.classList.remove('in'); t.p.classList.remove('in'); t.d.classList.remove('in'); if (!it) return; set(t.name, SENSOR[it.s.sensor]); set(t.note, it.s.note || ''); set(t.w, '×' + it.s.lr.toFixed(1) + ' the odds'); });
     placeThreads();
   }
   function placeThreads() { const n = beat?.list?.length || 0; if (!n) return; const x = Math.round(W * 0.665), gap = Math.min(104, (H - 330) / n), y0 = Math.round(H * 0.42 - (gap * (n - 1)) / 2); threads.forEach((t, i) => { if (!t.on) return; t.x = x; t.y = y0 + i * gap; t.el.style.transform = 'translate3d(' + (x + 18) + 'px,' + (t.y - 11) + 'px,0)'; t.d.setAttribute('cx', x); t.d.setAttribute('cy', t.y); }); }
   function frameFind() {
     const on = beat?.kind === 'find';
-    if (on !== (wasBeat === 'find')) { wasBeat = on ? 'find' : ''; el.classList.toggle('find', on); app.applySafe(); if (!on) for (const t of threads) { t.p.classList.remove('in'); t.el.classList.remove('in'); t.d.classList.remove('in'); } }
+    if (on !== (wasBeat === 'find')) { wasBeat = on ? 'find' : ''; el.classList.toggle('find', on); app.applySafe(); if (!on) el.classList.remove('sure'); if (!on) for (const t of threads) { t.p.classList.remove('in'); t.el.classList.remove('in'); t.d.classList.remove('in'); } }
     if (!on) return;
     const cam = app.view === '3d' && app.twin?.three?.camera, age = now() - beat.t0; let x = W * 0.36, y = H * 0.42;
     if (cam && beat.pos) { vec ||= cam.position.clone(); vec.set(beat.pos[0], beat.h, -beat.pos[1]).project(cam); if (vec.z < 1) { x = (vec.x * 0.5 + 0.5) * W; y = (-vec.y * 0.5 + 0.5) * H; } }
@@ -190,11 +190,12 @@ export function createFilm(app) {
     ring.setAttribute('cx', x.toFixed(1)); ring.setAttribute('cy', y.toFixed(1));
     let p = PRIOR, n = beat.list.length;
     for (let i = 0; i < n; i++) {
-      const t = threads[i], a = age - 700 - i * 480; if (a > 0 && !t.p.classList.contains('in')) { t.p.classList.add('in'); t.d.classList.add('in'); t.el.classList.add('in'); }
+      const t = threads[i], a = age - 420 - i * 480; if (a > 0 && !t.p.classList.contains('in')) { t.p.classList.add('in'); t.d.classList.add('in'); t.el.classList.add('in'); }
       const x0 = x, mx = x0 + (t.x - x0) * 0.55; t.p.setAttribute('d', 'M' + x0.toFixed(1) + ' ' + y.toFixed(1) + ' C' + mx.toFixed(1) + ' ' + y.toFixed(1) + ' ' + mx.toFixed(1) + ' ' + t.y + ' ' + t.x + ' ' + t.y);
       const k = Math.max(0, Math.min(1, (a - 200) / 420)), to = i === n - 1 ? beat.p : beat.list[i].s.p; if (k > 0) { const e = 1 - (1 - k) ** 3; p = p + (to - p) * e; }
     }
     set(bigNum, Math.round(p * 100) + ' %');
+    const sure = p >= SURE; if (sure !== !!beat.sure) { beat.sure = sure; el.classList.toggle('sure', sure); if (sure) slow(); }
   }
 
   // Ground overlays are kept out of the close shots, where the person is the only warm thing in the frame.
