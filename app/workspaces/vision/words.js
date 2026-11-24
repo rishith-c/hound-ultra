@@ -9,7 +9,7 @@ const SCALES = [{ k: 3, label: 'Coarse', hint: 'a third of the frame' }, { k: 5,
 
 export async function create(el, ctx, lab, def) {
   const { h, icon } = ctx.kit;
-  const f = lab.frame(el, { n: def.n, title: def.title, tags: def.tags, lede: ['Type what you are looking for and a vision-language model scores every part of the frame against your words.', 'It was never trained on “red jacket” or “blue barrel” as classes: it learned pictures and sentences together, so one model can look for anything you can describe.'] });
+  const f = lab.frame(el, { n: def.n, title: def.title, tags: def.tags, lede: ['Type what you are looking for and a vision-language model scores every part of the frame against your words.', 'It learned pictures and sentences together instead of a list of objects, so the same model can be asked for a barrel or a jacket.'] });
 
   const vision = lab.model({ key: 'mobileclip-vision', name: 'MobileCLIP-S0, image encoder', repo: REPO, role: 'Turns an image tile into 512 numbers', mb: 45.5,
     what: 'A small contrastive image-text model from Apple (2024). The image half runs once per tile.',
@@ -84,11 +84,11 @@ export async function create(el, ctx, lab, def) {
   f.section('Models', vision.view(), text.view());
   f.dossier({
     research: [
-      { title: 'MobileCLIP: fast image-text models through multi-modal reinforced training', who: 'Vasu, Pouransari, Faghri, Vemulapalli, Tuzel (Apple)', year: 'CVPR 2024', url: 'https://arxiv.org/abs/2311.17049', note: 'The model running here.' },
+      { title: 'MobileCLIP: fast image-text models through multi-modal reinforced training', who: 'Vasu et al. (Apple)', year: 'CVPR 2024', url: 'https://arxiv.org/abs/2311.17049', note: 'The model running here.' },
       { title: 'Learning transferable visual models from natural language supervision (CLIP)', who: 'Radford et al. (OpenAI)', year: '2021', url: 'https://arxiv.org/abs/2103.00020', note: 'The idea: train on image and caption pairs, then search by text.' },
     ],
     field: 'The drone would have to send frames sharp enough that the thing you describe covers tens of pixels, and someone has to choose good words. Unknown: how it behaves on real flood imagery at night or in rain. These sample frames are AI-generated illustrations, so nothing here measures field accuracy.',
-    failure: 'It scores resemblance, not presence. On frame E, which has no people, “a person lying down” still returns ranked crops, and a red cloth outranks everything for “a red jacket”. A top crop is a place to look, never a finding.',
+    failure: 'It scores resemblance, not presence. On frame E, where there is nobody, “a red jacket” scored 0.99 on a torn red cloth, more than the 0.92 a real one got on frame A (recorded with a finer fourth tile size). On frame A “a person covered in mud” gave 0.98 to a clean person in red. A top crop is a place to look, never a finding.',
   });
 
   // ---------- indexing ----------
@@ -178,9 +178,9 @@ export async function create(el, ctx, lab, def) {
   }
   async function query() {
     const idx = S.index, q = S.q; if (!idx || !q) return;
+    S.bg ||= await Promise.all(BACKGROUND.map(phrase));           // once, before the clock starts: every later query reuses it
     const t0 = performance.now();
     const qv = await phrase(q);
-    S.bg ||= await Promise.all(BACKGROUND.map(phrase));
     const tText = performance.now() - t0, t1 = performance.now();
     const { n, D, emb, tiles } = idx, raw = new Float32Array(n), score = new Float32Array(n);
     let lo = Infinity, hi = -Infinity;

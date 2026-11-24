@@ -4,10 +4,11 @@ import * as THREE from 'three';
 import { Part, rbox, cyl, extrude, chamfered, boxUV, makeMaterials, rng } from './materials.js';
 import { pi4, unoR4, shield, driver, heatsink, esp32, ld2450, mlx, tof } from './boards.js';
 
-// Camera of assets/img/landing/rover-real.jpg (1060 x 596), solved by least squares from four wheel centres and five frame
-// corners, all within 3 px. CAD axes, metres. The same solve returned a 0.480 m track (the CAD says 0.480) and a 0.321 m wheelbase.
+// Camera of assets/img/landing/rover-real.jpg (1060 x 596), solved by least squares from four wheel centres and five
+// hand-picked frame corners (unweighted residuals up to about 3.5 px). CAD axes, metres; scale from the 390 mm frame width.
+// The same solve returned a 0.480 m track (the CAD says 0.480, assembly.json 0.431) and a 0.321 m wheelbase (both say 0.250).
 export const PHOTO = { w: 1060, h: 596, f: 1424.55, pos: [1.40357, -0.07516, 0.88656], yaw: 0.00217, pitch: 0.45409, roll: 0.00131 };
-export const TRACK = .24, BASE = .1605, RW = .04, RAIL = .098, DECK = .102;
+export const TRACK = .24, BASE = .1605, RW = .0437, RAIL = .098, DECK = .102;
 const v3 = (a) => new THREE.Vector3(a[0], a[1], a[2]);
 export function photoBasis() {
   const { yaw, pitch, roll } = PHOTO, d = new THREE.Vector3(-Math.cos(yaw) * Math.cos(pitch), -Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch));
@@ -66,7 +67,7 @@ export async function buildRover() {
   }
   // ── motors, brackets, hubs, wheels
   const motorShape = chamfered(.0423, .0423, .0046), capHoles = [[.0155, .0155, .0016], [-.0155, .0155, .0016], [.0155, -.0155, .0016], [-.0155, -.0155, .0016]];
-  const legShape = [[-.025, -.021], [-.021, -.025], [.021, -.025], [.025, -.021], [.025, .037], [-.025, .037]];
+  const legShape = [[-.025, -.021], [-.021, -.025], [.021, -.025], [.025, -.021], [.025, .0333], [-.025, .0333]];
   const leg = extrude(legShape, .003, { bevel: .0004, holes: [[0, 0, .0115], ...capHoles.map(([x, y, r]) => [x, y, r, .004])], curve: 20 });
   const foot = extrude(chamfered(.05, .05, .002), .003, { bevel: .0004, holes: [[-.012, 0, .0022, .016], [.012, 0, .0022, .016]] });
   const wheels = [];
@@ -80,7 +81,7 @@ export async function buildRover() {
     for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), r = Math.hypot(x, z); if (r < .004) continue; const a = Math.atan2(z, x), e = Math.abs(y) / z1; const cut = e < .93 ? .085 * Math.pow(Math.max(0, Math.cos(a * 10)), 6) : 0; p.setX(i, x * (1 - cut)); p.setZ(i, z * (1 - cut)); }
     l.computeVertexNormals(); l.rotateX(Math.PI / 2); return boxUV(l);
   })();
-  const S8 = new THREE.Matrix4().makeScale(.8, .8, .8); // the CAD wheel is 100 mm; the rover has 80 mm wheels
+  const S8 = new THREE.Matrix4().makeScale(RW / .05, RW / .05, RW / .05); // the CAD wheel is 100 mm. The rover has 80 mm wheels, but next to a 390 mm frame the photograph shows them at 87 mm: the picture wins, so that model and photograph line up
   for (const [key, [nm, sx, sy]] of Object.entries(CADW)) {
     const cx = sx * BASE, cy = sy * TRACK, win = [.05, .7];
     const Mo = new Part('motor'); const rx = -sy * Math.PI / 2; // extrusions have axis z; turn it to +/- y
@@ -90,7 +91,7 @@ export async function buildRover() {
     Mo.add(M.white, rbox(.0006, .024, .030, .0001, 1), sx * .0213, 0, 0); Mo.add(M.epoxy, rbox(.0003, .016, .0016, .0001, 1), sx * .0217, 0, .008); Mo.add(M.epoxy, rbox(.0003, .012, .0012, .0001, 1), sx * .0217, 0, .004); Mo.add(M.epoxy, rbox(.0003, .018, .0012, .0001, 1), sx * .0217, 0, 0);
     Mo.add(M.white, rbox(.016, .006, .006, .0003, 1), -sx * 0, -sy * .0168, .0235);
     put('motor', Mo, [cx, sy * .1722, RW], [0, -sy * .030, LIFT - .075], [.16, .85], { group: 'motors' });
-    const Br = new Part('bracket'); Br.add(M.zinc, leg, 0, 0, 0, Math.PI / 2, 0, 0); Br.add(M.zinc, foot, 0, -sy * .0265, .0365 - .0000, 0, 0, 0); for (const [x, z] of capHoles) Br.add(M.steel, cyl(.0027, .0027, .0025, 18), x, sy * .0026, z, Math.PI / 2); for (const x of [-.012, .012]) Br.add(M.steel, cyl(.0042, .0042, .003, 6), x, -sy * .0265, .0335);
+    const Br = new Part('bracket'); Br.add(M.anodised, leg, 0, 0, 0, Math.PI / 2, 0, 0); Br.add(M.anodised, foot, 0, -sy * .0265, .0328, 0, 0, 0); for (const [x, z] of capHoles) Br.add(M.steel, cyl(.0027, .0027, .0025, 18), x, sy * .0026, z, Math.PI / 2); for (const x of [-.012, .012]) Br.add(M.steel, cyl(.0042, .0042, .003, 6), x, -sy * .0265, .0298);
     put('bracket', Br, [cx, sy * .1935, RW], [0, sy * .030, LIFT - .040], [.12, .8], { group: 'motors' });
     const hubN = nodes.find((x) => x.name === nm + '_hub_interface_TBD'), hub = new Part('hub'); hub.addM(M.alu, geos[hubN.mesh], new THREE.Matrix4().makeTranslation(-sx * .125, -sy * .2165, -.05).multiply(hubN.matrix));
     put('hub', hub, [cx, sy * .2135, RW], [0, sy * .075, .0], [.06, .75], { group: 'wheels' });
@@ -127,19 +128,19 @@ export async function buildRover() {
   const MZ = [-.34, 0, LIFT + .13], mw = [.22, .95];
   const mast = new Part('mast'); const at0 = [A.x, A.y, A.z];
   mast.add(M.foam, prism(0, 1, -.045, 0, .181)); mast.add(M.foam, prism(.79, 1.012, -.002, .0042, .184)); mast.add(M.foam, prism(.50, .985, -.049, -.044, .165));
-  mast.add(M.tape, prism(0, .135, -.0462, .0011, .1835, .0006)); mast.add(M.tape, rbox(.05, .19, .0008, .0003, 1), .020, 0, .0026); mast.add(M.tape, rbox(.03, .06, .0008, .0003, 1), -.02, -.118, .0024, 0, 0, .3);
+  mast.add(M.tape, prism(0, .135, -.0462, .0011, .1835, .0006)); mast.add(M.tape, rbox(.016, .186, .0008, .0003, 1), .006, 0, .0026); mast.add(M.tape, rbox(.03, .06, .0008, .0003, 1), -.02, -.118, .0024, 0, 0, .3);
   put('mast', mast, at0, MZ, mw);
   // sensors live in the mast's own frame
   const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 1, 0), N.clone().cross(new THREE.Vector3(0, 1, 0)).normalize(), N));
   const onMast = (px, py, lift = 0) => fromPhoto(px, py, A.clone().addScaledVector(N, lift), N);
-  const onto = (P, px, py, lift, off, id, win) => { const p = onMast(px, py, lift); return put(id, P, [p.x, p.y, p.z], [N.x * off + MZ[0], 0, N.z * off * .6 + MZ[2]], win, { quat: q }); };
+  const onto = (P, px, py, lift, off, id, win, side = 0) => { const p = onMast(px, py, lift); return put(id, P, [p.x, p.y, p.z], [N.x * off + MZ[0], side, N.z * off * .6 + MZ[2]], win, { quat: q }); };
   const tp = new Part('mast'); tp.add(M.tape, rbox(.074, .034, .0007, .0003, 1), 0, 0, .0006); { const p = onMast(580, 118, .0044); put('mast', tp, [p.x, p.y, p.z], MZ, mw, { quat: q }); }
   const tp2 = new Part('mast'); tp2.add(M.tape, rbox(.036, .016, .0007, .0003, 1), 0, 0, .0004, 0, 0, -.5); { const p = onMast(591, 183, 0); put('mast', tp2, [p.x, p.y, p.z], MZ, mw, { quat: q }); }
   const cam = new Part('webcam'); // C920-class: long rounded bar, glass lens, clip
   cam.add(M.plastic, rbox(.098, .030, .022, .0105, 6), 0, 0, .020); cam.add(M.gloss, rbox(.090, .0235, .004, .0019, 4), 0, 0, .0305); cam.add(M.aluDark, cyl(.0115, .0115, .004, 44), 0, 0, .0318); cam.add(M.glass, cyl(.0088, .0092, .002, 44), 0, 0, .0338); cam.add(M.plastic, cyl(.0048, .0052, .0008, 32), 0, 0, .0347); cam.add(M.gloss, cyl(.0032, .0034, .0006, 24), 0, 0, .0352); cam.add(M.plastic, rbox(.034, .018, .012, .003, 3), 0, .012, .007); for (const s of [-1, 1]) for (let k = 0; k < 7; k++) for (let j = 0; j < 4; j++) cam.add(M.epoxy, cyl(.0007, .0007, .0006, 8), s * (.025 + k * .0022), (j - 1.5) * .0026, .0327); cam.add(M.white, cyl(.0009, .0009, .0008, 10), .0165, 0, .0327);
-  onto(cam, 582, 138, .001, .085, 'webcam', [.34, 1]);
-  onto(ld2450(M), 570, 90, .005, .125, 'radar', [.38, 1]);
-  const th = mlx(M); th.add(M.printed, rbox(.024, .014, .012, .001, 2), 0, 0, -.006); onto(th, 583, 112, .019, .165, 'thermal', [.36, 1]);
+  { const g = onto(cam, 582, 138, .001, .085, 'webcam', [.34, 1]); g.rotateZ(.10); g.scale.setScalar(1.08); } // taped on at a slant, as in the photograph
+  { const g = onto(ld2450(M), 570, 90, .005, .125, 'radar', [.38, 1], -.085); g.rotateZ(.06); g.scale.setScalar(1.1); }
+  const th = mlx(M); th.add(M.printed, rbox(.024, .014, .012, .001, 2), 0, 0, -.006); onto(th, 583, 112, .019, .165, 'thermal', [.36, 1], .085);
   const tf = tof(M); const qx = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0)));
   put('tof', tf, [.1752, -.004, zr + .001], [.115, 0, LIFT], [.2, .9], { quat: qx });
   // ── electronics on the deck

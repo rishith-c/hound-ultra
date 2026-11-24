@@ -66,12 +66,12 @@ float mixAt(vec2 cell){ return smoothstep(0., 1., uMixW * 2.2 - cell.x * .8 - ce
 float reliefAt(vec2 uv, vec2 cell){ return (mix(texture2D(dA, uv).r, texture2D(dB, uv).r, mixAt(cell)) - .35) * uRelief; }
 float scoreAt(vec2 uv, vec2 cell){
   vec2 p = mix(cell, uv, uSmooth); float s = texture2D(lA, p).r;
-  s = mix(s, smoothstep(.47, .53, s), uSmooth);
+  s = mix(s, smoothstep(.40, .60, s), uSmooth);
   float w = smoothstep(0., 1., uWave * 1.9 - distance(p, uFocus) * .9);
   return s * w;
 }
 float liftAt(vec2 uv, vec2 cell){ float s = scoreAt(uv, cell); return uLift * mix(pow(s, 1.25), s, uSmooth); }
-float edgeDrop(vec2 cell){ float e = min(min(cell.x, 1. - cell.x), min(cell.y, 1. - cell.y)); return pow(1. - smoothstep(0., .07, e - hash(cell * 7.) * .035), 2.) * -5.; }
+float edgeDrop(vec2 cell){ return 0.; }
 vec2 cellOf(vec2 uv){ return (floor(uv * ${CELLS}.) + .5) / ${CELLS}.; }
 float roll(vec2 cell){ float m = mixAt(cell); return -sin(m * 3.14159) * (.5 + hash(cell * 3.) * 1.1); }
 float fullHeight(vec2 uv){ vec2 c = cellOf(uv); return reliefAt(uv, c) + liftAt(uv, c) + edgeDrop(c) + roll(c); }
@@ -80,7 +80,7 @@ float fullHeight(vec2 uv){ vec2 c = cellOf(uv); return reliefAt(uv, c) + liftAt(
 export function makeTerrain() {
   const blank = liftTexture(new Uint8Array([0, 0, 0, 0]), 1, false);
   const U = { pA: { value: null }, pB: { value: null }, dA: { value: null }, dB: { value: null }, lA: { value: blank }, uRelief: { value: 1.7 }, uLift: { value: 0 }, uSmooth: { value: 0 }, uWave: { value: 0 }, uMixW: { value: 0 }, uTime: { value: 0 },
-    uFocus: { value: new THREE.Vector2(0.5, 0.5) }, hT: { value: null }, uTint: { value: new THREE.Color('#ff6a45') }, uSun: { value: new THREE.Vector3(-0.62, 0.52, -0.42).normalize() }, uDim: { value: 0 }, uScan: { value: -1 }, uClick: { value: new THREE.Vector3(0, 0, -1) }, uFog: { value: new THREE.Color(0x0a0d11) }, uGlow: { value: 1 } };
+    uFocus: { value: new THREE.Vector2(0.5, 0.5) }, hT: { value: null }, uTint: { value: new THREE.Color('#ff6a45') }, uSun: { value: new THREE.Vector3(-0.62, 0.52, -0.42).normalize() }, uDim: { value: 0 }, uScan: { value: -1 }, uClick: { value: new THREE.Vector3(0, 0, -1) }, uFog: { value: new THREE.Color(0.0055, 0.0072, 0.0095) }, uGlow: { value: 1 } };
   const mat = new THREE.ShaderMaterial({ uniforms: U, side: THREE.DoubleSide,
     vertexShader: HEIGHT.replace('lA, lB', 'lA') + `
       attribute vec2 aCell; varying vec2 vUv; varying vec2 vCell; varying float vSide, vDepth, vLift, vScore, vFace; varying vec3 vW;
@@ -98,7 +98,7 @@ export function makeTerrain() {
       varying vec2 vUv; varying vec2 vCell; varying float vSide, vDepth, vLift, vScore, vFace; varying vec3 vW;
       vec3 aces(vec3 x){ return clamp((x * (2.51 * x + .03)) / (x * (2.43 * x + .59) + .14), 0., 1.); }
       float shadow(vec2 uv, float y){
-        float s = 1., t = .06 + .07 * hash(gl_FragCoord.xy * .013);
+        float s = 1., t = .07 + .03 * hash(gl_FragCoord.xy * .013);
         for (int i = 0; i < 22; i++) { vec2 p = uv + uSun.xz * t / ${SIZE}; float hh = total(p), c = y + uSun.y * t; s = min(s, 1. - smoothstep(-.02, .12 + t * .16, hh - c)); t *= 1.16; t += .05; if (s < .02) break; }
         return s;
       }
@@ -114,6 +114,7 @@ export function makeTerrain() {
         float s = clamp(vScore, 0., 1.);
         float on = mix(smoothstep(.06, .6, s), smoothstep(.3, .7, s), uSmooth);
         vec3 col;
+        vec3 gN = normalize(cross(dFdx(vW), dFdy(vW))); float wall = uSmooth * smoothstep(.62, .38, abs(gN.y)) * smoothstep(.08, .3, uLift) * smoothstep(.02, .2, s) * step(s, .999);
         if (top > .5) {
           float sh = shadow(vUv, vW.y + .02), nl = max(dot(N, uSun), 0.);
           float ao = 0.; for (int i = 0; i < 6; i++) { float a = float(i) * 1.047 + .4; vec2 d = vec2(cos(a), sin(a)); ao += max(0., total(vUv + d * .011) - vW.y) + .6 * max(0., total(vUv + d * .028) - vW.y); } ao = exp(-ao * .16);
@@ -125,7 +126,8 @@ export function makeTerrain() {
           // the edges between patches: a hairline where the meaning rises, and the outline itself for a click
           vec2 f = abs(fract(vUv * ${CELLS}.) - .5); float line = smoothstep(.5 - fwidth(vUv.x * ${CELLS}.) * 1.3, .5, max(f.x, f.y));
           col += uTint * line * on * (1. - uSmooth) * .35 * uGlow;
-          float raw = texture2D(lA, vUv).r, fw = fwidth(raw) + 1e-4; float iso = 1. - smoothstep(0., 1.6, abs(raw - .5) / fw); col += uTint * iso * uSmooth * uGlow * smoothstep(0., .2, uWave) * 2.2;
+          float raw = texture2D(lA, vUv).r, fw = fwidth(raw) + 1e-4; float iso = 1. - smoothstep(0., 1.6, abs(raw - .5) / fw); col += uTint * iso * uSmooth * uGlow * smoothstep(0., .2, uWave) * 2.2 * (1. - smoothstep(.12, .5, uLift));
+          if (wall > 0.) { float dep = (1. - s) * uLift, st = .5 + .5 * sin(vW.y * 21. + sin(vUv.x * 190.) * .8 + sin(vUv.y * 170.) * .8), gr = hash(floor(vec2((vUv.x + vUv.y) * 900., vW.y * 44.))); vec3 nn = gN.y < 0. ? -gN : gN; vec3 wn = normalize(vec3(nn.x, 0., nn.z) + 1e-4); vec3 earth = mix(vec3(.06, .055, .05), vec3(.15, .13, .11), st * .5 + gr * .35) * (.35 + .9 * max(dot(wn, uSun), 0.)) * exp(-dep * .5); earth += uTint * uGlow * exp(-dep * 15.) * 1.3; col = mix(col, earth, wall); }
           col += uTint * on * .05 * uGlow;
         } else {
           float side = vFace; vec3 n = side < .5 ? vec3(0., 0., -1.) : side < 1.5 ? vec3(1., 0., 0.) : side < 2.5 ? vec3(0., 0., 1.) : vec3(-1., 0., 0.);
@@ -138,7 +140,6 @@ export function makeTerrain() {
         }
         if (uScan > -.5) { float bnd = exp(-abs(vUv.y + hash(vCell) * .02 - uScan) * 60.); vec2 f = abs(fract(vUv * 32.) - .5); col += vec3(.35, .6, .95) * bnd * (.12 + .5 * step(.485, max(f.x, f.y))); }
         if (uClick.z > 0.) { float d = distance(vUv, uClick.xy) * ${SIZE}, r = uClick.z * 2.4; float ring = exp(-abs(d - r) * 16.) * (1. - smoothstep(1.2, 2.6, r)) + (1. - smoothstep(.06, .11, d)) * .9; col += uTint * ring * 1.3; }
-        float edge = min(min(vCell.x, 1. - vCell.x), min(vCell.y, 1. - vCell.y)); col *= smoothstep(-.01, .12, edge);
         float dist = length(cameraPosition - vW); float fog = 1. - exp(-pow(max(0., dist - 8.) / 24., 1.7)); col = mix(col, uFog, fog);
         col = aces(col * 1.22); col = pow(col, vec3(1. / 2.2));
         col += (hash(gl_FragCoord.xy + fract(uTime) * 61.) - .5) * .016;
@@ -147,6 +148,19 @@ export function makeTerrain() {
   const mesh = new THREE.Mesh(columns(), mat); mesh.frustumCulled = false;
   // the whole height field, baked once a frame, so shadows and contact shade cost one texture read a step
   const rt = new THREE.WebGLRenderTarget(768, 768, { type: THREE.HalfFloatType, format: THREE.RedFormat, depthBuffer: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter }); U.hT.value = rt.texture;
+  // beyond the frame: the same ground mirrored, fading into the dark, so the picture has no edge
+  const { hT: _h, ...OU } = U; const outer = new THREE.Mesh(new THREE.PlaneGeometry(3, 3, 210, 210), new THREE.ShaderMaterial({ uniforms: OU, side: THREE.DoubleSide,
+    vertexShader: HEIGHT.replace('lA, lB', 'lA') + `varying vec2 vUv, vP; varying vec3 vW; vec2 mir(vec2 p){ return 1. - abs(mod(p, 2.) - 1.); }
+      void main(){ vec2 p = position.xy + .5; vP = p; vUv = p; vec2 q = mir(p); vec3 w = vec3((p.x - .5) * ${SIZE}, reliefAt(q, cellOf(q)) + roll(cellOf(q)) * .3 - .02, (p.y - .5) * ${SIZE}); vW = w; gl_Position = projectionMatrix * viewMatrix * vec4(w, 1.); }`,
+    fragmentShader: HEIGHT.replace('lA, lB', 'lA') + `uniform sampler2D pA, pB; uniform vec3 uSun, uFog; uniform float uDim; varying vec2 vUv, vP; varying vec3 vW; vec2 mir(vec2 p){ return 1. - abs(mod(p, 2.) - 1.); }
+      vec3 aces(vec3 x){ return clamp((x * (2.51 * x + .03)) / (x * (2.43 * x + .59) + .14), 0., 1.); }
+      void main(){ vec2 d = max(vec2(0.), abs(vP - .5) - .5); float o = length(d); if (max(d.x, d.y) < -.0005 || (vP.x > 0. && vP.x < 1. && vP.y > 0. && vP.y < 1.)) discard;
+        vec2 q = mir(vP), s = vec2(mod(floor(vP.x), 2.) == 0. ? 1. : -1., mod(floor(vP.y), 2.) == 0. ? 1. : -1.); float m = mixAt(cellOf(q)), e = 1. / 400.;
+        vec3 ph = mix(texture2D(pA, q).rgb, texture2D(pB, q).rgb, m); float lum = dot(ph, vec3(.2126, .7152, .0722));
+        float hx = (reliefAt(q + vec2(e, 0.), cellOf(q)) - reliefAt(q - vec2(e, 0.), cellOf(q))) * s.x, hy = (reliefAt(q + vec2(0., e), cellOf(q)) - reliefAt(q - vec2(0., e), cellOf(q))) * s.y;
+        vec3 N = normalize(vec3(-hx / (2. * e * ${SIZE}), 1., -hy / (2. * e * ${SIZE}))); vec3 alb = mix(ph, mix(vec3(lum), ph, .38) * .62, uDim);
+        vec3 col = alb * (vec3(1.28, 1.16, 1.) * max(dot(N, uSun), 0.) * 1.3 + vec3(.36, .43, .52) * .8) * exp(-o * 5.5);
+        float fog = 1. - exp(-pow(max(0., length(cameraPosition - vW) - 8.) / 24., 1.7)); col = mix(col, uFog, fog); col = pow(aces(col * 1.22), vec3(1. / 2.2)); gl_FragColor = vec4(col + (hash(gl_FragCoord.xy) - .5) * .014, 1.); }` })); outer.frustumCulled = false; mesh.add(outer);
   const bakeScene = new THREE.Scene(), bakeCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   const { hT, ...BU } = U; const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({ uniforms: BU, depthTest: false, depthWrite: false, vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }', fragmentShader: HEIGHT.replace('lA, lB', 'lA') + 'varying vec2 vUv; void main(){ gl_FragColor = vec4(fullHeight(vUv), 0., 0., 1.); }' })); quad.frustumCulled = false; bakeScene.add(quad);
   const bake = (renderer) => { renderer.setRenderTarget(rt); renderer.render(bakeScene, bakeCam); renderer.setRenderTarget(null); };

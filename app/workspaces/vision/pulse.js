@@ -301,6 +301,7 @@ export async function create(el, ctx, lab, def) {
 
   F.dossier({
     research: [
+      { title: 'For heart rate assessments from drone footage in disaster scenarios', who: 'Bioengineering', year: '2023', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC10045207/', note: 'Pulse from a drone camera, with its limits.' },
       { title: 'Remote plethysmographic imaging using ambient light', who: 'Verkruysse, Svaasand, Nelson, Optics Express 16(26)', year: 2008, url: 'https://doi.org/10.1364/OE.16.021434', note: 'The pulse read from an ordinary colour camera in daylight, strongest in green. The green method here.' },
       { title: 'Robust pulse rate from chrominance-based rPPG', who: 'de Haan, Jeanne, IEEE Transactions on Biomedical Engineering 60(10)', year: 2013, url: 'https://doi.org/10.1109/TBME.2013.2266196', note: 'Colour-difference signals that cancel brightness changes. The quality measure here follows its signal-to-noise ratio.' },
       { title: 'Algorithmic principles of remote PPG', who: 'Wang, den Brinker, Stuijk, de Haan, IEEE Transactions on Biomedical Engineering 64(7)', year: 2017, url: 'https://doi.org/10.1109/TBME.2016.2609282', note: 'The plane-orthogonal-to-skin (POS) method, implemented here from its algorithm 1.' },
@@ -535,5 +536,5 @@ export async function create(el, ctx, lab, def) {
   };
 }
 
-const FIELD = 'TODO';
-const FAILURE = 'TODO';
+const FIELD = 'The rover would have to see bare skin, well lit and still, with many pixels on it and no video compression. Dust, mud, blood, shade and a shaking camera each take that away: a 2023 drone trial with 18 people of clean skin, standing still, had an error of 14.3 beats a minute and says real disasters need more research. Unknown: whether any of this survives a collapsed building.';
+const FAILURE = 'A lamp flickering at 87 per minute (2 % of the light) makes the green-channel method report 87.0 with a quality of 20.3 dB: confidently wrong by 15 beats, because the lamp looks like a stronger pulse. POS, on the same frames, read 72.1. With 4 pixels of head motion the green channel gave no reading at all.';

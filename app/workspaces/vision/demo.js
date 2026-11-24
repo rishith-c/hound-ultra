@@ -5,13 +5,13 @@ import { asset, clamp, lerp } from './common.js';
 import { makeTerrain, makeBeam, makeDust, loadFrame, liftTexture, maskTexture, SIZE } from './terrain.js';
 
 export const CHAPTERS = [
-  { id: 'words', name: 'Search by words', tag: 'live-ai', rec: true, line: 'Type what you are looking for. Every patch of the drone frame rises by how well it fits the words.' },
-  { id: 'outline', name: 'Click to outline', tag: 'live-ai', rec: true, line: 'One click, and the model cuts the object out of the ground and gives its area.' },
-  { id: 'relief', name: 'One photo to 3-D', tag: 'live-ai', rec: true, line: 'A single picture, and a network that estimates how far away every pixel is.' },
-  { id: 'pulse', name: 'Pulse from pixels', tag: 'sim', rec: false, line: 'Skin changes colour by under one per cent with each beat. Amplified, it is a landscape.' },
-  { id: 'events', name: 'Event camera', tag: 'concept', rec: false, line: 'A sensor that reports only change. Hold still, and the one thing left is a waving hand.' },
-  { id: 'skin', name: 'Skin, by its spectrum', tag: 'concept', rec: false, line: 'Past red light, wet skin and mud stop looking alike. Two infrared bands are enough.' },
-  { id: 'voice', name: 'Hear a voice', tag: 'live-ai', rec: true, line: 'A cry for help as terrain, and the language a small network heard in it.' },
+  { id: 'words', name: 'Search by words', rec: true, src: 'AI-generated frames', note: 'Five recorded results, selected from 60 phrase and frame pairs. The ground heights come from the depth model with the overall tilt removed.', line: 'Type what you are looking for. Every patch of the drone frame rises by how well it fits the words.' },
+  { id: 'outline', name: 'Click to outline', rec: true, src: 'AI-generated frame', note: 'Four clicks, selected from 12. The confidence is the model’s own estimate.', line: 'One click, and the model cuts the object out of the ground and gives its area.' },
+  { id: 'relief', name: 'One photo to 3-D', rec: true, src: 'AI-generated picture', note: 'One run per picture.', line: 'A single picture, and a network that estimates how far away every pixel is.' },
+  { id: 'pulse', name: 'Pulse from pixels', tag: 'sim', rec: false, line: 'In this simulated face the skin changes colour by under one per cent with each beat. Amplified, it is a landscape.' },
+  { id: 'events', name: 'Event camera', tag: 'concept', rec: false, src: 'Simulated on an AI-generated frame', line: 'A sensor that reports only change. Hold still, and the one thing left is a waving hand.' },
+  { id: 'skin', name: 'Skin, by its spectrum', tag: 'concept', rec: false, src: 'Simulated on an AI-generated frame', line: 'In short-wave infrared, skin and mud differ. A simulation: the skin is placed by hand.' },
+  { id: 'voice', name: 'Hear a voice', rec: true, src: 'Synthetic voice', note: 'Four clips shown from seven languages, one sentence and one voice each.', line: 'A cry for help as terrain, and the language a small network heard in it.' },
 ];
 const ease = (x) => { x = clamp(x, 0, 1); return x * x * x * (x * (6 * x - 15) + 10); };
 const span = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
@@ -39,6 +39,7 @@ export function createDemo(root, ctx, lab) {
   const v = new THREE.Vector3();
   const ui = {
     title(s) { if (title.textContent !== s) title.textContent = s; },
+    long(on) { title.classList.toggle('long', on); },
     caret(on) { title.classList.toggle('typing', on); },
     say(s, cls = '') { if (s === lastCap) return; lastCap = s; cap.textContent = s; cap.className = 'vision-demo-cap ' + cls; },
     fig(i, val, unit = '', label = '', cls = '') { const f = figs[i]; if (val == null) { f.el.hidden = true; return; } f.el.hidden = false; if (f.b.textContent !== val) f.b.textContent = val; if (f.s.textContent !== unit) f.s.textContent = unit; if (f.l.textContent !== label) f.l.textContent = label; f.el.className = cls; },
@@ -60,11 +61,11 @@ export function createDemo(root, ctx, lab) {
   async function go(i) {
     const c = CHAPTERS[i]; if (!c) return; const my = ++token; cur = c;
     steps.querySelectorAll('button').forEach((b, k) => b.setAttribute('aria-current', String(k === i))); stepName.textContent = c.name;
-    tags.replaceChildren(realityTag(c.tag), c.rec ? h('span.vision-demo-rec', { title: 'These numbers were produced by the real model on this computer on 23 November 2026 and saved. Press Run it live to produce them again.' }, 'Recorded run') : '');
+    tags.replaceChildren(c.rec ? h('span.vision-demo-rec', { title: c.note + ' Run on 23 November 2026, with more tries than are shown here. Press Run it live for a new run.' }, 'Recorded from this model on this computer') : realityTag(c.tag), c.src ? h('span.vision-demo-rec.src', null, c.src) : '');
     run.lastChild.textContent = c.rec ? 'Run it live' : 'Open the exhibit';
     if (!shown || !ensureRenderer()) return;
     if (scene) { veil.classList.add('on'); await new Promise((r) => setTimeout(r, 240)); if (my !== token) return; scene.leave?.(); scene = null; }
-    title.classList.remove('typing'); title.textContent = c.name; line.textContent = c.line; lastCap = ''; cap.textContent = ''; pin.hidden = true; aside.replaceChildren(); figs.forEach((f) => { f.el.hidden = true; });
+    title.classList.remove('typing'); title.textContent = c.name; title.classList.remove('long'); line.textContent = c.line; lastCap = ''; cap.textContent = ''; pin.hidden = true; aside.replaceChildren(); figs.forEach((f) => { f.el.hidden = true; });
     try {
       let s = cache.get(c.id); if (!s) { s = await LOADERS[c.id](); cache.set(c.id, s); }
       if (my !== token) return;
@@ -80,7 +81,7 @@ export function createDemo(root, ctx, lab) {
     const still = lab.reduced(); if (!still) scene.t += dt;
     scene.update(still ? 0 : dt, scene.t); renderer.render(scene.scene, scene.camera);
     // keep the frame rate: drop the pixel ratio in steps when frames run long
-    if (real > 0 && real < 200) { slow += real; if (++count === 45) { const m = slow / 45; if (m > 19.5 && ratio > 0.7) { ratio = Math.max(0.7, ratio - 0.15); resize(); } slow = 0; count = 0; } }
+    if (real > 0 && real < 200) { slow += real; if (++count === 45) { const m = slow / 45; if (m > 19.5 && ratio > 0.85) { ratio = Math.max(0.85, ratio - 0.15); resize(); } slow = 0; count = 0; } }
   }
   return {
     show(id) { shown = true; if (failed || !ensureRenderer()) return; resize(); last = 0; if (!raf) raf = requestAnimationFrame(frame); const i = Math.max(0, CHAPTERS.findIndex((c) => c.id === id)); if (!scene || cur !== CHAPTERS[i]) go(i); },
@@ -97,11 +98,11 @@ async function wordsScene(env) {
   const rec = await (await fetch(asset('data/vision/hero-words.json'))).json();
   const F = { 'aerial-01': 'a', 'aerial-05': 'd', 'aerial-03': 'e' };
   const beats = [
-    { tint: PERSON, cls: 'person', pin: 'Red jacket', say: 'Nobody trained it on jackets. It read the words and found the one that fits.' },
+    { tint: PERSON, cls: 'person', pin: 'Red jacket', say: 'No list of objects is built in. It compares the words with every patch.' },
     { tint: PERSON, cls: 'person', pin: 'Waving', say: 'Same frame, new question. The picture is not read again.' },
-    { tint: PERSON, cls: 'person', pin: 'Covered in mud', say: 'Grey on grey. Most people miss them. The words do not.' },
-    { tint: BLUE, cls: '', pin: 'Barrel', say: 'It is not a people detector. Anything you can describe will do.' },
-    { tint: AMBER, cls: 'warn', pin: 'A cloth, not a person', say: 'And it can be wrong: no one is here. A match is a place to look, never a finding.' },
+    { tint: PERSON, cls: 'person', pin: 'Covered in mud', say: 'A few words lead to the place.' },
+    { tint: BLUE, cls: '', pin: 'Barrel', say: 'Anything you can describe will do.' },
+    { tint: AMBER, cls: 'warn', pin: 'A red cloth', say: 'A red cloth. A match is a place to look.' },
   ].map((b, i) => { const r = rec.rows[i], t = r.top[0]; return { ...b, ...r, f: F[r.frame], tex: liftTexture(b64(r.grid), 64, false), u: (t.x + t.s / 2) / 1254, v: (t.y + t.s / 2) / 1254, grid: b64(r.grid) }; });
   // aim at the highest patch of the recorded map
   for (const b of beats) { let bi = 0; for (let i = 0; i < 4096; i++) if (b.grid[i] > b.grid[bi]) bi = i; b.hu = ((bi % 64) + 0.5) / 64; b.hv = ((bi / 64 | 0) + 0.5) / 64; b.peak = b.grid[bi] / 255; }
@@ -125,8 +126,8 @@ async function wordsScene(env) {
       const g = T.ground(all[b.f] || first, b.hu, b.hv), topY = g + Math.pow(b.peak, 1.25) * 3.1 * U.uWave.value; pinP.copy(T.at(b.hu, b.hv, topY + 0.5));
       S.beam.mesh.position.set(pinP.x, topY - 0.05, pinP.z); S.beam.U.uA.value = U.uWave.value * (0.8 + 0.2 * Math.sin(t * 1.6));
       // one slow move: the camera circles the place the words point at
-      const push = ease(span(k, 1.2, 5.5)), dist = lerp(D + 3.2, D - 1.2, push); az += dt * 0.045;
-      C.copy(T.at(lerp(0.5, b.hu, 0.82), lerp(0.52, b.hv, 0.82), 0.5 + 0.6 * U.uWave.value)); C.x = clamp(C.x, -6.2, 6.2); C.z = clamp(C.z, -5.5, 4.2);
+      const push = ease(span(k, 1.2, 5.5)), dist = lerp(D + 1.4, D - 2.6, push); az += dt * 0.045;
+      C.copy(T.at(lerp(0.5, b.hu, 0.9), lerp(0.5, b.hv, 0.9), 0.5 + 0.6 * U.uWave.value)); C.x = clamp(C.x, -6.2, 6.2); C.z = clamp(C.z, -5.5, 4.2);
       const a = Math.sin(az) * 0.55 + pointer.yaw, el = clamp(lerp(1.02, 0.8, push) + pointer.pitch, 0.35, 1.4);
       P.set(C.x + Math.sin(a) * Math.cos(el) * dist, C.y + Math.sin(el) * dist, C.z + Math.cos(a) * Math.cos(el) * dist);
       const s = init ? 1 : 1 - Math.exp(-dt * 1.7); init = false; pos.lerp(P, s); tgt.lerp(C, s); camera.position.copy(pos); camera.lookAt(tgt);
@@ -140,7 +141,7 @@ async function wordsScene(env) {
 async function outlineScene(env) {
   const { ui, ease, span, lerp, pointer } = env, S = env.terrain(), T = S.terrain, U = T.U;
   const rec = await (await fetch(asset('data/vision/hero-outline.json'))).json(), f = await loadFrame('a', env.renderer), m2 = rec.gridM ** 2;
-  const list = [['slab', BLUE, '', 'Fallen slab', 'The outline goes around the person sitting on it.'], ['rect', BLUE, '', 'Slab', 'An area is a first guess at a load, before anyone lifts.'], ['roof2', BLUE, '', 'Tin roof', 'One click per object. The picture is read once.'], ['waver', PERSON, 'person', 'A person', 'From 30 metres a person is about one square metre.']];
+  const list = [['slab', BLUE, '', 'Fallen slab', 'The outline goes around the person sitting on it.'], ['rect', BLUE, '', 'Slab', 'An area is a first guess at a load, before anyone lifts.'], ['roof2', BLUE, '', 'Tin roof', 'One click per object. The picture is read once.'], ['waver', PERSON, 'person', 'A person', 'A person is under one square metre here.']];
   const beats = await Promise.all(list.map(async ([id, tint, cls, pin, say]) => { const c = rec.clicks.find((x) => x.id === id); return { id, tint, cls, pin, say, tex: await maskTexture('assets/img/vision/mask-' + id + '.png'), u: c.pts[0][0] / 1254, v: c.pts[0][1] / 1254, area: c.cells[c.best] * m2, iou: c.iou[c.best], ms: c.ms }; }));
   const warm = rec.clicks.slice(1).map((c) => c.ms).sort((a, b) => a - b); const med = warm[warm.length >> 1];
   const camera = new THREE.PerspectiveCamera(34, 1.8, 0.1, 80), pos = new THREE.Vector3(), tgt = new THREE.Vector3(), P = new THREE.Vector3(), C = new THREE.Vector3(), pinP = new THREE.Vector3(); let i = 0, b = beats[0], t0 = 0, az = -0.5, init = true;

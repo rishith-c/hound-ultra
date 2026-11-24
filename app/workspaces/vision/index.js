@@ -44,7 +44,7 @@ export default {
     root.classList.add('vision');
     root.append(
       h('header.ws-head.vision-head.adv-only', null,
-        h('div', null, h('h1', null, 'Vision lab'), h('p', null, 'Seven ways a camera or a microphone could find a person, each one running for real in this page. Where the sensor does not exist on HOUND, it says Concept.')),
+        h('div', null, h('h1', null, 'Vision lab'), h('p', null, 'Seven ways a camera or a microphone could find a person, each one computed in this page. Where the sensor does not exist on HOUND, it says Concept.')),
         h('div.vision-head-chips', null, live, compute, ledger, realityTag('live-ai'))),
       h('div.vision-body.adv-only', null, h('div.vision-rail', null, nav, navFoot), body), demoEl);
     const demo = createDemo(demoEl, ctx, lab);

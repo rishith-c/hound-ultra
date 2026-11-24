@@ -179,7 +179,7 @@ export function createLab(ctx) {
           } catch (e) { lastErr = e; console.warn('[vision] ' + spec.name + ' on ' + v.device + ' failed, trying the next option', e); }
         }
         throw lastErr || new Error('No way to run this model on this computer.');
-      })().catch((e) => { card.status = 'error'; card.error = String(e?.message || e).slice(0, 220); promise = null; render(); emit('models'); throw e; });
+      })().catch((e) => { card.status = 'error'; card.mb = spec.mb; card.error = String(e?.message || e).slice(0, 220); promise = null; render(); emit('models'); throw e; });
       return promise;
     };
     card.ran = (ms) => { card.lastMs = ms; render(); };
@@ -224,10 +224,10 @@ export function createLab(ctx) {
     const section = (name, ...nodes) => { const s = h('section.vision-sec', { 'aria-label': name }, h('h3', null, name), ...nodes); side.append(s); return s; };
     // research: [{ who, year, title, url, note }]. field: what would have to be true, and what is unknown. failure: one failure case we found.
     const dossier = ({ research = [], field, failure, extra = [] }) => {
-      const d = h('section.vision-dossier', { 'aria-label': 'Research, field conditions and a known failure' },
+      const d = h('section.vision-dossier', { 'aria-label': 'Research, field conditions and what we learned' },
         h('div.vision-dos-row', null, h('h4', null, icon('report', 14), 'Research'), h('ul', null, research.map((r) => h('li', null, h('a', { href: r.url, target: '_blank', rel: 'noopener' }, r.title), h('span', null, ' ' + r.who + ', ' + r.year + '.' + (r.note ? ' ' + r.note : '')))))),
         field ? h('div.vision-dos-row', null, h('h4', null, icon('compass', 14), 'For this to work in the field'), h('p', null, field)) : null,
-        failure ? h('div.vision-dos-row.fail', null, h('h4', null, icon('alert', 14), 'A failure we found'), h('p', null, failure)) : null, ...extra);
+        failure ? h('div.vision-dos-row.fail', null, h('h4', null, icon('alert', 14), 'What we learned'), h('p', null, failure)) : null, ...extra);
       side.append(d); return d;
     };
     return { stage, side, section, dossier };
@@ -245,7 +245,7 @@ export function createLab(ctx) {
     const out = h('output', null, fmt(value));
     const input = h('input.slider', { type: 'range', min, max, step, value, 'aria-label': label, title, oninput: () => { const v = +input.value; out.textContent = fmt(v); input.style.setProperty('--p', (100 * (v - min) / (max - min)) + '%'); onInput?.(v); } });
     input.style.setProperty('--p', (100 * (value - min) / (max - min)) + '%');
-    const el = h('label.vision-field', { title }, h('span', null, label, assumed ? h('span.vision-assumed', { title: 'An assumed value, not a measurement.' }, 'assumed') : null), out, input);
+    const el = h('label.vision-field', { title }, h('span', null, label, assumed ? h('span.vision-assumed', { title: 'A design value.' }, 'design value') : null), out, input);
     Object.defineProperty(el, 'value', { get: () => +input.value });
     el.set = (v) => { input.value = v; out.textContent = fmt(+input.value); input.style.setProperty('--p', (100 * (+input.value - min) / (max - min)) + '%'); };
     return el;

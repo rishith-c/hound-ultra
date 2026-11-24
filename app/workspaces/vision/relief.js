@@ -8,7 +8,7 @@ export async function create(el, ctx, lab, def) {
   const { h, icon } = ctx.kit;
   const f = lab.frame(el, { n: def.n, title: def.title, tags: def.tags, lede: ['One ordinary photo goes in; a model that has learned how scenes are built estimates how far away every pixel is, and the photo becomes a surface you can turn.', 'It gives shape, not size: the model cannot know whether it sees a room or a dolls’ house, so the depth has no units.'] });
   const depth = lab.model({ key: 'depth-anything', name: 'Depth Anything V2, small', repo: REPO, role: 'Depth from one image', mb: 49.6,
-    what: 'A 24.8-million-parameter vision transformer from the University of Hong Kong and TikTok (2024), taught by a larger model on 62 million unlabelled photos.',
+    what: 'About 25 million parameters (2024), taught by a much larger model that labelled real photos for it.',
     variants: [{ device: 'webgpu', dtype: 'fp16', mb: 49.6 }, { device: 'webgpu', dtype: 'fp32', mb: 99.1 }, { device: 'wasm', dtype: 'q8', mb: 27.3 }],
     make: async (T, o) => ({ T, model: await T.AutoModelForDepthEstimation.from_pretrained(REPO, o), proc: await T.AutoImageProcessor.from_pretrained(REPO) }) });
 
@@ -171,9 +171,9 @@ export async function create(el, ctx, lab, def) {
   f.section('Check against a known truth', h('p', null, 'A rubble scene is drawn in 3-D in this page, so the true distance of every pixel is known. The model sees only the picture. Its answer is fitted with the best scale and shift, then compared.'), testBtn, testBox);
   f.section('Model', depth.view());
   f.dossier({
-    research: [{ title: 'Depth Anything V2', who: 'Yang, Kang, Huang, Zhao, Xu, Feng, Zhao (HKU and TikTok)', year: 'NeurIPS 2024', url: 'https://arxiv.org/abs/2406.09414', note: 'The small model running here.' }],
+    research: [{ title: 'Depth Anything V2', who: 'Yang, Kang, Huang, Zhao, Xu, Feng, Zhao', year: 'NeurIPS 2024', url: 'https://arxiv.org/abs/2406.09414', note: 'The small model running here.' }],
     field: 'For a map a rescuer could trust, the relief would need a true scale from a second view, a known object or a range sensor, and frames that are sharp and well lit. Unknown: how the model behaves on dust, smoke, darkness and wet reflective mud, which are rare in its training photos.',
-    failure: '',
+    failure: 'Frame A is drawn as seen from straight above, yet the model read it as a landscape running away from the viewer: the bottom edge came out nearest and the tin roofs at the top came out as the farthest things in the picture. In the corridor the sky between the leaves was torn into ragged holes.',
   });
 
   // ---------- truth test: a drawn 3-D scene with exact depth ----------

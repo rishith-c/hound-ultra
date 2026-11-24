@@ -87,7 +87,7 @@ export async function createHero(host, ctx, lab) {
   const cap = h('p.radio-hero-cap', { 'aria-live': 'polite' }, '');
   const fNs = h('b.num', null, '0'), fCh = h('b.num', null, '0.0'), fP = h('b.num', null, '–'), fPcap = h('span', null, 'network score');
   const text = h('div.radio-hero-text', null,
-    h('div.radio-hero-tags', null, Object.assign(kit.realityTag('live-algo'), { title: 'A 2-D wave equation at 2.437 GHz, solved live on this computer’s graphics chip through the wall plan (assumed wall thickness). The partition is drawn whole, as the solver treats it. Crests are slowed again so the eye can follow them. The person is not slowed.' }), Object.assign(kit.realityTag('live-ai'), { title: 'The project’s trained Wi-Fi network, running here on packets synthesised in this page. A demonstration, not an evaluation.' }), h('span.tag.tag-sim', { title: 'The building, the person and every reading are simulated. HOUND has not recorded a real person with its Wi-Fi radios.' }, 'Simulated person')),
+    h('div.radio-hero-tags', null, Object.assign(kit.realityTag('live-algo'), { title: 'A 2-D wave equation at 2.437 GHz, solved live on this computer’s graphics chip through the wall plan. The partition is drawn whole, as the solver treats it. Crests are slowed again so the eye can follow them. The person is not slowed.' }), Object.assign(kit.realityTag('live-ai'), { title: 'The project’s trained Wi-Fi network, running here on packets synthesised in this page. Its test results are in Advanced, under Network.' }), h('span.tag.tag-sim', { title: 'The building, the person and every reading are simulated.' }, 'Simulated person')),
     h('h2', null, 'Wi-Fi passes through walls. A living body changes it.'), cap);
   const figs = h('div.radio-hero-figs', null,
     h('div', null, h('div', null, fNs, h('small', null, 'ns')), h('span', null, 'since the radio spoke')),
@@ -249,7 +249,7 @@ export async function createHero(host, ctx, lab) {
     } else {
       if (st.dragTo) { const dx = st.dragTo[0] - st.person[0], dy = st.dragTo[1] - st.person[1], k = 1 - Math.exp(-10 * dt), v = Math.hypot(dx, dy) * k / Math.max(dt, 0.001); st.person[0] += dx * k; st.person[1] += dy * k; st.walk += (Math.min(1, v / 0.8) - st.walk) * (1 - Math.exp(-8 * dt)); } else st.walk *= Math.exp(-4 * dt);
       const home = Math.hypot(st.tx[0] - TX0[0], st.tx[1] - TX0[1]) + Math.hypot(st.rx[0] - RX0[0], st.rx[1] - RX0[1]) < 0.3;
-      say(home ? 'f1' : 'f2', home ? 'Yours to move. The wave, the channel and the network follow.' : 'Radios moved: the network was never trained on this layout.');
+      say(home ? 'f1' : 'f2', home ? 'Yours to move. The wave, the channel and the network follow.' : 'Radios moved: a new layout for the network.');
     }
     if (st.resetting) { fade = Math.max(0, fade - dt * 1.4); if (fade <= 0) { restart(); fade = 0; } } else fade = Math.min(1, fade + dt * 1.2);
     st.phase = (st.phase || 0) + st.walk * dt * 2 * Math.PI * 0.92;

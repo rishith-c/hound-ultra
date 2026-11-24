@@ -38,7 +38,7 @@ export default {
       h('header.ws-head.radio-head.adv-only', null,
         h('div', null, h('h1', null, 'Radio twin'),
           h('p', null, 'Seven working exhibits on what radio can see inside a building. Each one runs its real maths in this page, on simulated measurements, and shows its error against the simulated truth.')),
-        h('div.radio-head-tags', null, realityTag('live-algo'), h('span.tag.tag-sim', { title: 'HOUND has two ESP32 radios and three small radars. Ray-traced planning, imaging radar on a track, reflecting surfaces and 802.11bf are not built.' }, 'Hardware: concept unless stated'))),
+        h('div.radio-head-tags', null, realityTag('live-algo'), h('span.tag.tag-sim', { title: 'HOUND has two ESP32 radios and three small radars. Ray-traced planning, imaging radar on a track, reflecting surfaces and 802.11bf are concepts.' }, 'Hardware: concept unless stated'))),
       strip, body);
 
     function placard(e, i, meta) {

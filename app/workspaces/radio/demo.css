@@ -64,3 +64,4 @@
 :root[data-mode="demo"] .radio-exhibit[data-exhibit="sar"] .radio-stage { inset: 56px 0 8px 420px; }
 [data-exhibit="sar"] .radio-demo-text { right: auto; bottom: 40px; width: 400px; height: auto; gap: 10px; }
 [data-exhibit="sar"] .radio-demo-text .radio-hero-tags { position: static; margin-top: 4px; }
+:root[data-mode="demo"] .radio-steps { display: none; }

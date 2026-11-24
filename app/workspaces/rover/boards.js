@@ -11,7 +11,7 @@ function face(w, d, { mask, seed, text = [], pads = [], vias = 60, traces = 46, 
   const vs = Array.from({ length: vias }, () => [r() * W, r() * H]);
   const paint = (c, kind) => {
     const col = kind === 'map';
-    c.fillStyle = col ? mask[0] : 'rgb(0,105,0)'; c.fillRect(0, 0, W, H);
+    c.fillStyle = col ? mask[0] : 'rgb(0,150,0)'; c.fillRect(0, 0, W, H);
     if (col) { c.globalAlpha = .5; c.fillStyle = mask[1]; for (let i = 0; i < 5; i++) c.fillRect((r() * .8) * W, (r() * .8) * H, W * .3, H * .28); c.globalAlpha = 1; }
     c.lineCap = 'round'; c.lineJoin = 'round';
     for (const [pth, lw, n] of pts) for (let k = 0; k < n; k++) { c.strokeStyle = col ? mask[1] : 'rgb(0,88,0)'; c.lineWidth = lw; c.beginPath(); pth.forEach(([x, y], i) => c[i ? 'lineTo' : 'moveTo'](x + k * lw * 2.1, y + k * lw * 1.2)); c.stroke(); }
@@ -26,7 +26,7 @@ function face(w, d, { mask, seed, text = [], pads = [], vias = 60, traces = 46, 
 // comps: [material, x, y, width, depth, height, radius?, z?] with x,y in mm from the board's lower-left corner
 function board(id, M, { w, d, spec, comps = [], pins = [], passives = 40, keep = [], seed = 1, holes = [] }) {
   const P = new Part(id), f = face(w, d, { seed, ...spec });
-  const top = new THREE.MeshPhysicalMaterial({ map: f.map, roughnessMap: f.pbr, metalnessMap: f.pbr, roughness: 1, metalness: 1, clearcoat: .35, clearcoatRoughness: .35 });
+  const top = new THREE.MeshPhysicalMaterial({ map: f.map, roughnessMap: f.pbr, metalnessMap: f.pbr, roughness: 1, metalness: 1, specularIntensity: .4 });
   P.add(M.pcbEdge, rbox(w * mm, d * mm, T, .0002, 1), 0, 0, T / 2);
   const pl = new THREE.PlaneGeometry(w * mm - .0003, d * mm - .0003).toNonIndexed(); P.add(top, pl, 0, 0, T + .00005);
   const at = (x, y) => [(x - w / 2) * mm, (y - d / 2) * mm];

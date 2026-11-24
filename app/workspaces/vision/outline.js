@@ -72,7 +72,7 @@ export async function create(el, ctx, lab, def) {
       { title: 'SlimSAM: 0.1% data makes Segment Anything slim', who: 'Chen, Fang, Ma, Wang (National University of Singapore)', year: 'NeurIPS 2024', url: 'https://arxiv.org/abs/2312.05284', note: 'The compressed model running here.' },
     ],
     field: 'An area is only as good as the ground resolution, and that needs the drone’s height above the surface and a camera pointing straight down. On a slope, or in an oblique view, one scale does not hold across the frame. Unknown: how well the outlines hold on real flood imagery; the frames here are illustrations.',
-    failure: '',
+    failure: 'On the drawn scene with known areas, one click on the tin roof outlined a single sheet: 97.5 % too small. A second click brought it to 6.2 % too large. On frame A, one click on the brown pool made its first choice a 0.3 m² sliver.',
   });
   const failEl = f.side.querySelector('.vision-dos-row.fail p');
   if (failEl) failEl.textContent = 'One click is ambiguous. On drone frame A, a click on a roof sheet returns the single sheet, the whole roof or the roof with its shadow, depending on which of the three candidates you take, and the areas differ several times over. The model’s own quality score does not tell you which one you meant.';

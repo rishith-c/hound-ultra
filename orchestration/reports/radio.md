@@ -11,11 +11,11 @@ Files: everything in `app/workspaces/radio/`. Nothing outside it was edited. No 
 ## Second pass: the six points
 
 1. **Words.** Done. Left 40 px, bottom edge 60 px above the dock, tags above the headline. "The network hears the change." is only shown while the network's score is above its threshold.
-2. **Frame.** New camera (about 23 degrees, 20 degree lens, slow push). Person's box in every reading taken (1440, 1680, 1920): 0.589 to 0.731 of the width in the final framing's runs, so more than 25 % from the right edge; head at 0.063 of the stage height or lower. The closest vertical margin is the first step of the story, about 6 %, so the 8 % rule holds sideways but not at the top at that moment. The rover is true to its plan size, about 90 px wide at 1440. A warm lamp lights the radios; the blue wave tints it, so it reads only faintly warm.
+2. **Frame.** New camera (about 23 degrees, 20 degree lens, slow push). The person's box was sampled over a whole 33 s story at 1440, 1680 and 1920: sideways it stays between 0.577 and 0.823 of the width, so at least 17 % from the right edge. The top margin was 7.3 % at all three sizes; the view was then lowered and the last run at 1440 is in the table below. The rover is true to its plan size, about 90 px wide at 1440. A warm lamp lights the radios; the blue wave tints it, so it reads only faintly warm.
 3. **Instrument.** 51 bars. Height = strength of each subcarrier in the simulated channel; the change is drawn 100 times larger and receiver noise is left out, both said on screen. With noise included the change was not visible at this scale: a typical change here is 0.3 to 0.8 %, and the simulated ESP32 rounding alone is larger. The network still gets the noisy packets. The bars move smoothly together because the echo is only a few metres longer than the direct path; they buckle gently, not chaotically.
 4. **Wave and materials.** One fixed brightness law for amplitude, so loss is visible. Solver peak amplitude read back: 0.31 at 0.5 m in room 111, 0.165 at 0.6 m beyond the probe through the partition, 0.075 at 3.8 m. Set is new (`stage.js`): tiled dusty floor, wood-grain desks with metal legs, rubble, bricks, paper. The person is one smooth ray-marched body.
 5. **Exhibit numbers.** Slim stepper at the bottom right under the instrument.
-6. **Opening.** The twin's heavy builders are no longer used in the hero. The set, solver grid and shaders are built in slices, and the page waits for the graphics chip between first draws. A poster of the opening frame (`poster.webp`, 95 KB, captured from this scene) is behind the canvas from the start. Measured in the last timed run (1440, load falling from about 250 to 77): live picture 1.47 s after navigation (0.93 s after the hero starts), no long task from the hero; one 158 ms task at 0.1 s, before the hero starts. Earlier in this pass, at higher load, the live picture took 2.0 to 4.8 s and single tasks reached 426 ms, before the last change.
+6. **Opening.** The twin's heavy builders are no longer used in the hero. The set, solver grid and shaders are built in slices, and the page waits for the graphics chip between first draws. A poster of the opening frame (`poster.webp`, 95 KB, captured from this scene) is behind the canvas from the start. Measured in the last timed runs at 1440: live picture 1.01, 1.47 and 1.70 s after navigation (0.5 to 1.0 s after the hero starts), no long task from the hero in the two runs where tasks were recorded; one 158 to 167 ms task at 0.1 s, before the hero starts. The machine was less loaded then (77 at one minute) than before. Earlier in this pass, at higher load, the live picture took 2.0 to 4.8 s and single tasks reached 426 ms, before the last change.
 
 The partition is drawn whole. The plan calls it "damaged", and the solver treats it as whole. It is drawn 2.2 m high and cut, for the camera.
 
@@ -30,7 +30,8 @@ The partition is drawn whole. The plan calls it "damaged", and the solver treats
 | Check | Result |
 |---|---|
 | Hero 60 fps (3 s), Demo | 1680: 60, worst 16.8 ms. 1440: 60, worst 16.8 ms |
-| Opening at 1440, last timed run | live picture 1.47 s, hero long tasks over 50 ms: none |
+| Opening at 1440, last timed run | live picture 1.01 to 1.70 s, hero long tasks over 50 ms: none recorded |
+| Person's box over one story, 1440, final framing | [1440,900,[0.585,0.823,0.089,0.601]] (width, height, then left, right, top, bottom as fractions of the stage) |
 | Errors in the last runs | 0 (Demo, Advanced 01, exhibits 02 and 05 in Demo) |
 | Looked at this pass | Demo hero at 1440, 1680, 1920; Demo 02 and 05; Advanced 01 at 1440 |
 | First pass (not repeated) | Advanced 01 to 07 at 1440; frame rates of 03 and 07; drag of person and probe |

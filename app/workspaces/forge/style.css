@@ -112,3 +112,37 @@
   .forge-ex { padding: 14px 16px 18px; }
   .forge-station { padding: 8px 10px 9px; }
 }
+
+/* ==== Demo: the hall ==== */
+.forge-adv { display: flex; flex-direction: column; min-height: 0; flex: 1; height: 100%; }
+:root[data-mode="demo"] .forge-adv { display: none; }
+.forge-hall { position: absolute; inset: 0; overflow: hidden; background: var(--bg-0); }
+:root[data-mode="advanced"] .forge-hall { display: none; }
+.forge-hall-c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; cursor: grab; opacity: 0; transition: opacity 600ms var(--ease); }
+.forge-hall-c:active { cursor: grabbing; }
+.forge-hall.live .forge-hall-c { opacity: 1; }
+.forge-hall-c:focus-visible { box-shadow: inset 0 0 0 2px var(--focus); }
+.forge-hall-shade { position: absolute; inset: auto 0 0 0; height: 46%; pointer-events: none; background: radial-gradient(760px 100% at 0% 100%, color-mix(in srgb, var(--bg-0) 88%, transparent) 25%, transparent 80%), radial-gradient(560px 82% at 100% 100%, color-mix(in srgb, var(--bg-0) 92%, transparent) 30%, transparent 85%); }
+.forge-hall-text { position: absolute; left: 40px; bottom: 44px; width: 500px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; pointer-events: none; }
+.forge-hall-text .btn, .forge-hall-tags { pointer-events: auto; }
+.forge-hall-tags { display: flex; gap: 6px; }
+.forge-hall-text h2 { margin: 0; font: 400 40px/1.04 var(--font-display); color: var(--text); text-wrap: balance; }
+.forge-hall-line { margin: 0 0 4px; min-height: 45px; font: 400 16px/1.4 var(--font); color: var(--text-2); transition: opacity 260ms var(--ease); }
+.forge-hall-figs { position: absolute; right: 40px; bottom: 44px; display: flex; flex-direction: column; align-items: flex-end; gap: 18px; pointer-events: none; text-align: right; }
+.forge-hall-cap { margin: 0; min-height: 22px; font: 400 16px/1.4 var(--font); color: var(--text); transition: opacity 160ms var(--ease); }
+.forge-hall-row { display: flex; gap: 44px; align-items: flex-start; }
+.forge-hall-row > div { display: flex; flex-direction: column; gap: 4px; min-width: 96px; align-items: flex-end; }
+.forge-hall-row b { font: 400 38px/1 var(--font-display); font-variant-numeric: lining-nums tabular-nums; color: var(--text); }
+.forge-hall-big { display: inline-flex; align-items: baseline; gap: 5px; }
+.forge-hall-big b { color: var(--person); }
+.forge-hall-row small { font: 400 14px/1 var(--font); color: var(--text-2); }
+.forge-hall-row div > span { font: 400 13px/1.3 var(--font); color: var(--text-2); }
+.forge-hall-row i { font: 400 12px/1.3 var(--font); color: var(--text-3); }
+.forge-hall-lab { position: absolute; left: -110px; width: 220px; text-align: center; top: 0; pointer-events: none; opacity: 0; white-space: nowrap; will-change: transform; }
+.forge-hall-lab b { font: 400 20px/1 var(--font-display); color: var(--text); margin-right: 10px; }
+.forge-hall-lab span { font: 400 13px/1 var(--font); color: var(--text-2); }
+.forge-hall-tip { position: absolute; left: 0; top: 0; width: 230px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; background: color-mix(in srgb, var(--bg-1) 94%, transparent); border: 1px solid var(--line-2); border-radius: var(--r-1); pointer-events: none; font: 400 13px/1.35 var(--font); color: var(--text-2); }
+.forge-hall-tip[hidden] { display: none; }
+.forge-hall-tip b { color: var(--text); font-weight: 500; }
+.forge-hall-tip i { font-style: normal; color: var(--text-3); font-size: 12px; }
+.forge-hall-fail { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 12px; color: var(--text-2); }

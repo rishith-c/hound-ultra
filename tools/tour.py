@@ -11,7 +11,7 @@ import argparse, json, os, shutil, subprocess, sys, tempfile, time, urllib.reque
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import shoot
 
-IDS = "area mission sense radio aerial scan swarm structure horizon report triage fusion signals deepscan vision strategy timelines forge graph globe train copilot status".split()
+IDS = "area radio forge sense rover mission aerial scan swarm structure horizon report triage fusion signals deepscan vision strategy timelines graph globe train copilot status".split()
 HOOK = """(() => { const st = window.__gl = { made: 0, lost: 0, live: new Set() };
   const g = HTMLCanvasElement.prototype.getContext;
   HTMLCanvasElement.prototype.getContext = function (t, ...a) { const c = g.call(this, t, ...a);

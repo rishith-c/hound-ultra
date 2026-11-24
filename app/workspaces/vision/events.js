@@ -464,4 +464,4 @@ export async function create(el, ctx, lab, def) {
 }
 
 const FIELD = 'An event sensor would have to be on the drone, and HOUND has none: this is a concept. Airframe vibration makes every edge fire, the sensor is specialist hardware rather than a webcam part, and finding a person from events alone is still research. A survivor who lies still under a hovering drone makes no events at all; freeze the scene to see that. Whether the dark-scene advantage shown here survives real dust, rain and a real sensor’s noise is unknown.';
-const FAILURE = '__FAILURE__';
+const FAILURE = 'Freeze the scene and the sensor still reports about 16 thousand events a second, every one of them noise: a survivor who does not move is invisible. And when the drone sweeps, the stream costs 19 MB a second here, 16 times the frame camera it was meant to beat.';
