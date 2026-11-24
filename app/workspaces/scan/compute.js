@@ -3,6 +3,8 @@
 import { buildSite, scanSite, buildPlan, scanPlan, poseAt } from './scene.js';
 import { bounds, groundModel, classify, findVoids, occupancy } from './analyze.js';
 import { parseCloud } from './io.js';
+import { bakeLight } from './light.js';
+import { BUILDING } from '../../core/world.js';
 
 let cur = null; // { kind, pos, n, time, traj, B, g, cl }
 const now = () => performance.now();
@@ -16,10 +18,13 @@ async function analyse(progress, extra) {
   t = now(); c.cl = classify(c.pos, c.n, c.B, c.g, c.truth); T.classify = now() - t;
   progress(0.86, 'Searching for voids'); await tick();
   t = now(); const voids = runVoids({}); T.voids = now() - t;
-  progress(0.95, 'Building the map'); await tick();
+  progress(0.9, 'Working out light and shadow'); await tick();
+  const R = BUILDING.rect, zc = c.B.min[2] + 1.35, cut = c.kind === 'site' ? { x0: R[0] - 1.4, y0: R[1] - 1.4, x1: R[2] + 1.6, y1: R[3] + 1.6, z: 1.35 } : { x0: c.B.min[0], y0: c.B.min[1], x1: c.B.max[0], y1: c.B.max[1], z: zc };
+  t = now(); const lit = bakeLight(c.pos, c.n, c.B, { time: c.time, traj: c.traj, cut }); T.light = now() - t;
+  progress(0.97, 'Building the map'); await tick();
   t = now(); const occ = occupancy(c.pos, c.n, c.cl.hag, c.g, c.B, c.kind === 'site' ? { w: 240, h: 180 } : null); T.map = now() - t;
   const g = c.g, ext = [c.B.max[0] - c.B.min[0], c.B.max[1] - c.B.min[1], c.B.max[2] - c.B.min[2]];
-  return { kind: c.kind, n: c.n, pos: c.pos, inten: c.inten, time: c.time, rgb: c.rgb || null, cls: c.cl.cls, hag: c.cl.hag, sp: c.cl.sp, bounds: c.B, extent: ext,
+  return { kind: c.kind, n: c.n, pos: c.pos, inten: c.inten, time: c.time, rgb: c.rgb || null, cls: c.cl.cls, hag: c.cl.hag, sp: c.cl.sp, lightN: lit.N, lightL: lit.L, cut, bounds: c.B, extent: ext,
     ground: { x0: g.x0, y0: g.y0, w: g.w, h: g.h, z: g.z }, classes: { counts: c.cl.counts, confusion: c.cl.confusion, accuracy: c.cl.accuracy, voxel: c.cl.voxel, voxels: c.cl.voxels },
     voids, occ, timings: T, stats: { area: g.area, density: c.n / Math.max(1, g.area) }, ...extra };
 }

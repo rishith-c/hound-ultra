@@ -161,7 +161,7 @@ export function floodModel(dem, rivers) {
   const cellArr = Uint32Array.from(cells), needSorted = Float32Array.from(cells, (k) => need[k]);
   const countBelow = (h) => { let lo = 0, hi = needSorted.length; while (lo < hi) { const m = (lo + hi) >> 1; if (needSorted[m] < h) lo = m + 1; else hi = m; } return lo; };
   let sMin = Infinity, sMax = -Infinity; for (const v of sS) { if (v < sMin) sMin = v; if (v > sMax) sMax = v; }
-  return { n, cs, need, rel, s, cells: cellArr, countBelow, cellArea: cs * cs, riverLen, seeds: sCell.length, sMin, sMax,
+  return { n, cs, need, rel, s, cells: cellArr, countBelow, cellArea: cs * cs, riverLen, seeds: sCell.length, sMin, sMax, seedOf, sBed, sS, sCell,
     wet: (k, h) => k >= 0 && need[k] < h, depth: (k, h) => (k >= 0 && need[k] < h ? h - rel[k] : 0) };
 }
 

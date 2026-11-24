@@ -22,6 +22,14 @@ const hex = (c, a = 1) => {
   return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
 };
 
+// A room's search status. The simulator does not revisit coverage after a second look, so a person confirmed later is
+// folded in here: the room must not go on saying "lead open".
+export function roomCover(S, id) {
+  const cv = S.coverage[id]; if (!cv || cv.status !== 'lead') return cv;
+  const d = S.detections.find((x) => x.room === id && x.status === 'confirmed');
+  return d ? { ...cv, status: 'person', residual: d.p, note: 'A person was found here.' } : cv;
+}
+
 // Where a selection is on the site: { p: centre, r: radius to frame, rect? }.
 export function selPoint(sel, S, world) {
   if (!sel) return null;
@@ -29,7 +37,7 @@ export function selPoint(sel, S, world) {
   if (sel.type === 'survivor') { const v = S.survivors[sel.id]; return v?.pos ? { p: v.pos, r: 9 } : null; }
   if (sel.type === 'unit') { const u = S.units[sel.id]; return u ? { p: u.pos, r: 7 } : null; }
   if (sel.type === 'room') { const r = world.roomById(sel.id); return r ? { p: rectCenter(r.rect), r: Math.max(r.rect[2] - r.rect[0], r.rect[3] - r.rect[1]) * 0.75, rect: r.rect } : null; }
-  if (sel.type === 'hazard') { const hz = [...world.HAZARDS, ...S.hazards].find((x) => x.id === sel.id); if (!hz) return null; const xs = hz.poly.map((q) => q[0]), ys = hz.poly.map((q) => q[1]); const rect = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]; return { p: rectCenter(rect), r: Math.max(rect[2] - rect[0], rect[3] - rect[1]) * 0.7, rect }; }
+  if (sel.type === 'hazard') { const hz = [...world.HAZARDS, ...S.hazards].find((x) => x.id === sel.id); if (!hz) return null; const xs = hz.poly.map((q) => q[0]), ys = hz.poly.map((q) => q[1]); const rect = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]; return { p: rectCenter(rect), r: Math.max(12, Math.max(rect[2] - rect[0], rect[3] - rect[1]) * 0.7), rect: Math.max(rect[2] - rect[0], rect[3] - rect[1]) > 14 ? rect : undefined }; }
   if (sel.type === 'stop') { const s = world.STOPS.find((x) => x.id === sel.id); return s ? { p: s.pos, r: 7 } : null; }
   if (sel.type === 'event') {
     const e = S.events.find((x) => x.id === sel.id); if (!e) return null;
@@ -159,7 +167,7 @@ export function createMap(canvas, ctx, { mini = false, interactive = true, onUse
     const B = BUILDING.rect;
     g.fillStyle = C.bg2; g.fillRect(X(B[0]), Y(B[3]), (B[2] - B[0]) * k, (B[3] - B[1]) * k);
     for (const r of ROOMS) {
-      const cv = S.coverage[r.id], x = X(r.rect[0]), y = Y(r.rect[3]), w = (r.rect[2] - r.rect[0]) * k, hgt = (r.rect[3] - r.rect[1]) * k;
+      const cv = roomCover(S, r.id), x = X(r.rect[0]), y = Y(r.rect[3]), w = (r.rect[2] - r.rect[0]) * k, hgt = (r.rect[3] - r.rect[1]) * k;
       if (r.corridor) { g.fillStyle = 'rgba(255,255,255,0.022)'; g.fillRect(x, y, w, hgt); continue; }
       if (!cv) continue;
       if (layers.heat) { g.fillStyle = cv.status === 'person' ? hex(C.person, 0.22) : hex(C.warn, Math.min(0.5, 0.04 + cv.residual * 1.6)); g.fillRect(x, y, w, hgt); }
@@ -206,7 +214,7 @@ export function createMap(canvas, ctx, { mini = false, interactive = true, onUse
     if (layers.labels && !mini) for (const r of ROOMS) {
       const c = rectCenter(r.rect);
       if (r.corridor) { if (k > 9 && r.id === 'C-EW') { g.font = '500 10px ' + C.font; g.fillStyle = hex(C.text3, 0.8); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(r.name, X(c[0] - 12), Y(c[1])); } continue; }
-      const cv = S.coverage[r.id], isSel = sel?.type === 'room' && sel.id === r.id, x = X(r.rect[0]), y = Y(r.rect[3]);
+      const cv = roomCover(S, r.id), isSel = sel?.type === 'room' && sel.id === r.id, x = X(r.rect[0]), y = Y(r.rect[3]);
       g.font = '600 12px ' + C.font; g.textAlign = 'left'; g.textBaseline = 'top'; g.fillStyle = isSel ? C.text : hex(C.text2, 0.95); g.fillText(r.id, x + 7, y + 7);
       if (k > 9.5 && cv) {
         const word = { unsearched: 'not searched', clear: 'clear', lead: 'lead open', person: 'person', blocked: 'not reached' }[cv.status];

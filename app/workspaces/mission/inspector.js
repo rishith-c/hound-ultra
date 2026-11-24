@@ -1,5 +1,6 @@
 // The inspector: whatever is selected, explained. With nothing selected it shows the rover's live sensor stack.
 import { LR, THRESHOLDS, PRIOR } from '../../core/fusion.js';
+import { roomCover } from './map2d.js';
 import { drawWindow, drawRadar, drawThermal } from './sensors.js';
 
 const RESULT_WORD = { pos: 'detected', neg: 'nothing found', faint: 'faint sign', blind: 'could not see', none: 'nothing, as expected', machine: 'looks like a machine', tooHot: 'too hot for a person' };
@@ -150,7 +151,7 @@ export function createInspector(app) {
   }
 
   function roomView(r, S) {
-    const cv = S.coverage[r.id] || { status: 'unsearched', reach: 0, residual: PRIOR, note: '' }, door = world.DOORS.find((d) => d.room === r.id);
+    const cv = roomCover(S, r.id) || { status: 'unsearched', reach: 0, residual: PRIOR, note: '' }, door = world.DOORS.find((d) => d.room === r.id);
     const st = { unsearched: ['plain', 'Not searched'], clear: ['tag-ok', 'Clear'], lead: ['tag-warn', 'Lead open'], person: ['tag-person', 'Person found'], blocked: ['plain', 'Not reached'] }[cv.status];
     title.textContent = r.name; tagSlot.replaceChildren(h('span.tag.' + st[0], null, st[1]));
     const leads = S.detections.filter((d) => d.room === r.id);
@@ -217,7 +218,7 @@ export function createInspector(app) {
     const leads = S.detections.filter((d) => d.evidence.some((e) => e.vantage === s.id));
     put(
       h('p.mission-lede', null, s.label + '. The rover stops here and listens for 10 seconds per window, because the network cannot listen while the wheels turn.'),
-      h('section.mission-sec', null, h('header', null, h('h4', null, 'Rooms covered from here')), ...s.covers.map((id) => { const cv = S.coverage[id]; return h('button.mission-item', { onclick: () => app.select({ type: 'room', id }, true) }, h('i.mission-dot.' + (cv.status === 'person' ? 'person' : cv.status === 'lead' ? 'warn' : cv.status === 'clear' ? 'ok' : 'closed')), h('span.grow', null, world.roomById(id).name), h('span.dim', null, cv.status === 'clear' ? pct(cv.residual) + ' chance missed' : { unsearched: 'not searched', lead: 'lead open', person: 'person found', blocked: 'not reached' }[cv.status])); })),
+      h('section.mission-sec', null, h('header', null, h('h4', null, 'Rooms covered from here')), ...s.covers.map((id) => { const cv = roomCover(S, id); return h('button.mission-item', { onclick: () => app.select({ type: 'room', id }, true) }, h('i.mission-dot.' + (cv.status === 'person' ? 'person' : cv.status === 'lead' ? 'warn' : cv.status === 'clear' ? 'ok' : 'closed')), h('span.grow', null, world.roomById(id).name), h('span.dim', null, cv.status === 'clear' ? pct(cv.residual) + ' chance missed' : { unsearched: 'not searched', lead: 'lead open', person: 'person found', blocked: 'not reached' }[cv.status])); })),
       h('section.mission-sec', null, h('header', null, h('h4', null, 'Wi-Fi windows read here'), realityTag('live-ai')),
         reads.length ? reads.map((r) => h('div.mission-read', null, h('span.num', null, fmt.clock(r.t)), r.ok ? [h('div.mission-gauge.small', null, h('i.mission-gauge-thr', { style: { left: ctx.nn.threshold * 100 + '%' } }), h('i.mission-gauge-mark', { 'data-says': r.says ? 'person' : 'none', style: { left: r.person * 100 + '%' } })), h('span.num', null, r.person.toFixed(2)), h('span.tag.' + (r.says ? 'tag-warn' : 'plain'), null, r.says ? 'Person' : 'No one')] : h('span.dim', null, r.reason || 'No Wi-Fi reading'))) : h('p.mission-sub', null, 'No window has been read here yet.')),
       leads.length ? h('section.mission-sec', null, h('header', null, h('h4', null, 'Leads from this stop')), ...leads.map((d) => h('button.mission-item', { onclick: () => app.select({ type: 'detection', id: d.id }, true) }, h('i.mission-dot.' + (d.status === 'confirmed' ? 'person' : d.status === 'possible' ? 'warn' : 'closed')), h('span.grow', null, (d.status === 'confirmed' ? 'Person' : d.status === 'possible' ? 'Possible person' : 'Closed: ' + d.kind) + (d.room ? ', room ' + d.room : '')), h('span.num', null, pct(d.p))))) : null);

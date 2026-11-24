@@ -237,7 +237,7 @@ export function createCameras({ camera, dom, ctx, world, reduced = () => false, 
 
   return {
     update, setMode, focus, flyTo, groundAt,
-    get mode() { return mode; }, get pose() { return C; }, get goal() { return G; }, get shot() { return mode === 'cinematic' ? shot.key : ''; },
+    get mode() { return mode; }, get pose() { return C; }, get goal() { return G; }, dof: 0.0, get shot() { return mode === 'cinematic' ? shot.key : ''; },
     get userActive() { return userActive(); }, wasDrag: () => moved >= 4,
     setPose(p) { copyPose(G, { ...G, ...p, target: p.target ? p.target : G.target }); copyPose(C, G); trans = null; },
     dispose() {

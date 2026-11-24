@@ -439,7 +439,7 @@ export function createSwarm(world, { n = 6, strategy = 'hungarian', startCharge 
       for (let q = 1; q < cnt; q++) {
         if (done[q]) continue;
         const key = ns[b].id + '|' + ns[q].id; let db = pairCache.get(key);
-        if (db === undefined) { db = rssi(ns[b].x, ns[b].y, ns[q].x, ns[q].y, false); pairCache.set(key, db); pairCache.set(ns[q].id + '|' + ns[b].id, db); }
+        if (db === undefined) { db = rssi(ns[b].x, ns[b].y, ns[q].x, ns[q].y, !!(ns[b].high || ns[q].high)); pairCache.set(key, db); pairCache.set(ns[q].id + '|' + ns[b].id, db); }
         if (db < P.radio.rxMin) continue;
         const c = cost[b] + linkCost(db);
         if (c < cost[q]) { cost[q] = c; par[q] = b; up[q] = db; }
@@ -460,7 +460,7 @@ export function createSwarm(world, { n = 6, strategy = 'hungarian', startCharge 
       for (const nd of backbone) {
         if (!nd.connected) continue;
         const d = Math.hypot(nd.x - r.x, nd.y - r.y); if (d > 75) continue;
-        const db = rssi(r.x, r.y, nd.x, nd.y, r.kind === 'drone'); if (db < P.radio.rxMin) continue;
+        const db = rssi(r.x, r.y, nd.x, nd.y, r.kind === 'drone' || !!nd.high); if (db < P.radio.rxMin) continue;
         if (db > top) top = db;
         const c = nd.cost + linkCost(db);
         if (c < bestC) { bestC = c; best = nd; bestDb = db; }
@@ -492,9 +492,10 @@ export function createSwarm(world, { n = 6, strategy = 'hungarian', startCharge 
   const label = (id) => (id === 'BASE' ? 'base' : 'beacon ' + String(id).slice(1));
   function dropRelay(r, why) {
     // A wall can cost 10 dB in one step. A rover places the beacon from its rear deck at the last spot where the link
-    // was still strong (never more than 1 m behind it), so the beacon itself keeps a good link.
+    // was still strong (never more than 1 m behind it), so the beacon itself keeps a good link. A drone sets its beacon
+    // on a roof or another high point, so that beacon's links are traced from the air, as the drone's own are (assumed).
     const c = r.kind === 'rover' && r.crumb && r.link.ok && Math.hypot(r.crumb.x - r.x, r.crumb.y - r.y) <= 1 ? r.crumb : { x: r.x, y: r.y, parent: r.link.parent, rssi: r.link.rssi, best: r.link.best, hops: r.link.hops };
-    const rel = { id: 'B' + (++relaySeq), x: c.x, y: c.y, cell: cellOf(c.x, c.y), alive: true, by: r.id, t: S.t, connected: true, parent: c.parent, rssi: c.rssi, hops: c.hops, load: 0, why };
+    const rel = { id: 'B' + (++relaySeq), x: c.x, y: c.y, cell: cellOf(c.x, c.y), alive: true, high: r.kind === 'drone', by: r.id, t: S.t, connected: true, parent: c.parent, rssi: c.rssi, hops: c.hops, load: 0, why };
     S.relays.push(rel); r.relaysLeft--; S.m.relays++; staticDirty = true;
     log('info', r.id + ' dropped beacon ' + relaySeq + ' (its link was down to ' + r.link.best.toFixed(0) + ' dBm).', { robot: r.id, relay: rel.id });
   }

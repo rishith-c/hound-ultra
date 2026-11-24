@@ -22,6 +22,8 @@ function packRun(run, from) {
   // delta code the columns so the file stays small
   const W = 9; for (let k = P.length - 1; k >= W; k--) P[k] -= P[k - W];
   return { i0, n: f.n, frames: P, endT: run.endT, hash: run.hash, reached: run.metrics.reached, routeLen: run.metrics.routeLen, hazardM: run.metrics.hazardM,
+    // every lead this world's console held: when it opened, was confirmed, was closed, and when the team reached it
+    leads: f.dets.map((d, k) => { const first = (s) => { const j = d.st.indexOf(s); return j < 0 ? null : d.i0 + j; }, fin = run.detections[k]; return { id: d.id, pos: fin.pos && [q(fin.pos[0]) / 100, q(fin.pos[1]) / 100], open: first(1), confirmed: first(2), closed: first(3), reached: Object.values(run.survivors).find((s) => s.detId === d.id)?.reachedAt ?? null }; }).filter((d) => d.pos),
     // ground truth, used only for the labelled reveal at the end
     people: run.truth.people.map((p) => ({ id: p.id, pos: p.pos, seen: p.firstSeenAt, confirmed: p.confirmedAt, reached: p.reachedAt, outcome: p.outcome })) };
 }

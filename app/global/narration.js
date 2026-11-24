@@ -56,7 +56,8 @@ export function init(ctx) {
   let on = true; try { on = localStorage.getItem(KEY) !== 'off'; } catch { /* no storage */ }
   const text = h('p', { 'aria-live': 'polite' });
   const el = h('div.hound-narr.glass', { role: 'note', 'aria-label': 'Guide', hidden: true }, h('i.hound-narr-mark'), h('div', { style: { flex: '1', minWidth: '0' } }, h('small', null, 'Guide'), text));
-  let shownId = null, shownAt = 0, swapTimer = 0;
+  let shownId = null, shownAt = 0, holdMs = 2600, swapTimer = 0;
+  const spoken = new Set(); // alert lines already said
   const slot = () => document.querySelector('[data-narration-slot]');
   function place() { const s = ctx.shell.current() === 'mission' ? slot() : null; if (s && el.parentNode !== s) s.append(el); el.hidden = !(on && s && text.textContent); }
   function show(id, line, instant) {
@@ -69,16 +70,20 @@ export function init(ctx) {
   function update(instant) {
     const S = ctx.sim?.state; if (!S) return;
     if (!S.events.length) { if (shownId !== 'ready') show('ready', S.autoplay ? 'The mission starts by itself in a moment. Press Manual on the left to make every decision yourself.' : 'Press Start mission when you are ready. Nothing moves until you do.', instant); return; }
+    // An alert is said at once and held longer, even when routine entries were logged after it in the same moment.
+    if (!instant) for (let i = S.events.length - 1; i >= 0 && i >= S.events.length - 12; i--) {
+      const e = S.events[i]; if (e.level !== 'alert' || spoken.has(e.id)) continue; spoken.add(e.id); if (S.t - e.t > 20) continue;
+      const line = lineFor(e, S, ctx); if (line) { holdMs = 6000; return show(e.id, line, false); }
+    }
     for (let i = S.events.length - 1; i >= 0 && i >= S.events.length - 12; i--) {
       const e = S.events[i], line = lineFor(e, S, ctx); if (!line) continue;
       if (e.id === shownId) return;
-      const urgent = e.level === 'alert' || instant;
-      if (!urgent && performance.now() - shownAt < 2600) return;
-      show(e.id, line, instant); return;
+      if (!instant && performance.now() - shownAt < holdMs) return;
+      holdMs = 2600; show(e.id, line, instant); return;
     }
   }
   bus.on('tick', () => update(false));
-  bus.on('seek', () => { shownId = null; update(true); }); bus.on('reset', () => { shownId = null; text.textContent = ''; update(true); });
+  bus.on('seek', () => { shownId = null; holdMs = 0; update(true); }); bus.on('reset', () => { shownId = null; holdMs = 0; spoken.clear(); text.textContent = ''; update(true); });
   bus.on('workspace', () => { place(); update(true); }); bus.on('mission:shown', () => { place(); update(true); });
   bus.on('narration:set', (p) => { on = !!p?.on; try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch { /* no storage */ } place(); bus.emit('narration:state', { on }); });
   ctx.narration = { get on() { return on; }, set(v) { bus.emit('narration:set', { on: v }); } };

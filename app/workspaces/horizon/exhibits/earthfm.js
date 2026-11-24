@@ -39,16 +39,16 @@ function hydrology(z) {
 
 export default {
   id: 'earthfm', title: 'Foundation models for the Earth', short: 'Earth AI',
-  readiness: 1.3, readinessNote: 'Prithvi is published, open and fine-tuned for flood mapping on a public benchmark. Routine use inside a disaster response is still being trialled.',
+  readiness: 0.95, readinessNote: 'Prithvi is published, open, and scored on a public benchmark of past floods. We did not verify any use inside a live disaster response, so it is placed as a lab result.',
   standoff: [5e5, 8e5],
   labels: ['concept', 'live-ai'],
-  labelNote: 'Prithvi is not running here: it has hundreds of millions of parameters. The live AI is a network of about a hundred parameters trained in this page, beside a classic water index. The image is simulated on the real elevation of the valley, and the flood is illustrative: not a forecast, and not a reconstruction of the real flood.',
+  labelNote: 'Prithvi is not running here: the 2023 model has about 100 million parameters. The live AI is a network of about a hundred parameters trained in this page, beside a classic water index. It learns from simulated scenes of this same valley, with other clouds and water levels, which is easier than a new place. Its score is not comparable with the published one. The image is simulated on the real elevation of the valley, and the flood is illustrative: not a forecast, and not a reconstruction of the real flood.',
   sentences: [
     'A foundation model for the Earth is one large network trained on years of satellite images with no labels, then taught a new job, such as mapping flood water, from a few hundred labelled examples.',
     'NASA and IBM published one, Prithvi, in 2023; here a tiny stand-in does the same job on this valley, so you can see what the input is, what comes out, and exactly where it goes wrong.',
   ],
   needs: 'A cloud-free look at the right moment, or a radar pass instead. Floods come with cloud, and an optical image cannot see through it; deep valleys add shadow that reads like water.',
-  unknown: 'How well a model fine-tuned on a few hundred labelled floods holds up in a place and season it has never seen. The published score drops on a held-out country, and nobody has scored it on a Himalayan valley like this one.',
+  unknown: 'How well a model fine-tuned on a few hundred labelled floods holds up in a place and season it has never seen. The published score drops on a held-out country, and we found no score for a steep mountain valley like this one.',
   sources: [
     { who: 'Jakubik et al., IBM Research and NASA', year: 2023, title: 'Foundation models for generalist geospatial artificial intelligence', where: 'arXiv:2310.18660', url: 'https://arxiv.org/abs/2310.18660', note: 'Reports a water-class IoU of 82.99 on the Sen1Floods11 benchmark.' },
     { who: 'IBM and NASA', year: 2023, title: 'Prithvi-EO-1.0-100M fine-tuned on Sen1Floods11, model card', where: 'Hugging Face', url: 'https://huggingface.co/ibm-nasa-geospatial/Prithvi-EO-1.0-100M-sen1floods11', note: 'Water IoU 80.46 on the test split, 77.95 on a held-out flood in Bolivia.' },
@@ -170,9 +170,9 @@ export default {
       fIn.setNote((dem.real ? 'Simulated image on the real elevation around Timure, Nepal (8.6 km across). ' : 'The elevation file did not load: an invented valley. ') + 'The flood is illustrative: not a forecast, not a reconstruction.');
       fOut.setTitle(nm + ' finds ' + L.pct(J.tp / Math.max(1, S.nw)) + ' % of the flooded area, and adds ' + L.pct(J.fp / Math.max(1, S.nw)) + ' % that is not water');
       fOut.setNote('Truth: where the water is in the simulation, from the height of each cell above the river it drains to.');
-      fSc.setTitle(S.net.iou > S.idx.iou + 0.02 ? 'The trained network beats the hand-made index, ' + S.net.iou.toFixed(2) + ' to ' + S.idx.iou.toFixed(2) : S.idx.iou > S.net.iou + 0.02 ? 'Here the hand-made index beats the tiny network, ' + S.idx.iou.toFixed(2) + ' to ' + S.net.iou.toFixed(2) : 'The index and the tiny network score about the same here');
+      fSc.setTitle(S.net.iou > S.idx.iou + 0.02 ? 'The trained network scores above the untuned index, ' + S.net.iou.toFixed(2) + ' to ' + S.idx.iou.toFixed(2) : S.idx.iou > S.net.iou + 0.02 ? 'Here the hand-made index beats the tiny network, ' + S.idx.iou.toFixed(2) + ' to ' + S.net.iou.toFixed(2) : 'The index and the tiny network score about the same here');
       fCa.setTitle(J.fp + J.fn ? 'What is still weak: most wrong pixels are ' + (worst === 4 ? 'scattered noise' : worst === 3 ? 'at the water edge' : CAUSES[worst]) : 'No wrong pixels in this draw');
-      fCa.setNote('');
+      fCa.setNote(''); fSc.setNote('The network trained on this same valley; the index cut-off was never tuned. The dashed mark is another model on real floods: not comparable.');
     }
     const redo = L.soon(compute);
     controls.append(

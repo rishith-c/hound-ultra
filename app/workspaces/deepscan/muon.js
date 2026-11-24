@@ -9,13 +9,14 @@ const A_LOSS = 0.002;                                 // GeV lost per g/cm2 (min
 const DTH = 2 * Math.PI / 180, DPHI = 0.35;           // one angular bin: 2 degrees in the section, 20 degrees across it (assumed)
 const BINS = 87, TH0 = -86;                           // -86 .. +86 degrees
 const CR = 0.3, CNX = 80, CNZ = 35;                   // reconstruction cells
+const NIT = 60, MEV = 2, MB = 0.6; const tmpR = new Float32Array(CNX * CNZ);
 const surv = (X) => Math.pow((E0 + EC) / (E0 + EC + A_LOSS * X), NEXP - 1);       // share of muons that get through X g/cm2
 const opac = (R) => (E0 + EC) * (Math.pow(R, -1 / (NEXP - 1)) - 1) / A_LOSS;      // the inverse
 function pq(lam, u) { if (lam <= 0) return 0; let k = 0, p = Math.exp(-lam), s = p; while (u > s && k < 400) { k++; p *= lam / k; s += p; } return k; } // Poisson quantile
 
 export default function create(env) {
   const { h } = env, ui = env.ui;
-  const P = { hours: 2, area: 1, place: 'tunnel', npos: 5, spacing: 3.5, playing: false, playT: 0 };
+  const P = { hours: 2, area: 1, place: 'tunnel', npos: 7, spacing: 3, playing: false, playT: 0 };
   let pile, dets = [], recon = new Float32Array(CNX * CNZ), shown = new Float32Array(CNX * CNZ), truthC, active, refField, M = {}, img = null, parts = [], needSolve = true;
 
   function layout() {
@@ -64,10 +65,14 @@ export default function create(env) {
   function solve() {
     needSolve = false; recon.fill(0);
     const upd = new Float32Array(CNX * CNZ), cw = new Float32Array(CNX * CNZ);
-    for (let it = 0; it < 60; it++) {
+    for (let it = 0; it < NIT; it++) {
       upd.fill(0); cw.fill(0);
       for (const d of dets) for (const b of d.bins) { if (!b.w) continue; let p = 0; for (let k = 0; k < b.idx.length; k++) p += b.len[k] * recon[b.idx[k]]; const r = (b.d - p) / b.sum * b.w; for (let k = 0; k < b.idx.length; k++) { upd[b.idx[k]] += b.len[k] * r; cw[b.idx[k]] += b.len[k] * b.w; } }
       for (let q = 0; q < recon.length; q++) if (cw[q] > 1e-4) recon[q] = L.clamp(recon[q] + 0.9 * upd[q] / cw[q], -0.7, RHO_REF);
+      if (it % MEV === MEV - 1) { // edge-keeping smoother: pull each cell towards the median of its neighbours
+        tmpR.set(recon); const n9 = [];
+        for (let k = 1; k < CNZ - 1; k++) for (let i = 1; i < CNX - 1; i++) { const q = k * CNX + i; if (!active[q]) continue; n9.length = 0; for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) { const w = q + a * CNX + c; if (active[w]) n9.push(tmpR[w]); } n9.sort((x, y) => x - y); recon[q] = (1 - MB) * tmpR[q] + MB * n9[n9.length >> 1]; }
+      }
     }
     // a cell that only one detector looks through cannot be placed along that line: fade it
     const cov = new Uint8Array(CNX * CNZ), seen = new Int8Array(CNX * CNZ).fill(-1); dets.forEach((d, di) => { for (const b of d.bins) if (b.w > 0.05) for (let k = 0; k < b.idx.length; k++) { const q = b.idx[k]; if (seen[q] !== di) { seen[q] = di; cov[q]++; } } });
@@ -95,7 +100,7 @@ export default function create(env) {
   function controls() {
     const time = ui.slider({ label: 'Exposure time', min: 0, max: 1000, value: toV(P.hours), fmt: (v) => L.fmtDur(toH(v)), hint: 'Counting is the whole method. Slide from one minute to four days.', oninput: (v) => { P.hours = toH(v); P.playing = false; expose(); env.refresh(); } });
     const play = ui.button({ label: 'Run the exposure', ico: 'play', primary: true, title: 'Start counting from zero and watch the image form', onclick: () => { P.playing = true; P.playT = 0; P.hours = 1 / 60; } });
-    const area = ui.seg({ label: 'Detector size', value: P.area, options: [{ v: 0.25, l: '0.25 m²' }, { v: 1, l: '1 m²' }, { v: 4, l: '4 m²' }], hint: 'Counts scale with area. A 1 m² tracking detector is a two-person lift.', onchange: (v) => { P.area = v; rebuild(); env.refresh(); } });
+    const area = ui.seg({ label: 'Detector size', value: P.area, options: [{ v: 0.25, l: '0.25 m²' }, { v: 1, l: '1 m²' }, { v: 4, l: '4 m²' }], hint: 'Counts scale with area.', onchange: (v) => { P.area = v; rebuild(); env.refresh(); } });
     const place = ui.seg({ label: 'Where the detectors sit', value: P.place, options: [{ v: 'tunnel', l: 'In a tunnel below' }, { v: 'side', l: 'Beside it, at street level' }], hint: 'Muons come from above. A detector has to be under what it images, or settle for the few that arrive nearly sideways.', onchange: (v) => { P.place = v; spacing.hidden = v !== 'tunnel'; rebuild(); env.refresh(); } });
     const spacing = h('div.ds-controls', null, ui.seg({ label: 'Detector positions in the tunnel', value: P.npos, options: [3, 5, 7].map((v) => ({ v, l: String(v) })), hint: 'More viewpoints, fewer streaks. One detector can be moved from place to place; the exposure is per position.', onchange: (v) => { P.npos = v; rebuild(); env.refresh(); } }),
       ui.slider({ label: 'Spacing', min: 1.5, max: 6, step: 0.5, value: P.spacing, fmt: (v) => v.toFixed(1) + ' m', oninput: (v) => { P.spacing = v; rebuild(); env.refresh(); } }));
@@ -180,7 +185,7 @@ export default function create(env) {
     honest: 'a detector has to sit lower than what it images, so someone must find a cellar, sewer or borehole first. This section treats the pile as the same all the way back; a real 3-D image spreads the same muons over about ten times more bins, so multiply every time by ten. Scattering in the rubble and detector background are not modelled.',
     assumed: 'Assumed: 2° angular bins, 20° acceptance across the section, 0.5 GeV detector threshold, 2 MeV lost per g/cm², the pile uniform along the unseen axis. The solid-pile reference uses the outer surface, as a drone scan would give it, at 1.8 g/cm³.',
     sources: [
-      { who: 'Morishima et al., Nature 552 (2017).', what: 'ScanPyramids: muons reveal a 30 m void above the Grand Gallery of Khufu’s pyramid.', url: 'https://doi.org/10.1038/nature24647' },
+      { who: 'Morishima et al., Nature 552 (2017).', what: 'ScanPyramids: muons reveal a big void in Khufu’s pyramid.', url: 'https://doi.org/10.1038/nature24647' },
       { who: 'Shukla and Sankrith (2018).', what: 'The sea-level muon energy and angle formula used for the flux here.', url: 'https://arxiv.org/abs/1606.06907' },
     ],
     _dbg: () => ({ shown, recon, active, truthC, P, rebuild, solve, expose, dets, M }),
@@ -193,7 +198,7 @@ export default function create(env) {
       { k: 'Image error', v: M.rms.toFixed(2) + ' g/cm³', sub: 'RMS against the true density deficit' },
       { k: 'Match to truth', v: 'r = ' + M.corr.toFixed(2), sub: 'correlation, 1 would be perfect', tone: M.corr > 0.5 ? 'ok' : M.corr > 0.25 ? 'warn' : 'bad' },
     ],
-    row: { sees: 'Density. Any void with enough missing matter, and anything heavy.', range: 'Metres to hundreds of metres of rock', time: 'Hours here; months for a pyramid', cost: 'High', costNote: 'research instrument', ready: 2, readyNote: 'Fielded in archaeology, volcanoes and reactors. Never in a rescue.' },
+    row: { sees: 'Density. Any void with enough missing matter, and anything heavy.', range: 'Metres to hundreds of metres of rock', time: 'Minutes for a room, hours for a pocket, in this model', cost: 'High', costNote: 'research instrument', ready: 2, readyNote: 'Fielded in archaeology, volcanoes and reactors. Never in a rescue.' },
     summary: () => { const V = verdicts(); return pile.voids.filter((v) => V[v.id].state === 'seen').length + ' of 4 voids clear after ' + L.fmtDur(P.hours); },
   };
 }

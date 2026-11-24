@@ -7,6 +7,8 @@ import * as U from './util.js';
 import { createTextures } from './textures.js';
 import { createMaterials } from './materials.js';
 import { buildEnvironment } from './environment.js';
+import { loadTerrain } from './terrain.js';
+import { loadPhotos } from './photos.js';
 import { createCameras, MODES } from './cameras.js';
 import { createLabels } from './labels.js';
 import { createPost, makeGlow } from './post.js';
@@ -37,9 +39,9 @@ export async function createEngine(host, ctx, opts = {}) {
 
   // ---- renderer ----
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, depth: false, stencil: false, powerPreference: 'high-performance' });   // throws without WebGL: index.js shows the message
-  renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.18;
+  renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.12;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.autoClear = false; renderer.info.autoReset = false;
-  const maxPR = quality === 'high' ? 2 : 1.25; let pr = Math.min(maxPR, window.devicePixelRatio || 1); renderer.setPixelRatio(1);
+  const maxPR = quality === 'high' ? 1.5 : 1.1; let pr = Math.min(maxPR, window.devicePixelRatio || 1); renderer.setPixelRatio(1);
   const scene = new THREE.Scene(); scene.name = 'twin';
   const camera = new THREE.PerspectiveCamera(38, 1.6, 0.5, 5200);
   const tex = createTextures(world, Math.min(16, renderer.capabilities.getMaxAnisotropy()));
@@ -70,8 +72,10 @@ export async function createEngine(host, ctx, opts = {}) {
 
   // ---- build the world, a part at a time so the page stays alive ----
   onProgress(0.05, 'Painting the ground'); await nextFrame();
-  env.mats = createMaterials(tex);
-  const environment = buildEnvironment(env); env.environment = environment; t.heightAt = environment.heightAt;
+  const [D, photos] = await Promise.all([loadTerrain(), loadPhotos(quality, Math.min(8, renderer.capabilities.getMaxAnisotropy()))]);
+  env.photos = photos; env.mats = createMaterials(tex, photos);
+  onProgress(0.15, 'Raising the valley'); await nextFrame();
+  const environment = buildEnvironment(env, D); env.environment = environment; t.heightAt = environment.heightAt;
   const parts = [];
   for (let i = 0; i < PARTS.length; i++) {
     onProgress(0.25 + 0.6 * (i / PARTS.length), ['Raising block B', 'Piling the rubble', 'Furnishing the classrooms', 'Building the neighbours', 'Setting up staging'][i]); await nextFrame();
@@ -177,6 +181,7 @@ export async function createEngine(host, ctx, opts = {}) {
       if (!same(hit && hit.sel, hoverSel)) { hoverSel = hit ? hit.sel : null; hoverB.set(hit ? hit.object : null, hit ? nameOf(hit.sel) : ''); canvas.classList.toggle('over', !!hit); }
     }
     labels.update(dt, W, H); hoverB.update(); selB.update();
+    post.setFog(environment.fog); post.setFocus(camera.position.distanceTo(cams.pose.target), cams.mode === 'cinematic' && !cams.userActive ? cams.dof : 0, dt);
     renderer.info.reset(); post.render(time);
     stats.ms = ms; stats.fps = 1000 / ms; stats.calls = renderer.info.render.calls; stats.triangles = renderer.info.render.triangles;
   }
@@ -199,7 +204,7 @@ export async function createEngine(host, ctx, opts = {}) {
       if (disposed) return; api.stop(); disposed = true; ro.disconnect(); offs.forEach((f) => f()); mq && mq.removeEventListener && mq.removeEventListener('change', onMq);
       canvas.removeEventListener('pointermove', onPtrMove); canvas.removeEventListener('pointerleave', onPtrLeave); canvas.removeEventListener('pointerdown', onPtrDown); canvas.removeEventListener('pointerup', onPtrUp); canvas.removeEventListener('dblclick', onDbl);
       for (const a of actors) callActor(a, 'dispose'); for (const p of parts) { try { p.dispose && p.dispose(); } catch (e) { /* keep disposing */ } }
-      cams.dispose(); labels.dispose(); environment.dispose(); U.disposeTree(scene); env.mats.dispose(); tex.dispose(); post.dispose(); renderer.dispose(); renderer.forceContextLoss && renderer.forceContextLoss();
+      cams.dispose(); labels.dispose(); environment.dispose(); U.disposeTree(scene); env.mats.dispose(); tex.dispose(); post.dispose(); photos.dispose(); renderer.dispose(); renderer.forceContextLoss && renderer.forceContextLoss();
       canvas.remove(); overlay.remove(); host.querySelector(':scope > .twin-caption')?.remove(); host.classList.remove('twin-host', 'static');
     },
   };

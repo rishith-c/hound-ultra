@@ -124,7 +124,7 @@ export function eikonal(slow, sx, sz) {
   const si = clamp(Math.floor((sx - x0) / res), 0, nx - 1), sk = clamp(Math.floor((sz - z0) / res), 0, nz - 1), s0 = sk * nx + si;
   T[s0] = 0; push(0, s0);
   while (hk.length) {
-    const t0 = hk[0], q = pop(); if (done[q] || t0 > T[q]) continue; done[q] = 1;
+    const q = pop(); if (done[q]) continue; done[q] = 1; const t0 = T[q];
     const i = q % nx, k = (q - i) / nx, sq = slow[q];
     for (let n = 0; n < NB.length; n++) {
       const ii = i + NB[n][0], kk = k + NB[n][1]; if (ii < 0 || kk < 0 || ii >= nx || kk >= nz) continue;

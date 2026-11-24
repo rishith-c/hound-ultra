@@ -13,6 +13,8 @@
 .mission-centre { pointer-events: none !important; display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; }
 .mission-centre > .grow { pointer-events: none; flex: 1; }
 
+.mission [hidden] { display: none !important; }
+
 /* panels */
 .mission-left, .mission-right { display: flex; flex-direction: column; min-height: 0; align-self: stretch; overflow: hidden; }
 .mission-left[data-closed="true"], .mission-right[data-closed="true"] { align-self: start; }
@@ -247,6 +249,70 @@
 .hound-narr p.swap { opacity: 0; }
 .hound-narr small { display: block; font-size: var(--fs-11); color: var(--text-3); margin-bottom: 1px; }
 
-@media (max-width: 1500px) { .mission-wide { display: none; } .mission-bar .btn { padding: 0 7px; } .mission-bar .seg button { padding: 0 8px; } .mission-mini { width: 204px; } }
+@media (max-width: 1500px) { .mission { --m-left: 276px; --m-right: 328px; } .mission-wide { display: none; } .mission-bar .btn { padding: 0 7px; } .mission-bar .seg button { padding: 0 8px; } .mission-mini { width: 204px; } }
 @media (prefers-reduced-motion: reduce) { .mission-beacon, .mission-card, .mission-pop, .mission-scrim, .mission-route { animation: none; } }
 :root[data-motion="reduce"] .mission-beacon, :root[data-motion="reduce"] .mission-card, :root[data-motion="reduce"] .mission-pop { animation: none; }
+
+/* ---------- Demo mode: the film ---------- */
+:root[data-mode="demo"] .mission-hud, :root[data-mode="demo"] .mission-pop { display: none; }
+.mission-twin { transition: opacity 900ms var(--ease-in-out); }
+.mission-film { position: absolute; inset: 0; pointer-events: none; overflow: hidden; color: var(--text); }
+.film-shade { position: absolute; inset: 0; background:
+  radial-gradient(120% 90% at 50% 42%, transparent 52%, color-mix(in srgb, var(--bg-0) 62%, transparent) 100%),
+  linear-gradient(0deg, color-mix(in srgb, var(--bg-0) 92%, transparent) 0, color-mix(in srgb, var(--bg-0) 66%, transparent) 150px, transparent 360px); }
+.film-dim { position: absolute; left: 0; top: 0; width: 3600px; height: 3600px; opacity: 0; transition: opacity 700ms var(--ease-in-out); will-change: transform, opacity;
+  background: radial-gradient(circle, transparent 110px, color-mix(in srgb, var(--bg-0) 55%, transparent) 260px, color-mix(in srgb, var(--bg-0) 88%, transparent) 560px); }
+.mission-film.find .film-dim { opacity: 1; }
+.film-threads { position: absolute; inset: 0; overflow: visible; }
+.film-threads path { fill: none; stroke: var(--person); stroke-width: 1; stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; }
+.film-threads path.in { stroke-dashoffset: 0; opacity: 0.85; transition: stroke-dashoffset 520ms var(--ease-in-out), opacity 200ms linear; }
+.film-threads circle { fill: var(--person); opacity: 0; transition: opacity 240ms linear; }
+.film-threads circle.in { opacity: 1; transition-delay: 420ms; }
+.film-threads .film-ring { fill: none; stroke: var(--person); stroke-width: 1.25; }
+.mission-film.find .film-ring { opacity: 1; transition-delay: 300ms; }
+.film-ev { position: absolute; left: 0; top: 0; width: min(30%, 420px); display: flex; flex-direction: column; gap: 1px; opacity: 0; transition: opacity 320ms linear; }
+.film-ev.in { opacity: 1; transition-delay: 380ms; }
+.film-ev b { font: 400 var(--fs-24)/1.05 var(--font-display); }
+.film-ev span { font-size: var(--fs-14); color: var(--text-2); }
+.film-ev small { font-size: var(--fs-11); color: var(--text-3); }
+.film-low { isolation: isolate; position: absolute; left: 40px; right: 40px; bottom: 76px; display: flex; align-items: flex-end; justify-content: space-between; gap: 48px; }
+.film-left { display: flex; align-items: flex-end; gap: 28px; min-width: 0; }
+.film-title { max-width: 620px; transition: opacity 240ms var(--ease-in-out); }
+.film-title.swap { opacity: 0; }
+.film-tags { display: flex; gap: 6px; margin-bottom: 12px; min-height: 20px; }
+.film-head { font: 400 var(--fs-40)/1.04 var(--font-display); letter-spacing: -0.005em; text-wrap: balance; margin: 0; }
+.film-line { margin-top: 8px; font-size: var(--fs-16); line-height: 1.4; color: var(--text-2); text-wrap: pretty; }
+.film-p { display: none; font: 400 112px/0.78 var(--font-display); font-variant-numeric: lining-nums tabular-nums; color: var(--person); white-space: nowrap; padding-bottom: 8px; }
+.mission-film.find .film-p { display: block; animation: mission-fade 500ms var(--ease-in-out); }
+.film-inst { flex: none; position: relative; opacity: 0; transition: opacity 320ms var(--ease-in-out); }
+.film-inst.on { opacity: 1; }
+.film-inst::before { content: ""; position: absolute; inset: -120px -60px -100px -220px; z-index: -1; background: radial-gradient(70% 78% at 72% 62%, color-mix(in srgb, var(--bg-0) 88%, transparent) 30%, transparent 100%); }
+.film-inst:has(.film-inst-wave[hidden])::before { display: none; }
+.film-strip-head { display: flex; align-items: center; gap: 10px; font-size: var(--fs-12); color: var(--text-2); margin-bottom: 8px; }
+.film-strip-row { display: flex; align-items: flex-end; gap: 22px; }
+.film-strip { width: 600px; height: 168px; display: block; }
+.film-score-box { width: 92px; display: flex; flex-direction: column; gap: 4px; padding-bottom: 2px; }
+.film-score { font: 400 var(--fs-56)/0.86 var(--font-display); font-variant-numeric: lining-nums tabular-nums; }
+.film-score.over { color: var(--warn); }
+.film-score-say { font-size: var(--fs-13); color: var(--text-2); }
+.film-inst-figs { display: flex; gap: 40px; }
+.film-fig { display: flex; flex-direction: column; gap: 6px; text-align: right; }
+.film-fig b { font: 400 var(--fs-56)/0.9 var(--font-display); font-variant-numeric: lining-nums tabular-nums; }
+.film-fig small { font: 400 var(--fs-20)/1 var(--font-display); color: var(--text-2); margin-left: 5px; }
+.film-fig span { font-size: var(--fs-13); color: var(--text-2); }
+.film-foot { position: absolute; left: 40px; right: 40px; bottom: 18px; height: 40px; display: flex; align-items: center; gap: 20px; pointer-events: auto; }
+.film-rail { position: relative; flex: 1; height: 32px; cursor: pointer; touch-action: none; border-radius: var(--r-1); }
+.film-rail-line, .film-rail-fill { position: absolute; left: 0; right: 0; top: 15.5px; height: 1px; background: var(--text); opacity: 0.26; }
+.film-rail-fill { opacity: 0.95; transform-origin: 0 50%; }
+.film-rail-marks i { position: absolute; top: 12px; width: 1px; height: 8px; background: var(--text); opacity: 0.55; }
+.film-rail-marks i.find { top: 12px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--person); opacity: 1; }
+.film-rail-knob { position: absolute; left: -1px; top: 8px; width: 2px; height: 16px; background: var(--text); }
+.film-rail-tip { position: absolute; left: 0; bottom: 30px; padding: 3px 7px; white-space: pre; font-size: var(--fs-11); background: var(--bg-2); border: 1px solid var(--line-2); border-radius: var(--r-1); opacity: 0; transition: opacity var(--t-fast) linear; pointer-events: none; }
+.film-rail:hover .film-rail-tip { opacity: 1; }
+.film-control { min-height: 34px; padding: 0 16px; font: 500 var(--fs-13) var(--font); color: var(--text); background: color-mix(in srgb, var(--bg-0) 50%, transparent); border: 1px solid var(--line-3); border-radius: var(--r-2); cursor: pointer; transition: background var(--t-fast) linear, border-color var(--t-fast) linear; }
+.film-control:hover { background: var(--text); color: var(--bg-0); border-color: var(--text); }
+.film-black { position: absolute; inset: 0; background: var(--bg-0); opacity: 0; transition: opacity 800ms var(--ease-in-out); }
+.film-black.on { opacity: 1; }
+@media (max-width: 1500px) { .film-strip { width: 480px; height: 134px; } .film-score-box { width: 82px; } .film-title { max-width: 520px; } .film-p { font-size: 92px; } .film-low { gap: 32px; } }
+@media (prefers-reduced-motion: reduce) { .film-threads path.in, .film-dim, .film-title, .film-inst, .film-black, .mission-twin { transition: none; } .mission-film.find .film-p { animation: none; } }
+:root[data-motion="reduce"] .film-threads path.in, :root[data-motion="reduce"] .film-dim, :root[data-motion="reduce"] .film-title, :root[data-motion="reduce"] .mission-twin { transition: none; }

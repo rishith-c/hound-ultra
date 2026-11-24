@@ -227,7 +227,7 @@ export function classify(pile, poses, g) {
     const o = p.idx * 7, A = quatAxes([poses[o + 3], poses[o + 4], poses[o + 5], poses[o + 6]]), up = A[1], ax = A[2];
     const tilt = Math.acos(Math.min(1, Math.abs(up[1]))) * 180 / Math.PI, y = poses[o + 1], drop = p.home[1] - y, L = p.boxes[0].h[2];
     const s = ax[1] > 0 ? -1 : 1, hl = Math.hypot(ax[0], ax[2]) || 1, dip = [s * ax[0] / hl, s * ax[2] / hl];
-    const ends = [1, -1].map((e) => [poses[o] + ax[0] * e * (L - 0.12), y + ax[1] * e * (L - 0.12), poses[o + 2] + ax[2] * e * (L - 0.12)]);
+    const ends = [1, -1].map((e) => [poses[o] + ax[0] * e * (L - 0.05), y + ax[1] * e * (L - 0.05), poses[o + 2] + ax[2] * e * (L - 0.05)]);
     let cls = 'other';
     if (tilt < 15 && drop > 1.2) cls = 'flatLow'; else if (tilt < 15 && drop < 0.45) cls = 'flatHigh'; else if (tilt >= 15 && tilt <= 72) cls = 'inclined'; else if (tilt > 72) cls = 'hanging';
     let cant = false;

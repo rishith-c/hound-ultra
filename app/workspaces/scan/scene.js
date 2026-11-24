@@ -9,9 +9,9 @@ import { SITE, BUILDING, ROOMS, DOORS, WALLS, OBSTACLES, HAZARDS, SEED } from '.
 
 // Materials: reflectance drives the intensity channel; 'cls' is the simulator's own label, used only to CHECK the
 // classifier afterwards (0 ground, 1 structure, 2 rubble, 3 vegetation, 4 contents such as furniture and vehicles).
-export const MAT = { soil: 0, mud: 1, asphalt: 2, pad: 3, floor: 4, rubble: 5, concrete: 6, drywall: 7, roof: 8, wood: 9, metal: 10, trunk: 11, leaf: 12, vehicle: 13 };
-const REFL = [0.34, 0.22, 0.11, 0.9, 0.44, 0.38, 0.56, 0.76, 0.6, 0.5, 0.72, 0.26, 0.46, 0.64];
-const CLS_OF_MAT = [0, 0, 0, 0, 0, 2, 1, 1, 1, 4, 4, 3, 3, 4];
+export const MAT = { soil: 0, mud: 1, asphalt: 2, pad: 3, floor: 4, rubble: 5, concrete: 6, drywall: 7, roof: 8, wood: 9, metal: 10, trunk: 11, leaf: 12, vehicle: 13, sheet: 14, cable: 15, rebar: 16 };
+const REFL = [0.34, 0.22, 0.11, 0.9, 0.44, 0.38, 0.56, 0.76, 0.6, 0.5, 0.72, 0.26, 0.46, 0.64, 0.86, 0.42, 0.5];
+const CLS_OF_MAT = [0, 0, 0, 0, 0, 2, 1, 1, 1, 4, 4, 3, 3, 4, 2, 4, 2];
 
 function hash2(i, j, s) { let h = Math.imul(i, 374761393) ^ Math.imul(j, 668265263) ^ s; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
 function vnoise(x, y, s) {
@@ -216,6 +216,41 @@ function tree(S, R, x, y, big) {
 }
 function bush(S, R, x, y) { const g = groundAt(S, x, y) || 0, r = 0.6 + R() * 0.5; addBlob(S, x, y, g + r * 0.55, r, r * (0.8 + R() * 0.4), r * 0.75, 1.3); }
 
+// Thin things: a straight rod between two points, a sagging cable, a bent reinforcing bar, a curled roof sheet.
+// They are drawn a little thicker than life because a lidar spot a few centimetres wide catches them anyway.
+function rod(S, a, b, th, mat) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2], hz = Math.hypot(dx, dy), L = Math.hypot(hz, dz); if (L < 1e-3) return;
+  addBox(S, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2, L / 2, th / 2, th / 2, mat, Math.atan2(dy, dx), Math.atan2(-dz, hz));
+}
+function cable(S, a, b, sag, n, th = 0.05) {
+  let p = a; for (let i = 1; i <= n; i++) { const u = i / n, q = [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u - sag * 4 * u * (1 - u)]; rod(S, p, q, th, MAT.cable); p = q; }
+}
+function bar(S, R, x, y, z, yaw, len) {
+  let p = [x, y, z], pitch = (R() - 0.3) * 0.5, w = yaw; const n = 5;
+  for (let i = 0; i < n; i++) { const st = len / n, q = [p[0] + Math.cos(w) * Math.cos(pitch) * st, p[1] + Math.sin(w) * Math.cos(pitch) * st, p[2] + Math.sin(pitch) * st]; rod(S, p, q, 0.045, MAT.rebar); p = q; pitch -= 0.15 + R() * 0.4; w += (R() - 0.5) * 0.35; }
+}
+function sheet(S, x, y, z, yaw, pitch, bend, len, wid, n = 7) {
+  let p = [x, y, z], a = pitch; const st = len / n, c = Math.cos(yaw), s = Math.sin(yaw);
+  for (let i = 0; i < n; i++) { const q = [p[0] + c * Math.cos(a) * st, p[1] + s * Math.cos(a) * st, p[2] - Math.sin(a) * st]; addBox(S, (p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2, st / 2 + 0.01, wid / 2, 0.02, MAT.sheet, yaw, a); p = q; a += bend / n; }
+}
+function wreckage(S) {
+  const R = mulberry32(SEED ^ 0x71c3), P = Math.PI;
+  for (let x = 76.2; x < 87; x += 0.75 + R() * 0.5) bar(S, R, x, 47.75, 3.18 + R() * 0.1, P / 2 + (R() - 0.5) * 0.5, 0.8 + R() * 1.3);      // broken edge of the standing roof
+  for (let y = 48.6; y < 61; y += 0.9 + R() * 0.6) bar(S, R, 75.15, y, 3.18 + R() * 0.1, (R() - 0.5) * 0.5, 0.7 + R() * 1.0);
+  for (let i = 0; i < 16; i++) { const a = R() * 6.283, d = 1 + R() * 3.4, x = 82.6 + Math.cos(a) * d, y = 55.4 + Math.sin(a) * d; bar(S, R, x, y, (groundAt(S, x, y) || 0) + 0.25, R() * 6.283, 0.9 + R() * 1.2); }
+  for (let i = 0; i < 12; i++) { const x = 92 + R() * 4.2, y = 39 + R() * 6.5; bar(S, R, x, y, (groundAt(S, x, y) || 0) + 0.3, R() * 6.283, 0.8 + R() * 1.1); }
+  for (const [x, y, z, yaw, p, b, l, w] of [[83.4, 47.5, 3.36, 1.5, -0.12, 1.5, 3.6, 2.2], [86.0, 47.4, 3.34, 1.75, -0.05, 1.25, 2.9, 1.8], [79.6, 60.4, 1.2, -0.7, 0.1, -0.8, 3.2, 1.9], [85.6, 51.6, 2.3, 2.4, 0.5, -0.9, 3.3, 2.0], [86.6, 58.4, 1.5, -2.5, 0.2, 0.8, 3.0, 1.7], [74.8, 58.6, 3.36, 0.2, -0.1, 1.3, 2.6, 2.0], [95.8, 45.6, 3.2, 2.9, 0.5, 0.5, 3.4, 2.2], [91.0, 41.0, 1.4, 2.5, 0.5, -0.5, 2.6, 1.8], [101.0, 66.4, 1.0, 0.8, 0.3, -0.9, 2.8, 1.7], [96.2, 73.0, 0.9, 2.2, 0.35, -0.8, 3.0, 1.8]]) sheet(S, x, y, z, yaw, p, b, l, w);
+  const poles = [9, 36, 58, 86, 111];
+  for (let i = 0; i + 1 < poles.length; i++) for (const dy of [-0.5, 0.5]) cable(S, [poles[i], 7.7 + dy, 7.2], [poles[i + 1], 7.7 + dy, 7.2], 0.9, 16);
+  for (const x of poles) addBox(S, x, 7.7, 7.2, 0.05, 0.7, 0.05, MAT.wood);
+  cable(S, [86, 7.7, 7.0], [84, 28.2, 3.5], 0.8, 14); cable(S, [36, 7.7, 7.0], [44, 28.4, 3.5], 0.9, 14);
+  // a utility pole brought down across the rubble, its wires trailing
+  rod(S, [89.2, 60.6, 0.5], [82.2, 57.4, 2.9], 0.24, MAT.trunk); rod(S, [82.9, 57.0, 2.7], [82.4, 58.5, 2.85], 0.09, MAT.wood);
+  cable(S, [82.2, 57.0, 2.9], [76.4, 60.9, 3.3], 0.9, 10); cable(S, [82.5, 58.4, 2.9], [75.3, 61.6, 3.3], 1.1, 10); cable(S, [89.2, 60.6, 0.6], [97.5, 63.5, 0.4], 0.1, 8);
+  for (const [x, l] of [[77.6, 1.6], [80.1, 2.2], [82.4, 1.3], [84.8, 2.0]]) cable(S, [x, 47.7, 3.15], [x + 0.35, 48.2, 3.15 - l], 0.05, 5, 0.04); // wires hanging from the broken roof edge
+  for (let i = 0; i < 22; i++) { const x = 76.5 + R() * 12, y = 47.8 + R() * 14, g = groundAt(S, x, y); if (g !== g || (y < 54 && x < 82)) continue; const a = R() * 6.283, L = 0.5 + R() * 1.1; rod(S, [x, y, g + 0.12], [x + Math.cos(a) * L, y + Math.sin(a) * L, g + 0.15 + R() * 0.6], 0.07, MAT.trunk); } // splintered timber
+}
+
 export function buildSite() {
   const S = makeScene(SITE.w, SITE.h), R = mulberry32(SEED ^ 0x5ca9);
   const B = BUILDING.rect, WH = BUILDING.wallHeight;
@@ -368,6 +403,7 @@ export function buildSite() {
     if (R() < 0.5) bush(S, R, x + 2 + R() * 1.5, y + (R() - 0.5) * 3);
   }
   for (const [x, y] of [[40.5, 33], [41.2, 36.5], [87.5, 33.5], [86.6, 38], [12, 34.5], [70, 25.2], [56.5, 25.6]]) bush(S, R, x, y);
+  wreckage(S);
   finalize(S);
   return S;
 }
@@ -406,7 +442,7 @@ function flyLine(S, C, T, a, b, v, pass, { spacing, perLine, halfFov, sigma }) {
 
 export function scanSite(S, progress = () => {}) {
   rs = 0x1234abcd ^ SEED; rayN = 0; S.stamp.fill(-1);
-  const C = makeCloud(760000), T = Traj(), passes = [];
+  const C = makeCloud(1250000), T = Traj(), passes = [];
   const pad = SITE.dronePad;
   // pass 1: the aerial survey, on the same five lines the mission's drone flies, 30 m up
   T.jump([pad[0], pad[1], 0.3]); T.to([pad[0], pad[1], 30], 10);
@@ -436,6 +472,18 @@ export function scanSite(S, progress = () => {}) {
   }
   passes.push({ id: 'orbit', name: 'Collapse orbit', detail: '11 m up, circling the fallen corner and looking in', t0, t1: T.t, i0, i1: C.n });
   progress(0.72, 'Collapse orbit');
+  // pass 2b: a tighter, lower orbit, for the fine structure of the heap
+  { const r2 = 9.4, alt = 6.2, n2 = 72, arc2 = (2 * Math.PI * r2) / n2, oq = (a) => [oc[0] + r2 * Math.cos(a), oc[1] + r2 * Math.sin(a), alt];
+    T.to(oq(0.9), 3); i0 = C.n; t0 = T.t;
+    for (let s = 0; s < n2; s++) {
+      const a0 = 0.9 + (s / n2) * 2 * Math.PI, ts = T.t, dt = arc2 / 2, nl = Math.round(arc2 / 0.06);
+      for (let L = 0; L < nl; L++) for (let k = 0; k < 100; k++) {
+        const f = (L + k / 100) / nl, a = a0 + (f * 2 * Math.PI) / n2, kk = L & 1 ? 99 - k : k, phi = (12 + (74 * (kk + rnd())) / 100) * DEG, az = a + Math.PI + (rnd() - 0.5) * 0.006;
+        shoot(S, C, oc[0] + r2 * Math.cos(a), oc[1] + r2 * Math.sin(a), alt, Math.cos(az) * Math.cos(phi), Math.sin(az) * Math.cos(phi), -Math.sin(phi), ts + f * dt, 0.012, 34, 12);
+      }
+      T.to(oq(0.9 + ((s + 1) / n2) * 2 * Math.PI), 2, true, 2);
+    }
+    passes.push({ id: 'close', name: 'Close orbit', detail: '6 m up and 9 m out, for cables, bars and bent sheet', t0, t1: T.t, i0, i1: C.n }); }
   // pass 3: a low flight inside, along the corridor and into every room whose door is open
   const zI = 1.25, way = [[64, 31], [64, 44], [64, 50.6], [64, 44], [57.6, 44], [57.6, 39.2], [56.2, 36.4], [57.6, 41], [57.6, 44], [57.6, 47.4], [57.6, 49], [59.8, 54.4], [57.6, 48], [57.6, 44], [48.6, 44],
     [48.6, 39.2], [47.4, 36.2], [48.6, 41], [48.6, 44], [48.6, 49.4], [47.6, 53.6], [48.6, 48], [48.6, 44], [64, 44], [70.6, 44], [70.6, 39.6], [68.2, 38.4], [70.6, 41], [70.6, 44], [70.6, 49.4], [72.6, 53.4], [70.6, 48], [70.6, 44], [74.7, 44]];
@@ -450,7 +498,7 @@ export function scanSite(S, progress = () => {}) {
         shoot(S, C, ox, oy, oz, Math.cos(az) * ce, Math.sin(az) * ce, Math.sin(el), ts + f * dt, 0.008, 30, 5);
       }
     }
-    T.to(b, 1.0, true, 2);
+    T.to(b, 1.0, true, 3);
   }
   passes.push({ id: 'interior', name: 'Interior flight', detail: '1.25 m above the floor, corridor and every open room', t0, t1: T.t, i0, i1: C.n });
   progress(1, 'Scan captured');

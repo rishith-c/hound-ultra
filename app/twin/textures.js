@@ -85,13 +85,14 @@ export function createTextures(world, maxAniso = 8) {
   // ---- ground: the one-off painting of the whole site (mud, road, ruts, puddles) ----
   function groundMacro() {
     return memo('groundMacro', () => {
-      const S = 2048, k = S / GROUND.size, r = rng('tex:gm'), [ac, a] = cv(S), [rc, ro] = cv(S);
+      const S = 2048, k = S / GROUND.size, r = rng('tex:gm'), [ac, a] = cv(S), [rc, ro] = cv(S), [kc, kk] = cv(S / 2);
       const B = world.BUILDING.rect;
       a.fillStyle = '#6b655c'; a.fillRect(0, 0, S, S); ro.fillStyle = '#b8b8b8'; ro.fillRect(0, 0, S, S);
       tileNoise(a, S, S, r, { cells: [512, 256, 128, 64], alpha: 0.26, mode: 'soft-light' });
       tileNoise(ro, S, S, r, { cells: [256, 96, 32], alpha: 0.25, mode: 'multiply', lo: 120 });
       const M = (c) => c.setTransform(k, 0, 0, -k, -GROUND.x0 * k, (GROUND.y0 + GROUND.size) * k);   // draw in metres, north up
       M(a); M(ro);
+      kk.fillStyle = '#000'; kk.fillRect(0, 0, S / 2, S / 2); kk.setTransform(k / 2, 0, 0, -k / 2, -GROUND.x0 * k / 2, (GROUND.y0 + GROUND.size) * k / 2); kk.lineCap = 'round'; kk.lineJoin = 'round'; kk.globalCompositeOperation = 'lighter'; kk.filter = 'blur(2px)';
       a.lineCap = ro.lineCap = 'round'; a.lineJoin = ro.lineJoin = 'round';
       const path = (c, pts) => { c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length - 1; i++) { const mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2; c.quadraticCurveTo(pts[i][0], pts[i][1], mx, my); } c.lineTo(pts.at(-1)[0], pts.at(-1)[1]); };
       // silt laid down by the flood, streaked along the flow (from the slope in the north-east towards the river)
@@ -108,7 +109,8 @@ export function createTextures(world, maxAniso = 8) {
       a.strokeStyle = hex2('#3c3d40', 0.6); a.lineWidth = 5.4; path(a, road); a.stroke();
       ro.strokeStyle = '#9c9c9c'; ro.lineWidth = 6.4; path(ro, road); ro.stroke();
       // gravel yard in front of block B, the path to its entrance, the staging hardstand, a lane between A and B
-      const gravel = (pts, w, al = 0.5) => { a.strokeStyle = hex2('#7d776c', al); a.lineWidth = w; path(a, pts); a.stroke(); };
+      kk.strokeStyle = '#f00'; kk.lineWidth = 6.4; path(kk, road); kk.stroke();
+      const gravel = (pts, w, al = 0.5) => { kk.strokeStyle = 'rgba(0,255,0,' + al * 1.3 + ')'; kk.lineWidth = w * 0.9; path(kk, pts); kk.stroke(); a.strokeStyle = hex2('#7d776c', al); a.lineWidth = w; path(a, pts); a.stroke(); };
       gravel([[42, 25.6], [64, 25.2], [87, 25.8]], 8.5, 0.5); gravel([[63.6, 7], [64.4, 16], [64, 27]], 4.2, 0.5); gravel([[16, 13.2], [24, 13.8], [33, 13]], 11, 0.5);
       gravel([[38.6, 9], [38.2, 30], [39, 52], [38, 76], [40, 100]], 4.2, 0.36); gravel([[30, 9.5], [44, 18], [58, 24]], 3.2, 0.3);
       // mud thrown back over the road and the gravel
@@ -153,7 +155,7 @@ export function createTextures(world, maxAniso = 8) {
       for (const c of [a, ro]) for (const [x0, y0, x1, y1, rect] of [[0, 0, edge, 0, [0, 0, edge, S]], [S, 0, S - edge, 0, [S - edge, 0, edge, S]], [0, 0, 0, edge, [0, 0, S, edge]], [0, S, 0, S - edge, [0, S - edge, S, edge]]]) {
         const g = c.createLinearGradient(x0, y0, x1, y1), col = c === a ? TERRAIN_BASE : '#d0d0d0'; g.addColorStop(0, col); g.addColorStop(0.25, col); g.addColorStop(1, hex2(col, 0)); c.fillStyle = g; c.fillRect(...rect);
       }
-      return { map: T(ac, { repeat: false, aniso: 16 }), roughnessMap: T(rc, { srgb: false, repeat: false, aniso: 16 }) };
+      return { mask: T(kc, { srgb: false, repeat: false }), map: T(ac, { repeat: false, aniso: 16 }), roughnessMap: T(rc, { srgb: false, repeat: false, aniso: 16 }) };
     });
   }
 

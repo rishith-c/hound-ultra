@@ -6,6 +6,7 @@ import { createTimeline } from './timeline.js';
 import { createInspector } from './inspector.js';
 import { createStepper } from './stepper.js';
 import { createAlerts, createRouteDialog, runDrill } from './alerts.js';
+import { createFilm } from './film.js';
 
 const CAM3 = [['cinematic', 'Cinematic', 'The camera frames the story by itself'], ['orbit', 'Orbit', 'Drag to turn, scroll to zoom'], ['top', 'Top', 'Straight down, like a plan'], ['follow', 'Follow', 'Stay behind HOUND-01'], ['fpv', 'Rover view', 'Look out from the rover']];
 const CAM2 = [['auto', 'Auto', 'Frame whatever the mission is doing'], ['building', 'Building', 'Fit building B'], ['site', 'Site', 'Fit the whole site'], ['follow', 'Follow', 'Stay on HOUND-01']];
@@ -16,11 +17,6 @@ export default {
     const { kit, sim, bus, world } = ctx, { h, icon, realityTag, fmt } = kit;
     if (!document.querySelector('link[data-mission-css]')) document.head.append(h('link', { rel: 'stylesheet', href: new URL('./style.css', import.meta.url).href, 'data-mission-css': '' }));
     installRecorder(sim);
-    // ctx here is this workspace's own copy of the shared context, so its .selection would go stale.
-    // Keep it current from the bus: everything in this workspace reads ctx.selection.
-    let selection = window.HOUND?.selection ?? null;
-    bus.on('select', (s) => { selection = s || null; });
-    Object.defineProperty(ctx, 'selection', { get: () => selection, configurable: true, enumerable: true });
     root.classList.add('mission');
 
     const app = { ctx, root, twin: null, view: '2d', visible: false, pending: null, avoid: { slope: true, mud: true, gas: true, collapse: true }, planWhenReady: false };
@@ -34,7 +30,7 @@ export default {
     const mini = createMap(miniCanvas, ctx, { mini: true });
 
     // ---------- panels ----------
-    const collapseBtn = (panel, name) => { const b = h('button.btn.btn-ghost.btn-sm.btn-icon.mission-collapse', { 'aria-label': 'Collapse or expand ' + name, 'aria-expanded': 'true', onclick: () => { const closed = panel.dataset.closed !== 'true'; panel.dataset.closed = String(closed); b.setAttribute('aria-expanded', String(!closed)); store.set('hound.mission.' + name, closed ? 'closed' : 'open'); requestAnimationFrame(layout); } }, icon('chevron')); queueMicrotask(() => { if (store.get('hound.mission.' + name, 'open') === 'closed') { panel.dataset.closed = 'true'; b.setAttribute('aria-expanded', 'false'); } }); return b; };
+    const collapseBtn = (panel, name, first = 'open') => { const b = h('button.btn.btn-ghost.btn-sm.btn-icon.mission-collapse', { 'aria-label': 'Collapse or expand ' + name, 'aria-expanded': 'true', onclick: () => { const closed = panel.dataset.closed !== 'true'; panel.dataset.closed = String(closed); b.setAttribute('aria-expanded', String(!closed)); store.set('hound.mission.' + name, closed ? 'closed' : 'open'); requestAnimationFrame(layout); } }, icon('chevron')); queueMicrotask(() => { if (store.get('hound.mission.' + name, first) === 'closed') { panel.dataset.closed = 'true'; b.setAttribute('aria-expanded', 'false'); } }); return b; };
     const stepper = createStepper(app), inspector = createInspector(app), timeline = createTimeline(app), alerts = createAlerts(app), routeDialog = createRouteDialog(app);
     app.alerts = alerts;
     const left = h('aside.mission-left.glass', { 'aria-label': 'Mission' });
@@ -55,7 +51,7 @@ export default {
       h('li', null, h('i.lg-hazard'), 'Hazard'), h('li', null, h('i.lg-stop'), 'Listening stop'), h('li', null, h('i.lg-searched'), 'Searched'), h('li', null, h('i.lg-rover'), 'Rover'));
     const miniTitle = h('h3', null, 'Minimap');
     const miniPanel = h('div.mission-mini.glass', { 'aria-label': 'Minimap and legend' });
-    miniPanel.append(h('header.mission-head', null, miniTitle, h('span.dim.mission-mini-scale', null, '120 × 90 m'), collapseBtn(miniPanel, 'minimap')), miniCanvas, legend);
+    miniPanel.append(h('header.mission-head', null, miniTitle, h('span.dim.mission-mini-scale', null, '120 × 90 m'), collapseBtn(miniPanel, 'minimap', 'closed')), miniCanvas, legend);
 
     // ---------- toolbar ----------
     const camSeg = h('div.seg.mission-cams', { role: 'group', 'aria-label': 'Camera' });
@@ -78,7 +74,8 @@ export default {
     const narrSlot = h('div.mission-narr', { 'data-narration-slot': '' });
     const centre = h('div.mission-centre', null, toolbar, alerts.el, h('div.grow'), h('div.mission-low', null, narrSlot, miniPanel));
     const mapPadBottom = () => (app.view === '2d' ? narrSlot.getBoundingClientRect().height + 12 : 0);
-    root.append(h('div.mission-view', null, mapCanvas, twinHost), h('div.mission-hud', null, left, centre, right, tlPanel), pop);
+    const film = createFilm(app);
+    root.append(h('div.mission-view', null, mapCanvas, twinHost), film.el, h('div.mission-hud', null, left, centre, right, tlPanel), pop);
 
     const safe = (fn, d) => { try { return fn(); } catch (e) { console.warn('[mission] twin call failed', e); return d; } };
     function syncCamera() {
@@ -100,7 +97,7 @@ export default {
       syncCamera();
     };
     app.focus = (sel) => { if (!sel) return; if (app.view === '3d') safe(() => app.twin.focus(sel)); else if (map.focus(sel)) { camera = 'free'; syncCamera(); } };
-    app.pushIn = (sel) => { const before = camera; app.focus(sel); clearTimeout(restoreTimer); if (before !== 'free' && sim.state.autoplay) restoreTimer = setTimeout(() => { if (app.view === '2d' ? camera === 'free' : true) app.setCamera(before); }, 7000); };
+    app.pushIn = (sel) => { if (ctx.mode === 'demo') return; const before = camera; app.focus(sel); clearTimeout(restoreTimer); if (before !== 'free' && sim.state.autoplay) restoreTimer = setTimeout(() => { if (app.view === '2d' ? camera === 'free' : true) app.setCamera(before); }, 7000); };
     app.select = (sel, fly) => { ctx.select(sel); if (sel && right.dataset.closed === 'true') right.querySelector('.mission-collapse').click(); if (fly) app.focus(sel); };
     function setLayer(id, on) { layerState[id] = on; map.setLayer(id, on); if (id !== 'labels' && id !== 'sensing') mini.setLayer(id, on); if (app.twin) safe(() => app.twin.setLayer(id, on)); }
     function setView(v, init) {
@@ -125,12 +122,31 @@ export default {
     app.planFromAlert = () => { if (sim.state.phase === 'plan') { app.takeControl(); app.planRoute(); } else if (sim.state.phase === 'rescue' || sim.state.phase === 'complete') ctx.shell.toast('The route is already approved.', { level: 'info' }); else { app.planWhenReady = true; app.takeControl(); ctx.shell.toast('Noted. The route planner opens as soon as the search and the lead checks are finished.', { level: 'info' }); } };
     app.restart = () => { sim.reset({ autoplay: sim.state.autoplay }); sim.play(); };
 
+    // ---------- keep the subject in the part of the view that nothing covers ----------
+    const safeNow = { x: 0, y: 0 }, safeGoal = { x: 0, y: 0 }; let safeW = 0, safeH = 0;
+    app.applySafe = () => {
+      const R0 = root.getBoundingClientRect(); if (!R0.width || !app.twin) return;
+      let a;
+      if (ctx.mode === 'demo') a = film.find ? { left: 0, top: 0, right: Math.round(R0.width * 0.3), bottom: 170 } : { left: 0, top: 0, right: 0, bottom: 130 };
+      else { const l = left.getBoundingClientRect(), r = right.getBoundingClientRect(), t = toolbar.getBoundingClientRect(), b = tlPanel.getBoundingClientRect(); a = { left: left.dataset.closed === 'true' ? 12 : l.right - R0.left, top: t.bottom - R0.top, right: right.dataset.closed === 'true' ? 12 : R0.right - r.left, bottom: R0.bottom - b.top }; }
+      if (app.twin.setSafeArea) return void safe(() => app.twin.setSafeArea(a));
+      safeGoal.x = (a.right - a.left) / 2; safeGoal.y = (a.bottom - a.top) / 2; safeW = R0.width; safeH = R0.height;
+    };
+    function frameSafe() { // until the twin has its own safe area: shift the lens, eased
+      const cam = app.twin?.three?.camera; if (!cam || app.twin.setSafeArea || !safeW) return;
+      const k = kit.reducedMotion() ? 1 : 0.06, dx = safeGoal.x - safeNow.x, dy = safeGoal.y - safeNow.y; if (Math.abs(dx) + Math.abs(dy) < 0.2 && cam.view?.fullWidth === safeW && cam.view?.fullHeight === safeH) return;
+      safeNow.x += dx * k; safeNow.y += dy * k; cam.setViewOffset(safeW, safeH, safeNow.x, safeNow.y, safeW, safeH);
+    }
+
     // ---------- layout: tell the map which part of the view is not under a panel ----------
     function layout() {
       const R0 = root.getBoundingClientRect(); if (!R0.width) return;
       const l = left.getBoundingClientRect(), r = right.getBoundingClientRect(), t = toolbar.getBoundingClientRect(), b = tlPanel.getBoundingClientRect();
       map.setPad({ l: l.right - R0.left + 16, r: R0.right - r.left + 16, t: t.bottom - R0.top + 14, b: R0.bottom - b.top + 16 + mapPadBottom() });
+      film.resize(R0.width, R0.height);
+      if (ctx.mode === 'demo') map.setPad({ l: 40, r: 40, t: 40, b: 190 });
       if (app.twin) safe(() => app.twin.resize());
+      app.applySafe();
     }
     const ro = new ResizeObserver(() => layout()); for (const el of [root, left, right, tlPanel]) ro.observe(el);
 
@@ -138,25 +154,37 @@ export default {
     let raf = 0, lastSlow = 0;
     function frame(now) {
       raf = requestAnimationFrame(frame);
-      timeline.frame();
+      if (ctx.mode === 'demo') film.frame(); else timeline.frame();
+      frameSafe();
       if (now - lastSlow > 110) { lastSlow = now; slow(); }
     }
-    function slow(force) { stepper.update(); inspector.update(force); if (app.view === '3d' && app.twin?.cameraMode && app.twin.cameraMode !== camera) { camera = app.twin.cameraMode; syncCamera(); } const S = sim.state; const txt = fmt.clock(S.t) + ' · ' + (S.hold ? 'All stop' : ctx.PHASE_INFO[S.phase].label); if (tlNow.textContent !== txt) tlNow.textContent = txt; }
-    function run(on) { cancelAnimationFrame(raf); map.stop(); mini.stop(); if (app.twin) safe(() => app.twin.stop()); if (!on) return; raf = requestAnimationFrame(frame); if (app.view === '3d') { safe(() => app.twin.start()); mini.start(); } else map.start(); }
+    function slow(force) { if (ctx.mode === 'demo') { stepper.update(); film.slow(); return; } stepper.update(); inspector.update(force); if (app.view === '3d' && app.twin?.cameraMode && app.twin.cameraMode !== camera) { camera = app.twin.cameraMode; syncCamera(); } const S = sim.state; const txt = fmt.clock(S.t) + ' · ' + (S.hold ? 'All stop' : ctx.PHASE_INFO[S.phase].label); if (tlNow.textContent !== txt) tlNow.textContent = txt; }
+    function run(on) { cancelAnimationFrame(raf); map.stop(); mini.stop(); if (app.twin) safe(() => app.twin.stop()); if (!on) return; raf = requestAnimationFrame(frame); if (app.view === '3d') { safe(() => app.twin.start()); if (ctx.mode !== 'demo') mini.start(); } else map.start(); }
 
     const offs = [
-      bus.on('event', (ev) => alerts.onEvent(ev)),
+      bus.on('event', (ev) => { if (ctx.mode !== 'demo') alerts.onEvent(ev); }),
+      bus.on('mode', () => applyMode()),
       bus.on('phase', ({ to }) => { autoFrame(); if (to === 'plan' && app.planWhenReady) { app.planWhenReady = false; setTimeout(() => app.planRoute(), 0); } }),
       bus.on('route', () => autoFrame()),
       bus.on('select', () => { slow(true); }),
       bus.on('seek', () => { alerts.clear(); autoFrame(); slow(true); }),
-      bus.on('reset', () => { alerts.clear(); app.planWhenReady = false; ctx.select(null); autoFrame(); slow(true); }),
+      bus.on('reset', () => { alerts.clear(); app.planWhenReady = false; app.avoid = { slope: true, mud: true, gas: true, collapse: true }; ctx.select(null); autoFrame(); slow(true); }),
       bus.on('escape', () => { if (!pop.hidden) closePop(); else if (!routeDialog.isOpen && ctx.selection && app.visible) ctx.select(null); }),
       bus.on('narration:state', ({ on }) => guideBtn.setAttribute('aria-pressed', String(on))),
       bus.on('prefs', () => inspector.recolor()),
     ];
     root.addEventListener('pointerdown', (e) => { if (!pop.hidden && !pop.contains(e.target) && !popFor?.contains(e.target)) closePop(); });
 
+    // Demo hides every instrument and gives the 3-D view the whole stage; Advanced brings them back.
+    app.demoLayer = (id, on) => { if (app.twin && ctx.mode === 'demo') safe(() => app.twin.setLayer(id, on)); };
+    function applyMode() {
+      const demo = ctx.mode === 'demo';
+      alerts.clear(); closePop(); if (demo) { routeDialog.close(); ctx.select(null); } else { film.release(); film.reset(); }
+      if (app.twin) for (const [id, on] of [['labels', demo ? false : layerState.labels], ['hazards', demo ? true : layerState.hazards], ['walls-xray', demo ? false : !!layerState['walls-xray']]]) safe(() => app.twin.setLayer(id, on));
+      if (app.view === '3d') app.setCamera('cinematic');
+      if (app.visible) run(true);
+      requestAnimationFrame(() => { layout(); autoFrame(); slow(true); });
+    }
     setView('2d', true);
     // ---------- the 3-D twin: loaded after the workspace is already usable ----------
     const want2d = ctx.params?.view === '2d' || new URLSearchParams(location.search).get('view') === '2d';
@@ -170,17 +198,18 @@ export default {
         app.twin = twin; viewSeg.children[0].disabled = false; viewSeg.children[0].title = 'The 3-D digital twin';
         twinNote.remove();
         for (const [id, on] of Object.entries(layerState)) if (on !== MAP_LAYERS.find((l) => l.id === id).on) safe(() => twin.setLayer(id, on));
-        if (!want2d && store.get('hound.mission.view', '3d') !== '2d') setView('3d', true);
+        if (!want2d && (ctx.mode === 'demo' || store.get('hound.mission.view', '3d') !== '2d')) { twinHost.style.opacity = '0'; setView('3d', true); requestAnimationFrame(() => { requestAnimationFrame(() => { twinHost.style.opacity = ''; }); }); }
+        applyMode();
       } catch (e) {
         console.warn('[mission] the 3-D twin did not load; using the tactical map.', e);
-        twinHost.hidden = true; twinHost.replaceChildren(); viewSeg.children[0].title = 'The 3-D twin did not load on this device. The tactical map shows the same mission.';
+        app.twinFailed = true; twinHost.hidden = true; twinHost.replaceChildren(); viewSeg.children[0].title = 'The 3-D twin did not load on this device. The tactical map shows the same mission.';
         twinNote.textContent = '3-D twin unavailable. Showing the tactical map.';
       }
     })();
 
     return {
       onShow() { app.visible = true; run(true); requestAnimationFrame(() => { layout(); autoFrame(); slow(true); }); bus.emit('mission:shown'); },
-      onHide() { app.visible = false; run(false); closePop(); alerts.clear(); },
+      onHide() { app.visible = false; film.release(); run(false); closePop(); alerts.clear(); },
       onParams(p) { if (p?.select) app.select(p.select, true); if (p?.view) setView(p.view === '2d' ? '2d' : '3d'); },
     };
   },

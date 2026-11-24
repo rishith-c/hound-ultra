@@ -178,6 +178,7 @@ export function createEngine({ nn, emit = () => {}, seed = SEED, windows = 'scri
     else {
       d.status = 'rejected';
       if (d.dismissed) { d.kind = 'dismissed'; d.reason = 'Dismissed by the operator.'; }
+      else if (has('human', 'neg')) { d.kind = 'no one there'; d.reason = 'The rescue team looked and found no one.'; }
       else if (has('signature', 'machine')) { d.kind = 'machine'; d.reason = 'Steady, repeating motion with no body heat: most likely a machine such as a fan.'; }
       else if (has('temperature', 'tooHot')) { d.kind = 'hot object'; d.reason = 'Far hotter than a person, with no motion or breathing: most likely a hot pipe or machine.'; }
       else { d.kind = 'false alarm'; d.reason = 'One sensor raised an alarm that the others did not support.'; }
@@ -434,7 +435,12 @@ export function createEngine({ nn, emit = () => {}, seed = SEED, windows = 'scri
       const det = S.detections.find((d) => d.id === leg.det);
       yield* drive(team, leg.access, { nearest: true, label: 'the next person' });
       leg.arrivedAt = S.t;
-      if (det.status === 'possible') { det.evidence.push({ t: S.t, vantage: 'team', unit: team.id, sensor: 'human', result: 'pos', note: 'Confirmed in person by the rescue team (simulated)' }); judge(det, team.id); }
+      if (det.status === 'possible') {
+        const someone = TRUTH.people.some((p) => p.id === srcOf.get(det.id)); // what the team sees when it gets there
+        det.evidence.push({ t: S.t, vantage: 'team', unit: team.id, sensor: 'human', result: someone ? 'pos' : 'neg', note: someone ? 'Confirmed in person by the rescue team (simulated)' : 'The rescue team looked and found no one (simulated)' });
+        judge(det, team.id);
+        if (!someone) { log('ok', 'TEAM_FOUND_NO_ONE', `Rescue team checked ${det.room ? 'room ' + det.room : 'the place'}: no one there.`, { det: det.id, pos: leg.access }); yield* wait(4); continue; }
+      }
       const sv = det.survivorId && S.survivors[det.survivorId];
       if (sv) { sv.status = 'reached'; sv.reachedAt = S.t; emit('survivor', sv); }
       log('ok', 'TEAM_ARRIVED', leg.reached ? `Rescue team reached the person ${det.room ? 'in room ' + det.room : 'outdoors'}.` : `Rescue team is at the wall of room ${det.room}, ${leg.gap.toFixed(1)} m from the person, and is breaking through.`, { det: det.id, pos: leg.access });
@@ -579,7 +585,7 @@ export function createSim({ bus, nn }) {
 // For each person: confirmed (by the rover or drone sensors alone), flagged (left as "possible" and handed to the
 // rescue team to check), or missed (never detected, or wrongly closed). Yields to the page between runs.
 export async function monteCarlo({ nn, runs = 100, onProgress } = {}) {
-  const people = {}, outcomes = []; let falseConfirmed = 0, time = 0;
+  const people = {}, outcomes = []; let falseConfirmed = 0, wastedVisits = 0, time = 0;
   for (const p of TRUTH.people) people[p.id] = { confirmed: 0, flagged: 0, missed: 0 };
   for (let i = 0; i < runs; i++) {
     const e = createEngine({ nn, seed: 1000 + i * 7919, windows: 'random', keep: { autoplay: true } });
@@ -589,7 +595,7 @@ export async function monteCarlo({ nn, runs = 100, onProgress } = {}) {
     for (const d of e.state.detections) {
       const src = e.truthOf(d.id), isPerson = TRUTH.people.some((p) => p.id === src);
       const byTeam = d.evidence.some((x) => x.sensor === 'human');
-      if (!isPerson) { if (d.status === 'confirmed') o.falseConfirmed++; continue; }
+      if (!isPerson) { if (d.status === 'confirmed') o.falseConfirmed++; if (byTeam) wastedVisits++; continue; } // a wasted visit: the team was sent and found no one
       if (d.status === 'confirmed' && !byTeam) o.people[src] = 'confirmed';
       else if (d.status === 'confirmed' || (d.status === 'possible' && d.needsTeam)) o.people[src] = 'flagged';
     }
@@ -597,5 +603,5 @@ export async function monteCarlo({ nn, runs = 100, onProgress } = {}) {
     falseConfirmed += o.falseConfirmed; time += o.time; outcomes.push(o);
     if (i % 5 === 4) { onProgress?.((i + 1) / runs); await new Promise((r) => setTimeout(r, 0)); }
   }
-  return { runs, people, falseConfirmed, meanTime: time / runs, outcomes };
+  return { runs, people, falseConfirmed, wastedVisits, meanTime: time / runs, outcomes };
 }

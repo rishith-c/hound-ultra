@@ -293,7 +293,7 @@ export default {
       const y = y0 + 7 * rowH + 22, c = a.c[RH];
       L.text(g, 'Humidity', r.x, y + 5, { color: 'text2', size: 11, base: 'middle' }); g.fillStyle = T.bg3; g.fillRect(x0, y + 1, x1 - x0, 8); g.fillStyle = L.rgba('text3', 0.75); g.fillRect(x0, y + 1, ((x1 - x0) * c) / 100, 8); L.text(g, Math.round(c) + ' %', r.x + r.w, y + 5, { color: 'text', size: 11, align: 'right', base: 'middle', mono: true });
       if (y + 34 < r.y + r.h) { g.fillStyle = L.rgba('text3', 0.75); g.fillRect(r.x, y + 24, 9, 7); L.text(g, 'clean air', r.x + 13, y + 31, { color: 'text3', size: 10.5 }); g.fillStyle = T.text; g.fillRect(r.x + 66, y + 24, 9, 7); L.text(g, 'added by the source', r.x + 79, y + 31, { color: 'text3', size: 10.5 }); }
-      if (y + 50 < r.y + r.h) { g.strokeStyle = T.accent; g.lineWidth = 1.5; g.beginPath(); g.moveTo(r.x + 4.5, y + 38); g.lineTo(r.x + 4.5, y + 50); g.stroke(); L.text(g, 'published sensor limit (Güntner 2018)', r.x + 13, y + 48, { color: 'text3', size: 10.5 }); }
+      if (y + 50 < r.y + r.h) { g.strokeStyle = T.accent; g.lineWidth = 1.5; g.beginPath(); g.moveTo(r.x + 4.5, y + 38); g.lineTo(r.x + 4.5, y + 50); g.stroke(); L.text(g, 'limit of comparable sensors (cited in Güntner 2018)', r.x + 13, y + 48, { color: 'text3', size: 10.5 }); }
     }
     // The fingerprint: seven sensor responses on seven spokes
     function drawNose(g, r, k) {

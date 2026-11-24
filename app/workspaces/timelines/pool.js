@@ -24,7 +24,8 @@ export function createPool(nn, { size } = {}) {
     };
     workers.push(rec);
   }
-  try { for (let i = 0; i < want; i++) spawn(); } catch { mode = 'page'; }
+  let started = false; // workers start with the first job, not on page load
+  function start() { started = true; try { for (let i = 0; i < want; i++) spawn(); } catch { mode = 'page'; } }
   async function runInline(j) {
     inline ||= import('./runner.js');
     const { runSpec } = await inline;
@@ -48,8 +49,9 @@ export function createPool(nn, { size } = {}) {
     }
   }
   return {
-    get mode() { return mode; }, get size() { return mode === 'page' ? 1 : workers.length; }, get pending() { return queue.length + jobs.size; },
+    get mode() { return mode; }, get size() { return mode === 'page' ? 1 : started ? workers.length : want; }, get pending() { return queue.length + jobs.size; },
     run(spec, { onProgress, priority = false } = {}) {
+      if (!started) start();
       return new Promise((resolve, reject) => { const j = { job: ++seq, spec, onProgress, resolve, reject }; if (priority) queue.unshift(j); else queue.push(j); pump(); });
     },
     dispose() { dead = true; for (const r of workers) r.w.terminate(); workers.length = 0; queue.length = 0; jobs.clear(); },

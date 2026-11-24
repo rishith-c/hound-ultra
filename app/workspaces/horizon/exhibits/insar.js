@@ -37,7 +37,7 @@ export default {
   readiness: 2.85, readinessNote: 'Damage proxy maps from radar satellites are produced after real earthquakes and handed to responders. HOUND does not make them.',
   standoff: [5e5, 8e5],
   labels: ['concept', 'live-algo'],
-  labelNote: 'The radar images are simulated on the real elevation of the valley. The interferometry, the unwrapping and the damage map are computed in this page.',
+  labelNote: 'The radar images are simulated on the real elevation of the valley. The block, the damage, the air and the ground motion are invented, and the scatterer motion, noise and damage levels are assumed values that we tuned until the unwrapping worked. The interferometry, the unwrapping and the damage map are computed in this page.',
   sentences: [
     'A radar satellite about 700 km up measures its distance to the ground on two passes; the difference shows the ground moving by centimetres, as coloured fringes.',
     'Where buildings have collapsed, the echo stops matching itself between passes, and that loss of coherence is how damage proxy maps are drawn in the days after a real earthquake.',
@@ -229,8 +229,8 @@ export default {
       sDm.set(S.tp + ' of ' + nd); sFa.set(String(S.fp), 'false alarms, of ' + (W.blocks.length - nd) + ' intact blocks'); sFa.tone(S.fp > 3 ? 'warn' : null);
       fMap.setTitle(TITLES[P.view]());
       fMap.setNote((dem.real ? 'Real elevation around Timure, Nepal (8.6 km across, north up). ' : 'The elevation file did not load: this is an invented valley. ') + 'The ground shift, the blocks and the damage are invented; no real event is shown.');
-      fPro.setTitle('Along A to B, the fringes give the shift back to within ' + L.fix(S.rms * 1000, 0) + ' mm' + (S.unFrac < 0.4 ? ', where there is signal at all' : ''));
-      fPro.setNote('Atmosphere and unwrapping mistakes are the error. Raise the delay, or switch to X band, to watch it fail.');
+      fPro.setTitle('Along A to B, the fringes give the shift back to within ' + L.fix(S.rms * 1000, 0) + ' mm, over the ' + L.pct(S.unFrac) + ' % that could be unwrapped');
+      fPro.setNote('Scatterer motion, noise and air delay are assumed. Atmosphere and unwrapping mistakes are the error. Raise the delay, or switch to X band, to watch it fail.');
       fBlk.setTitle(nd ? 'Coherence loss flags ' + S.tp + ' of ' + nd + ' damaged blocks, with ' + S.fp + ' false alarm' + (S.fp === 1 ? '' : 's') : 'No block was damaged in this draw');
       fBlk.setNote(W.blocks.length + ' invented blocks, each a 3 by 3 cell average. The ringed dot is the exercise site.');
     }

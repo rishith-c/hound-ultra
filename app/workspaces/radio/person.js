@@ -21,16 +21,16 @@ export const meta = {
   unknown: 'how a real wet wall, a real ESP32 and a real trapped person differ from this model.',
 };
 
-const BODY = 0.15, REF_AREA = 0.30, WALL_LOSS = 0.5;                         // simulate_csi.py / fresnel.py
+export const BODY = 0.15, REF_AREA = 0.30, WALL_LOSS = 0.5;                         // simulate_csi.py / fresnel.py
 const PKT_HZ = 100, SECONDS = 10, HZ = 20, N_T = 200, AGC_STEP = 0.04, MAX_EMPTY = 0.35;
-const TX = [74.7, 49.5, 0.80], RX = [74.7, 51.0, 0.45], WALL_X = 75;         // the training layout, laid on the wall between rooms 111 and 112
+export const TX = [74.7, 49.5, 0.80], RX = [74.7, 51.0, 0.45], WALL_X = 75;         // the training layout, laid on the wall between rooms 111 and 112
 const REGION = { x0: 75.5, x1: 78.2, y0: 50.0, y1: 52.5 };                   // where the training simulator put people
 const ROOM = { x0: 75.42, x1: 79.1, y0: 48.5, y1: 53.5 };
 const DK = (2 * Math.PI * DF) / C0, KC = (2 * Math.PI * F0) / C0;
 const ROW = new Map(SUB.map((s, i) => [s, i]));                              // subcarrier number -> network row
 
 // ---- the body: surface points in the body's own frame (it faces -x, toward the wall) ----
-function buildBody(posture) {
+export function buildBody(posture) {
   const P = []; const add = (x, y, z, n, area, part) => P.push({ x, y, z, n, area, part });
   if (posture === 'standing') {
     for (let r = 0; r < 5; r++) for (let c = 0; c < 4; c++) add(-0.11, -0.135 + c * 0.09, 0.97 + r * 0.12, [-1, 0, 0], 0.0108, 0);
@@ -138,7 +138,7 @@ export function synthesise(o, staticH, lab, seed) {
   return { x, clean: cb, sigPct: sig / 51, noisePct: noise / 51, best, ratio, excess, cx, cy, chest, dt, n, lost: 1 - ta.length / n, agcSeen, t0: tEnd - SECONDS };
 }
 // the receiver's own frequency response: fixed for this radio
-const RIPPLE = (() => { let a = 3; const r = () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; const g = Array.from({ length: 57 }, () => Math.sqrt(-2 * Math.log(r() + 1e-12)) * Math.cos(6.2832 * r())); return Array.from({ length: 51 }, (_, k) => 1 + (0.1 * g.slice(k, k + 7).reduce((s, v) => s + v, 0)) / 7); })();
+export const RIPPLE = (() => { let a = 3; const r = () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; const g = Array.from({ length: 57 }, () => Math.sqrt(-2 * Math.log(r() + 1e-12)) * Math.cos(6.2832 * r())); return Array.from({ length: 51 }, (_, k) => 1 + (0.1 * g.slice(k, k + 7).reduce((s, v) => s + v, 0)) / 7); })();
 
 // csi_window.to_window: AGC steps out, 20 bins a second, a motion row from the packets inside each bin.
 export function toWindow(t, amp, tEnd) {

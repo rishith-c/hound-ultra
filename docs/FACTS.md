@@ -95,3 +95,12 @@ still). Of those 30, the network is right on 20; it misses most still people, as
 - Need for the project: after the 26 August 2026 Bhote Koshi flood on the Nepal–Tibet border, Nepal's disaster
   authority counted about 1,399 dead and about 5,130 missing by 15 September (from the previous write-up; do
   not embellish). Commercial through-wall radars used by rescue teams cost thousands of dollars.
+
+## Measured on 23 November 2026 (after the rescue-team fix in sim.js)
+
+200 simulated missions, `monteCarlo({ runs: 200 })`, random Wi-Fi windows, seeds 1000 + 7919 i. Three hidden people and
+two decoys each time: **600 of 600 people found or flagged for a team check, none missed; 284 confirmed by sensors alone,
+316 flagged as possible and confirmed by the team on foot; no decoy or empty room was ever confirmed as a person.**
+Cost of that caution: the number of visits where the team found no one is `wastedVisits` in the same result (see
+tests). Mean mission time 693 s simulated. All of it is simulation; likelihoods for radar, thermal and people on foot
+are assumed values.

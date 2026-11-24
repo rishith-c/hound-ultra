@@ -22,7 +22,7 @@ export const LR = {
   temperature: { tooHot: 0.1, assumed: true, label: 'Temperature check' }, // far above skin temperature
   aerial: { pos: 6, neg: 0.9, assumed: true, label: 'Drone image detector' },
   acoustic: { pos: 7, neg: 0.9, assumed: true, label: 'Tapping or voice' },
-  human: { pos: 200, assumed: true, label: 'Rescue team on site' },
+  human: { pos: 200, neg: 0.02, assumed: true, label: 'Rescue team on site' },
 };
 
 // A missed person costs far more than a second look, so a lead stays open ("possible") down to 15 %.

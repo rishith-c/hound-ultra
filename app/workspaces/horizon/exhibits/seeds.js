@@ -206,7 +206,7 @@ export default {
       // reader and its reach
       const rx = X(P.reader[0]), ry = Y(P.reader[1]);
       g.strokeStyle = L.rgba('accent', 0.5); g.setLineDash([3, 4]); g.beginPath(); g.arc(rx, ry, P.range * sc, 0, TAU); g.stroke(); g.setLineDash([]);
-      const pulse = (clock * 0.3) % 1; if (live && !L.reduced()) { g.strokeStyle = L.rgba('accent', 0.35 * (1 - pulse)); g.beginPath(); g.arc(rx, ry, pulse * P.range * sc, 0, TAU); g.stroke(); }
+      const pulse = (((clock * 0.3) % 1) + 1) % 1; if (live && !L.reduced()) { g.strokeStyle = L.rgba('accent', 0.35 * (1 - pulse)); g.beginPath(); g.arc(rx, ry, pulse * P.range * sc, 0, TAU); g.stroke(); }
       // seeds: landed, then falling (shadow on the ground, seed drawn larger the higher it is)
       const r0 = clamp(sc * 0.42, 1.6, 2.6);
       for (const s of D.seeds) {
