@@ -10,7 +10,7 @@ The edit file: {"segments": [{"clip", "a": start, "d": seconds used from the cli
 "scope": true for a 2.39 : 1 picture}], "music": [{"file", "at": block, "db", "fi", "fo"}], "block": seconds, "k": 1 or 2 (2 = a 3840 x 2160 film)}
 Captions are set in the site's own type by Chrome and laid over the lower bar, so no picture is covered.
 """
-import argparse, base64, concurrent.futures, json, os, subprocess, sys, tempfile
+import argparse, hashlib, base64, concurrent.futures, json, os, subprocess, sys, tempfile
 import film, shoot
 
 FF = film.FFMPEG
@@ -114,11 +114,24 @@ def cut(job):
         fades = f",fade=t=in:st=0:d={f}:alpha=1,fade=t=out:st={t1 - t0 - f:.3f}:d={f}:alpha=1" if f else ""
         g += f";[{k + n}:v]format=rgba{fades},setpts=PTS-STARTPTS+{t0:.3f}/TB[c{n}];[{last}][c{n}]overlay=0:0:eof_action=pass:format=auto[o{n}]"
         last = f"o{n}"
-    cmd += ["-filter_complex", g + f";[{last}]format=yuv420p[out]", "-map", "[out]", "-t", f"{dur:.3f}", "-an"] + ENC + [out]
-    r = subprocess.run(cmd, capture_output=True, text=True)
+    cmd += ["-filter_complex", g + f";[{last}]format=yuv420p[out]", "-map", "[out]", "-t", f"{dur:.3f}", "-an"] + ENC
+    h = hashlib.sha1()                      # a shot that has not changed is not rendered again
+    for c in cmd:
+        if c.endswith(".png"):
+            h.update(open(c, "rb").read())
+        else:
+            h.update(c.encode())
+            if c.startswith("/") and os.path.isfile(c):
+                h.update(f"{os.path.getsize(c)} {os.path.getmtime(c):.0f}".encode())
+    done = os.path.join(FILM, "seg", h.hexdigest() + ".mp4")
+    if os.path.exists(done):
+        return done, dur
+    r = subprocess.run(cmd + [out], capture_output=True, text=True)
     if r.returncode:
         sys.exit(f"segment {i} {seg['clip']}: {r.stderr[-1500:]}")
-    return out, dur
+    os.makedirs(os.path.dirname(done), exist_ok=True)
+    os.replace(out, done)
+    return done, dur
 
 
 def voices(ed):
@@ -202,6 +215,11 @@ def main():
     items, jobs, n = [], [], 0
     for i, s in enumerate(ed["segments"]):
         caps = []
+        for t0, t1, body, f in s.get("html", []):          # under the subtitles
+            png = f"c{n:03d}.png"
+            n += 1
+            items.append((png, body))
+            caps.append((os.path.join(tmp, png), t0, t1, f))
         if not a.no_captions:
             for t0, t1, text, *f in s.get("cap", []):
                 png = f"c{n:03d}.png"
@@ -213,11 +231,6 @@ def main():
             n += 1
             items.append((png, f'<div class="tag">{s["tag"]}</div>'))
             caps.append((os.path.join(tmp, png), 0, s["d"] / s.get("s", 1), 0))
-        for t0, t1, body, f in s.get("html", []):
-            png = f"c{n:03d}.png"
-            n += 1
-            items.append((png, body))
-            caps.append((os.path.join(tmp, png), t0, t1, f))
         if s.get("card"):
             png = f"c{n:03d}.png"
             n += 1

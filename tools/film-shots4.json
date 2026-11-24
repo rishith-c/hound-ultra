@@ -103,7 +103,7 @@
    ],
    [
     7.4,
-    "__cur.go('Approve',900)"
+    "__cur.go('css:.mission-approve',900)"
    ]
   ]
  },
@@ -687,6 +687,20 @@
   "hide": "#dock{opacity:0!important}"
  },
  {
+  "name": "v_link",
+  "url": "/app/?mode=demo&intro=0&paused#/status",
+  "settle": 4,
+  "seconds": 11,
+  "after": 1.5,
+  "size": [
+   1440,
+   810,
+   2.6667
+  ],
+  "hide": "#dock{opacity:0!important}",
+  "before": "(()=>{const b=[...document.querySelectorAll('button')].find(x=>x.offsetParent&&x.textContent.trim()===\"Broken on purpose\");if(b)b.click();return !!b})()"
+ },
+ {
   "name": "v_broken",
   "url": "/app/?mode=demo&intro=0&paused#/status",
   "settle": 5,
@@ -713,6 +727,18 @@
   "hide": "#dock{opacity:0!important}",
   "before": "HOUND_AERIAL.startFly(true);(()=>{const cs=[...document.querySelectorAll('canvas')];let m=0;for(const c of cs){const r=c.getBoundingClientRect();m=Math.max(m,r.width*r.height)}for(const c of cs){const r=c.getBoundingClientRect();if(r.width*r.height>m*.6)c.classList.add('__big')}const s=document.createElement('style');s.textContent='body *{visibility:hidden!important} canvas.__big{visibility:visible!important}';document.head.append(s);return m})()",
   "after": 0.05
+ },
+ {
+  "name": "v_fall",
+  "url": "/app/?mode=demo&intro=0&paused#/structure",
+  "settle": 2.6,
+  "seconds": 9,
+  "size": [
+   1440,
+   810,
+   2.6667
+  ],
+  "before": "(()=>{const cs=[...document.querySelectorAll('canvas')];let m=0;for(const c of cs){const r=c.getBoundingClientRect();m=Math.max(m,r.width*r.height)}for(const c of cs){const r=c.getBoundingClientRect();if(r.width*r.height>m*.6)c.classList.add('__big')}const s=document.createElement('style');s.textContent='body *{visibility:hidden!important} canvas.__big{visibility:visible!important}';document.head.append(s);return m})()"
  },
  {
   "name": "v_struct",
