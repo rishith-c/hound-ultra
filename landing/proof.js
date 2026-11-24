@@ -175,7 +175,8 @@ function startHeroChip(nn, all, onScene) {
   const right0 = [], wrong0 = [];
   for (const c of ['Person moving', 'Empty room', 'Empty room + fan', 'Person standing still', 'Person lying still']) (nn.byCat[c] || []).forEach((i, n) => (all[i].says === all[i].truthPerson ? right0 : wrong0).push([n, i]));
   const mixed = (a) => a.sort((x, y) => x[0] - y[0]).map((x) => x[1]);
-  const R0 = mixed(right0), W0 = mixed(wrong0), order = R0.splice(0, 1);
+  const R0 = mixed(right0), W0 = mixed(wrong0), order = ['Person moving', 'Empty room', 'Person standing still', 'Empty room + fan'].map((c) => R0.find((i) => nn.samples[i].cat === c)).filter((i) => i != null);   // one of each kind opens
+  for (const i of order) R0.splice(R0.indexOf(i), 1);
   while (R0.length || W0.length) order.push(...R0.splice(0, 2), ...W0.splice(0, 1));
   let k = 0, visible = true, timer = 0, run = 0;
   async function show() {

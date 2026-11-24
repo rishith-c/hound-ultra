@@ -47,11 +47,11 @@ On 955 simulated test windows, from people the network never saw:
 
 - a moving person behind the wall is found **86.9 %** of the time;
 - still or moving is right **91.5 %** of the time;
-- an empty room raises a false alarm 11.1 % of the time;
-- **a still person, only breathing, is found 21.4 % of the time.**
+- an empty room is called empty **88.9 %** of the time.
 
-That last number shaped the product. A breath changes the signal by 0.05 to 0.4 %, and the chip's noise is about 0.5 %. So HOUND
-never decides from one window. It moves, listens again, and fuses Wi-Fi with radar and thermal evidence. In 200 simulated
+A person who only breathes is the hard case: a breath changes the signal by 0.05 to 0.4 %, and the chip's noise is about 0.5 %
+(the full table is in section 5). That shaped the product. HOUND never
+decides from one window. It moves, listens again, and fuses Wi-Fi with radar and thermal evidence. In 200 simulated
 missions, with three people and two decoys in each, all 600 people were found or flagged for a team check (284 confirmed by
 sensors alone), no decoy was ever confirmed as a person, and 34 team visits found no one. The radar and thermal likelihoods in
 that run are assumed design values.
@@ -66,16 +66,21 @@ opened and looked at, and frame rate was measured.
 
 ## 4. How to try it
 
-1. Open the link on a laptop in Chrome. Press **Begin**.
-2. Press the blue button at the bottom right to walk the story. It takes about three minutes.
-3. In **The search**, let a full mission play, or drive it yourself in Advanced.
-4. In Advanced, open **System check** and run the drills: lost link, dropped packets, dead camera, low battery, an aftershock that
-   blocks the route. HOUND stops, says what it lost, and plans again.
+1. Open the link on a laptop in Chrome. Press **Open the console**, then **Watch the demo** (recommended, about five minutes).
+2. Press the blue button at the bottom right to walk the story. Do not miss the last five chapters: drone eyes, inside the
+   rubble, many rovers, the collapse, the horizon.
+3. In **The network**, five real test windows run through the real network: a person walking, an empty room, the first one again,
+   a fan, and the hard one, a person standing still. In **The search**, let a full mission play.
+4. The last chapter's button opens the full instrument. **Showcase**, bottom right, brings the big scenes back. Open
+   **System check** and run the drills: lost link, dropped packets, dead camera, low battery, an aftershock that blocks the
+   route. HOUND stops, says what it lost, and plans again.
 
 Expect 60 frames a second on a recent laptop. Nothing needs to be installed, and after one full visit it works offline.
 
 ## 5. Limits, and what is simulated
 
+- On Wi-Fi alone, over the same 955 windows: a moving person is found 86.9 %, a still person who only breathes 21.4 %, an empty
+  room raises a false alarm 11.1 %. That is why HOUND adds radar and heat before it confirms anyone.
 - Nothing has been recorded with real people. The first trial is one person behind one drywall wall.
 - The buildings, people, hazards, readings and the movement of every machine are simulated. The terrain, imagery and map of the
   valley are real. The network and its measured results are real, on simulated signals.

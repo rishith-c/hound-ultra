@@ -14,7 +14,7 @@ are a training exercise: simulated, and labelled that way on every screen.
 
 ## Try it in three minutes
 
-1. Open the site and press **Begin**, then **Watch the demo** (recommended). **Skip to the console** opens the full instrument.
+1. Open the site, press **Open the console**, then **Watch the demo** (recommended). **Skip to the console** opens the full instrument.
 2. Press the blue button, bottom right, to move through the story: the problem, the idea, the training, the network, the
    rover, the search, the proof, the test.
 3. In **The search**, watch a whole mission: a drone survey, the rover driving in, four listening stops, a fan and a hot

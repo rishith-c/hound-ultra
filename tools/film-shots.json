@@ -102,7 +102,7 @@
   "name": "wall",
   "url": "/app/?mode=demo&intro=0&paused#/status",
   "settle": 2.5,
-  "seconds": 22,
+  "seconds": 8,
   "hide": "#dock{opacity:0!important}"
  },
  {
@@ -495,5 +495,26 @@
   "hide": "#dock{opacity:0!important}",
   "skip": 28.8,
   "seconds": 46
+ },
+ {
+  "name": "compare",
+  "url": "/app/?mode=demo&intro=0&paused#/aerial",
+  "settle": 8,
+  "size": [
+   1440,
+   810,
+   2
+  ],
+  "seconds": 16,
+  "hide": "#dock{opacity:0!important}",
+  "before": "HOUND_AERIAL.endFly(2); 1"
+ },
+ {
+  "name": "landing",
+  "url": "/",
+  "settle": 1.7,
+  "seconds": 6.2,
+  "hide": ".hero-live,.live-card,#hero-live,[data-hero-live]{visibility:hidden!important} html{scroll-behavior:auto!important}",
+  "before": "(()=>{const t0=performance.now();(function f(){scrollTo(0,20*(performance.now()-t0)/1000);requestAnimationFrame(f)})();return 1})()"
  }
 ]
