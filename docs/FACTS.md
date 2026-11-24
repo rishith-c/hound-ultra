@@ -19,8 +19,7 @@ into a space that is not safe for people. When it stops, it senses for people:
 - **Rover:** aluminium extrusion frame, four NEMA 17 steppers on 80 mm mecanum wheels, Arduino UNO R4 with DRV8825
   drivers, Raspberry Pi 4, 3S 2200 mAh LiPo. The Arduino stops the motors by itself 400 ms after the Pi goes quiet.
 - The rover hardware and its web remote exist. **This console (HOUND Command) is not connected to the rover.**
-  The rover firmware has no Bluetooth; the console's Bluetooth button can only talk to a device that advertises
-  the Nordic UART service under a name starting with HOUND.
+  Neither the rover firmware nor this console uses Bluetooth.
 
 ## The Wi-Fi neural network (the real AI in this project)
 

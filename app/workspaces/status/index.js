@@ -44,7 +44,7 @@ export default {
 
     const fig = (v, label, cls = '') => h('div', { class: 'status-fig ' + cls }, h('b.num', null, v), h('span', null, label));
     function head() {
-      const T = { wall: ['Proof, not <em>promises</em>', SUITE.length + ' self-tests run on this computer, now. Every lamp is one check.', ['live-algo'], 'Break it on purpose'], film: ['', '', ['live-algo', 'sim'], 'What is real?'], real: ['What is <em>real</em>', 'Every feature, by how real it is. Anything not found in the code is struck out.', [], 'Run the proof again'] }[view];
+      const T = { wall: ['Proof, not <em>promises</em>', SUITE.length + ' self-tests run on this computer, now. Every lamp is one check.', ['live-algo'], 'Break it on purpose'], film: ['', '', ['live-algo', 'sim'], 'What is real?'], real: ['What is <em>real</em>', 'Every feature, by how real it is, checked against the code just now.', [], 'Run the proof again'] }[view];
       if (view !== 'film') { title.innerHTML = T[0]; sub.textContent = T[1]; }
       tags.replaceChildren(...T[2].map((k) => realityTag(k))); act.replaceChildren(h('span', null, T[3]), icon(view === 'real' ? 'reset' : 'arrow-right'));
       for (const b of steps.children) b.setAttribute('aria-pressed', String(b.dataset.v === view));
@@ -61,7 +61,7 @@ export default {
     async function go(v) { // one WebGL canvas at a time: a scene is released when the next one opens
       const g = ++gen; view = v; wallHost.hidden = v !== 'wall'; filmHost.hidden = v !== 'film'; realHost.hidden = v !== 'real'; tip.classList.remove('show');
       head(); if (v !== 'wall') closeWall(); if (v !== 'film') closeFilm(); if (v === 'real') real.show(); else real.hide();
-      if (v === 'real') checkBuilt().then(() => { if (view !== 'real') return; const n = (f) => String(ALL.filter(f).length); figs.replaceChildren(fig(n((r) => r.built === 'built'), 'found in the code'), fig(n((r) => r.built === 'built' && r.kind === 'concept'), 'of those, concepts only'), fig(n((r) => r.built === 'missing'), 'not built', 'bad')); });
+      if (v === 'real') checkBuilt().then(() => { if (view !== 'real') return; const n = (f) => String(ALL.filter(f).length); figs.replaceChildren(fig(n((r) => r.built === 'built'), 'found in the code'), fig(n((r) => r.built === 'built' && r.kind === 'concept'), 'of those, concepts only'), ...(ALL.some((r) => r.built === 'missing') ? [fig(n((r) => r.built === 'missing'), 'not built', 'bad')] : [])); });
       if (!shown || ctx.mode !== 'demo') return;
       if (v === 'wall') { await openWall(); if (g !== gen) return closeWall(); wall?.start(); }
       if (v === 'film' && !film) { title.textContent = 'Broken on purpose'; sub.textContent = 'A private copy of the mission. The live one is not touched.'; now.textContent = 'Building the site'; const f = await createDrillFilm(filmHost, ctx, { onUpdate: onFilm }); if (g !== gen) { f.dispose(); return; } film = f; film.twin.setSafeArea?.({ left: 0, top: 0, right: 380, bottom: 220 }); film.start(); }

@@ -61,7 +61,6 @@ export const LEDGER = [
     R('live-algo', 'Training', 'train', 'workspaces/train/drill.js', /score|sim/i, 'The real mission engine, scored against ground truth.', 'Not a certified course.'),
     R('live-algo', 'Accessibility', 'status', 'global/a11y.js', /aria-live/, 'Contrast, palette, motion, text size, shortcuts, spoken alerts.', 'Not tested by people who rely on it.'),
     R('device', 'Works offline', 'status', 'global/a11y.js', /serviceWorker/, 'Files are kept after the first load.', 'Large models are kept by their own libraries.'),
-    R('device', 'Bluetooth link to a rover', 'mission', 'workspaces/mission/inspector.js', /bluetooth/i, 'The browser side only.', 'The rover’s firmware has no Bluetooth yet.'),
   ] },
   { group: 'Radio twin', rows: [
     R('live-algo', 'Ray-traced Wi-Fi', 'radio', 'workspaces/radio/twin.js', /ray|image/i, 'Image-method rays through the plan.', 'Wall losses are assumed.'),

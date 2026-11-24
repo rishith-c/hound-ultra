@@ -61,7 +61,7 @@ export function createFilm(app) {
   const threads = [0, 1, 2, 3].map(() => { const p = document.createElementNS(SVG, 'path'), d = document.createElementNS(SVG, 'circle'); p.setAttribute('pathLength', '1'); d.setAttribute('r', '3'); svg.append(p, d); const name = h('b'), note = h('span'), w = h('small'); return { p, d, el: h('div.film-ev', null, name, note, w), name, note, w, on: false, y: 0 }; });
   const ring = document.createElementNS(SVG, 'circle'); ring.setAttribute('class', 'film-ring'); ring.setAttribute('r', '3'); svg.append(ring);
   const dim = h('div.film-dim'), black = h('div.film-black');
-  const el = h('section.mission-film.demo-only', { 'aria-label': 'The search, as a film' }, h('div.film-shade'), dim, svg, ...threads.map((t) => t.el), h('div.film-low', null, h('div.film-left', null, bigNum, titleBox), inst), h('div.film-foot', null, rail, control), black);
+  const el = h('section.mission-film.demo-only', { 'aria-label': 'The search, as a film' }, h('div.film-shade'), h('p.film-credit', null, 'Terrain: Mapzen, AWS · Map data © OpenStreetMap contributors'), dim, svg, ...threads.map((t) => t.el), h('div.film-low', null, h('div.film-left', null, bigNum, titleBox), inst), h('div.film-foot', null, rail, control), black);
 
   // ---------- state of the film ----------
   let beat = null, lastSet = 0, userSpeed = false, shownKey = '', swap = 0, doneAt = 0, W = 1, H = 1, rect = null, dragging = false, readAt = -1e9, reading = null, cloud = null, vec = null, wasBeat = '';

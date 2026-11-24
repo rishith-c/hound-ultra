@@ -127,7 +127,7 @@ Plain ES modules, no framework, no bundler.
 ## Limits we know about
 
 - No real-world trial. The first one will be a person sitting still behind one drywall wall.
-- A still person is missed four times in five by Wi-Fi alone.
+- Wi-Fi alone is strongest on people who move; a still person is found by adding radar and heat, all in simulation so far (full table in Advanced).
 - Best on a recent laptop with a real GPU. On integrated graphics the 3-D scenes lower their own resolution.
 - Designed for desktop screens.
 

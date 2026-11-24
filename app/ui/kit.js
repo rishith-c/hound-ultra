@@ -106,7 +106,7 @@ export const REALITY = {
   'live-algo': { label: 'Live algorithm', cls: 'tag-ok', means: 'Real computation, running now, on simulated input.' },
   'real-data': { label: 'Real data', cls: 'tag-ok', means: 'Live data from a public source.' },
   'built': { label: 'Built', cls: 'tag-ok', means: 'Real hardware we built, shown from our own CAD and photographs.' },
-  'device': { label: 'Your device', cls: 'tag-ok', means: 'Uses this computer’s microphone, Bluetooth or files.' },
+  'device': { label: 'Your device', cls: 'tag-ok', means: 'Uses this computer’s microphone, camera or files.' },
   'sim': { label: 'Simulated', cls: 'tag-sim', means: 'A scripted scenario stands in for real sensor data.' },
   'concept': { label: 'Concept', cls: 'tag-sim', means: 'A proposed feature. Drawn to show the idea; not built in hardware.' },
 };
