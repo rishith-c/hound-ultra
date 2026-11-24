@@ -150,8 +150,8 @@ export async function create(stage, side, ctx, lab) {
       'uniform float uFront; uniform float uSteady; uniform float uLo; uniform float uHi; uniform vec3 uCol; uniform vec3 uHot; varying float vDist; varying float vPow;',
       'void main(){ float p = clamp((vPow - uLo) / (uHi - uLo), 0.0, 1.0); float p2 = p * p;',
       '  float ahead = vDist - uFront; float pulse = exp(-ahead * ahead / 0.28); float wake = ahead < 0.0 ? exp(ahead / 9.0) : 0.0;',
-      '  float far = smoothstep(0.2, 7.0, vDist); far = 0.06 + 0.94 * far * far;                       // every ray starts at the transmitter: thin them where they pile up
-  float a = (p2 * (uSteady + 0.2 * wake) + pulse * (0.05 + 0.42 * p)) * far;',
+      '  float far = smoothstep(0.3, 11.0, vDist); far = 0.02 + 0.98 * far * far;',
+      '  float a = (p2 * (uSteady + 0.2 * wake) + pulse * (0.04 + 0.28 * p)) * far;',
       '  vec3 c = mix(uCol, uHot, clamp(pulse * 0.85 + p2 * 0.25, 0.0, 1.0));',
       '  gl_FragColor = vec4(c * a, 1.0); }'].join('\n'),
   });

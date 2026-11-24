@@ -106,7 +106,7 @@ export default {
     // ---------- Demo: the Earth, the week, three figures ----------
     const D = { t: 0, i: 0, big: null, near: null, list: null, sorted: [], last: '' }, SPAN = 64, HOLD = 9;   // seconds for the week, then a held beat over Nepal
     const demoFig = (label) => { const b = h('b', null, '–'), s = h('span', null, label); return { b, s, el: h('div.globe-fig', null, b, s) }; };
-    const figN = demoFig('earthquakes located'), figBig = demoFig('largest so far'), figNear = demoFig('nearest M4.5+ to Timure');
+    const figN = demoFig('events located'), figBig = demoFig('largest so far'), figNear = demoFig('nearest M4.5+ to Timure');
     const demoNow = h('span.globe-demo-now');
     const demoUi = h('div.globe-demo.demo-only', null,
       h('section.globe-demo-title', null, h('div.row', null, realityTag('real-data')),
@@ -124,7 +124,7 @@ export default {
       if (D.t > SPAN + HOLD) { D.t = 0; D.i = 0; D.big = D.near = null; }
       const u = Math.min(1, D.t / SPAN), t = d.tMin + (d.tMax - d.tMin) * u, e = u * u * (3 - 2 * u);
       scene.setTime(t, { winH: 5.5, tauH: spanH() * 0.1, playing: u < 1 }); scene.setSun(t);
-      scene.setDrift(-6 + 31 * e, 168 - 80 * e, 1 - 0.16 * e);
+      scene.setDrift(-4 + 29 * e, 146 - 58 * e, 1 - 0.16 * e);
       if (D.list !== d) { D.list = d; D.sorted = d.quakes.slice().sort((a, b) => a.time - b.time); D.i = 0; D.big = D.near = null; }
       let changed = false;
       while (D.i < D.sorted.length && D.sorted[D.i].time <= t) { const q = D.sorted[D.i++]; changed = true; if (!D.big || q.mag > D.big.mag) D.big = q; if (q.mag >= 4.5 && (!D.near || q.km < D.near.km)) D.near = q; }
@@ -133,7 +133,7 @@ export default {
     }
     function enterMode() {
       hideTip(); scene.setWide(demoOn()); S.playing = false;
-      if (demoOn()) { if (S.feed !== 'week') switchFeed('week'); if (S.sel) select(null); if (S.minMag > -Infinity) setMinMag(-Infinity); D.t = 0; D.list = null; scene.face(-6, 168); }
+      if (demoOn()) { if (S.feed !== 'week') switchFeed('week'); if (S.sel) select(null); if (S.minMag > -Infinity) setMinMag(-Infinity); D.t = 0; D.list = null; scene.face(-4, 146); }
       else { scene.setDrift(null); syncPlay(); requestAnimationFrame(() => { bakePlot(); renderList(true); if (S.data) setTime(S.data.tMax); }); }
       requestAnimationFrame(fitFrame);
     }

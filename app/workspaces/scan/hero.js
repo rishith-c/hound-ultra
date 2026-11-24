@@ -35,7 +35,8 @@ export function createHero(view, d, { reduced = false, html }) {
     const p1 = P(l + 9, c[2] + 4.6), p2 = P(l + 3.2, c[2] + 1.2);
     const inn = (s, h) => [c[0] - dx * s, c[1] - dy * s, c[2] + h], px = -dy, py = dx;
     const hold = (s, h, side) => { const x = c[0] + dx * s + px * side, y = c[1] + dy * s + py * side; return [x, y, Math.max(gz(x, y) + 0.5, c[2] + h)]; };
-    at([tVoid + 2.6], p1, [c[0], c[1], c[2] + 0.1]); at([tVoid + 4.8], p2, inn(0.2, 0.05)); at([tVoid + 7.6], hold(l + 3.6, 0.8, -0.3), inn(0.4, 0)); at([tDive - 1.5], hold(l + 2.9, 0.6, 0.7), inn(0.7, 0)); at([tDive], hold(l + 2.8, 0.6, 0.85), inn(0.7, 0));
+    if (site) { key(tVoid + 3.4, c, 19, 392, 35); key(tVoid + 8, c, 13.5, 385, 31); key(tDive - 1, c, 11.4, 379, 28); key(tDive, c, 11.2, 378, 28); }
+    else { at([tVoid + 2.6], p1, [c[0], c[1], c[2] + 0.1]); at([tVoid + 4.8], p2, inn(0.2, 0.05)); at([tVoid + 7.6], hold(l + 3.6, 0.8, -0.3), inn(0.4, 0)); at([tDive - 1.5], hold(l + 2.9, 0.6, 0.7), inn(0.7, 0)); at([tDive], hold(l + 2.8, 0.6, 0.85), inn(0.7, 0)); }
   } else key(total, [F[0], F[1], z0], 60, 150, 40);
   const C6 = new Float64Array(6);
   function sample(t) { // non-uniform Catmull-Rom, so the camera never stops or jerks at a key

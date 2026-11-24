@@ -4,6 +4,9 @@ import { buildReport, outlineOf, missionLog, clock } from './model.js';
 import { buildBlocks, paginate } from './paper.js';
 import { toMarkdown } from './markdown.js';
 import { createReassurance } from './speech.js';
+import { createReportHero } from './hero.js';
+import { inlineFonts } from './raster.js';
+import { finishedRun } from '../graph/run.js';
 
 const SHEET_W = 794;
 let cssLoaded = false, paperCss = '';
@@ -37,7 +40,7 @@ export default {
     // ---------- chrome ----------
     root.classList.add('report');
     const stamp = h('span.report-stamp', { role: 'status', title: 'Mission clock at the last rewrite of the report' }, 'Updated at ', h('b.num', null, '00:00'));
-    const head = h('header.ws-head', null,
+    const head = h('header.ws-head.adv-only', null,
       h('div', null, h('h1', null, 'Hand-over report'), h('p', null, 'What the incoming rescue team needs on one document: who was found and where, what was not searched, the way in, and how far to trust the sensors. Rewritten live from the mission log.')),
       realityTag('live-algo'), stamp);
     const outlineList = h('ol.list.report-ol');
@@ -66,7 +69,23 @@ export default {
     exportPanel.classList.add('report-export');
     const reassure = createReassurance(ctx);
     const side = h('aside.report-side', { 'aria-label': 'Export and reassurance message' }, exportPanel, reassure.el);
-    root.append(head, h('div.report-body', null, outline, scroll, side), press);
+    const bodyEl = h('div.report-body.adv-only', null, outline, scroll, side), heroEl = h('div.report-hero.demo-only');
+    root.append(heroEl, head, bodyEl, press);
+    // Demo: the finished document of a complete run (heroRun). Advanced: the live mission.
+    let heroRun = null, heroLost = false, lastSheets = [], heroFonts = '';
+    const hero = createReportHero(heroEl, ctx, { print: () => printReport() });
+    const isDemo = () => ctx.mode === 'demo' && !heroLost;
+    async function buildForHero() {
+      const run = await finishedRun(ctx); if (run === heroRun || !isDemo()) return null;
+      heroRun = run; if (!heroFonts) heroFonts = await inlineFonts(FONT_CSS); await document.fonts?.ready; rebuild();
+      return { sheets: lastSheets, report: R, fontCss: heroFonts, paperCss, press, live: run.live };
+    }
+    async function applyMode() {
+      if (!shown) { hero.hide(); return; }
+      if (!isDemo()) { hero.hide(); return; }
+      if (!(await hero.show(buildForHero))) { heroLost = true; heroEl.remove(); bodyEl.classList.remove('adv-only'); outline.classList.add('adv-only'); side.classList.add('adv-only'); bodyEl.classList.add('report-alone'); heroRun = heroRun || null; dirty = true; rebuild(); }
+    }
+    window.__reportHero = hero;
 
     // ---------- build ----------
     function signature(S) {
@@ -77,15 +96,15 @@ export default {
         Object.values(S.coverage).map((c) => c.status[0]).join('')].join('|');
     }
     function rebuild() {
-      const S = sim.state; // always fresh
+      const demoRun = ctx.mode === 'demo' && heroRun, S = demoRun ? heroRun.state : sim.state, cmdLog = demoRun ? heroRun.commandLog : sim.commandLog; // always fresh
       dirty = false; lastSig = signature(S); lastBuild = performance.now();
       const keepTop = scroll.scrollTop, focusSel = document.activeElement?.closest?.('.report-stack [data-sel]')?.dataset.sel;
-      R = buildReport(S, { PHASE_INFO: ctx.PHASE_INFO, FAULTS: ctx.FAULTS, commandLog: sim.commandLog });
+      R = buildReport(S, { PHASE_INFO: ctx.PHASE_INFO, FAULTS: ctx.FAULTS, commandLog: cmdLog });
       const ol = outlineOf(R);
       const out = paginate(buildBlocks(S, R, ol), R, press);
       pages = out.pages;
       for (const s of out.sheets) { s.querySelectorAll('[data-fill="pages"]').forEach((e) => { e.textContent = pages + ', A4'; }); s.querySelectorAll('[data-toc]').forEach((e) => { e.textContent = out.pageOf(e.dataset.toc); }); }
-      stack.replaceChildren(...out.sheets);
+      stack.replaceChildren(...out.sheets); lastSheets = out.sheets;
       scroll.scrollTop = keepTop;
       if (focusSel) stack.querySelector('[data-sel="' + focusSel + '"]')?.focus({ preventScroll: true });
       // outline
@@ -94,7 +113,7 @@ export default {
         h('span.report-ol-n.num', null, o.n), h('span.report-ol-t', null, o.title, h('span.sub.report-ol-m' + (o.mark.tone ? '.report-om-' + o.mark.tone : ''), null, o.mark.text)), h('span.meta', { title: 'Page' }, String(out.pageOf(o.id)))))));
       outline.querySelector('.report-ol-pages').textContent = String(pages);
       // exports
-      md = toMarkdown(S, R); log = missionLog(S, R, sim.commandLog);
+      md = toMarkdown(S, R); log = missionLog(S, R, cmdLog);
       const words = stack.textContent.split(/\s+/).filter(Boolean).length, mdB = new Blob([md]).size, jsB = new Blob([JSON.stringify(log, null, 1)]).size;
       st.status.replaceChildren(h('span.tag.' + (R.meta.partial ? 'tag-warn' : 'tag-ok'), null, R.meta.partial ? 'Partial, ' + R.meta.phaseLabel.toLowerCase() : 'Final'));
       st.pages.textContent = pages + ' pages, A4 portrait'; st.words.textContent = words.toLocaleString('en') + ' words, 2 drawings';
@@ -107,14 +126,14 @@ export default {
       root.dataset.pages = String(pages); root.dataset.builtAt = R.meta.clock;
     }
     function maybeRebuild(force) {
-      if (!shown || printing) { dirty = true; return; }
+      if (!shown || printing || (ctx.mode === 'demo' && heroRun)) { dirty = true; return; }
       const sel = window.getSelection?.();
       if (!force && sel && !sel.isCollapsed && stack.contains(sel.anchorNode)) { schedule(800); return; } // do not pull text out from under a selection
       if (force || dirty || signature(sim.state) !== lastSig) rebuild();
     }
     function schedule(ms) { clearTimeout(timer); timer = setTimeout(() => { timer = 0; maybeRebuild(false); }, ms); }
     function onTick() {
-      if (!shown) { dirty = true; return; }
+      if (!shown || (ctx.mode === 'demo' && heroRun)) { dirty = true; return; }
       if (timer) return;
       schedule(Math.max(60, 700 - (performance.now() - lastBuild)));
     }
@@ -227,7 +246,7 @@ export default {
     const after = () => { printing = false; document.documentElement.classList.remove('report-printing'); pageStyle?.remove(); pageStyle = null; };
     window.addEventListener('beforeprint', before); window.addEventListener('afterprint', after);
 
-    offs.push(ctx.bus.on('tick', onTick), ctx.bus.on('reset', () => { dirty = true; scroll.scrollTop = 0; maybeRebuild(true); }), ctx.bus.on('seek', () => { dirty = true; maybeRebuild(true); }));
+    offs.push(ctx.bus.on('mode', () => { if (shown) rebuild(); applyMode(); }), ctx.bus.on('tick', onTick), ctx.bus.on('reset', () => { dirty = true; scroll.scrollTop = 0; maybeRebuild(true); }), ctx.bus.on('seek', () => { dirty = true; maybeRebuild(true); }));
     // for the automated checks
     window.__reportPrintHTML = () => { if (!R || dirty) rebuild(); return printHTML(); };
     window.__reportMarkdown = () => md;
@@ -236,8 +255,8 @@ export default {
 
     const go = (p) => { if (p?.section) goTo(String(p.section).startsWith('s') ? p.section : 's' + p.section); if (p?.print) printReport(); };
     return {
-      onShow() { shown = true; rebuild(); go(ctx.params); ctx.params = null; if (!fontsSeen) document.fonts?.ready.then(() => { fontsSeen = true; if (shown) rebuild(); else dirty = true; }); },
-      onHide() { shown = false; clearTimeout(timer); timer = 0; clearTimeout(flashT); reassure.stop(); },
+      onShow() { shown = true; rebuild(); applyMode(); go(ctx.params); ctx.params = null; if (!fontsSeen) document.fonts?.ready.then(() => { fontsSeen = true; if (shown) rebuild(); else dirty = true; }); },
+      onHide() { shown = false; hero.hide(); clearTimeout(timer); timer = 0; clearTimeout(flashT); reassure.stop(); },
       onParams(p) { go(p); },
     };
   },

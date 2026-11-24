@@ -282,7 +282,7 @@ export function createFilm(host, { dem, model, osm, frame, SITE, BUILDING, OBSTA
     void c;
     lineMat.uniforms.uLine.value = sm(FILM.orbitAt + 5, FILM.orbitDone + 3, tt);
     const fin = reduced() ? 1 : sm(0.1, 1.6, tt) * (1 - sm(FILM.length - 1.4, FILM.length - 0.1, tt)); finalMat.uniforms.uFade.value = fin;
-    finalMat.uniforms.uExposure.value = lerp(1.15, 0.80, sm(5, 18, tt)); airMat.uniforms.uMist.value = lerp(lerp(0.95, 0.42, sm(5, 13, tt)), 0.07, sm(22, 36, tt)); castMat.uniforms.uCast.value = 0.55 * sm(0.08, 0.3, U.uSun.value.y);
+    finalMat.uniforms.uExposure.value = lerp(1.15, 0.80, sm(5, 18, tt)); airMat.uniforms.uMist.value = lerp(lerp(0.95, 0.17, sm(4, 11, tt)), 0.07, sm(22, 36, tt)); castMat.uniforms.uCast.value = 0.55 * sm(0.08, 0.3, U.uSun.value.y);
     return { k, front };
   }
   function cull() {

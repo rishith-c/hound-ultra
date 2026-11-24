@@ -2,6 +2,7 @@
 // from, what the route avoids and who approved it. Built live from ctx.sim.state (see model.js); nothing is replayed
 // from events, so reset and seek simply rebuild it.
 import * as d3 from 'd3';
+import { createGraphHero } from './hero.js';
 import { TYPES, TYPE_ORDER, EDGE_KINDS, SENSOR_ORDER, SENSOR_INFO, buildGraph, signature, whyChain, changeMind, clock, pct, PRIOR, THRESHOLDS, LR } from './model.js';
 
 const CSS = new URL('./style.css', import.meta.url);
@@ -51,7 +52,7 @@ export default {
     const viewSeg = h('div.seg', { role: 'group', 'aria-label': 'View' }, ...[['chart', 'Link chart'], ['table', 'Table']].map(([id, label]) => h('button', { 'aria-pressed': String(id === view), 'data-view': id, onclick: () => setView(id) }, label)));
     const searchIn = h('input.input.graph-search-in', { type: 'search', placeholder: 'Search objects: D4, thermal, 103, approved…', 'aria-label': 'Search the evidence graph', oninput: (e) => { query = e.target.value.trim().toLowerCase(); applySearch(); }, onkeydown: (e) => { if (e.key === 'Enter') { const hit = matches()[0]; if (hit) select([hit.id], { center: true }); } else if (e.key === 'Escape') { e.target.value = ''; query = ''; applySearch(); } } });
     const searchCount = h('span.graph-search-n.num', { 'aria-live': 'polite' });
-    const head = h('header.ws-head.graph-head', null,
+    const head = h('header.ws-head.graph-head.adv-only', null,
       h('div', null, h('div.graph-title', null, h('h1', null, 'Evidence'), realityTag('live-algo'), h('span.tag.tag-sim', { title: 'The readings in this chart come from the simulated exercise. The Wi-Fi network that produced the Wi-Fi readings is real and ran in this browser.' }, 'Readings simulated')),
         h('p.graph-lede', null, 'Every finding, linked to the readings that support or contradict it, where they were taken, and who approved what. Pick anything to see why the console believes it.')),
       h('label.graph-search', null, icon('search'), searchIn, searchCount), viewSeg);
@@ -80,7 +81,11 @@ export default {
     const timeBox = h('div.graph-time');
     const main = h('div.graph-main', null, stage, tableWrap, timeBox);
     const detail = h('aside.graph-detail', { 'aria-label': 'Details of the selected object' });
-    root.append(head, h('div.graph-body', null, main, detail));
+    const heroEl = h('div.graph-hero.demo-only'), hero = createGraphHero(heroEl, ctx);
+    root.append(heroEl, head, h('div.graph-body.adv-only', null, main, detail));
+    const applyMode = () => { if (shown && ctx.mode === 'demo') hero.show(); else hero.hide(); };
+    unsub.push(ctx.bus.on('mode', () => { applyMode(); if (shown && ctx.mode !== 'demo') { rebuild(true); requestAnimationFrame(() => { renderTime(); fit(false); }); } }));
+    window.__graphHero = hero;
 
     // ---------- graph data ----------
     const visible = (n) => { if (hiddenIds.has(n.id)) return false; if (isolated) return isolated.has(n.id); if (forced.has(n.id)) return true; if (!typesOn.has(n.type)) return false; if (timeRange && n.t != null && (n.t < timeRange[0] || n.t > timeRange[1])) return false; return true; };
@@ -651,8 +656,8 @@ export default {
     renderLegend(); renderDetail();
     const applyParams = (p) => { if (!p) return; if (p.view) setView(p.view); if (p.layout) setLayout(p.layout); if (p.group) setGroup(p.group); if (p.time !== undefined) setTime(p.time); if (p.q != null) { searchIn.value = p.q; query = String(p.q).toLowerCase(); applySearch(); } if (p.select) { const id = fromSelection(p.select) || (nodeMap.has(p.select) ? p.select : null); if (id) select([id], { center: true, silent: true }); } };
     return {
-      onShow() { shown = true; rebuild(true); if (ctx.selection && !sel.size) onSelect(ctx.selection); if (firstShow) { firstShow = false; applyParams(ctx.params); } requestAnimationFrame(() => { renderTime(); if (!userZoomed) fit(false); }); },
-      onHide() { shown = false; cancelAnimationFrame(raf); raf = 0; tip.hidden = true; simulation.alpha(0); },
+      onShow() { shown = true; applyMode(); rebuild(true); if (ctx.selection && !sel.size) onSelect(ctx.selection); if (firstShow) { firstShow = false; applyParams(ctx.params); } requestAnimationFrame(() => { renderTime(); if (!userZoomed) fit(false); }); },
+      onHide() { shown = false; hero.hide(); cancelAnimationFrame(raf); raf = 0; tip.hidden = true; simulation.alpha(0); },
       onParams: applyParams,
       // For tests and other workspaces.
       api: { select, expand, isolate, showAll, setLayout, setGroup, setView, setTime, get graph() { return G; } },

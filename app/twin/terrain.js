@@ -63,7 +63,7 @@ function groundMaterial(env, macro) {
         // three looks into one noise picture give every blend its own field (R G B A are independent)
         vec4 nMid = GT(tNoise, gM(0.0, 130.0)), nFine = GT(tNoise, gM(0.7, 58.0)), nBig = GT(tNoise, gM(0.3, 1150.0));
         vec2 muv = vec2((gp.x - uBox.x) / uBox.z, (-gp.y - uBox.y) / uBox.z); vec2 me = min(muv, 1.0 - muv); float inside = smoothstep(0.015, 0.13, min(me.x, me.y) + (nMid.g - 0.5) * 0.05);
-        vec3 c = vColor.rgb; vec2 nx = vec2(0.0); float hh = 0.5, rub = 0.0, road = 0.0, damp = 0.0;
+        vec3 c = vColor.rgb; vec2 nx = vec2(0.0); float hh = 0.5, rub = 0.0, road = 0.0, damp = 0.0, lvlOut = -1.0;
         if (inside > 0.003) {
           vec2 ddx = vec2(dx.x, -dx.y) / uBox.z, ddy = vec2(dy.x, -dy.y) / uBox.z;
           vec3 macro = textureGrad(tMacro, muv, ddx, ddy).rgb, mask = textureGrad(tMask, muv, ddx, ddy).rgb * inside; float wetM = 1.0 - textureGrad(tMacroR, muv, ddx, ddy).r;
@@ -79,7 +79,7 @@ function groundMaterial(env, macro) {
           if (mask.r > 0.05) { mat2 m4 = gM(0.35, 1.4); vec4 n4 = GT(tRubN, m4); road = smoothstep(0.35, 0.75, mask.r + (n4.a - hgt) * 0.3 - smoothstep(0.5, 0.75, nFine.a) * 0.55); c = mix(c, vec3(0.052, 0.053, 0.055) * GT(tRub, m4).rgb / uRubAvg, road); nx = mix(nx, (n4.rg * 2.0 - 1.0) * 0.35, road); hh = mix(hh, n4.a, road); }
           // water fills the low parts of the relief, only where the ground is level
           float flat_ = smoothstep(0.03, 0.006, slope), lvl = wetM * (0.62 + 0.6 * nFine.r) + (nMid.r * 0.6 + nFine.r * 0.4 - 0.5) * 1.0 - (hh - 0.5) * 0.28 - 0.46 - rub * 0.1 - road * 0.02;
-          gWater = smoothstep(0.0, 0.11, lvl) * flat_ * inside * uWet; damp = smoothstep(-0.34, 0.02, lvl) * uWet * mix(0.4, 1.0, inside);
+          lvlOut = lvl; gWater = smoothstep(0.0, 0.11, lvl) * flat_ * inside * uWet; damp = smoothstep(-0.34, 0.02, lvl) * uWet * mix(0.4, 1.0, inside);
         } else { c *= 0.75 + 0.5 * nFine.g; hh = nFine.r; }
         c *= 0.82 + 0.36 * nBig.b;
         if (inside < 0.98) {
@@ -93,8 +93,8 @@ function groundMaterial(env, macro) {
           float snow = smoothstep(1250.0, 1700.0, vWP.y + (nBig.a - 0.5) * 500.0) * smoothstep(0.55, 0.2, slope); c = mix(c, vec3(0.72, 0.76, 0.82), snow);
         }
         c *= mix(1.0, 0.52, damp); gRough = mix(mix(0.93, 0.8, rub), 0.75, road) - hh * 0.06; gRough = mix(gRough, 0.6 + (1.0 - hh) * 0.14 + 0.14 * smoothstep(15.0, 110.0, camD), damp * 0.85);
-        nx *= 0.9;
-        if (gWater > 0.0) { float ws = smoothstep(0.0, 0.45, gWater); c = mix(c, c * 0.35 + vec3(0.042, 0.035, 0.027), ws); gRough = mix(gRough, 0.05, ws); vec2 rip = (texture2D(tNoise, gp / 13.0 + uTime * 0.02).rg + texture2D(tNoise, gp.yx / 11.0 - uTime * 0.017).ba - 1.0) * 0.025; nx = mix(nx, rip, ws); }
+        nx *= 0.9 * (1.0 - 0.75 * smoothstep(-0.07, 0.0, lvlOut));
+        if (gWater > 0.0) { float ws = smoothstep(0.0, 0.45, gWater); c = mix(c, c * 0.35 + vec3(0.042, 0.035, 0.027), ws); gRough = mix(gRough, 0.05, ws * ws); vec2 rip = (texture2D(tNoise, gp / 13.0 + uTime * 0.02).rg + texture2D(tNoise, gp.yx / 11.0 - uTime * 0.017).ba - 1.0) * 0.025; nx = mix(nx, rip, smoothstep(0.0, 0.12, gWater)); }
         nx *= 0.12 + 0.75 * smoothstep(95.0, 9.0, camD); gNrm = normalize(vec3(wn.x + nx.x * wn.y, wn.y, wn.z + nx.y * wn.y));
         diffuseColor.rgb = c;`)
       .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = gRough;')

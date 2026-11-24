@@ -54,6 +54,8 @@ function machineMaterial(THREE) {
         float rDust = rUp * 0.22 * smoothstep(0.4, 0.75, rA);
         diffuseColor.rgb *= 0.9 + 0.2 * rB;
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.105, 0.082, 0.06) * (0.7 + 0.7 * rC), max(rDirt, rDust));`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      { float rf = 1.0 - clamp(dot(normalize(vViewPosition), normalize(vNormal)), 0.0, 1.0); totalEmissiveRadiance += (diffuseColor.rgb * 0.07 + vec3(0.02, 0.026, 0.034)) * (0.35 + 1.4 * rf * rf * rf); }   // a little fill, so the machine reads in an unlit room`)
       .replace('#include <roughnessmap_fragment>', `float roughnessFactor = vPbr.y;
         float rS = rn(vec3(vObj.x * 18.0, vObj.y * 1500.0, vObj.z * 1500.0)) * step(abs(vObjN.x), 0.5) + rn(vec3(vObj.x * 1500.0, vObj.y * 1500.0, vObj.z * 18.0)) * step(0.5, abs(vObjN.x));
         float rF = 1.0 - smoothstep(0.0004, 0.0016, max(length(dFdx(vObj)), length(dFdy(vObj))));

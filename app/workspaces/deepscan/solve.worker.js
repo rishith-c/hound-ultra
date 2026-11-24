@@ -33,8 +33,10 @@ const JOBS = {
   async gpr(pile, post) {
     const ex = await get('gpr', pile); ex._demo().runAll(); const d = ex._demo(), out = new Float32Array(nx * nz), K = 8; let clip = 0;
     for (let n = 0; n <= K; n++) { const ap = d.P.apMax * Math.pow(n / K, 1.6); d.migrate(d.total, d.P.v, ap, out); const g = new Float32Array(nx * nz), s = [];
-      for (const q of d.maskList) { const i = q % nx, k = (q - i) / nx, dep = Math.max(0, pile.surf[i] - (WORLD.z0 + (k + 0.5) * res)); g[q] = Math.abs(out[q]) * Math.min(40, Math.exp(0.6 * dep)) * (0.4 + dep); s.push(g[q]); }
-      s.sort((a, b) => a - b); clip = s[Math.floor(s.length * 0.99)] || 1; post({ n, of: K + 1, ap, v: d.P.v, traces: d.ant.length, verdicts: ex.verdicts(), field: grid(g, res, nx, nz, clip * 0.16, clip) }); await rest(); }
+      for (const q of d.maskList) { const i = q % nx, k = (q - i) / nx, dep = Math.max(0, pile.surf[i] - (WORLD.z0 + (k + 0.5) * res)); g[q] = Math.abs(out[q]) * Math.min(40, Math.exp(0.28 * dep)) * (0.4 + dep); }
+      const sm = new Float32Array(nx * nz); // the envelope of the echoes, so the film shows energy and not single cycles
+      for (const q of d.maskList) { let a = 0, w = 0; for (let k = -2; k <= 2; k++) for (let i = -2; i <= 2; i++) { const c = Math.exp(-(i * i + k * k) / 2.6), v = g[q + k * nx + i]; if (v >= 0) { a += c * v; w += c; } } sm[q] = a / w; s.push(sm[q]); } g.set(sm);
+      s.sort((a, b) => a - b); clip = s[Math.floor(s.length * 0.993)] || 1; post({ n, of: K + 1, ap, v: d.P.v, traces: d.ant.length, verdicts: ex.verdicts(), field: grid(g, res, nx, nz, clip * 0.22, clip) }); await rest(); }
   },
   async das(pile, post) { const ex = await get('das', pile), d = ex._demo(); post({ n: 0, of: 1, T: d.T, tap: d.tap, M: { ...d.M }, sideways: Math.abs(d.M.x - d.tap.x), path: d.ch.map((c) => [c.x, c.z, c.t0 - d.PRE]), field: grid(d.field, d.CR, d.CNX, d.CNZ, 0.12, 1) }); },
   async seismic(pile, post) { const ex = await get('seismic', pile), d = ex._demo(); post({ n: 0, of: 1, T: d.T, tap: d.tap, M: { ...d.M }, geo: d.geo.map((g, i) => [g.x, g.z, d.sig[i].t0 - d.PRE]), field: grid(d.field, d.CR, d.CNX, d.CNZ, 0.12, 1) }); },

@@ -140,7 +140,7 @@ void main() {
   float jit = (texture2D(uDet, position.xz / 320.).b - 0.5) * 90.;
   float s = aWat.y + jit, h = stageAt(s), x = uFront - s, boil = exp(-max(x, 0.) / 240.) * smoothstep(-10., 40., x);
   vec4 n = texture2D(uDet, position.xz / 60. - aFlow * uTime * 0.16), n2 = texture2D(uDet, position.xz / 23. - aFlow * uTime * 0.33);
-  float y = aWat.x + h + boil * ((n.b - 0.5) * 7. + (n2.a - 0.4) * 2.6 + 1.6) + (n2.b - 0.5) * 0.5 * smoothstep(0., 200., x);
+  float y = aWat.x + h + 4.6 * exp(-pow((x - 34.) / 30., 2.)) * step(-20., x) + boil * ((n.b - 0.5) * 7. + (n2.a - 0.4) * 2.6 + 1.6) + (n2.b - 0.5) * 0.5 * smoothstep(0., 200., x);
   vW = vec3(position.x, y, position.z); vWat = vec4(aWat.x, s, aWat.z, h); vFlow = aFlow;
   gl_Position = projectionMatrix * viewMatrix * vec4(vW, 1.);
 }`;
@@ -165,18 +165,18 @@ void main() {
   float d01 = 1. - exp(-depth / mix(2.6, 1.3, surge));
   vec3 clear = mix(vec3(0.11, 0.15, 0.14), vec3(0.030, 0.072, 0.080), d01), silt = mix(vec3(0.150, 0.118, 0.086), vec3(0.070, 0.054, 0.040), d01) * (0.45 + 0.6 * w0.b + 0.5 * w1.b);
   vec3 body = mix(clear, silt, surge);
-  vec3 c = body * (uSunCol * (0.25 + 0.75 * max(dot(N, uSun), 0.)) * sh + uSkyCol * mix(vec3(0.9), vec3(1.35, 1.1, 0.85), surge) * (0.55 + 0.9 * N.y * N.y * N.y));
+  vec3 c = body * (uSunCol * (0.25 + 0.75 * max(dot(N, uSun), 0.)) * sh + uSkyCol * mix(vec3(0.9), vec3(0.95, 0.78, 0.58), surge) * (0.55 + 0.9 * N.y * N.y * N.y));
   vec3 R = reflect(-V, N); R.y = abs(R.y); vec3 H = normalize(V + uSun);
   // the reflected sky is cut down by the valley walls round the water
   vec3 refl = skyCol(normalize(R + vec3(0., 0.35, 0.))) * mix(0.34, 0.62, sh); c = mix(c, refl * mix(0.8, 0.5, surge), fres * mix(0.8, 0.22, surge));
   c += uSunCol * sh * pow(max(dot(N, H), 0.), mix(420., 60., rough)) * mix(5., 0.55, rough);
   // foam: the breaking front, streaks carried behind it, and a wet edge against the banks
   float fn = w1.a * 0.55 + w2.a * 0.45, streak = w0.a * 0.6 + w1.b * 0.4;
-  float foam = min(1., near * 1.25) * smoothstep(0.30, 0.56, fn + near * 0.16);
+  float crest = exp(-pow((x - 30.) / 46., 2.)); float foam = max(min(1., near * 1.25) * smoothstep(0.27, 0.52, fn + near * 0.18), crest * smoothstep(0.08, 0.34, fn));
   foam = max(foam, surge * smoothstep(0.60, 0.78, streak * 0.55 + fn * 0.42) * exp(-max(x, 0.) / 900.) * 0.6);
   foam = max(foam, smoothstep(1.2, 0.15, depth) * smoothstep(0.22, 0.52, fn) * (0.35 + 0.55 * surge));
   foam = max(foam, (1. - surge) * smoothstep(0.50, 0.72, fn * 0.6 + w1.b * 0.45) * 0.55);
-  vec3 foamC = mix(vec3(0.62, 0.63, 0.62), vec3(0.56, 0.51, 0.45), surge) * (0.72 + 0.5 * w2.b);
+  vec3 foamC = mix(vec3(0.62, 0.63, 0.62), vec3(0.56, 0.51, 0.45), surge) * (0.62 + 0.7 * w2.b) * mix(1., 1.75, crest);
   c = mix(c, foamC * (uSunCol * sh * (0.35 + 0.65 * max(dot(N, uSun), 0.)) + uSkyCol * mix(vec3(1.05), vec3(1.25, 1.1, 0.95), surge)), clamp(foam, 0., 1.));
   gl_FragColor = vec4(c, smoothstep(0.02, 0.5, depth));
 }`;
@@ -188,9 +188,9 @@ void main() {
   float life = fract(uTime * (0.34 + 0.3 * aR.w) + aR.x); int k = int(aR.y * 7.99); vec4 f = uFP[k];
   vec2 dir = vec2(cos(f.w), sin(f.w)), side = vec2(-dir.y, dir.x);
   vec2 p = f.xy + side * (aR.z - 0.5) * 34. + dir * (life * 16. - 6.) + (aR.wx - 0.5) * 12.;
-  float y = f.z + 3. + (aR.w * 15. + 3.) * 4. * life * (1. - life) * (0.6 + 0.6 * aR.x);
+  float y = f.z + 3. + (aR.w * 24. + 4.) * 4. * life * (1. - life) * (0.6 + 0.6 * aR.x);
   vec4 v = viewMatrix * vec4(p.x, y, p.y, 1.); gl_Position = projectionMatrix * v;
-  gl_PointSize = min(130., (5. + 13. * life) * uScale / -v.z); vA = uSprayOn * smoothstep(0., 0.12, life) * (1. - life) * (1. - life) * 0.34; vL = sunAt(p);
+  gl_PointSize = min(130., (8. + 20. * life) * uScale / -v.z); vA = uSprayOn * smoothstep(0., 0.12, life) * (1. - life) * (1. - life) * 0.46; vL = sunAt(p);
 }`;
 export const SPRAY_FRAG = COMMON + /* glsl */ `
 varying float vA, vL;

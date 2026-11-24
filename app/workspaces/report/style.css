@@ -64,11 +64,26 @@ iframe.report-printframe { position: fixed; right: 0; bottom: 0; width: 0; heigh
   html.report-printing #main { overflow: visible; position: static; background: white; }
   html.report-printing .ws { display: none; }
   html.report-printing .ws[data-ws="report"] { display: block; position: static; background: white; }
-  html.report-printing .report-head, html.report-printing .report-outline, html.report-printing .report-side, html.report-printing .report-press, html.report-printing .report-md { display: none; }
-  html.report-printing .report-body { display: block; }
+  html.report-printing .report .ws-head, html.report-printing .report-hero, html.report-printing .report-outline, html.report-printing .report-side, html.report-printing .report-press, html.report-printing .report-md { display: none; }
+  html.report-printing .report-body { display: block !important; }
   html.report-printing .report-scroll { overflow: visible; padding: 0; background: white; }
   html.report-printing .report-stack { display: block; zoom: 1 !important; width: auto; margin: 0; }
   html.report-printing .report-sheet { box-shadow: none; width: 210mm; height: 297mm; break-after: page; --rp-paper: white; }
   html.report-printing .report-sheet:last-child { break-after: auto; }
   html.report-printing * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* ---------- Demo: the document under the lamp ---------- */
+.report-hero { position: absolute; inset: 0; overflow: hidden; background: #050607; }
+.rh-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; } .rh-canvas:active { cursor: grabbing; }
+.rh-vig { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(70% 84% at 0% 100%, rgba(4, 4, 5, 0.94) 0%, rgba(4, 4, 5, 0.72) 34%, rgba(4, 4, 5, 0.22) 58%, transparent 74%), radial-gradient(120% 110% at 58% 44%, transparent 50%, rgba(3, 3, 4, 0.7) 100%); }
+.rh-copy { position: absolute; left: 48px; bottom: 44px; max-width: 520px; pointer-events: none; } .rh-copy button { pointer-events: auto; }
+.rh-tags { display: flex; gap: 8px; margin-bottom: 14px; }
+.rh-h1 { font: 400 40px/1.04 var(--font-display); color: var(--text); margin: 0; }
+.rh-sub { margin-top: 12px; font-size: var(--fs-16); line-height: 1.45; color: var(--text-2); max-width: 40ch; min-height: 2.9em; text-shadow: 0 1px 10px #050607; }
+.rh-row { display: flex; align-items: center; gap: 18px; margin-top: 18px; white-space: nowrap; }
+.rh-steps { display: flex; align-items: center; gap: 2px; }
+.rh-step, .rh-turn { height: 34px; padding: 0 9px; border: 0; background: none; color: var(--text-3); font: var(--type-label); cursor: pointer; border-radius: var(--r-2); text-shadow: 0 1px 8px #050607; } .rh-turn { display: grid; place-items: center; padding: 0 6px; } .rh-step:hover, .rh-turn:hover { color: var(--text); } .rh-step[aria-pressed="true"] { color: var(--text); box-shadow: inset 0 -1px 0 var(--text); border-radius: 0; }
+.rh-figs { position: absolute; right: 48px; top: 34px; display: flex; gap: 34px; text-align: right; pointer-events: none; text-shadow: 0 1px 14px #050607; } .rh-figs b { display: block; font: 400 34px/1 var(--font-display); color: var(--text); } .rh-figs span { font: var(--type-caption); color: var(--text-2); } .rh-figs .rh-warm b { color: var(--person); }
+.report-alone { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 1500px) { .rh-copy { left: 36px; } .rh-figs { right: 36px; } }

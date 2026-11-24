@@ -33,12 +33,13 @@ self.onmessage = async (ev) => {
     }
     if (!found) { post({ t: 'error', message: 'No lift on this pile both disturbs the pocket and is saved by one shore.' }); return; }
     const a = await run(ST.jackRun(pile, snap, found.site, found.box, { rec: true })), b = await run(ST.jackRun(pile, snap, found.site, found.box, { shores: [found.shore], rec: true }));
-    post({ t: 'lift', box: found.box, site: found.site, shore: found.shore, a, b, tried, ms: performance.now() - t0, piece: pile.pieces[found.site.idx].id, seed }, [a.frames.buffer, b.frames.buffer]);
+    const slim = (r) => { r.movedSlab = r.moved.filter((m) => pile.pieces[m.idx]?.kind === 'plank' || pile.pieces[m.idx]?.kind === 'beam').length; return r; };
+    post({ t: 'lift', box: found.box, site: found.site, shore: found.shore, a: slim(a), b: slim(b), tried, ms: performance.now() - t0, piece: pile.pieces[found.site.idx].id, seed }, [a.frames.buffer, b.frames.buffer]);
     // aftershocks: the same seeded tremors on the pile as it is and on the pile with the shore
-    const N = 16, pga = 0.35, f = P.fork(pile, snap); P.addShore(f, found.shore, 'post'); const snapS = P.snapshot(f);
+    const N = 16, pga = 0.5, f = P.fork(pile, snap); P.addShore(f, found.shore, 'post'); const snapS = P.snapshot(f);
     const out = []; const base = P.protectedMetrics(pile, pile.world, found.box);
     for (const [pl, sn] of [[pile, snap], [f, snapS]]) {
-      const tr = []; for (let k = 0; k < N; k++) { const r = await run(P.shakeTrial(pl, sn, { pga, seed: k + 1, box: found.box })); const big = r.moved.filter((m) => m.d > 0.05); tr.push({ seed: k + 1, max: r.maxDisp, moved: big.length, head: r.prot.headroom, lost: base.headroom - r.prot.headroom > 0.1 || r.prot.intrusion > 0.02 }); post({ t: 'shakeN', k: out.length * N + k + 1, n: 2 * N }); }
+      const tr = []; for (let k = 0; k < N; k++) { const r = await run(P.shakeTrial(pl, sn, { pga, seed: k + 1, box: found.box })); const big = r.moved.filter((m) => m.d > 0.05); tr.push({ seed: k + 1, max: r.maxDisp, moved: big.length, head: r.prot.headroom, lost: base.headroom - r.prot.headroom > 0.1 || r.prot.intrusion > 0.02, by: [...new Set((r.prot.within.length ? r.prot.within : r.prot.roof).map((i) => pl.pieces[i].kind))] }); post({ t: 'shakeN', k: out.length * N + k + 1, n: 2 * N }); }
       out.push(tr);
     }
     const pick = (out[0].find((t, i) => t.lost && !out[1][i].lost) || out[0].find((t) => t.lost) || out[0].reduce((x, y) => (y.max > x.max ? y : x))).seed; const recs = [];

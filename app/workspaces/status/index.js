@@ -18,10 +18,11 @@ export default {
 
     // ---------- results, shared by both modes ----------
     const store = { checks: new Map(), results: new Map(), running: new Set(), out: null, error: null, busy: false, counts: { p: 0, f: 0, l: 0 } }, subs = new Set(), say = (m) => { for (const f of subs) f(m); };
+    const checksOf = (id) => (store.checks.get(id) || []).flat(); // kept in parts as they arrive: flatten once, here
     const runner = createRunner((m) => {
       if (m.type === 'start') store.running.add(m.id);
       if (m.type === 'checks') { let l = store.checks.get(m.id); if (!l) store.checks.set(m.id, (l = [])); (l[m.part] ||= []).push(...m.checks); }
-      if (m.type === 'end') { store.running.delete(m.id); store.checks.set(m.id, (store.checks.get(m.id) || []).flat()); store.results.set(m.id, m.result); wall?.finish(m.id, store.checks.get(m.id), m.result); last = m.result; }
+      if (m.type === 'end') { store.running.delete(m.id); store.results.set(m.id, m.result); wall?.finish(m.id, checksOf(m.id), m.result); last = m.result; }
       if (m.type === 'done') { store.busy = false; store.out = m.out; finishedAt = performance.now(); }
       if (m.type === 'error') { store.busy = false; store.error = m.message; }
       say(m); dirty = true;
@@ -50,7 +51,7 @@ export default {
     }
     function primary() { touched = true; if (view === 'wall') go('film'); else if (view === 'film') go('real'); else { go('wall'); runAll(); } }
     async function openWall() {
-      if (wall) return; try { wall = await createWall(wallHost, { nn: ctx.nn, ctx, css: cssVar, reduced: reducedMotion }); for (const [id, r] of store.results) wall.finish(id, store.checks.get(id), r, { instant: true }); for (const id of store.running) wall.begin(id); if (store.results.size) wall.toEnd(); }
+      if (wall) return; try { wall = await createWall(wallHost, { nn: ctx.nn, ctx, css: cssVar, reduced: reducedMotion }); for (const [id, r] of store.results) wall.finish(id, checksOf(id), r, { instant: true }); for (const id of store.running) wall.begin(id); if (store.results.size) wall.toEnd(); }
       catch (e) { wallHost.replaceChildren(h('div.empty', null, icon('alert', 28), h('h2', null, 'The wall needs WebGL'), h('p', null, 'The tests still run. Open Advanced to read every result.'))); console.warn('[status] wall:', e); }
     }
     function closeWall() { wall?.dispose(); wall = null; }
@@ -80,7 +81,7 @@ export default {
       const lit = wall ? wall.lit() : 0, done = store.out, par = store.results.get('nn-parity'), sh = wall ? Math.round(wall.part('nn-parity') * (par?.passed || 0)) : 0;
       let bad = 0; for (const [id, r] of store.results) if (!wall || wall.part(id) >= 1) bad += r.failed;
       const set = (i, t) => { const b = F[i].firstChild; if (b.textContent !== t) b.textContent = t; }; set(0, lit.toLocaleString('en')); set(1, sh + ' / 30'); set(2, String(bad)); F[2].classList.toggle('bad', bad > 0); F[1].classList.toggle('good', sh === 30);
-      const t = store.error ? 'The tests could not run: ' + store.error : done && wall?.settled() ? (done.failed ? done.results.filter((r) => r.failed).length + ' of ' + SUITE.length + ' tests failed. Red shows which; Advanced says why.' : 'All ' + SUITE.length + ' passed, in ' + (done.ms / 1000).toFixed(0) + ' seconds. Amber is a limit we measured and kept.') : store.running.size ? 'Running: ' + SUITE.find((x) => x.id === [...store.running][0]).title.toLowerCase() : last ? last.got : 'Starting';
+      const t = store.error ? 'The tests could not run: ' + store.error : done && wall?.settled() ? (done.failed ? done.results.filter((r) => r.failed).length + ' of ' + SUITE.length + ' tests failed. Red shows which; Advanced says why.' : 'All ' + SUITE.length + ' passed, in ' + (done.ms / 1000).toFixed(0) + ' seconds. Amber is a limit we measured and kept.') : store.running.size ? 'Running: ' + SUITE.find((x) => x.id === [...store.running][0]).title : last ? last.got : 'Starting';
       if (now.textContent !== t) now.textContent = t; now.dataset.tone = store.error || bad ? 'bad' : 'ok';
       if (done && wall?.settled() && !touched && !reducedMotion() && performance.now() - finishedAt > 14000 && wall.time > 34) go('film');
     }
@@ -88,7 +89,7 @@ export default {
     wallHost.addEventListener('pointermove', (e) => {
       const p = wall?.pick(e.clientX, e.clientY), r = demo.getBoundingClientRect(); if (!p) { tip.classList.remove('show'); wallHost.style.cursor = ''; return; }
       let a, b, c; if (p.test) { const t = SUITE.find((x) => x.id === p.test), res = store.results.get(p.test); a = t.title; b = res ? res.got : store.running.has(p.test) ? 'Running' : 'Waiting its turn'; c = res ? VERDICT[res.state] + ' · ' + (res.passed + res.failed + res.limits) + ' checks · ' + (res.ms < 1000 ? res.ms.toFixed(0) + ' ms' : (res.ms / 1000).toFixed(1) + ' s') : t.expect; }
-      else { const s = ctx.nn.samples[p.window], d = store.checks.get('nn-parity')?.flat?.()[p.window]?.[3]; a = 'Window ' + p.window + ': ' + s.cat.toLowerCase(); b = d ? 'This browser ' + d.js.toFixed(5) + ', Python ' + d.py.toFixed(5) : 'Waiting'; c = 'Simulated. Ten seconds, 52 rows by 200 samples'; }
+      else { const s = ctx.nn.samples[p.window], d = checksOf('nn-parity')[p.window]?.[3]; a = 'Window ' + p.window + ': ' + s.cat.toLowerCase(); b = d ? 'This browser ' + d.js.toFixed(5) + ', Python ' + d.py.toFixed(5) : 'Waiting'; c = 'Simulated. Ten seconds, 52 rows by 200 samples'; }
       tip.replaceChildren(h('b', null, a), h('span', null, b), h('small', null, c)); tip.classList.add('show'); wallHost.style.cursor = p.test ? 'pointer' : 'default';
       const x = e.clientX - r.left, y = e.clientY - r.top; tip.style.transform = 'translate(' + Math.min(x + 18, r.width - 350) + 'px,' + Math.min(y + 18, r.height - 130) + 'px)';
     });

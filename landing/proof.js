@@ -51,7 +51,7 @@ export async function startProof({ onScene }) {
       const b = el('button.pf-cell.' + (right ? 'right' : 'wrong'), { type: 'button', 'aria-pressed': 'false', 'aria-label': `${c.label}, window ${k + 1}. The network was ${right ? 'right' : 'wrong'}.`, onclick: () => { setAuto(false); pick(i); } });
       cells[i] = b; return b;
     })))));
-  const autoBtn = el('button.lbtn.lbtn-line.pf-auto', { type: 'button', 'aria-pressed': 'true', onclick: () => setAuto(!auto) }, 'Stop stepping through');
+  const autoBtn = el('button.lbtn.lbtn-line.pf-auto', { type: 'button', 'aria-pressed': String(!reduced), onclick: () => setAuto(!auto) }, reduced ? 'Step through all 30' : 'Stop stepping through');
   const csi = el('canvas', { id: 'pf-csi', width: 200, height: 52, role: 'img', 'aria-label': 'The Wi-Fi window as a heat map: 52 rows of signal strength over 200 time steps' });
   const LAYERS = [
     { id: 'c1', name: 'Convolution 1', dim: '24 filters \u00d7 192 steps' },
@@ -93,11 +93,11 @@ export async function startProof({ onScene }) {
         el('div', null, el('dt', null, 'Time on this computer'), kv.ms)),
       truthline)));
 
-  let current = -1, run = 0, auto = true, visible = false, timer = 0;
+  let current = -1, run = 0, auto = !reduced, visible = false, timer = 0;
   const order = Array.from({ length: all.length }, (_, k) => (12 + k * 7) % all.length);   // starts on a walking person
   let step = 0;
   function setAuto(on) { auto = on; autoBtn.setAttribute('aria-pressed', String(on)); autoBtn.textContent = on ? 'Stop stepping through' : 'Step through all 30'; schedule(); }
-  function schedule() { clearTimeout(timer); if (auto && visible && !reduced) timer = setTimeout(() => { pick(order[++step % order.length]); }, 4200); }
+  function schedule() { clearTimeout(timer); if (auto && visible) timer = setTimeout(() => { pick(order[++step % order.length]); }, 4200); }
 
   const ridge = startRidge();
   async function pick(i) {

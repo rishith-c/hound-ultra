@@ -325,7 +325,7 @@ export default {
       const ang = Math.atan2(AP_C - SENSOR.y, XW - SENSOR.x); g.save(); g.translate(X(SENSOR.x), Y(SENSOR.y)); g.rotate(ang); g.fillStyle = T.bg4; g.strokeStyle = T.text2; g.lineWidth = 1; g.beginPath(); g.rect(-13, -8, 22, 16); g.fill(); g.stroke(); g.fillStyle = T.accent; g.fillRect(9, -5, 3, 4); g.fillStyle = T.text2; g.fillRect(9, 1, 3, 4); g.restore();
       // labels
       const lab = (str, x, y, tx, ty, color = 'text2') => L.callout(g, str, X(x), Y(y), X(x) + tx, Y(y) + ty, { color });
-      lab('laser and single-photon detector (concept)', SENSOR.x - 0.06, SENSOR.y + 0.02, -24, 26, 'text2');
+      lab('laser and detector (concept)', SENSOR.x - 0.06, SENSOR.y + 0.02, -24, -16, 'text2');
       const headX = P.px + 0.75 * 0.93 * BU[0], headY = P.py + 0.75 * 0.93 * BU[1];
       lab('person: truth (simulated)', headX + 0.07, headY - 0.07, 22, -24, 'person');
       lab('slab', CLUTTER[0].cx - 0.03, CLUTTER[0].cy - 0.4, -14, -22, 'text2'); lab('wall stub', CLUTTER[1].cx - 0.2, CLUTTER[1].cy + 0.14, -8, 24, 'text2');

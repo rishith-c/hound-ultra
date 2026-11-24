@@ -341,10 +341,10 @@ export function create(stage, side, ctx, lab) {
       const lx = Math.min(...fx, ...tx) + 12;
       lab.label(c, f.name, lx, y0 - 8, { color: live || hot ? tok('--text') : done ? tok('--text-2') : tok('--text-3'), font: f.ndp ? TXB() : TXT(), bg: true });
       // what happens when it lands
-      for (const m of f.measure || []) { const x = xOf(m[0]), y = y1 - 5; c.fillStyle = done ? tok('--text') : tok('--bg-1'); c.strokeStyle = done ? tok('--text') : tok('--text-3'); c.beginPath(); c.moveTo(x + 10, y); c.lineTo(x + 14.5, y - 4.5); c.lineTo(x + 19, y); c.lineTo(x + 14.5, y + 4.5); c.closePath(); c.fill(); c.stroke(); lab.label(c, x + 100 > w ? 'CSI' : 'measures CSI', x + 24, y, { color: done ? tok('--text') : tok('--text-3'), bg: true }); }
+      for (const m of f.measure || []) { const x = xOf(m[0]) + (xOf(m[0]) < lx ? 90 : 0), y = y1 - 5; c.fillStyle = done ? tok('--text') : tok('--bg-1'); c.strokeStyle = done ? tok('--text') : tok('--text-3'); c.beginPath(); c.moveTo(x + 10, y); c.lineTo(x + 14.5, y - 4.5); c.lineTo(x + 19, y); c.lineTo(x + 14.5, y + 4.5); c.closePath(); c.fill(); c.stroke(); lab.label(c, x + 100 > w ? 'CSI' : 'measures CSI', x + 24, y, { color: done ? tok('--text') : tok('--text-3'), bg: true }); }
       if (f.report) { const x = xOf(f.report), y = y1 - 5, left2 = x < w / 2; c.fillStyle = done ? tok('--ok') : tok('--bg-1'); c.strokeStyle = done ? tok('--ok') : tok('--text-3'); c.fillRect(x + (left2 ? -18 : 10), y - 4, 8, 8); c.strokeRect(x + (left2 ? -18 : 10) + 0.5, y - 3.5, 7, 7);
         const which = S.reporting === 'immediate' ? 'this exchange' : 'the previous exchange';
-        lab.label(c, (done ? 'has results of ' : 'results of ') + which, x + (left2 ? 12 : 24), y + (left2 ? 13 : 0), { color: done ? tok('--ok') : tok('--text-3'), bg: true }); }
+        lab.label(c, left2 ? 'for ' + which : (done ? 'has results of ' : 'results of ') + which, left2 ? w - 10 : x + 24, left2 ? y0 - 8 : y, { align: left2 ? 'right' : 'left', color: done ? tok('--ok') : tok('--text-3'), bg: true }); }
     });
     // playhead
     if (T < n + 0.02) { const py = Math.round(ty) + 0.5; c.strokeStyle = rgba('--text', 0.75); c.lineWidth = 1; c.beginPath(); c.moveTo(left - 2, py); c.lineTo(w - 8, py); c.stroke(); c.fillStyle = tok('--text'); c.beginPath(); c.moveTo(left - 2, py); c.lineTo(left - 9, py - 4); c.lineTo(left - 9, py + 4); c.closePath(); c.fill(); }
@@ -354,7 +354,8 @@ export function create(stage, side, ctx, lab) {
 
   function drawCsi(c, w, hh) {
     const sw = Math.min(170, w * 0.34), mg = { l: 36, r: sw + 26, t: 22, b: 34 };
-    const P = lab.plot(c, { x: mg.l, y: mg.t, w: w - mg.l - mg.r, h: hh - mg.t - mg.b, xd: [-26, 26], yd: [0, 2.4], xt: [-26, -13, 0, 13, 26], yt: [0, 1, 2], xf: (v) => String(v).replace('-', '−'), xl: 'subcarrier', yl: 'amplitude, direct path = 1', ylx: 26 });
+    const P = lab.plot(c, { x: mg.l, y: mg.t, w: w - mg.l - mg.r, h: hh - mg.t - mg.b, xd: [-26, 26], yd: [0, 2.4], xt: [-26, -13, 0, 13, 26], yt: [0, 1, 2], xf: (v) => String(v).replace('-', '−'), xl: '', yl: 'amplitude, direct path = 1', ylx: 26 });
+    lab.label(c, 'subcarrier', mg.l, hh - 12, { color: tok('--text-3') });
     const now = performance.now(), cols = [tok('--accent'), tok('--text')];
     lines.forEach((ln, q) => {
       if (!ln.cur) return; const rv = clamp((now - ln.t0) / 600, 0, 1), nn = ln.cur.length, upto = Math.max(1, Math.round(rv * nn));
@@ -404,7 +405,7 @@ export function create(stage, side, ctx, lab) {
   }
 
   function drawBw(c, w, hh) {
-    const lw = 96, mg = { l: lw + 12, r: 16, t: 20, b: 34 }, pw = w - mg.l - mg.r, lo = Math.log10(0.1), hi = Math.log10(30), X = (m) => mg.l + ((Math.log10(m) - lo) / (hi - lo)) * pw;
+    const lw = 96, mg = { l: lw + 12, r: 128, t: 20, b: 34 }, pw = w - mg.l - mg.r, lo = Math.log10(0.1), hi = Math.log10(30), X = (m) => mg.l + ((Math.log10(m) - lo) / (hi - lo)) * pw;
     const rh = (hh - mg.t - mg.b) / BANDS.length; bwRows = { top: mg.t, rh };
     c.font = NUM(); c.textBaseline = 'top'; c.textAlign = 'center';
     for (const m of [0.1, 0.3, 1, 3, 10, 30]) { const x = Math.round(X(m)) + 0.5; c.strokeStyle = tok('--line'); c.beginPath(); c.moveTo(x, mg.t); c.lineTo(x, hh - mg.b); c.stroke(); c.fillStyle = tok('--text-3'); c.fillText(String(m), x, hh - mg.b + 5); }
@@ -417,9 +418,7 @@ export function create(stage, side, ctx, lab) {
       c.fillStyle = sel ? tok('--accent') : tok('--line-3'); c.fillRect(mg.l, cy - 1, x - mg.l, 3);
       c.fillStyle = sel ? tok('--accent') : tok('--text-2'); c.fillRect(Math.round(x) - 1, cy - 6, 3, 13);
       const txt = (r >= 1 ? r.toFixed(r >= 10 ? 1 : 2) + ' m' : (r * 100).toFixed(1) + ' cm') + (ok ? '  apart' : '  merged');
-      const leftSide = x > mg.l + pw - 110;
-      c.font = NUM(); const tw = c.measureText(txt).width; const lx = leftSide ? x - 8 - tw : x + 8;
-      lab.label(c, txt, lx, cy, { font: NUM(), color: ok ? tok('--ok') : tok('--text-3'), bg: Math.abs(exX - (lx + tw / 2)) < tw / 2 + 4 });
+      lab.label(c, txt, mg.l + pw + 12, cy, { font: NUM(), color: ok ? tok('--ok') : tok('--text-3') });
     });
     c.strokeStyle = tok('--person'); c.lineWidth = 1; c.setLineDash([2, 3]); c.beginPath(); c.moveTo(exX, mg.t - 4); c.lineTo(exX, hh - mg.b); c.stroke(); c.setLineDash([]);
     lab.label(c, 'echo +' + S.excess.toFixed(1) + ' m', exX + (exX > mg.l + pw - 80 ? -6 : 6), mg.t - 9, { align: exX > mg.l + pw - 80 ? 'right' : 'left', color: tok('--person') });

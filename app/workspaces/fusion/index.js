@@ -5,16 +5,17 @@ import { createMap } from './map.js';
 import { createInstruments } from './instruments.js';
 import { createBreathing } from './breathing.js';
 import { createMonteCarlo } from './montecarlo.js';
+import { createHero } from './hero.js';
 import { dropTokens } from './util.js';
 
 function loadCss() {
   if (document.querySelector('link[data-fusion-css]')) return Promise.resolve();
-  return new Promise((resolve) => {
+  return Promise.all(['./style.css', './hero.css'].map((f) => new Promise((resolve) => {
     const link = document.createElement('link');
-    link.rel = 'stylesheet'; link.href = new URL('./style.css', import.meta.url).href; link.dataset.fusionCss = '1';
+    link.rel = 'stylesheet'; link.href = new URL(f, import.meta.url).href; link.dataset.fusionCss = '1';
     link.onload = link.onerror = () => resolve();
     document.head.append(link); setTimeout(resolve, 1500);
-  });
+  })));
 }
 
 export default {
@@ -55,21 +56,29 @@ export default {
     // ---- layout ----
     const viewBtn = (id, label) => h('button', { type: 'button', 'aria-pressed': 'false', 'data-view': id, onclick: () => setView(id) }, label);
     const seg = h('div.seg', { role: 'group', 'aria-label': 'Fusion views' }, viewBtn('lead', 'Leads and evidence'), viewBtn('limits', 'Limits and reliability'));
-    const head = h('header.ws-head.fusion-head', null,
+    const head = h('header.ws-head.fusion-head.adv-only', null,
       h('div', null, h('h1', null, 'Fusion'), h('p', null, 'No single sensor is good enough alone. Every reading is weighed and added into one probability; see how, and how far to trust it.')),
       seg, realityTag('live-algo'));
     const ledgerEl = h('div.fusion-col'), mapEl = h('div.fusion-cell'), instEl = h('div.fusion-inst');
-    const leadView = h('div.fusion-view.fusion-view-lead', { 'data-view': 'lead' }, ledgerEl, h('div.fusion-col.fusion-right', null, mapEl, instEl));
+    const leadView = h('div.fusion-view.fusion-view-lead.adv-only', { 'data-view': 'lead' }, ledgerEl, h('div.fusion-col.fusion-right', null, mapEl, instEl));
     const breathEl = h('div.fusion-col'), mcEl = h('div.fusion-col');
-    const limitsView = h('div.fusion-view.fusion-view-limits', { 'data-view': 'limits', hidden: true }, breathEl, mcEl);
-    root.append(head, leadView, limitsView);
+    const limitsView = h('div.fusion-view.fusion-view-limits.adv-only', { 'data-view': 'limits', hidden: true }, breathEl, mcEl);
+    const heroEl = h('div.demo-only');
+    root.append(heroEl, head, leadView, limitsView);
 
     const parts = {
       lead: [createLedger(ledgerEl, ctx, api), createMap(mapEl, ctx, api), createInstruments(instEl, ctx, api)],
       limits: [createBreathing(breathEl, ctx), createMonteCarlo(mcEl, ctx)],
     };
     const all = [...parts.lead, ...parts.limits];
-    let view = 'lead', raf = 0, visible = false;
+    let view = 'lead', raf = 0, visible = false, hero = null, building = null;
+    const demo = () => ctx.mode === 'demo';
+    const buildHero = () => building ||= createHero(heroEl, ctx, { openEvidence: () => ctx.setPref('mode', 'advanced') }).then((x) => { hero = x; if (visible && demo()) hero.onShow(); });
+    function sync() { // only the visible mode runs
+      cancelAnimationFrame(raf); raf = 0;
+      if (!visible) { hero?.onHide(); return; }
+      if (demo()) { hero ? hero.onShow() : buildHero(); } else { hero?.onHide(); for (const p of all) p.dirty?.(); raf = requestAnimationFrame(frame); }
+    }
     function setView(v) {
       view = v === 'limits' ? 'limits' : 'lead';
       leadView.hidden = view !== 'lead'; limitsView.hidden = view !== 'limits';
@@ -90,6 +99,7 @@ export default {
     }
 
     const offs = [
+      ctx.bus.on('mode', sync),
       ctx.bus.on('select', (sel) => {
         if (!sel) return;
         const S = ctx.sim.state;
@@ -107,11 +117,13 @@ export default {
     if (ctx.selection) { const s = ctx.selection; if (s.type === 'detection') pin = { type: 'detection', id: s.id }; else if (s.type === 'room') pin = { type: 'room', id: s.id }; }
     applyParams(ctx.params);
     setView(view);
+    if (demo()) await buildHero();
 
     return {
-      onShow() { if (visible) return; visible = true; for (const p of all) p.dirty?.(); raf = requestAnimationFrame(frame); },
-      onHide() { visible = false; cancelAnimationFrame(raf); for (const p of all) p.hide?.(); },
+      onShow() { if (visible) return; visible = true; sync(); },
+      onHide() { visible = false; sync(); for (const p of all) p.hide?.(); },
       onParams(p) { applyParams(p); },
+      get hero() { return hero; },
       dispose() { offs.forEach((f) => f()); },
     };
   },

@@ -26,8 +26,7 @@ All five: Live algorithm on Simulated input (the Demo race shows Simulated, "The
 - Information gain against 4,000 sampled looks on a toy map: 2.03 and 2.08 bits (the sampled figure uses the mean-field alarm update).
 - Sources: titles, authors, years and links checked in search results and abstract pages. Full texts not read.
 
-## Not verified after the last edit
-The stacked policy table and the shorter tree labels in exhibit 3 (fixing clipping at 1440x900) were written last and not screenshotted.
+The last edit (stacked policy table and shorter tree labels in exhibit 3) was screenshotted in Advanced at 1440x900 and fits, with 0 errors. The write hook timed out once more while saving this report and was retried alone.
 
 ## Known gaps
 - Looks are treated as independent; after an alarm the map keeps per-cell probabilities only (mean field). `populate()` hard-codes 40 % moving.

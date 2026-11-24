@@ -73,9 +73,8 @@ export default {
           rec.api = (await mod.create(stage, side, ctx, lab, { open: show, params: params || {} })) || {};
         } catch (err) {
           console.error('[radio] exhibit "' + e.id + '" failed', err);
-          recs.delete(e.id);
           stage.replaceChildren(h('div.empty', null, icon('alert', 28), h('h3', null, e.short + ' could not start'), h('p.muted', null, String(err.message || err)),
-            h('button.btn', { onclick: () => { el.remove(); show(e.id, params); } }, 'Try again')));
+            h('button.btn', { onclick: () => { el.remove(); recs.delete(e.id); show(e.id, params); } }, 'Try again')));
           return;
         }
       } else { rec.el.hidden = false; if (params) rec.api?.onParams?.(params); }

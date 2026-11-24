@@ -1,6 +1,7 @@
 // Training: practise being the operator. Lessons first, then drills on the real mission engine, then a debrief
 // that compares your choices with the autoplay policy and with ground truth. Progress is kept in this browser.
 import { LEVELS } from './scenario.js';
+import { createHero } from './hero.js';
 
 export const LESSON_META = [
   { id: 'wifi', title: 'How Wi-Fi sensing works, and where it stops', minutes: 4, screens: 3, blurb: 'Drag a person through the echoes, then try to beat the network on real test windows.' },
@@ -18,10 +19,11 @@ export default {
     if (!document.getElementById('train-css')) document.head.append(h('link', { id: 'train-css', rel: 'stylesheet', href: new URL('./style.css', import.meta.url).href }));
     root.classList.add('train');
     let progress = load(), view = null, visible = false, saved = true;
-    const body = h('div.train-body');
+    const body = h('div.train-body.adv-only');
     root.append(body);
+    const hero = createHero(root, ctx, { onDrill: () => { ctx.setMode('advanced'); drill(1); } }); window.__thero = hero;
 
-    function swap(next) { try { view?.destroy?.(); } catch (e) { console.error(e); } view = null; body.replaceChildren(); body.className = 'train-body'; body.scrollTop = 0; return next(); }
+    function swap(next) { try { view?.destroy?.(); } catch (e) { console.error(e); } view = null; body.replaceChildren(); body.className = 'train-body adv-only'; body.scrollTop = 0; return next(); }
     const seedFor = (level) => (level.windows === 'scripted' ? ctx.world.SEED : 1000 + level.id * 7919 + ((progress.levels[level.id]?.runs || 0) + 1) * 104729);
     const recommend = () => { const l = LESSON_META.find((x) => !progress.lessons[x.id]); if (l) return { type: 'lesson', id: l.id }; const lv = LEVELS.find((x) => (progress.levels[x.id]?.best ?? -1) < 75) || LEVELS[LEVELS.length - 1]; return { type: 'drill', id: lv.id }; };
 
@@ -88,10 +90,12 @@ export default {
     else if (q.has('card')) await card();
     else home();
     if (!view) home();
+    const show = () => { if (ctx.mode === 'demo') { view?.pause?.(); hero.show(); } else { hero.hide(); view?.resume?.(); } };
+    ctx.bus.on('mode', () => { if (visible) show(); });
 
     return {
-      onShow() { visible = true; view?.resume?.(); },
-      onHide() { visible = false; view?.pause?.(); },
+      onShow() { visible = true; show(); },
+      onHide() { visible = false; view?.pause?.(); hero.hide(); },
       onParams(p) { if (p?.lesson) lesson(p.lesson); else if (p?.drill) drill(p.drill); else if (p?.card) card(); },
     };
   },

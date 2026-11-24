@@ -61,7 +61,7 @@ const filmStep = (x) => {
   let at = 0; while (at < 3 && x >= MARK[at + 1]) at++;
   if (at !== filmAt) { filmAt = at; caption.textContent = CAPTIONS[at]; for (let i = 0; i < 4; i++) filmEl.classList.toggle('at-' + i, i === at); }
 };
-if (reduced) showStills();
+if (reduced) { showStills(); caption.textContent = 'The four pictures are illustrations, not photographs. The flood of 26 August 2026 was real; the search on this site is invented.'; }
 else {
   onScene('film', (p, u, spanVh) => filmStep(Math.max(0, u * spanVh)));
   const canvas = $('#film-gl');

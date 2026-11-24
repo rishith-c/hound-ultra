@@ -10,7 +10,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { TRUTH } from '../../core/world.js';
 import { palette, Y, clamp, lerp, damp, smoothstep, stateWatcher, decalMaterial, disposeTree, mulberry32 } from './common.js';
 
-const FIG_R = 1.0;                 // ring radius around a confirmed person, m
+const FIG_R = 0.78;                // ring radius around a confirmed person, m
 const TAU = Math.PI * 2;
 
 const RING_VERT = /* glsl */ `
@@ -27,14 +27,15 @@ void main() {
   float r = length(q), aa = fwidth(r), w = max(0.005, aa * 0.8);
   float ang = fract(atan(vP.x, vP.y) / 6.2831853 + 1.0);
   vec3 col = mix(mix(uWarn, uPerson, 0.35 + 0.65 * uConf), uOk, uReach * 0.8);
-  float line = band(r - uR, w) * mix(0.5, 0.22, uConf);
+  float tick = band(fract(ang * 100.0) - 0.5, 0.16);                                    // once confirmed the outline becomes a 100-mark scale; the arc fills it to the probability
+  float line = band(r - uR, w) * mix(0.5, 0.06, uConf) + smoothstep(0.045, 0.04, abs(r - uR + 0.045)) * tick * 0.3 * uConf;
   float iso = (band(r - uR * 0.68, w * 0.8) * 0.22 + band(r - uR * 0.4, w * 0.8) * 0.16) * (1.0 - uConf);
-  float fill = exp(-r * r / (uR * uR) * 2.2) * mix(0.07, 0.16, uConf);
+  float fill = exp(-r * r / (uR * uR) * 2.2) * mix(0.07, 0.1, uConf);
   float aaA = fwidth(ang) * 1.2 + 1e-4;
   float arc = band(r - uR, w * 1.5) * (1.0 - smoothstep(uP - aaA, uP, ang)) * step(0.0005, uP) * uConf * 0.75;
   float sel = band(r - uR - max(0.06, aa * 4.0), w) * uSel * 0.7;
   float pk = 1.0 - uPulse, pe = 1.0 - pow(1.0 - pk, 3.0);
-  float pulse = (band(r - uR - pe * 1.5, w * 2.2) * 0.9 + exp(-(r - uR - pe * 1.5) * (r - uR - pe * 1.5) * 25.0) * 0.2) * uPulse * uPulse * step(0.001, uPulse);
+  float pulse = (band(r - uR - pe * 1.3, w * 1.3) * 0.7 + exp(-(r - uR - pe * 1.3) * (r - uR - pe * 1.3) * 40.0) * 0.08) * uPulse * uPulse * step(0.001, uPulse);
   float a = max(max(line, arc), iso) + fill + sel + pulse;
   gl_FragColor = vec4(col * (0.85 + 0.35 * uSel + 0.5 * pulse), clamp(a, 0.0, 1.0) * uAlpha);
 }`;
@@ -85,25 +86,27 @@ void main() {
     if (tt > b) break;
     vec3 p = ro + rd * tt;
     float e = (length((p - vec3(0.0, 0.86, 0.03)) / vec3(0.42, 0.86, 0.24)) - 1.0) * 0.24, bd = uK < 0.03 || e > 0.45 ? 0.5 : body(p), d = uK < 0.03 ? e : mix(e, bd, morph);
-    tt += st; if (d > 0.3) tt += (d - 0.26) * 0.8;
+    float ds = lockK > 0.4 && !got ? clamp(d * 0.8, 0.012, 0.3) : st; tt += ds; if (ds == st && d > 0.3) tt += (d - 0.26) * 0.8;
     if (d < 0.28) {
       float n = un > 0.01 ? noise(p * 5.5 + drift) * 0.6 + noise(p * 13.0 - drift * 1.7) * 0.4 : 0.5;
       d += un * (n - 0.42) * 0.62;
       float tick = un > 0.02 ? step(0.5 * un, hash(floor(p * 34.0) + floor(uTime * 9.0) * 0.37 + uSeed)) : 1.0;       // the estimate flickers until it is sure
       // the skin, once there is one: found between two steps, lit by its own warmth and the angle it is seen at
       if (!got && lockK > 0.01 && d < 0.0) {
-        got = true; vec3 h = p - rd * st * 0.5; for (int s = 0; s < 3; s++) { h += rd * body(h) * 0.85; }
+        got = true; vec3 h = p - rd * min(st, 0.02) * 0.5; for (int s = 0; s < 3; s++) { h += rd * body(h) * 0.85; }
         vec2 ee = vec2(0.006, -0.006);
         vec3 N = normalize(ee.xyy * body(h + ee.xyy) + ee.yyx * body(h + ee.yyx) + ee.yxy * body(h + ee.yxy) + ee.xxx * body(h + ee.xxx));
-        vec3 fq = h * vec3(15.0, 7.0, 15.0); float f0 = noise(fq) + 0.5 * noise(fq * 2.7);                                           // creases of cloth
-        N = normalize(N - 0.42 * (vec3(noise(fq + vec3(0.25, 0.0, 0.0)) + 0.5 * noise((fq + vec3(0.25, 0.0, 0.0)) * 2.7), noise(fq + vec3(0.0, 0.25, 0.0)) + 0.5 * noise((fq + vec3(0.0, 0.25, 0.0)) * 2.7), noise(fq + vec3(0.0, 0.0, 0.25)) + 0.5 * noise((fq + vec3(0.0, 0.0, 0.25)) * 2.7)) - f0));
         float ndv = clamp(-dot(N, rd), 0.0, 1.0), rim = pow(1.0 - ndv, 2.5);
         float trunk = smoothstep(0.42, 0.1, abs(h.x)) * smoothstep(0.75, 1.1, h.y) * smoothstep(1.75, 1.62, h.y), face = smoothstep(1.46, 1.56, h.y);
-        float cloth = 0.82 + 0.18 * noise(h * vec3(22.0, 9.0, 22.0)) ;
-        float T = (0.2 + 0.5 * max(trunk, face)) * pow(ndv, 1.3) * cloth + 0.1 * noise(h * 11.0 + vec3(0.0, uTime * 0.15, 0.0));
-        vec3 ember = vec3(uPerson.r * 0.42, uPerson.g * 0.22, uPerson.b * 0.16);
-        vec3 sk = mix(ember * 0.8, uPerson * 0.92, smoothstep(0.04, 0.52, T)); sk = mix(sk, uHot, smoothstep(0.4, 0.85, T) * 0.7 * (1.0 - 0.35 * uCalm));
-        sk += uPerson * rim * 0.3; sk += uPerson * 0.05 * step(0.92, fract(h.y * 46.0 - uTime * 0.5));
+        float warm = max(trunk, face * 0.8), px = length(h - vCam) * 0.0009;
+        float cl = noise(h * vec3(26.0, 10.0, 26.0)) * 0.6 + noise(h * 60.0) * 0.4;                                         // cloth, not plastic
+        vec3 ember = vec3(uPerson.r * 0.2, uPerson.g * 0.09, uPerson.b * 0.07);
+        vec3 sk = mix(ember, uPerson * 0.5, pow(ndv, 1.4) * (0.2 + 0.55 * warm) * (0.7 + 0.6 * cl));
+        // section lines every 2.5 cm, as a body scanner draws them; they fade out before they could shimmer
+        float lf = abs(fract(h.y * 40.0 + cl * 0.12) - 0.5), ln = smoothstep(0.3, 0.46, lf) * smoothstep(0.0062, 0.0022, px);
+        sk += uPerson * ln * (0.16 + 0.34 * warm) * (0.35 + 0.65 * ndv);
+        vec3 hd = h - vec3(0.02, 1.27, 0.06); sk += uHot * 0.34 * exp(-dot(hd, hd) * 42.0) * (1.0 - 0.4 * uCalm);             // the heart of the heat
+        sk += uPerson * rim * 0.95;
         sum += tr * lockK * sk; tr *= 1.0 - 0.94 * lockK;
       }
       float heat = smoothstep(0.06, -0.06, d), halo = exp(-max(d, 0.0) * mix(9.0, 26.0, uK)) * mix(0.1, 0.05, uK);
@@ -111,8 +114,8 @@ void main() {
       vec3 col = mix(vec3(0.34, 0.2, 0.12), uPerson, max(uK, 0.25 * heat));
       // inside the noise, the shape the evidence is starting to suggest
       float hb = un > 0.02 && uK > 0.03 ? smoothstep(0.05, -0.04, bd + un * (n - 0.45) * 0.4) * tick : 0.0; dens += hb * 3.2 * uK; col = mix(col, uPerson * 1.05, hb);
-      float k = 1.0 - exp(-dens * st * mix(1.6, 3.4, uK)); sum += tr * k * col * mix(0.55, 1.0, heat); tr *= 1.0 - k * 0.8;
-      if (tr < 0.04) break;
+      float k = 1.0 - exp(-dens * ds * mix(1.6, 3.4, uK)); sum += tr * k * col * mix(0.55, 1.0, heat); tr *= 1.0 - k * 0.8;
+      if (tr < 0.04 || (got && lockK > 0.9)) break;
     }
   }
   float al = (1.0 - tr) * uAlpha; if (al < 0.003) discard;

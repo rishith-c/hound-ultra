@@ -28,12 +28,12 @@ const COMMON = [
   '  if(p.x<XL0||p.x>XL1) return vec3(0.); float fy=9.; int r=-1;',
   '  for(int g=0;g<4;g++){ float q=(uGroup[g].x-p.y)/PITCH; if(q>=0.&&q<uGroup[g].y){ float k=floor(q); r=int(uGroup[g].z+k); fy=(q-k-.5)*PITCH; } }',
   '  if(r<0) return vec3(0.);',
-  '  float hw=.019, cov=clamp((hw-abs(fy))/px+.5,0.,1.); if(cov<=0.) return vec3(0.);',
+  '  float hw=.019; if(uCount[r]>.5){ float bi=floor((p.x-XL0)/(XL1-XL0)*uCount[r]), w0=max(1.,px*2.2*uCount[r]/(XL1-XL0)); for(int k=-1;k<=1;k++){ vec2 b=texelFetch(tState,ivec2(int(clamp(bi+float(k)*floor(w0*.5),0.,1023.)),r),0).rg; if(b.r>1.5&&b.r<2.5&&uT>=b.g) return cBad*(2.1+3.*exp(-(uT-b.g)*4.2))*clamp((.032-abs(fy))/px+.5,0.,1.); } } float cov=clamp((hw-abs(fy))/px+.5,0.,1.); if(cov<=0.) return vec3(0.);',
   '  float u=(p.x-XL0)/(XL1-XL0), n=uCount[r]; vec3 glass=vec3(.0035,.0045,.005);',
   '  if(n<.5){ float run=uRun[r]; if(run<.0001) return glass*cov; float ph=fract((uT-run)*.55)*1.3-.15; float d=u-ph; return cov*(glass+vec3(.5,.72,1.)*(exp(-max(-d,0.)*18.)*step(d,0.)*.9+exp(-abs(d)*220.)*2.2)); }',
   '  float un=u*n, i=floor(un), f=fract(un), cell=(XL1-XL0)/n; float gap=min(cell*.24,.034); float e=min(f,1.-f)*cell; float seg=mix(clamp((e-gap*.5)/px+.5,0.,1.),1.-gap/cell,smoothstep(.35,1.,px/cell));',
   '  vec2 s=texelFetch(tState,ivec2(int(min(i,1023.)),r),0).rg; float age=uT-s.g; if(s.r<.5||age<0.) return glass*cov*seg;',
-  '  vec3 c=lampColour(s.r); float fl=exp(-age*4.2); vec3 on=mix(c,vec3(1.),.16)*(s.r>1.5?1.75:.92); return cov*seg*(on+mix(c,vec3(1.),.75)*fl*3.6);',
+  '  vec3 c=lampColour(s.r); float fl=exp(-age*4.2); vec3 on=mix(c,vec3(1.),.06)*(s.r>1.5?1.5:.72); return cov*seg*(on+mix(c,vec3(1.),.75)*fl*3.6);',
   '}',
   // thirty panes: the Wi-Fi windows themselves, 52 rows by 200 samples each
   'vec3 panes(vec2 p, float px){',
@@ -70,7 +70,7 @@ export async function createWall(host, { nn, ctx, css, reduced = () => false, on
   function drawLabels(done) {
     const c = label.getContext('2d'), sx = 2048 / (LX1 - LX0), sy = 2048 / H; c.fillStyle = '#000'; c.fillRect(0, 0, 2048, 2048); c.textAlign = 'right'; c.textBaseline = 'middle';
     for (const g of groups) { c.save(); c.translate(2048, (H - g.y - 0.0) * sy - 0.11 * sy); c.scale(sx / sy, 1); c.fillStyle = '#fff'; c.font = '400 46px ' + css('--font-display'); c.fillText(g.title, -0.06 * sy, 0); c.restore(); }
-    ORDER.forEach((t, r) => { const g = groups.find((q) => r >= q.start && r < q.start + q.n), y = g.y - (r - g.start + 0.5) * PITCH, d = done?.get(t.id); c.save(); c.translate(2048, (H - y) * sy); c.scale(sx / sy, 1); c.fillStyle = d ? (d.state === 'fail' ? 'rgb(255,0,0)' : 'rgb(150,150,150)') : 'rgb(78,78,78)'; c.font = '500 31px ' + css('--font'); c.fillText(t.title, -0.09 * sy, 1); c.restore(); });
+    ORDER.forEach((t, r) => { const g = groups.find((q) => r >= q.start && r < q.start + q.n), y = g.y - (r - g.start + 0.5) * PITCH, d = done?.get(t.id); c.save(); c.translate(2048, (H - y) * sy); c.scale(sx / sy, 1); c.fillStyle = d ? (d.state === 'fail' ? 'rgb(255,0,0)' : 'rgb(190,190,190)') : 'rgb(96,96,96)'; c.font = '500 34px ' + css('--font'); c.fillText(t.title, -0.09 * sy, 1); c.restore(); });
     tLabel.needsUpdate = true;
   }
   drawLabels();
@@ -103,11 +103,11 @@ export async function createWall(host, { nn, ctx, css, reduced = () => false, on
       + 'alb*=1.-slot*.965;'
       + 'vec3 e1=blur(p,1.6),e2=blur(p,2.8),e3=blur(p,4.),e4=blur(p,5.2),e5=blur(p,6.4); vec3 E=e1*.55+e2*.9+e3*1.25+e4*1.5+e5*1.6;'
       + 'float d=.22; vec3 gx=blur(p+vec2(d,0.),3.2)-blur(p-vec2(d,0.),3.2), gy=blur(p+vec2(0.,d),3.2)-blur(p-vec2(0.,d),3.2); vec3 rel=gx*bump.x+gy*bump.y;'
-      + 'vec3 col=alb*(E*1.25+rel*2.4); col+=alb*lip*(e1*3.5+e2*1.2);'
-      + 'float up=exp(-max(7.4-p.y,0.)*.55); float graze=1.+bump.y*1.4; vec3 wash=vec3(.36,.5,.66)*(up*.2+.014+uLift*.012)*graze; col+=alb*wash;'
+      + 'E=mix(vec3(dot(E,vec3(.25,.6,.15))),E,.72); vec3 col=alb*(E*.5+rel*1.5); col+=alb*lip*(e1*2.4+e2*.8);'
+      + 'float up=exp(-max(7.4-p.y,0.)*.55); float graze=1.+bump.y*1.4; vec3 wash=vec3(.36,.5,.66)*(up*.62+.06+uLift*.03)*graze; col+=alb*wash;'
       + 'col*=mix(.35,1.,smoothstep(0.,.5,p.y)); col+=alb*smoothstep(.36,.3,p.y)*smoothstep(.0,.06,p.y)*.0;'
-      + 'vec2 lu=vec2((p.x-' + LX0 + ')/' + (LX1 - LX0).toFixed(3) + ',p.y/' + H.toFixed(2) + '); if(lu.x>0.&&lu.x<1.&&lu.y<1.){ vec4 t=texture(tLabel,lu); float red=step(t.g+.08,t.r); vec3 ink=mix(vec3(t.r),vec3(1.,.14,.16)*t.r,red); col+=ink*(vec3(.21,.23,.25)+E*.08); }'
-      + 'col+=emitAt(p,px)*1.55; col+=e5*.035+e4*.02; o=vec4(col,1.); }' });
+      + 'vec2 lu=vec2((p.x-' + LX0 + ')/' + (LX1 - LX0).toFixed(3) + ',p.y/' + H.toFixed(2) + '); if(lu.x>0.&&lu.x<1.&&lu.y<1.){ vec4 t=texture(tLabel,lu); float red=step(t.g+.08,t.r); vec3 ink=mix(vec3(t.r),vec3(1.,.14,.16)*t.r,red); col+=ink*vec3(.62,.66,.7); }'
+      + 'col+=emitAt(p,px)*1.15; col+=e5*.012+e4*.008; o=vec4(col,1.); }' });
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(W + 60, H).translate(W / 2, H / 2, 0), wallMat); scene.add(wall);
 
   // ---------- floor: wet, polished, reflecting the wall ----------
@@ -118,15 +118,15 @@ export async function createWall(host, { nn, ctx, css, reduced = () => false, on
       + 'vec2 slab=abs(fract(g/vec2(6.,5.))-.5)*vec2(6.,5.); float jn=smoothstep(2.984,2.992,slab.x)+smoothstep(2.484,2.492,slab.y); jn=clamp(jn,0.,1.);'
       + 'vec2 nz=(vec2(vn(g*9.),vn(g*9.+31.))-.5)*mix(.05,.008,wet)+(vec2(fbm(g*2.3),fbm(g*2.3+17.))-.5)*.02; vec3 N=normalize(vec3(nz.x,1.,nz.y)); vec3 R=reflect(V,N);'
       + 'float t=-vP.z/min(R.z,-.02); vec3 hit=vP+R*t; float rough=mix(.5,.12,wet)+ft*.16; float lod=clamp(log2(1.+t*rough*7.),.4,6.2); float onw=smoothstep(8.6,7.2,hit.y);'
-      + 'vec3 refl=(blur(hit.xy,lod)*1.75+blur(vec2(hit.x,hit.y*.9),min(lod+1.7,6.5))*.75+blur(hit.xy,6.2)*.12)*onw; refl+=vec3(.36,.5,.66)*.012*exp(-max(7.4-hit.y,0.)*.55)*onw;'
-      + 'float fr=.045+.955*pow(1.-max(dot(-V,N),0.),5.); float k=mix(fr*1.5+.05,fr*3.+.16,wet); vec3 near=blur(vec2(vP.x,1.2),6.); vec3 alb=vec3(pow(ft,1.6))*.5*mix(1.,.45,wet); vec3 col=alb*(near*1.5/(1.+vP.z*.22)+vec3(.36,.5,.66)*(.006+uLift*.006)); col+=refl*k; col*=1.-jn*.75;'
+      + 'vec2 sp=vec2(h21(gl_FragCoord.xy)-.5,h21(gl_FragCoord.yx+9.)-.5)*(.25+lod*.32); vec3 refl=(blur(hit.xy+sp,max(lod-1.2,.4))*1.5+blur(hit.xy+sp*2.2,max(lod-.2,.4))*.6)*onw; refl=mix(vec3(dot(refl,vec3(.25,.6,.15))),refl,.75); refl+=vec3(.36,.5,.66)*.012*exp(-max(7.4-hit.y,0.)*.55)*onw;'
+      + 'float fr=.045+.955*pow(1.-max(dot(-V,N),0.),5.); float k=mix(fr*1.5+.05,fr*3.+.16,wet); vec3 near=blur(vec2(vP.x,1.2),6.); vec3 alb=vec3(pow(ft,1.6))*.5*mix(1.,.45,wet); vec3 col=alb*(near*1.5/(1.+vP.z*.22)+vec3(.36,.5,.66)*(.006+uLift*.006)); col+=refl*k*.55; col*=1.-jn*.75;'
       + 'vec2 rd=(g-uRover.xy)/vec2(1.55,1.2); float occ=exp(-dot(rd,rd)*1.15); col*=1.-occ*.9; col*=mix(.4,1.,smoothstep(0.,.6,vP.z));'
       + 'float far=smoothstep(34.,14.,vP.z); o=vec4(col*far,mix(.985,.8,clamp(wet*.8+fr,0.,1.))); }' });
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(W + 60, 40).rotateX(-Math.PI / 2).translate(W / 2, 0, 20), floorMat); floor.renderOrder = 2; scene.add(floor);
   const under = new THREE.Mesh(new THREE.PlaneGeometry(W + 60, H).translate(W / 2, -H / 2, -0.01), new THREE.MeshBasicMaterial({ color: 0x000000 })); scene.add(under);
 
   // ---------- the rover, from the twin ----------
-  const POS = new THREE.Vector3(19.4, 0, 5.6), roverRoot = new THREE.Group(), mirror = new THREE.Group(); roverRoot.position.copy(POS); roverRoot.scale.setScalar(2.35); mirror.position.copy(POS); mirror.scale.set(2.35, -2.35, 2.35); scene.add(roverRoot, mirror); U.uRover.value.set(POS.x, POS.z, 0);
+  const POS = new THREE.Vector3(16.9, 0, 6.2), roverRoot = new THREE.Group(), mirror = new THREE.Group(); roverRoot.position.copy(POS); roverRoot.scale.setScalar(2.35); mirror.position.copy(POS); mirror.scale.set(2.35, -2.35, 2.35); scene.add(roverRoot, mirror); U.uRover.value.set(POS.x, POS.z, 0);
   const fake = { hold: false, faults: {}, phase: 'search', units: { 'HOUND-01': { id: 'HOUND-01', pos: [0, 0], heading: 2.42, mode: 'idle', v: 0, odo: 0, battery: 1, link: 1 } } }, actors = [];
   import('../../twin/actors/rover.js').then((m) => {
     for (const g of [roverRoot, mirror]) {
@@ -140,7 +140,7 @@ export async function createWall(host, { nn, ctx, css, reduced = () => false, on
   }).catch(() => { U.uRover.value.set(-99, -99, 0); });
   const g0 = () => scene.traverse((o) => { if (o.isSpotLight) o.visible = false; });
   const areas = [[TX0 + TW * 1.5, 3.7, TW * 3, 6], [XL0 + 3, 3.7, 6, 6], [XL0 + 8.9, 3.7, 6, 6]].map(([x, y, w, h]) => { const l = new THREE.RectAreaLight(0xffffff, 0, w, h); l.position.set(x, y, 0.02); l.lookAt(x, y, 10); scene.add(l); return l; });
-  const sky = new THREE.RectAreaLight(0xbcd4ea, 1.6, 9, 1.2); sky.position.set(21, 8.4, 9.5); sky.lookAt(19.4, 0.4, 5.6); scene.add(sky, new THREE.AmbientLight(0x8fa6bd, 0.05));
+  const sky = new THREE.RectAreaLight(0xbcd4ea, 4.2, 9, 1.2); sky.position.set(18.5, 8.4, 10); sky.lookAt(16.9, 0.4, 6.2); scene.add(sky, new THREE.AmbientLight(0x8fa6bd, 0.22));
 
   // ---------- dust in the light ----------
   const ND = 420, dp = new Float32Array(ND * 3), ds = new Float32Array(ND); for (let i = 0; i < ND; i++) { dp[i * 3] = -3 + Math.random() * 30; dp[i * 3 + 1] = Math.random() * 7; dp[i * 3 + 2] = 0.4 + Math.random() * 11; ds[i] = Math.random(); }
@@ -160,7 +160,7 @@ export async function createWall(host, { nn, ctx, css, reduced = () => false, on
 
   // ---------- story ----------
   // Camera keys: [seconds, x, y, z, look x, look y, fov]. It reads the panes, travels along the strips, then steps back.
-  const KEYS = [[0, 3.3, 2.5, 9.2, 4.5, 3.2, 30], [5.5, 5.4, 2.3, 9.6, 6.8, 3.15, 30], [13, 13.6, 1.75, 10.4, 15.6, 3.05, 31], [20, 13.4, 1.5, 19.6, 12.6, 2.9, 31], [60, 11.2, 1.55, 20.6, 12.2, 2.95, 31]];
+  const KEYS = [[0, 3.3, 2.5, 9.2, 4.5, 3.2, 30], [5.5, 5.4, 2.3, 9.6, 6.8, 3.15, 30], [13, 11.9, 2.6, 11.6, 12.9, 3.3, 33], [20, 12.6, 1.7, 23.2, 12.1, 2.55, 31], [60, 11.4, 1.75, 23.8, 11.9, 2.55, 31]];
   const still = KEYS[3], cur = { x: 0, y: 0, z: 0, lx: 0, ly: 0, f: 30 };
   function pose(t) {
     if (t > KEYS[4][0]) { const u = (t - 60) / 40; t = 40 + 20 * Math.cos(u * Math.PI); }   // then drift, back and forth

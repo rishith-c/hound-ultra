@@ -121,7 +121,7 @@ const quant = (a, q) => { const s = Float64Array.from(a).sort(); return s.length
 
 export default {
   id: 'laser', title: 'Heartbeat by laser', short: 'Laser',
-  readiness: 0.9, readinessNote: 'Shown in hospital laboratories at about a metre, and reported by the Pentagon at 200 m on a person sitting or standing in the open. Never shown at a collapse. HOUND has no such instrument.',
+  readiness: 0.9, readinessNote: 'Published on people in laboratories, and reported in 2019 from a Pentagon project at 200 m. Never shown at a collapse. HOUND has no such instrument.',
   standoff: [10, 300],
   labels: ['concept', 'live-algo'],
   labelNote: 'The instrument, the person and every recording are simulated; the amplitudes marked assumed are our own guesses. The filtering, the averaged spectrum, the heart-rate estimate and the detection score are computed in this page from the simulated recording.',
@@ -227,7 +227,7 @@ export default {
     let chunks = null, chunkKey = '';
     fHero.draw = (g, w, hh) => {
       if (!rec) return; const T = L.tokens(), S = SURF[P.surf];
-      const G = hh - 44, sc = clamp((G - 16) / 1.95, 40, 118), ox = w - 3.45 * sc, xMin = 52, xMax = Math.max(xMin + 60, Math.min(w * 0.4, ox - 5.2 * sc));
+      const G = hh - 44, sc = clamp(Math.min((G - 16) / 1.95, (G - 108) / 1.52), 40, 118), ox = w - 3.45 * sc, xMin = 52, xMax = Math.max(xMin + 60, Math.min(w * 0.4, ox - 5.2 * sc));
       const xT = xMax - (xMax - xMin) * (Math.log(P.range / 10) / Math.log(30)), m = (x, y) => [ox + x * sc, G - y * sc];
       const ti = clamp(Math.floor(tNow * FS), 0, rec.n - 1), br = Math.sin(rec.bph[ti]);
       let lastBeat = -9; for (const b of rec.beats) { if (b > tNow) break; lastBeat = b; } const pulse = Math.exp(-Math.max(0, tNow - lastBeat) * 6);
@@ -271,7 +271,7 @@ export default {
       g.beginPath(); g.rect(Math.round(bx + bw) + 0.5, Math.round(by + bh * 0.2) + 0.5, 0.06 * sc, bh * 0.6); g.fill(); g.stroke(); g.beginPath(); g.rect(Math.round(bx + bw * 0.25) + 0.5, Math.round(by - bh * 0.42) + 0.5, bw * 0.45, bh * 0.4); g.stroke();
       g.fillStyle = T.sim; g.beginPath(); g.arc(lens[0], lens[1], 2, 0, TAU); g.fill();
       if (P.vib > 4) { const k = clamp(Math.log10(P.vib / 4) / 1.9); g.strokeStyle = L.rgba('warn', 0.3 + 0.5 * k); for (const sgn of [-1, 1]) for (let i = 1; i <= 1 + Math.round(2 * k); i++) { g.beginPath(); g.arc(xT + 0.03 * sc, G - 1.42 * sc, 0.3 * sc + i * 5, sgn > 0 ? -0.5 : Math.PI - 0.5, sgn > 0 ? 0.5 : Math.PI + 0.5); g.stroke(); } }
-      L.callout(g, 'laser vibrometer, 1550 nm infrared (concept)', bx + bw * 0.4, by - bh * 0.5, bx + bw * 0.4 + 16, by - bh * 0.5 - 22, { color: 'sim', dot: false });
+      L.callout(g, 'laser vibrometer, 1550 nm infrared (concept)', bx + bw * 0.6, by + bh, xT + 0.35 * sc + 10, G - 0.8 * sc, { color: 'sim', dot: false });
       g.strokeStyle = T.accent; g.fillStyle = T.accent; g.lineWidth = dragging ? 2 : 1.5; g.beginPath(); g.moveTo(xT - 15, G + 10); g.lineTo(xT + 15, G + 10); g.moveTo(xT - 10, G + 6); g.lineTo(xT - 15, G + 10); g.lineTo(xT - 10, G + 14); g.moveTo(xT + 10, G + 6); g.lineTo(xT + 15, G + 10); g.lineTo(xT + 10, G + 14); g.stroke();
       // range, with the break
       const yd = G + 27; g.strokeStyle = T.text3; g.lineWidth = 1; g.beginPath(); g.moveTo(xT + 0.5, yd - 4); g.lineTo(xT + 0.5, yd + 4); g.moveTo(xT, yd + 0.5); g.lineTo(xb - 34, yd + 0.5); g.moveTo(xb + 34, yd + 0.5); g.lineTo(tg[0], yd + 0.5); g.moveTo(Math.round(tg[0]) + 0.5, yd - 4); g.lineTo(Math.round(tg[0]) + 0.5, yd + 4); g.stroke();
@@ -344,7 +344,7 @@ export default {
       const h1 = Math.round((hh - 40) * 0.56), B1 = { x: 52, y: 16, w: w - 52 - 14, h: h1 - 16 }, B2 = { x: 52, y: h1 + 28, w: w - 52 - 14, h: hh - h1 - 28 - 34 };
       const shown = phase === 'build' ? Math.max(0, segsAt(tNow)) : nK, all = [...mc.hi, ...mc.lo, ...own.z, ZTHR].filter((v) => v > 0);
       const zd = [Math.min(1, 10 ** Math.floor(Math.log10(Math.min(...all)))), Math.max(100, 10 ** Math.ceil(Math.log10(Math.max(...all) * 1.2)))];
-      const P1 = L.plot(g, B1, { xd: [7.4, 62], yd: zd, xlog: true, ylog: true, xticks: XT, ylabel: 'detection score (robust standard deviations)', yfmt: (v) => (v >= 1 ? String(v) : v.toPrecision(1)) });
+      const P1 = L.plot(g, B1, { xd: [7.4, 62], yd: zd, xlog: true, ylog: true, xticks: XT, xfmt: () => '', ylabel: 'detection score (robust standard deviations)', yfmt: (v) => (v >= 1 ? String(v) : v.toPrecision(1)) });
       g.save(); g.beginPath(); g.rect(B1.x, B1.y, B1.w, B1.h); g.clip(); g.fillStyle = L.rgba('accent', 0.13); g.beginPath(); taus.forEach((t, k) => (k ? g.lineTo(P1.X(t), P1.Y(Math.max(mc.hi[k], zd[0]))) : g.moveTo(P1.X(t), P1.Y(Math.max(mc.hi[k], zd[0]))))); for (let k = nK - 1; k >= 0; k--) g.lineTo(P1.X(taus[k]), P1.Y(Math.max(mc.lo[k], zd[0]))); g.closePath(); g.fill(); g.restore();
       L.rule(g, P1, { y: ZTHR, color: 'warn', label: 'threshold ' + ZTHR });
       if (Number.isFinite(mc.c)) { const law = taus.map((_, k) => mc.c * Math.sqrt(kEff(k + 1))); L.trace(g, P1, taus, law, { color: 'text2', width: 1.25, dash: [5, 3] }); const kk = Math.round(nK * 0.42); L.callout(g, 'square-root law', P1.X(taus[kk]), P1.Y(law[kk]), P1.X(taus[kk]) + 26, clamp(P1.Y(law[kk]) + 30, B1.y + 12, B1.y + B1.h - 8), { color: 'text2', dot: false }); }

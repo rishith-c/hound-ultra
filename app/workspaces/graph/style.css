@@ -186,3 +186,32 @@ button.graph-step { cursor: pointer; } button.graph-step:hover { background: var
 .graph-svg[data-layout="time"] .graph-edge.e-by:not(.is-on), .graph-svg[data-layout="time"] .graph-edge.e-carries:not(.is-on), .graph-svg[data-layout="time"] .graph-edge.e-covers:not(.is-on), .graph-svg[data-layout="time"] .graph-edge.e-threatens:not(.is-on) { display: none; }
 .graph-l2 { font-size: 0.86em; }
 .graph-table th[aria-sort]::after { content: none; }
+
+/* ---------- Demo: the space-time hero ---------- */
+:root[data-mode="demo"] .graph-root { padding: 0; }
+.graph-hero { position: absolute; inset: 0; overflow: hidden; background: #080a0d; }
+.gh-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; } .gh-canvas:active { cursor: grabbing; }
+.gh-vig { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(78% 86% at 0% 100%, rgba(4, 6, 9, 0.96) 0%, rgba(4, 6, 9, 0.8) 34%, rgba(4, 6, 9, 0.3) 58%, transparent 76%), radial-gradient(130% 110% at 56% 46%, transparent 52%, rgba(3, 4, 6, 0.72) 100%); }
+.gh-leaders { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; } .gh-leaders path { fill: none; stroke: rgba(214, 226, 240, 0.5); stroke-width: 1; } .gh-leaders circle { fill: none; stroke: var(--text); stroke-width: 1.2; }
+.gh-copy { position: absolute; left: 48px; bottom: 74px; max-width: 560px; pointer-events: none; } .gh-copy button { pointer-events: auto; }
+.gh-tags { display: flex; gap: 8px; margin-bottom: 14px; }
+.gh-h1 { font: 400 40px/1.04 var(--font-display); letter-spacing: -0.005em; color: var(--text); margin: 0; text-wrap: balance; }
+.gh-sub { margin-top: 12px; font-size: var(--fs-16); line-height: 1.45; color: var(--text-2); max-width: 46ch; min-height: 2.9em; }
+.gh-row { display: flex; align-items: center; gap: 20px; margin-top: 18px; white-space: nowrap; }
+.gh-steps { display: flex; gap: 4px; }
+.gh-step { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; border: 0; background: none; color: var(--text-3); font: var(--type-label); cursor: pointer; border-radius: var(--r-2); } .gh-step i { width: 7px; height: 7px; border-radius: 50%; border: 1px solid currentColor; } .gh-step.is-person i { background: var(--person); border-color: var(--person); } .gh-step:hover { color: var(--text); } .gh-step[aria-pressed="true"] { color: var(--text); } .gh-step[aria-pressed="true"] span { box-shadow: 0 5px 0 -4px var(--text); }
+.gh-figs { position: absolute; right: 48px; top: 34px; display: flex; gap: 34px; text-align: right; transition: opacity 600ms; } .gh-figs b { display: block; font: 400 34px/1 var(--font-display); color: var(--text); font-variant-numeric: tabular-nums; } .gh-figs b.num { font: 500 28px/34px var(--mono); } .gh-figs span { font: var(--type-caption); color: var(--text-3); } .gh-figs .gh-warm b { color: var(--person); }
+.is-rest .gh-figs { opacity: 0; }
+.gh-callouts { position: absolute; right: 48px; top: 15%; width: 218px; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column-reverse; gap: 30px; pointer-events: none; }
+.gh-co { position: relative; padding-top: 4px; min-height: 72px; animation: gh-in 700ms 500ms both cubic-bezier(0.2, 0.7, 0.1, 1); }
+.gh-co-h { display: flex; gap: 10px; align-items: baseline; padding-bottom: 7px; border-bottom: 1px solid rgba(214, 226, 240, 0.28); margin-bottom: 7px; font: var(--type-label); color: var(--text-2); } .gh-co-h .num { color: var(--text); }
+.gh-r { display: flex; align-items: center; gap: 8px; width: 146px; white-space: nowrap; font-size: var(--fs-13); line-height: 21px; color: var(--text-2); } .gh-r i { width: 7px; height: 7px; border-radius: 50%; flex: none; } .gh-r.up i { background: var(--person); } .gh-r.down i { border: 1.5px solid var(--accent); } .gh-r b { margin-left: auto; font-weight: 500; color: var(--text); font-size: var(--fs-12); }
+.gh-co-p { position: absolute; right: 0; bottom: 0; font: 400 32px/1 var(--font-display); color: var(--text-2); } .gh-co-p.hot { color: var(--person); }
+.gh-co-note { font: var(--type-caption); color: var(--text-3); margin: -6px 0 0; animation: gh-in 700ms 1800ms both; }
+@keyframes gh-in { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+.gh-scrub { position: absolute; left: 48px; right: 48px; bottom: 22px; height: 30px; cursor: ew-resize; touch-action: none; } .gh-scrub > i { position: absolute; } .gh-rail, .gh-fill { left: 0; right: 0; top: 15px; height: 1px; background: rgba(214, 226, 240, 0.2); } .gh-fill { background: var(--text); transform-origin: 0 50%; transform: scaleX(0); } .gh-knob { left: -1px; top: 8px; width: 2px; height: 15px; background: var(--text); }
+.gh-ticks i { position: absolute; top: 10px; width: 1px; height: 5px; background: rgba(160, 180, 205, 0.55); } .gh-ticks i.p { background: var(--person); }
+.gh-scrub:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-1); }
+.gh-tip { position: absolute; left: 0; top: 0; width: 260px; padding: 9px 12px; background: rgba(11, 13, 16, 0.94); border: 1px solid var(--line-2); border-radius: var(--r-2); display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-12); color: var(--text-2); pointer-events: none; } .gh-tip[hidden] { display: none; } .gh-tip b { color: var(--text); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .gh-co, .gh-co-note { animation: none; } } :root[data-motion="reduce"] .gh-co, :root[data-motion="reduce"] .gh-co-note { animation: none; }
+@media (max-width: 1500px) { .gh-copy { left: 36px; max-width: 520px; } .gh-figs, .gh-callouts { right: 36px; } .gh-scrub { left: 36px; right: 36px; } .gh-callouts { top: 12%; gap: 22px; } }

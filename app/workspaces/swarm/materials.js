@@ -106,7 +106,7 @@ export const GROUND = {
 // Building shells: the outside of each block is on the site map, the inside is not. A shell dissolves from the roof down
 // where the fleet has mapped what is under it.
 const SHELL_CUT = /* glsl */ `
-  vec2 uvS = sUv(vW - vWN * vec3(0.55, 0.0, 0.55)); vec4 nS = tri(vW, vWN, 0.11);
+  vec2 uvS = sUv(vW - vWN * vec3(0.95, 0.0, 0.95)); vec4 nS = tri(vW, vWN, 0.11);
   float rv = texture2D(uField, clamp(uvS, 0.0, 1.0)).a * vReal;
   float thr = mix(0.30, 0.62, clamp(1.0 - vW.y / max(1.0, vTopY), 0.0, 1.0)) + (nS.r - 0.5) * 0.5;
   float cutK = rv - thr;
@@ -168,9 +168,10 @@ export const FOG_FRAG = /* glsl */ `
     float body = smoothstep(0.30, 0.74, n * 0.62 + n2 * 0.46 - vL * 0.035);
     float un = 1.0 - smoothstep(0.02, 0.55, fd.r + (n2 - 0.5) * 0.35);
     vec2 e = smoothstep(vec2(0.0), vec2(0.04), vUv) * smoothstep(vec2(0.0), vec2(0.04), 1.0 - vUv);
-    float a = body * un * e.x * e.y * uDens;
+    float graze = smoothstep(0.03, 0.30, abs(normalize(cameraPosition - vP).y));
+    float a = body * un * e.x * e.y * uDens * graze;
     vec4 L = texture2D(uLight, vUv); float beam = L.r * exp(-(vL - 0.45) * (vL - 0.45) / 0.64) * (0.55 + 0.9 * n2);
-    vec3 c = uFogC * (0.7 + 0.6 * n2) + uScan * fd.b * 0.5;
+    vec3 c = uFogC * (0.7 + 0.6 * n2) + uScan * fd.b * 0.3; beam *= graze;
     gl_FragColor = vec4(c * a + uHead * beam * 0.022 + uScan * L.b * 0.006, a);
     #include <colorspace_fragment>
   }`;

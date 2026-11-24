@@ -79,7 +79,7 @@ export function createLabels(overlay, camera, { select, occluded, safe = { left:
       if (found < 0) { hide(L); L.slot = -1; continue; }
       if (!L.shown || L.slot < 0) { L.ox = tx; L.oy = ty; } else { L.ox += (tx - L.ox) * k; L.oy += (ty - L.oy) * k; }
       L.slot = found; shown++;
-      const fd = L.through ? 1 : Math.round((1 - 0.6 * Math.min(1, Math.max(0, (L.d - 70) / 160))) * 20) / 20; if (fd !== L.fade) { L.fade = fd; L.el.style.setProperty('--fade', fd); if (L.leader) { L.leader.style.opacity = fd; L.dot.style.opacity = fd; } }
+      const fd = L.through ? 1 : Math.round((1 - (few ? 0.5 : 0.2) * Math.min(1, Math.max(0, (L.d * camera.fov / 38 - 80) / 160))) * 20) / 20; if (fd !== L.fade) { L.fade = fd; L.el.style.setProperty('--fade', fd); if (L.leader) { L.leader.style.opacity = fd; L.dot.style.opacity = fd; } }
       const x = L.sx + L.ox, y = L.sy + L.oy;
       placed.push(L.sx + tx, L.sy + ty, L.sx + tx + L.w, L.sy + ty + L.h);
       L.el.style.transform = 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0)';

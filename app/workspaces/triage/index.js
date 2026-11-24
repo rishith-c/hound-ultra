@@ -66,7 +66,7 @@ export default {
     const teamPanel = h('section.triage-panel', { 'aria-label': 'Resource sketch' });
     const side = h('aside.triage-side', null, modelPanel, teamPanel);
     root.append(head, h('div.triage-body.adv-only', null, board, centre, side), live);
-    const hero = createHero(root, ctx);
+    const hero = createHero(root, ctx); window.__hero = hero;
     const demo = () => ctx.mode === 'demo';
 
     const plan = createPlan(canvas, { scene, onPick: (id) => { if (id) pick(id); }, view });

@@ -25,7 +25,7 @@ export function createDemo(root, ctx, opts) {
     if (f.siteOn) el.mark.style.transform = 'translate3d(' + f.siteX.toFixed(1) + 'px,' + f.siteY.toFixed(1) + 'px,0)';
     const now = performance.now(); if (now - lastText < 200) return; lastText = now;
     set(el.ha, f.ha.toFixed(1) + ' ha'); set(el.front, f.toBlock > 20 ? fmtDist(f.toBlock) : 'passed'); set(el.need, '+' + opts.blockNeed.toFixed(1) + ' m');
-    const what = f.t < 7 ? 'First light on the Lende Khola' : f.toBlock > 900 ? 'A 15 m surge runs down the Bhote Koshi' : f.toBlock > 0 ? 'The surge nears Timure' : f.t < 46 ? 'The surge passes below the block' : 'The block stays dry. The search can start';
+    const what = f.t < 7 ? 'First light on the Lende Khola' : f.toBlock > 900 ? 'A 15 m surge runs down the Bhote Koshi' : f.toBlock > 0 ? 'The surge nears Timure' : f.t < 46 ? 'The surge passes below the block' : (opts.blockNeed > 15 ? 'The block stays dry. The search can start' : 'The surge has reached the block');
     set(el.now, fmtClock(f.minutes) + '  ' + what);
   }
   async function ensure() {

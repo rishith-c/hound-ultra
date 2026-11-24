@@ -1,0 +1,39 @@
+/* ---------- Demo: the hero (shared look with Training) ---------- */
+.th { position: absolute; inset: 0; overflow: hidden; background: var(--bg-0); touch-action: none; cursor: grab; }
+.th:active { cursor: grabbing; }
+.th .th-scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+.th-shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to top, color-mix(in srgb, var(--bg-0) 92%, transparent) 0, color-mix(in srgb, var(--bg-0) 55%, transparent) 16%, transparent 40%), linear-gradient(to top right, color-mix(in srgb, var(--bg-0) 80%, transparent) 4%, transparent 42%); }
+.th-tags { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.th-tag { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 12px; white-space: nowrap; will-change: transform; opacity: 0; text-shadow: 0 1px 10px var(--bg-0), 0 0 2px var(--bg-0); }
+.th-tag > div { display: grid; }
+.th-rank { font-family: var(--font-display); font-weight: 400; font-size: 44px; line-height: 0.9; color: var(--text-2); }
+.th-tag[data-first="true"] .th-rank { color: var(--text); font-size: 60px; }
+.th-where { font-size: 15px; font-weight: 600; color: var(--text); }
+.th-sub { font-size: 13px; color: var(--text-2); }
+.th-val { font-family: var(--mono); font-size: 22px; color: var(--person); padding-left: 12px; border-left: 1px solid var(--line-2); font-variant-numeric: tabular-nums; }
+.th-tag[data-sure="false"] .th-val { color: var(--warn); }
+.th-gap { display: grid; gap: 2px; padding-left: 12px; border-left: 2px solid var(--accent); }
+.th-low { position: absolute; left: 40px; right: 40px; bottom: 74px; display: flex; align-items: flex-end; gap: 32px; pointer-events: none; }
+.th-low .btn { pointer-events: auto; }
+.th-title { display: grid; gap: 10px; max-width: 620px; }
+.th-title h1 { font-family: var(--font-display); font-weight: 400; font-size: 40px; line-height: 1.04; margin: 0; color: var(--text); }
+.th-title p { margin: 0; font-size: 16px; color: var(--text-2); transition: opacity 0.22s; min-height: 24px; }
+.th-title .swap { opacity: 0; }
+.th-clock { display: grid; gap: 2px; text-align: right; font-size: 13px; color: var(--text-2); }
+.th-clock > div { font-family: var(--mono); font-size: 34px; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1; }
+.th-clock small { font-size: 14px; color: var(--text-2); margin-left: 6px; }
+.th-foot { position: absolute; left: 40px; right: 40px; bottom: 22px; display: flex; align-items: center; gap: 24px; font-size: 13px; color: var(--text-2); }
+.th-steps { display: flex; gap: 22px; }
+.th-steps button { background: none; border: 0; border-top: 1px solid var(--line-2); padding: 9px 2px 4px; min-width: 96px; text-align: left; font: inherit; color: var(--text-2); cursor: pointer; transition: color 0.2s, border-color 0.2s; }
+.th-steps button:hover { color: var(--text); }
+.th-steps button[aria-pressed="true"] { color: var(--text); border-top-color: var(--accent); }
+.th-steps button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.th .twin-leaders, .th .twin-overlay { display: none; }
+.th-title h1 { transition: opacity 0.22s; }
+.th-pct { font-family: var(--mono); font-size: 34px; color: var(--text); font-variant-numeric: tabular-nums; min-width: 92px; text-align: right; }
+.th-choices { display: grid; grid-auto-flow: column; gap: 12px; pointer-events: auto; }
+.th-choices[hidden] { display: none; }
+.th-choice { position: relative; min-width: 216px; min-height: 72px; padding: 0 24px; text-align: left; font: inherit; font-size: 20px; font-weight: 500; color: var(--text); background: color-mix(in srgb, var(--bg-0) 72%, transparent); border: 1px solid var(--line-3); border-radius: var(--r-1); cursor: pointer; overflow: hidden; transition: background-color 0.2s, border-color 0.2s, opacity 0.3s; }
+.th-choice:hover:not(:disabled), .th-choice:focus-visible { background: var(--text); color: var(--bg-0); border-color: var(--text); outline: none; }
+.th-choice i { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--accent); transform: scaleX(0); transform-origin: left; }
+.th-choice:disabled { cursor: default; } .th-choice[data-picked="no"] { opacity: 0.25; } .th-choice[data-picked="yes"] { border-color: var(--accent); } .th-choice:disabled i { display: none; }

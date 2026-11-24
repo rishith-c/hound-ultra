@@ -42,15 +42,15 @@ export default {
           float un = 1.0 - smoothstep(0.12, 0.88, e);
           float gw = fwidth(vW.x) * 16.0, grain = mix(n2(vW * 16.0 + drift * 9.0), 0.5, smoothstep(0.35, 1.0, gw));
           float steep = smoothstep(0.1, 0.5, abs(normalize(cameraPosition - vP).y));
-          float a = un * vS.y * (0.86 + 0.22 * cloud + 0.2 * (grain - 0.5)) * (vS.x > 0.0 ? steep : 1.0);
-          vec3 col = vec3(0.011, 0.0125, 0.0145) * (0.6 + 0.9 * cloud);
+          float a = un * vS.y * (0.78 + 0.22 * cloud + 0.2 * (grain - 0.5)) * (vS.x > 0.0 ? steep : 1.0);
+          vec3 col = vec3(0.016, 0.018, 0.0205) * (0.6 + 0.9 * cloud);
           if (vS.x == 0.0) {                                                       // the moment of clearing: one fine front, then nothing
-            float w = fwidth(vW.x) + fwidth(vW.y), f = 0.0;
+            float w = max(fwidth(vW.x), fwidth(vW.y)), f = 0.0;
             for (int i = 0; i < ${WAVES}; i++) { vec4 v = uWave[i]; if (v.z < 0.0) continue;
               vec4 r = uRect[i]; if (vW.x < r.x || vW.x > r.z || vW.y < r.y || vW.y > r.w) continue;
               float d = v.z - length(vW - v.xy);
-              float ln = 1.0 - smoothstep(0.02, 0.03 + w, abs(d)), tail = d > 0.0 ? exp(-d * 2.4) * 0.13 : 0.0;
-              f = max(f, (ln * 0.5 + tail) * v.w); }
+              float ln = 1.0 - smoothstep(0.3, 1.0, abs(d) / max(0.022, w)), tail = d > 0.0 ? exp(-d * 2.4) * 0.13 : 0.0;
+              f = max(f, (ln * 0.36 + tail) * v.w); }
             col = mix(col, uScan * 0.75, f / max(f + a * (1.0 - f), 1e-4)); a = f + a * (1.0 - f);
           }
           a *= uFade; if (a < 0.003) discard;

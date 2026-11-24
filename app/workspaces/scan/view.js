@@ -560,7 +560,7 @@ export function createView(host, { colors, reduced = false } = {}) {
     stop() { running = false; cancelAnimationFrame(raf); },
     renderOnce, resize,
     screenshot() { renderOnce(); return canvas; },
-    focusVoid(i) { const m = voidMeshes[i]; if (!m) return; const v = m.v, size = Math.max(v.length, v.width, 2); let az = 200; if (v.access && v.access.from !== 'above') az = (Math.atan2(v.access.pos[0] - v.centre[0], v.access.pos[1] - v.centre[1]) * 180) / Math.PI; flyTo({ target: [v.centre[0], v.centre[1], v.centre[2]], dist: size * 2.1 + 9, az, el: 30 }); },
+    focusVoid(i, az0) { const m = voidMeshes[i]; if (!m) return; const v = m.v, size = Math.max(v.length, v.width, 2); let az = 200; if (v.access && v.access.from !== 'above') az = (Math.atan2(v.access.pos[0] - v.centre[0], v.access.pos[1] - v.centre[1]) * 180) / Math.PI; flyTo({ target: [v.centre[0], v.centre[1], v.centre[2]], dist: size * 2.1 + 9, az: az0 ?? az, el: 32 }); },
     dispose() { api.stop(); ro.disconnect(); controls.dispose(); if (points) points.geometry.dispose(); pMat.dispose(); if (rt) { rt.depthTexture.dispose(); rt.dispose(); } renderer.dispose(); canvas.remove(); labels.remove(); },
   };
   return api;

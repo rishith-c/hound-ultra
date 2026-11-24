@@ -479,7 +479,7 @@ export function createSwarm(world, { n = 6, strategy = 'hungarian', startCharge 
         else if (r.relaysLeft === 0 && r.mode === 'explore') { r.mode = 'return'; r.why = 'Out of beacons'; headHome(r); log('info', r.id + ' is out of beacons and returns to restock.', { robot: r.id }); }
         log('ok', r.id + ' is back on the mesh through ' + label(r.link.parent) + '.', { robot: r.id });
       } else if (was.ok && r.link.ok && r.rerouteFrom && was.parent !== r.link.parent) {
-        S.m.reroutes++; log('ok', r.id + ' re-routed: ' + label(r.rerouteFrom) + ' failed, now through ' + label(r.link.parent) + ' (' + r.link.hops + ' hops).', { robot: r.id });
+        S.m.reroutes++; log('ok', r.id + ' re-routed: ' + label(r.rerouteFrom) + ' failed, now through ' + label(r.link.parent) + ' (' + r.link.hops + (r.link.hops === 1 ? ' hop).' : ' hops).'), { robot: r.id });
       }
       r.rerouteFrom = null;
     }

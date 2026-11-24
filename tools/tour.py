@@ -62,10 +62,12 @@ def main():
     proc, prof, page = browser(a)
     rows = []
     try:
+        nav = True
         for n, i in enumerate(ids):
             before = len(page.errors)
             t0 = time.time()
-            if a.fresh or n == 0:
+            if a.fresh or nav:
+                nav = False
                 page.events.clear()
                 page.call("Page.navigate", {"url": f"{base}&v={n}#/{i}"})
                 page.wait_event("Page.loadEventFired", 30)
@@ -84,8 +86,7 @@ def main():
                 proc.kill()
                 proc, prof, page = browser(a)
                 rows.append((i, "hung"))
-                page.call("Page.navigate", {"url": f"{base}&v={n}r#/{i}"}) if False else None
-                a.fresh = True
+                nav = True
                 continue
             errs = page.errors[before:]
             rows.append((i, len(errs)))

@@ -68,9 +68,9 @@ class View {
   }
 
   // what is known opens the building above it, about a metre beyond the edge of the map; once most of a block is mapped the rest of its shell goes
-  openAround(k) {
-    const i = k % W, j = (k / W) | 0, O = this.open; for (let b = -3; b <= 3; b++) for (let a = -3; a <= 3; a++) { if (a * a + b * b > 10) continue; const x = i + a, y = j + b; if (x < 0 || y < 0 || x >= W || y >= H) continue; const e = y * W + x; if (!O[e]) { O[e] = 1; this.touch(e); } }
-    const q = this.bOf[k]; if (q >= 0 && ++this.bGot[q] > this.bN[q] * 0.62 && this.bGot[q] < 1e8) { this.bGot[q] = 1e9; const [x0, y0, x1, y1] = this.world.buildings[q].cells; for (let y = Math.max(0, Math.floor(y0) - 2); y <= Math.min(H - 1, y1 + 2); y++) for (let x = Math.max(0, Math.floor(x0) - 2); x <= Math.min(W - 1, x1 + 2); x++) { const e = y * W + x; if (!O[e]) { O[e] = 1; this.touch(e); } } }
+  openAround(k, R = 3) {
+    const i = k % W, j = (k / W) | 0, O = this.open; for (let b = -R; b <= R; b++) for (let a = -R; a <= R; a++) { if (a * a + b * b > R * R + 1) continue; const x = i + a, y = j + b; if (x < 0 || y < 0 || x >= W || y >= H) continue; const e = y * W + x; if (!O[e]) { O[e] = 1; this.touch(e); } }
+    const q = this.bOf[k]; if (q >= 0 && ++this.bGot[q] > this.bN[q] * 0.55 && this.bGot[q] < 1e8) { this.bGot[q] = 1e9; const [x0, y0, x1, y1] = this.world.buildings[q].cells; for (let y = Math.max(0, Math.floor(y0) - 2); y <= Math.min(H - 1, y1 + 2); y++) for (let x = Math.max(0, Math.floor(x0) - 2); x <= Math.min(W - 1, x1 + 2); x++) { const e = y * W + x; if (!O[e]) { O[e] = 1; this.touch(e); } } }
   }
 
   // ---------- static world ----------
@@ -223,12 +223,12 @@ class View {
   makeLead(l) {
     const C = this.sh.C, g = new THREE.Group(); g.position.copy(v3(l.pos[0], l.pos[1]));
     const fres = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { uC: { value: new THREE.Color() }, uK: { value: 0 } }, vertexShader: 'varying vec3 vN; varying vec3 vV; void main(){ vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position, 1.0); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }', fragmentShader: 'varying vec3 vN; varying vec3 vV; uniform vec3 uC; uniform float uK; void main(){ float f = 1.0 - abs(dot(vN, vV)); gl_FragColor = vec4(uC * uK * (0.35 + 1.5 * f * f), 1.0); }' });
-    const fig = new THREE.Mesh(parts().person, fres); fig.renderOrder = 7; fig.visible = false; g.add(fig);
+    const fig = new THREE.Mesh(parts().person, fres); fig.visible = false; g.add(fig); const pre = new THREE.Mesh(parts().person, new THREE.MeshBasicMaterial({ colorWrite: false })); fig.add(pre);
     const mat = new THREE.MeshBasicMaterial({ color: C.warn, transparent: true, opacity: 0.8, depthWrite: false });
     const beam = new THREE.Mesh(this._beamG ||= new THREE.CylinderGeometry(0.022, 0.022, 1, 8).translate(0, 0.5, 0), mat); g.add(beam);
     const ring = new THREE.Mesh(this._lr ||= new THREE.RingGeometry(1.22, 1.32, 64).rotateX(-Math.PI / 2), mat); ring.position.y = 0.1; g.add(ring);
     const pulse = new THREE.Mesh(this._lp2 ||= new THREE.RingGeometry(0.97, 1.0, 72).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: C.warn, transparent: true, opacity: 0.6, depthWrite: false })); pulse.position.y = 0.1; g.add(pulse);
-    for (const o of g.children) o.renderOrder = 7; this.scene.add(g);
+    for (const o of g.children) o.renderOrder = 7; pre.renderOrder = 6; beam.position.y = 1.75; this.scene.add(g);
     return { g, mat, beam, ring, pulse, fig, fres, born: this.time, conf: 0, glow: 0, h: 0 };
   }
 
@@ -236,7 +236,7 @@ class View {
   syncAll() { const S = this.swarm.state, kn = S.known; for (let k = 0; k < W * H; k++) if (kn[k]) this.cell(k, kn[k], true); if (S.changed) S.changed.length = 0; this.stateDirty = true; }
   cell(k, v, instant) {
     this.stateArr[k * 4] = (v === K.FREE ? (this.world.indoor[k] ? 2 : 1) : v === K.OCC ? 3 : 4) * 50;
-    if (v !== K.ROOF) { if (instant) this.reveal[k] = 1; this.openAround(k); } this.touch(k);
+    if (v !== K.ROOF) { if (instant) this.reveal[k] = 1; if (v === K.FREE && this.world.indoor[k]) this.openAround(k); } this.touch(k);
     if (v === K.OCC) this.addSolid(k, instant); this.stateDirty = true;
   }
   // a visibility fan against what is known: light stops at known walls and at the edge of the unknown
@@ -317,16 +317,16 @@ class View {
 
     // leads, the bids for them, and people
     for (let q = 0; q < S.leads.length; q++) {
-      const l = S.leads[q]; let o = this.leads.get(l.id); if (!o) { o = this.makeLead(l); this.leads.set(l.id, o); }
+      const l = S.leads[q]; let o = this.leads.get(l.id); if (!o) { o = this.makeLead(l); this.leads.set(l.id, o); this.openAround(Math.floor(l.pos[1] / RES) * W + Math.floor(l.pos[0] / RES), 10); }
       const conf = l.status === 'confirmed', rej = l.status === 'rejected', col = conf ? C.person : rej ? C.text3 : C.warn;
       if (l.bids && l.winner && this.bidSeen.get(l.id) !== l.awardedAt) { const first = !this.bidSeen.has(l.id); this.bidSeen.set(l.id, l.awardedAt); if (first || true) { let d = 0; for (const b of l.bids) { if (!b.eligible) continue; const t = this.thread('bid' + l.id + b.robot); const won = b.robot === l.winner; t.kind = 'bid'; t.aId = b.robot; t.bId = '@'; t.b.copy(v3(l.pos[0], l.pos[1], 2.4)); t.c.copy(won ? C.warn : C.accent); t.rest = -4 - 2 * hash(d + 3); t.want = won ? 1 : 0.75; t.dly = won ? 0.75 : d * 0.09; t.hold = won ? 4.5 : 1.15; d++; } } }
       if (o.st !== l.status) { o.st = l.status; if (conf) o.confAt = time; const txt = conf ? 'Person · ' + Math.round(l.p * 100) + ' %' : rej ? 'Ruled out' : l.status === 'open' ? 'Possible · ' + Math.round(l.p * 100) + ' % · needs a person' : 'Possible · ' + Math.round(l.p * 100) + ' %' + (l.winner ? ' · ' + l.winner : ''); this.label(l.id, txt, 'swarm-l-lead ' + (conf ? 'person' : rej ? 'off' : 'warn')); }
-      o.conf += ((conf ? 1 : 0) - o.conf) * (1 - Math.exp(-dt * 1.4)); o.h += ((conf ? 3.4 : rej ? 0.6 : 3.0) - o.h) * (1 - Math.exp(-dt * 3)); o.beam.scale.y = Math.max(0.01, o.h);
+      o.conf += ((conf ? 1 : 0) - o.conf) * (1 - Math.exp(-dt * 1.4)); o.h += ((conf ? 3.4 : rej ? 0.6 : 3.0) - o.h) * (1 - Math.exp(-dt * 3)); o.beam.scale.y = Math.max(0.01, o.h - 1.75);
       o.mat.color.copy(col).multiplyScalar(conf ? 1.7 : rej ? 0.5 : 1.2); o.mat.opacity = rej ? 0.25 : 0.75; o.pulse.material.color.copy(col);
       const f = ((time - o.born) * 0.32) % 1; o.pulse.visible = !rej && !sh.reduced; o.pulse.scale.setScalar(1.3 + f * (conf ? 5 : 3)); o.pulse.material.opacity = 0.55 * (1 - f) * (1 - f);
       const s = clamp(camDist / 60, 0.9, 1.9); o.ring.scale.setScalar(s * (rej ? 0.5 : 1)); const breath = sh.reduced ? 0.7 : 0.7 + 0.3 * Math.sin(time * 1.7);
       o.fig.visible = o.conf > 0.02; o.fig.scale.setScalar(clamp(camDist / 42, 1.05, 2.4)); o.fres.uniforms.uC.value.copy(C.person); o.fres.uniforms.uK.value = o.conf * (1.15 + 0.4 * breath);
-      if (!rej) this.fan(l.pos[0], l.pos[1], 0, Math.PI, 60, 3 + o.conf * 4.5, 2, conf ? 0.12 + o.conf * (0.36 + 0.14 * breath) : 0.0, 0);
+      if (!rej) this.fan(l.pos[0], l.pos[1], 0, Math.PI, 60, 3 + o.conf * 4.5, 2, conf ? 0.1 + o.conf * (0.27 + 0.1 * breath) : 0.0, 0);
       const lb = this.labels.get(l.id); lb.off = sh.cinema && !conf && l.status !== 'assigned' && l.status !== 'listening'; this.at(lb, l.pos[0], o.h + 0.15, -l.pos[1]);
     }
     const bl = this.labels.get('BASE'); bl.off = sh.cinema; this.baseRing.visible = !sh.cinema; this.at(bl, this.world.base[0], 6.5, -this.world.base[1]);
@@ -435,7 +435,7 @@ export function createScene(host, { kit, onPick }) {
     if (disposed || !views.length || !composer && size.w < 2) return; clock += dt; frameNo++; sh.reduced = kit.reducedMotion(); adapt(dt);
     if (mode === 'film') stepFilm(dt);
     else if (mode === 'follow' && follow) { if (views[0].robotPos(follow, tmp)) { off.copy(camera.position).sub(controls.target); tmp2.copy(tmp).sub(controls.target).multiplyScalar(1 - Math.exp(-dt * 3)); controls.target.add(tmp2); camera.position.add(tmp2); const dist = off.length(); if (dist > 46 && clock - lastTouch > 2) { off.setLength(dist + (34 - dist) * (1 - Math.exp(-dt * 1.8))); camera.position.copy(controls.target).add(off); } } controls.update(); }
-    else { if (goal.active) { const k = 1 - Math.exp(-dt * 2.6); camera.position.lerp(goal.pos, k); controls.target.lerp(goal.target, k); if (camera.position.distanceTo(goal.pos) < 0.05) goal.active = false; } else if (mode === 'overview' && !sh.reduced && clock - lastTouch > 8) { off.copy(camera.position).sub(controls.target).applyAxisAngle(THREE.Object3D.DEFAULT_UP, Math.sin(clock * 0.07) * 0.00045); camera.position.copy(controls.target).add(off); } controls.update(); }
+    else { if (goal.active) { const k = 1 - Math.exp(-dt * 2.6); camera.position.lerp(goal.pos, k); controls.target.lerp(goal.target, k); if (camera.position.distanceTo(goal.pos) < 0.05) goal.active = false; } else if (mode === 'overview' && !sh.reduced && clock - lastTouch > 8) { off.copy(camera.position).sub(controls.target).applyAxisAngle(THREE.Object3D.DEFAULT_UP, Math.sin(clock * 0.07) * 0.00012); camera.position.copy(controls.target).add(off); } controls.update(); }
     camera.updateMatrixWorld();
     for (const v of views) { v.update(dt, speed); v.flushLight(renderer); }
     fade += (fadeTo - fade) * (1 - Math.exp(-dt * 4)); if (final) { final.uniforms.uTime.value = clock % 10; final.uniforms.uFade.value = fade; final.uniforms.uExp.value = sh.cinema ? 1.3 : 1.65; final.uniforms.uVig.value = sh.cinema ? 1 : 0.45; bloom.strength = sh.cinema ? 0.5 : 0.36; }

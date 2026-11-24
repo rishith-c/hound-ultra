@@ -95,7 +95,36 @@ const ctx = { bus, world, kit, prefs, manifest: MANIFEST, PHASE_INFO, FAULTS, CO
 };
 window.HOUND = ctx; // for debugging and for the automated checks
 
-const mounted = new Map(); let current = null;
+const mounted = new Map(); let current = null, mounting = null;
+
+// ---------- keeping the browser healthy ----------
+// A browser allows about 16 live WebGL views and each scene holds a lot of video memory. The last few workspaces stay
+// alive (so going back is instant); older ones are let go completely and built again if you return.
+const KEEP = 4, glOwned = new Map();
+const realGetContext = HTMLCanvasElement.prototype.getContext;
+HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
+  const c = realGetContext.call(this, type, ...rest);
+  if (c && /^(experimental-)?webgl/.test(type)) { const id = this.closest('.ws')?.dataset.ws || mounting || current; if (!glOwned.has(id)) glOwned.set(id, new Set()); glOwned.get(id).add(this); }
+  return c;
+};
+function evict(id) {
+  const rec = mounted.get(id); if (!rec?.api || id === current) return;
+  mounted.delete(id);
+  try { rec.api.dispose?.(); } catch (e) { console.warn('[shell] dispose', id, e); }
+  rec.offs.forEach((f) => f());
+  for (const c of glOwned.get(id) || []) { try { (realGetContext.call(c, 'webgl2') || realGetContext.call(c, 'webgl'))?.getExtension('WEBGL_lose_context')?.loseContext(); c.width = c.height = 1; } catch { /* already gone */ } }
+  glOwned.delete(id); rec.root.remove();
+}
+function keepRecent(id) {
+  const rec = mounted.get(id); if (rec) { mounted.delete(id); mounted.set(id, rec); }
+  const old = [...mounted.keys()].filter((k) => k !== id && k !== 'mission');      // the mission twin is the one to keep
+  while (old.length > KEEP - 1) evict(old.shift());
+}
+// In Demo the mission plays only while you watch it, so every chapter starts from its own beginning.
+function demoClock(id) {
+  if (ctx.mode !== 'demo' || !ctx.sim || new URLSearchParams(location.search).has('paused')) return;
+  if (id === 'mission') ctx.sim.play(); else ctx.sim.pause();
+}
 
 function refreshMode() {
   for (const b of document.querySelectorAll('[data-set-mode]')) b.setAttribute('aria-pressed', String(b.dataset.setMode === ctx.mode));
@@ -195,11 +224,11 @@ async function openWorkspace(id, params = {}) {
   if (!rec) {
     const root = h('div.ws', { id: 'ws-' + m.id, 'data-ws': m.id, role: 'region', 'aria-label': m.title });
     root.append(h('div.empty', null, h('div.spinner'), h('p', null, `Opening ${m.title}…`)));
-    $('main').append(root); rec = { root, api: null }; mounted.set(m.id, rec);
+    $('main').append(root); rec = { root, api: null, offs: [] }; mounted.set(m.id, rec); mounting = m.id;
     try {
       const mod = await import(`./workspaces/${m.id}/index.js`);
       root.replaceChildren();
-      const own = { ...ctx, params, manifestEntry: m };
+      const own = { ...ctx, params, manifestEntry: m, bus: { ...bus, on: (type, fn) => { const off = bus.on(type, fn); rec.offs.push(off); return off; } } };
       for (const k of ['selection', 'mode']) Object.defineProperty(own, k, { get: () => ctx[k], set: (v) => { if (k === 'selection') ctx.selection = v; }, configurable: true, enumerable: true });
       rec.api = (await mod.default.mount(root, own)) || {};
     } catch (e) {
@@ -211,6 +240,8 @@ async function openWorkspace(id, params = {}) {
   } else { rec.root.hidden = false; rec.api?.onParams?.(params); }
   if (current === m.id) { try { rec.api?.onShow?.(); } catch (e) { console.error(e); } }
   else if (rec.root) rec.root.hidden = true;
+  if (mounting === m.id) mounting = null;
+  if (current === m.id) { keepRecent(m.id); demoClock(m.id); }
   bus.emit('workspace', m.id);
   if (token === opening) { if (!first) await frames(2); veil(false); preloadNext(m.id); }
 }
@@ -234,7 +265,7 @@ async function boot() {
   try { const name = localStorage.getItem('hound_operator'); if (name) ctx.sim.command('setOperator', { name }); } catch { /* no storage */ }
   loading.classList.add('out'); setTimeout(() => loading.remove(), 520);
   bus.on('tick', refreshChrome); bus.on('reset', refreshChrome); bus.on('seek', refreshChrome);
-  bus.on('event', (ev) => { if (ev.level === 'alert' && current !== 'mission') toast(ev.text, { level: 'alert', ms: 6000 }); });
+  bus.on('event', (ev) => { if (ev.level === 'alert' && current !== 'mission' && ctx.mode === 'advanced') toast(ev.text, { level: 'alert', ms: 6000 }); });
   window.addEventListener('hashchange', () => openWorkspace(location.hash.replace(/^#\/?/, '').split('?')[0]));
   window.addEventListener('keydown', (e) => {
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName) || document.activeElement?.isContentEditable;
@@ -246,6 +277,6 @@ async function boot() {
   for (const g of GLOBALS) import(`./global/${g}.js`).then((mod) => mod.init?.(ctx)).catch(() => {});
   refreshChrome();
   await openWorkspace(location.hash.replace(/^#\/?/, '').split('?')[0] || (ctx.mode === 'demo' ? CHAPTERS[0].id : 'mission'));
-  if (!new URLSearchParams(location.search).has('paused')) ctx.sim.play();
+  if (!new URLSearchParams(location.search).has('paused') && ctx.mode === 'advanced') ctx.sim.play();
 }
 boot();

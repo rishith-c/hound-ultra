@@ -1,6 +1,7 @@
 // Vision lab: seven exhibits of frontier computer vision, each running for real in this page.
 // Frame only. Each exhibit lives in its own file and is imported the first time it is opened.
 import { createLab, gpu, TF_VERSION, clearTok, asset } from './common.js';
+import { createDemo } from './demo.js';
 
 const EXHIBITS = [
   { id: 'words', n: '01', title: 'Search by words', sub: 'Type it, find it in the frame', file: './words.js', tags: ['live-ai'] },
@@ -15,8 +16,7 @@ const EXHIBITS = [
 export default {
   async mount(root, ctx) {
     const { h, icon, realityTag } = ctx.kit;
-    const href = new URL('./style.css', import.meta.url).href;
-    if (!document.querySelector('link[href="' + href + '"]')) document.head.append(h('link', { rel: 'stylesheet', href }));
+    for (const f of ['./style.css', './demo.css']) { const href = new URL(f, import.meta.url).href; if (!document.querySelector('link[href="' + href + '"]')) document.head.append(h('link', { rel: 'stylesheet', href })); }
     const lab = createLab(ctx);
     fetch(asset('data/vision/samples.json')).then((r) => (r.ok ? r.json() : [])).then((s) => { lab.samples = s; lab.emit('samples'); }).catch(() => {});
 
@@ -40,12 +40,15 @@ export default {
       h('p', null, 'Every model here runs in this page, on this computer. Transformers.js ' + TF_VERSION + '. Nothing loads until you ask, and nothing you show the camera or microphone is sent anywhere.'),
       h('div.vision-key', null, h('span', null, h('i.t-live-ai'), 'Live AI'), h('span', null, h('i.t-live-algo'), 'Live algorithm'), h('span', null, h('i.t-device'), 'Your device'), h('span', null, h('i.t-concept'), 'Concept hardware')));
     const body = h('div.vision-main');
+    const demoEl = h('div.vision-demo.demo-only');
     root.classList.add('vision');
     root.append(
-      h('header.ws-head.vision-head', null,
+      h('header.ws-head.vision-head.adv-only', null,
         h('div', null, h('h1', null, 'Vision lab'), h('p', null, 'Seven ways a camera or a microphone could find a person, each one running for real in this page. Where the sensor does not exist on HOUND, it says Concept.')),
         h('div.vision-head-chips', null, live, compute, ledger, realityTag('live-ai'))),
-      h('div.vision-body', null, h('div.vision-rail', null, nav, navFoot), body));
+      h('div.vision-body.adv-only', null, h('div.vision-rail', null, nav, navFoot), body), demoEl);
+    const demo = createDemo(demoEl, ctx, lab);
+    const isDemo = () => ctx.mode === 'demo';
 
     lab.on((t, d) => { if (t === 'models') paintLedger(); if (t === 'media') live.hidden = !d; });
     lab.open = (id, params) => show(id, params);
@@ -72,11 +75,17 @@ export default {
       } else { rec.el.hidden = false; if (params) rec.api?.onParams?.(params); }
       if (current === def.id && visible) { try { rec.api?.onShow?.(); } catch (e) { console.error(e); } } else if (current !== def.id) rec.el.hidden = true;
     }
-    await show(ctx.params?.exhibit || ctx.params?.view || 'words', ctx.params);
+    // Demo plays the scenes; Advanced runs the exhibits. Only the one on screen animates.
+    const first = ctx.params?.exhibit || ctx.params?.view || 'words';
+    const start = () => { if (!visible) return; if (isDemo()) { pause(); demo.show(demo.current || current || first); } else { demo.hide(); if (current) { try { views.get(current)?.api?.onShow?.(); } catch (e) { console.error(e); } } else show(demo.current || first, ctx.params); } };
+    const pause = () => { if (current) { try { views.get(current)?.api?.onHide?.(); } catch (e) { console.error(e); } } lab.releaseAll(); };
+    ctx.bus.on('mode', start);
+    if (!isDemo()) await show(first, ctx.params);
+    root._vision = { demo, lab, show };
     return {
-      onShow() { visible = true; try { views.get(current)?.api?.onShow?.(); } catch (e) { console.error(e); } },
-      onHide() { visible = false; try { views.get(current)?.api?.onHide?.(); } catch (e) { console.error(e); } lab.releaseAll(); },
-      onParams(p) { if (p && (p.exhibit || p.view)) show(p.exhibit || p.view, p); },
+      onShow() { visible = true; start(); },
+      onHide() { visible = false; demo.hide(); pause(); },
+      onParams(p) { const id = p && (p.exhibit || p.view); if (!id) return; if (isDemo()) demo.go(id); else show(id, p); },
     };
   },
 };

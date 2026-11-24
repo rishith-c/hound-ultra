@@ -46,7 +46,7 @@ void main() {
   float warm = max(nt.r - nt.b * 0.82, 0.0);
   vec3 lights = vec3(1.0, 0.76, 0.46) * pow(warm, 0.72) * 2.4 * uLights;
   vec3 moon = mix(vec3(lum), day, 0.35) * vec3(0.50, 0.66, 1.0) * mix(0.16, 0.10, uSunlit) + vec3(0.002, 0.0035, 0.007);
-  moon = mix(moon, moon * 0.45, water);
+  moon = mix(moon, moon * 0.7 + vec3(0.0035, 0.0085, 0.019), water);
   vec3 night = moon + lights;
 
   vec3 col = mix(night, lit, dayF);

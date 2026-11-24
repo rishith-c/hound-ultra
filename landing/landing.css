@@ -189,7 +189,7 @@ h2 { font: 400 clamp(40px, 4.5vw, 78px)/1.02 var(--serif); letter-spacing: -0.01
 /* 3. Network */
 .network { position: relative; background: var(--bg-0); padding-bottom: 40px; overflow: clip; }
 .network > .wrap { position: relative; }
-.net-ridge { position: absolute; right: 0; top: 0; width: 60%; height: 620px; max-width: none; -webkit-mask-image: linear-gradient(to right, transparent 14%, #000 44%); mask-image: linear-gradient(to right, transparent 14%, #000 44%); }
+.net-ridge { position: absolute; right: 0; top: 0; width: 60%; height: 580px; max-width: none; -webkit-mask-image: linear-gradient(to right, transparent 14%, #000 44%), linear-gradient(to top, transparent 0, #000 26%); -webkit-mask-composite: source-in; mask-image: linear-gradient(to right, transparent 14%, #000 44%), linear-gradient(to top, transparent 0, #000 26%); mask-composite: intersect; }
 .net-ridge-cap { position: absolute; right: var(--pad); top: 84px; font-size: 12px; color: var(--text-3); z-index: 1; }
 .network .sec-head .sec-no { border-top-color: transparent; }
 .proof { border: 1px solid var(--hair-2); border-radius: 2px; background: #0a0d11; min-height: 520px; }

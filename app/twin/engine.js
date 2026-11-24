@@ -192,7 +192,7 @@ export async function createEngine(host, ctx, opts = {}) {
       if (!same(hit && hit.sel, hoverSel)) { hoverSel = hit ? hit.sel : null; hoverB.set(hit ? hit.object : null, hit ? nameOf(hit.sel) : ''); canvas.classList.toggle('over', !!hit); }
     }
     labels.update(dt, W, H); hoverB.update(); selB.update();
-    post.setFog(environment.fog); post.setFocus(camera.position.distanceTo(cams.pose.target), cams.dof, dt);
+    post.setFog(environment.fog, 1 - 0.85 * U.smooth(0.8, 1.45, cams.pose.pitch)); post.setFocus(camera.position.distanceTo(cams.pose.target), cams.dof, dt);
     renderer.shadowMap.needsUpdate = once || frames % 2 === 0;
     renderer.info.reset(); post.render(time);
     stats.ms = ms; stats.fps = 1000 / ms; stats.calls = renderer.info.render.calls; stats.triangles = renderer.info.render.triangles;

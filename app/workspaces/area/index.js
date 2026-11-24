@@ -151,7 +151,7 @@ export default {
       h('details.area-how', null, h('summary', null, 'How this is worked out, and its limits'),
         h('p', null, 'The mapped river is laid on the elevation grid (' + dem.n + ' by ' + dem.n + ' cells of ' + dem.cs.toFixed(1) + ' m). Each cell near it gets its height above the nearest point of the river. A priority flood from the river then finds the lowest water level at which water can reach each cell without climbing over higher ground.'),
         h('p', null, 'Limits: the elevation data is about 30 m wide per measurement, so the channel, embankments and buildings are not resolved. There is no flow, no time and no debris in this model. A road is counted as under water at ' + ROAD_DEPTH + ' m of water, and a river crossing at ' + CROSSING_CLEARANCE + ' m (both assumed). A building is “cut off” when its nearest mapped road or path no longer connects to the south end of the main road.'),
-        h('p', null, 'The surge is a ' + SURGE.height + ' m wave shown about 100 times faster than a real flood wave would travel (assumed shape and speed).')));
+        h('p', null, 'The surge is a ' + SURGE.height + ' m wave with an assumed shape, moved at ' + SURGE.speed + ' m a second on screen so it can be watched. A real flood wave is far slower.')));
 
     el.exRange = range({ min: 1, max: 2, step: 0.05, value: M.exaggeration, 'aria-label': 'Terrain height exaggeration', oninput: (e) => { M.exaggeration = +e.target.value; fill(e.target); el.exVal.textContent = M.exaggeration.toFixed(2) + '×'; S.view?.setExaggeration(M.exaggeration); } });
     const steepAll = impacts.sectors.reduce((a, s) => a + s.steep, 0) / impacts.sectors.reduce((a, s) => a + s.cells, 0);
@@ -492,7 +492,7 @@ export default {
       if (now - lastEx > 250) { lastEx = now; S.view.setData('ex', exDynamic(st)); renderExercise(); if (renderSectors.phase !== st.phase) { renderSectors.phase = st.phase; renderSectors(); } }
     }
     const full = () => { lastEx = 0; panelKey = ''; onTick(); };
-    const offs = [ctx.bus.on('tick', onTick), ctx.bus.on('reset', full), ctx.bus.on('seek', full), ctx.bus.on('select', (sel) => { full(); if (S.shown && sel?.type === 'unit') { /* highlighted through markerList */ } }),
+    const offs = [ctx.bus.on('tick', onTick), ctx.bus.on('reset', full), ctx.bus.on('seek', full), ctx.bus.on('select', full),
       ctx.bus.on('escape', () => { if (!S.shown) return; S.view?.cancelFlight(); if (S.measuring) (S.pts.length && !S.lineDone ? clearLine() : setMeasuring(false)); }),
       ctx.bus.on('prefs', () => { redrawCharts(); syncAnimation(); })];
     root.addEventListener('keydown', (e) => { if (e.key === 'Enter' && S.measuring && S.pts.length > 1 && !S.lineDone && e.target.tagName !== 'BUTTON') finishLine(); });

@@ -269,7 +269,7 @@ export default {
         const e = S.est[i]; if (e) { const ex = X(e.x), ey = Y(e.y); g.strokeStyle = T.accent2; g.lineWidth = 1.5; g.beginPath(); g.moveTo(ex - 6, ey); g.lineTo(ex + 6, ey); g.moveTo(ex, ey - 6); g.lineTo(ex, ey + 6); g.stroke(); g.lineWidth = 1; g.setLineDash([3, 3]); g.beginPath(); g.arc(ex, ey, Math.max(7, e.sd * sc), 0, TAU); g.stroke(); g.setLineDash([]); }
         const up = p.y - 60 > pile.env[p.x] + 10, lx = X(p.cx + 34 * p.f), ly = Y(p.cy + (up ? -44 : 30));
         const msg = f ? p.name + ': sensed at ' + mmss(S.foundT[i]) + (e ? ', placed ' + Math.round(e.err) + ' cm off' : '') : G.findable[i] ? p.name + ': not reached yet' : p.name + ': sealed off from a ' + P.width + ' cm body';
-        L.callout(g, msg, X(p.cx + 6 * p.f), Y(p.cy - 9), lx, ly, { color: f ? 'person' : G.findable[i] ? 'text2' : 'warn', dot: false, size: 11.5 }); });
+        const mw = msg.length * 6.4; L.callout(g, msg, X(p.cx + 6 * p.f), Y(p.cy - 9), p.f < 0 ? Math.max(lx, x0 + 34 + mw) : Math.min(lx, x0 + W * sc - 10 - mw), ly - (i % 2 ? 0 : 20), { color: f ? 'person' : G.findable[i] ? 'text2' : 'warn', dot: false, size: 11.5 }); });
       for (const q of pulse) { const a = (now - q.t) / 1.6; if (a < 1) { g.strokeStyle = L.rgba('person', 0.8 * (1 - a)); g.lineWidth = 1.5; g.beginPath(); g.arc(X(q.x), Y(q.y), (14 + 70 * a) * sc, 0, TAU); g.stroke(); } }
       // insects: a body 6 cm long and as wide as the slider says, antennae forward, backpack on the thorax
       const bl = Math.max(4.5, 3 * sc), bw = Math.max(2, (P.width / 2) * sc);
@@ -285,8 +285,8 @@ export default {
       if (G.start < 0) L.text(g, 'No gap here is wide enough for a ' + P.width + ' cm body.', x0 + (W * sc) / 2, y0 + 40, { color: 'warn', size: 12, align: 'center', halo: true });
       // what the pile is made of, pointed out once
       const slab = hero.slab || (hero.slab = pile.pieces.filter((q) => q.kind === 'slab').sort((a, b) => Math.abs(a.cx - W * 0.78) - Math.abs(b.cx - W * 0.78))[0]);
-      if (slab) L.callout(g, 'floor slab, reinforcing bar showing', X(slab.cx + slab.hw * 0.5 * Math.cos(slab.a)), Y(slab.cy + slab.hw * 0.5 * Math.sin(slab.a)), X(Math.min(W - 250, slab.cx + 20)), y0 + 24, { color: 'text2', size: 11 });
-      if (G.cnt < pile.nPore * 0.97) L.text(g, 'hatched: pores too tight for this body', x0 + 14, y0 + H * sc - 26, { color: 'text3', size: 11, halo: true });
+      if (slab) L.callout(g, 'floor slab, reinforcing bar showing', X(slab.cx + slab.hw * 0.5 * Math.cos(slab.a)), Y(slab.cy + slab.hw * 0.5 * Math.sin(slab.a)), X(Math.min(W - 250, slab.cx + 20)), y0 + 46, { color: 'text2', size: 11 });
+      if (G.cnt < pile.nPore * 0.97) L.text(g, 'hatched: pores too tight for this body', x0 + 14, y0 + H * sc - 5, { color: 'text3', size: 11, halo: true });
     };
     fPile.onPointer((ev) => { if (!hero || !G) return; const near = Math.abs(ev.x - (hero.x0 + (G.sx + 0.5) * hero.sc)) < 16 && ev.y < hero.y0 + G.sy * hero.sc + 14;
       if (ev.type === 'down') dragging = true; if (ev.type === 'up' || ev.type === 'leave') dragging = false;
@@ -295,7 +295,7 @@ export default {
 
     // ---- percolation ----
     fPerc.draw = (g, w, hh) => {
-      if (!pile) return; const B = L.pad(w, hh, { l: 44, t: 30, b: 34, r: 14 }), Pl = L.plot(g, B, { xd: [1.2, 70], yd: [0, 100], xlog: true, xticks: [2, 5, 10, 20, 50], xlabel: 'body width, cm', ylabel: 'pore space reached, %' });
+      if (!pile) return; const B = L.pad(w, hh, { l: 44, t: 30, b: 34, r: 14 }), Pl = L.plot(g, B, { xd: [1.2, 70], yd: [0, 100], xlog: true, xticks: [2, 5, 10, 20, 50], xlabel: 'body width, cm', yfmt: (v) => v + ' %' });
       const T = L.tokens();
       BODIES.forEach((b, i) => { const x = Math.round(Pl.X(b.w)) + 0.5; g.strokeStyle = L.rgba('text3', 0.55); g.lineWidth = 1; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(x, B.y - 6); g.lineTo(x, B.y + B.h); g.stroke(); g.setLineDash([]);
         L.text(g, b.name, i === 3 ? x - 5 : x + 4, B.y - (i % 2 ? 18 : 6) + (i === 3 ? 0 : 0), { color: 'text2', size: 10.5, align: i === 3 ? 'right' : 'left', halo: true }); });
@@ -305,7 +305,7 @@ export default {
         g.strokeStyle = L.rgba('person', 0.85); g.lineWidth = 2; g.beginPath(); g.moveTo(B.x + 1, y); g.lineTo(Pl.X(wmax), y); g.stroke(); L.text(g, p.name, Pl.X(wmax) + 4, y + 3.5, { color: 'person', size: 10.5, weight: 600, halo: true }); });
       const x = Pl.X(P.width); g.strokeStyle = T.accent2; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x, B.y); g.lineTo(x, B.y + B.h); g.stroke();
       g.fillStyle = T.bg0; g.beginPath(); g.arc(x, Pl.Y(G.frac * 100), 4.5, 0, TAU); g.fill(); g.stroke();
-      L.text(g, L.pct(G.frac) + ' %', x + 8, Pl.Y(G.frac * 100) - 7, { color: 'accent2', size: 11, mono: true, halo: true });
+      L.text(g, L.pct(G.frac) + ' %', x + 8, Pl.Y(G.frac * 100) + 16, { color: 'accent2', size: 11, mono: true, halo: true });
       if (sweepAt < WIDTHS.length) L.text(g, 'measuring ' + sweepAt + ' of ' + WIDTHS.length + ' widths', B.x + B.w, B.y + 12, { color: 'text3', size: 10.5, align: 'right' });
     };
 

@@ -75,15 +75,16 @@ export function jackSites(pile, poses, box) {
 export function rot(q, v) { const { x, y, z, w } = q, [a, b, c] = v; const tx = 2 * (y * c - z * b), ty = 2 * (z * a - x * c), tz = 2 * (x * b - y * a); return [a + w * tx + y * tz - z * ty, b + w * ty + z * tx - x * tz, c + w * tz + x * ty - y * tx]; }
 
 // headroom over the person (smallest clear height above the body, 15 rays) and how far pieces have come into the space
-function gauge(pile, box) { const m = P.protectedMetrics(pile, pile.world, box); return { head: m.headroom, intr: m.intrusion, open: m.open, roof: m.roof }; }
+function gauge(pile, box) { const m = P.protectedMetrics(pile, pile.world, box); return { head: m.headroom, intr: m.intrusion, open: m.open, roof: m.roof, within: m.within }; }
 
 // ------------------------------------------------------------ one jack lift in a forked world
+const CARRY = new Set(['plank', 'beam', 'shore']);
 export function* jackRun(pile, snap, site, box, { shores = [], rec = false, hold = 2.6 } = {}) {
   const f = P.fork(pile, snap); const sh = shores.map((s) => P.addShore(f, s, 'post'));
   const jack = P.addJack(f, site), n = f.pieces.length, before = P.readPoses(f);
   const g0 = gauge(f, box); const up = Math.round(P.JACK.rise / P.JACK.speed / P.DT), total = up + Math.round(hold / P.DT);
   const frames = rec ? new Float32Array(total * n * NFRAME) : null, tr = { head: [], intr: [], force: [], shore: [], jackY: [], dust: [], edges: [] };
-  let worst = g0.head, worstI = g0.intr, peakF = 0, y = jack.y0, Fs = 0, Ss = 0, rose = 0; const acc = [];
+  let worst = g0.head, worstI = g0.intr, peakF = 0, by = g0.roof, y = jack.y0, Fs = 0, Ss = 0, rose = 0; const acc = [];
   for (let s = 0; s < total; s++) {
     if (s < up) { const k = s / up, e = Math.min(1, Math.min(k, 1 - k) * 8); y += P.JACK.speed * P.DT * (0.35 + 0.65 * e); rose = y - jack.y0; }
     jack.body.setNextKinematicTranslation({ x: site.x, y, z: site.z });
@@ -91,14 +92,14 @@ export function* jackRun(pile, snap, site, box, { shores = [], rec = false, hold
     if (rec) { P.readPoses(f, f.world, frames.subarray(s * n * NFRAME, (s + 1) * n * NFRAME)); for (const q of d) tr.dust.push([s, q.x, q.y, q.z, q.s, q.r]); }
     const F = P.forceOn(f.world, jack.col); Fs += (F - Fs) * 0.16; peakF = Math.max(peakF, s > 12 ? Fs : 0);
     let Fsh = 0; for (const p of sh) { const b = f.world.getRigidBody(p.handle); Fsh += P.forceOn(f.world, b.collider(0)); } Fsh = Fsh / 2; Ss += (Fsh - Ss) * 0.16;   // top and bottom both press on it: half
-    if (s % 3 === 0) { const g = gauge(f, box); worst = Math.min(worst, g.head); worstI = Math.max(worstI, g.intr); if (rec) { tr.head.push(g.head); tr.intr.push(g.intr); } }
-    if (rec) { tr.force.push(Fs); tr.shore.push(Ss); tr.jackY.push(y); const m = P.readContacts(f, f.world, new Map()); tr.edges.push(m); }
+    if (s % 3 === 0) { const g = gauge(f, box); if (g.head < worst - 1e-6 || g.intr > worstI + 1e-6) by = g.within.length ? g.within : g.roof; worst = Math.min(worst, g.head); worstI = Math.max(worstI, g.intr); if (rec) { tr.head.push(g.head); tr.intr.push(g.intr); } }
+    if (rec) { tr.force.push(Fs); tr.shore.push(Ss); tr.jackY.push(y); const m = P.readContacts(f, f.world, new Map()); for (const [id, e] of m) if (!(CARRY.has(f.pieces[e.a].kind) || (e.b >= 0 && CARRY.has(f.pieces[e.b].kind))) || f.pieces[e.a].fixed && f.pieces[e.a].kind !== 'shore' && e.b >= 0 && f.pieces[e.b].kind === 'wall') m.delete(id); tr.edges.push(m); }
     if (s % 30 === 29) yield s / total;
   }
   const g1 = gauge(f, box), after = P.readPoses(f), moved = [];
   for (const p of f.pieces) if (p.alive && !p.fixed) { const dd = P.poseShift(before, after, p.idx * 7, p.radius); if (dd > 0.03) moved.push({ idx: p.idx, d: dd }); }
   moved.sort((a, b) => b.d - a.d);
-  const out = { site, head0: g0.head, head1: g1.head, worst, intr0: g0.intr, intr1: g1.intr, worstI, peakF, moved, n, total, up, rise: rose, roof: g0.roof, speed: P.maxSpeed(f), shores: sh.map((p, i) => ({ idx: p.idx, ...shores[i], rated: p.rated })) };
+  const out = { site, head0: g0.head, head1: g1.head, worst, intr0: g0.intr, intr1: g1.intr, worstI, peakF, by: [...by], moved, n, total, up, rise: rose, roof: g0.roof, speed: P.maxSpeed(f), shores: sh.map((p, i) => ({ idx: p.idx, ...shores[i], rated: p.rated })) };
   if (rec) { out.frames = frames; out.tr = packTrace(tr, total); }
   f.world.free();
   return out;

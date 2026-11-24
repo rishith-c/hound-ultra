@@ -89,7 +89,7 @@ export function createPost(renderer, scene, camera, { quality = 'high' } = {}) {
       sceneRT.setSize(W, H); airRT.setSize(W, H); dofRT.setSize(W >> 1, H >> 1); gtao && gtao.setSize(Math.round(W * s), Math.round(H * s)); bloom.setSize(W >> 1, H >> 1); final.uniforms.uRes.value.set(W, H); air.uniforms.uRes.value.set(W, H); dof.uniforms.uTexel.value.set(2 / W, 2 / H);
     },
     setAO(on) { aoOn = on && !!gtao; },
-    setFog(f) { air.uniforms.uFogCol.value.copy(f.color); air.uniforms.uFogSun.value.copy(f.sun); air.uniforms.uSunDir.value.copy(f.dir); air.uniforms.uFog.value.set(f.a, f.h, f.b, f.base); },
+    setFog(f, k = 1) { air.uniforms.uFogCol.value.copy(f.color); air.uniforms.uFogSun.value.copy(f.sun); air.uniforms.uSunDir.value.copy(f.dir); air.uniforms.uFog.value.set(f.a * k, f.h * k, f.b, f.base); },
     setFocus(dist, amount, dt = 0.016) { const k = 1 - Math.exp(-4 * dt); dof.uniforms.uFocus.value += (dist - dof.uniforms.uFocus.value) * k; dofK += (amount - dofK) * k; },
     render(time, target = null) {
       camera.updateMatrixWorld(); cam.copy(camera.position); vp.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); ivp.copy(vp).invert();

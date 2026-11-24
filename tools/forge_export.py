@@ -630,7 +630,99 @@ def stage_bundle():
     return info
 
 
-STAGES = {"repro": stage_repro, "scores": stage_scores, "int8": stage_int8, "prune": stage_prune, "uncertainty": stage_uncertainty, "ood": stage_ood,
+# ---------- the Demo hero: the project's own training run, replayed with its own seed and recorded step by step ----------
+def stage_hero():
+    import gzip
+    import train as T
+    from net import CsiNet
+    d = D.get(); X, meta, s = d["X"], d["meta"], d["s"]
+    y = {"person": meta["presence"].astype(np.int64), "moving": meta["moving"].astype(np.int64), "zone": meta["zone"].astype(np.int64)}
+    tr, va, te = s == 0, s == 1, s == 2
+    snaps, count = {}, [0]
+    early = {1, 2, 3, 5, 8, 12, 16, 20, 26, 32, 40, 50, 60}
+    per_epoch = int(np.ceil(tr.sum() / 64))
+    net = CsiNet(seed=0)
+    snaps[0] = [p.copy() for p in net.params()]
+    class Rec(T.Adam):
+        def step(self, g):
+            super().step(g); count[0] += 1; n = count[0]
+            if n in early or n % per_epoch == 0: snaps[n] = [p.copy() for p in net.params()]
+    old, T.Adam = T.Adam, Rec
+    try: net, hist = T.train(X[tr], T.take(y, tr), X[va], T.take(y, va), seed=0, net=net, log=log)
+    finally: T.Adam = old
+    best = min(hist, key=lambda h: h["val_loss"])["epoch"]
+    ship = d["net"].params()
+    dw = max(float(np.abs(a - b).max()) for a, b in zip(net.params(), ship))
+    log("best epoch", best, "largest weight difference from the shipped model", dw)
+    steps = [n for n in sorted(snaps) if n <= best * per_epoch]
+    people = json.load(open(os.path.join(ML, "data", "people.json")))["people"]
+    N = len(people); g = meta["group"]; kind = meta["kind"]
+    split = T.split_of(np.arange(N))
+    # each person stands once: in each split, every other person is shown walking, the rest still (so both sides are a fair half)
+    side = np.zeros(N, int)
+    for sp in range(3):
+        for ly in (0, 1):
+            ids = [p["id"] for p in people if split[p["id"]] == sp and (p["posture"] == "lying") == bool(ly)]
+            side[ids[::2]] = 1                                              # 1 = moving
+    win = [np.where((g == i) & (kind == (2 if side[i] else 1)))[0] for i in range(N)]
+    flat = np.concatenate(win); off = np.cumsum([0] + [len(w) for w in win])
+    def unit_acts(nt, x):
+        h, out = x.astype(np.float32), [np.abs(x).mean(2)]
+        for l in nt.body:
+            h = l.forward(h)
+            if type(l).__name__ == "ReLU": out.append(h.mean(2) if h.ndim == 3 else h)
+            if type(l).__name__ == "MeanMax": out.append(h)
+        hd = [o.forward(h) for o in nt.heads]
+        e = np.exp(hd[0] - hd[0].max(1, keepdims=True)); out.append(e / e.sum(1, keepdims=True))
+        return out
+    # 24 people whose full set of unit activations is stored at every step: the one the film opens on, then a spread
+    nt = CsiNet(seed=0); P_all = []; stats = []; edges = []; acts_by = []
+    for n in steps:
+        for p, w in zip(nt.params(), snaps[n]): p[...] = w
+        p_all = np.concatenate([nt.predict(X[i:i + 512])["person"][:, 1] for i in range(0, len(X), 512)])
+        thr = float(np.quantile(p_all[va & (kind == 0)], 0.9))
+        st = {"step": n, "epoch": round(n / per_epoch, 2), "thr": r(thr)}
+        for nm, m in (("test", te), ("train", tr)):
+            said = p_all > thr
+            st[nm] = {"moving": r(said[m & (kind == 2)].mean()), "still": r(said[m & (kind == 1)].mean()), "empty_ok": r((~said)[m & (kind == 0)].mean())}
+        log(st); stats.append(st); P_all.append(p_all)
+        W = [p for p in nt.params() if p.ndim == 2]
+        def chan(w): w = w.reshape(-1, 9, w.shape[1]); return np.sign(w.sum(1)) * np.sqrt((w ** 2).sum(1))      # one line per channel pair: length of its 9-tap filter, sign of its sum
+        edges.append([chan(W[0]), chan(W[1]), chan(W[2]), W[3], W[4]])
+    P_all = np.array(P_all); thr = np.array([t["thr"] for t in stats])
+    found = np.array([[(P_all[c][w] > thr[c]).mean() for w in win] for c in range(len(steps))])
+    score = np.array([[P_all[c][w].mean() for w in win] for c in range(len(steps))])
+    first = np.array([w[0] for w in win])
+    ok = [i for i in range(N) if side[i] == 1 and people[i]["posture"] == "standing" and split[i] == 2 and found[0, i] == 0 and found[-1, i] == 1 and found[-6:, i].min() == 1 and 1.70 < people[i]["height"] < 1.85]
+    hero = ok[0]; rng = np.random.default_rng(5)
+    cast = [hero] + [int(i) for i in rng.permutation(N) if i != hero][:23]
+    log("hero", hero, "of", len(ok), "candidates; cast", cast)
+    for n in steps:
+        for p, w in zip(nt.params(), snaps[n]): p[...] = w
+        acts_by.append(unit_acts(nt, X[first[cast]]))
+    scaleE = [max(float(np.abs(e[k]).max()) for e in edges) for k in range(5)]
+    scaleA = [max(float(a[k].max()) for a in acts_by) for k in range(len(acts_by[0]))]
+    blob, idx = [], {}
+    def put(name, arr):
+        arr = np.ascontiguousarray(arr); o = sum(len(b) for b in blob); blob.append(arr.tobytes()); idx[name] = [o, arr.dtype.str[1:], list(arr.shape)]
+    put("found", np.round(found * 6).astype(np.uint8)); put("score", np.round(score * 255).astype(np.uint8))
+    for k in range(5): put(f"e{k}", np.round(np.array([e[k] for e in edges]) / scaleE[k] * 127).astype(np.int8))
+    for k in range(len(scaleA)): put(f"a{k}", np.round(np.clip(np.array([a[k] for a in acts_by]) / scaleA[k], 0, 1) * 255).astype(np.uint8))
+    sl = X[first][:, :, 96:104].mean(2); put("ribbon", np.round(127 * np.tanh(sl / 12)).astype(np.int8))
+    rms = X[first].std(2); put("energy", np.round(255 * np.tanh(rms / 12)).astype(np.uint8))
+    put("heroWin", compand(X[first[hero]]).astype(np.int8)); 
+    put("body", np.array([[round(p["height"] * 100), round(p["shoulder"] * 400), round(p["chest_depth"] * 800), round((p["yaw"] % (2 * np.pi)) / (2 * np.pi) * 255), p["posture"] == "lying", side[p["id"]], split[p["id"]], round(max(0, p["y"] - 0.3) * 64)] for p in people], np.uint8))
+    raw = b"".join(blob)
+    side_found = {nm: {sd: r(found[-1][(side == k) & (split == sp)].mean()) for k, sd in ((1, "moving"), (0, "still"))} for sp, nm in ((0, "train"), (2, "test"))}
+    doc = {"steps": steps, "stats": stats, "hero": hero, "cast": cast, "index": idx, "scaleA": [r(v) for v in scaleA], "scaleE": [r(v) for v in scaleE], "n": N, "steps_per_epoch": per_epoch,
+           "best_epoch": best, "max_weight_diff_from_shipped": dw, "shown_found": side_found, "split_counts": np.bincount(split).tolist(), "wall_y": 0.3}
+    head = json.dumps(doc, separators=(",", ":")).encode(); head += b" " * (-len(head) % 4)
+    out = os.path.join(OUT, "hero.bin.gz")
+    open(out, "wb").write(gzip.compress(np.uint32(len(head)).tobytes() + head + raw, 9, mtime=0)); log("wrote", out, os.path.getsize(out))
+    return {k: doc[k] for k in ("steps", "stats", "hero", "best_epoch", "max_weight_diff_from_shipped", "shown_found", "split_counts")}
+
+
+STAGES = {"repro": stage_repro, "hero": stage_hero, "scores": stage_scores, "int8": stage_int8, "prune": stage_prune, "uncertainty": stage_uncertainty, "ood": stage_ood,
           "snn": stage_snn, "clean": stage_clean, "train_ref": stage_train_ref, "bundle": stage_bundle, "prune_ft": stage_prune_ft}
 
 

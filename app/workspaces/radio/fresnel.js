@@ -43,7 +43,7 @@ export async function create(stage, side, ctx, lab) {
   const { h, icon } = lab;
   const TX = [-1.5, 0], WALL_Y = 0.3, REGION = { x0: -1.0, x1: 1.5, y0: 0.8, y1: 3.5 }, STEP = LAMBDA / 4;
   const st = { p: [0.42, 1.86], stop: 0, stops: 4, chestMm: 5, bpm: 15, auto: false, offset: 0 };   // offset eases toward stop * STEP
-  let breath = 0, tNow = 0, autoT = 0, mc = null, mcJob = null, mapImg = null, mapKey = '';
+  let breath = 0, tNow = 0, autoT = 0, mc = null, mcJob = null, mapImg = null, mapKey = '', mapBuf = new Float32Array(0);
   const rxAt = (i) => [i * STEP, 0], rxNow = () => [st.offset, 0];
   const L = (i) => link(TX, rxAt(i), st.p, st.chestMm);
   const chestNow = () => { const ph = 2 * Math.PI * (st.bpm / 60) * tNow, s = Math.sin(ph) + 0.25 * Math.sin(2 * ph + 0.8); return (st.chestMm / 2) * (s / 1.19); };   // mm, same breath shape as the simulator
@@ -51,7 +51,7 @@ export async function create(stage, side, ctx, lab) {
   const figPlan = lab.figure('Bright bands: breathing shows. Dark bands: it does not.', { tag: h('span.tag.tag-sim', null, 'Model'), caption: 'Plan view. Shade: how much a 5 mm breath there changes the received amplitude, for the receiver where it is now. Drag the person.' });
   const figPh = lab.figure('Why: two arrows that add', { caption: 'The straight path (long arrow) and the body’s echo (short arrow). Breathing swings the echo through the shaded arc. The white bar is how far the received strength moves: the arc’s shadow on the long arrow.' });
   const figStops = lab.figure('The ripple at each stop', { caption: 'Amplitude change over 10 s at every stop, with the model’s noise after averaging (0.4 %). A stop counts when the ripple is 1.5 times the noise.' });
-  const figMc = lab.figure('What the dither buys, over many people', { caption: 'Still people placed at random 0.8 to 3.5 m behind the wall. Bars: this page, now. White ticks: the project’s Python run (400 people, wavelength rounded to 12.5 cm).' });
+  const figMc = lab.figure('What the dither buys, over many people', { caption: 'Still people placed at random 0.8 to 3.5 m behind the wall. White ticks: the project’s Python run (400 people, 12.5 cm wavelength).' });
   stage.append(h('div.radio-grid.radio-fresnel-grid', null, figPlan, figPh, figStops, figMc));
 
   // ---------- plan ----------
@@ -59,10 +59,10 @@ export async function create(stage, side, ctx, lab) {
   const toS = (p) => [tr.ox + (p[0] - V.x0) * tr.s, tr.oy - (p[1] - V.y0) * tr.s];
   function paintMap(w, hh, dpr) {
     const key = [w, hh, dpr, st.offset.toFixed(4), st.chestMm].join(); if (key === mapKey && mapImg) return; mapKey = key;
-    const W = Math.round(w * dpr), Hh = Math.round(hh * dpr), d = new Float32Array(W * Hh), rx = rxNow();
+    const q = w * hh * dpr * dpr > 5e5 ? dpr * 0.5 : dpr, W = Math.round(w * q), Hh = Math.round(hh * q), d = mapBuf.length === W * Hh ? mapBuf.fill(0) : (mapBuf = new Float32Array(W * Hh)), rx = rxNow();
     const dDir = Math.hypot(rx[0] - TX[0], rx[1] - TX[1]), k = (2 * Math.PI) / LAMBDA, dphi = (2 * Math.PI * ((1.5 * st.chestMm) / 1000)) / LAMBDA;
-    for (let j = 0; j < Hh; j++) { const y = V.y0 + (tr.oy - j / dpr) / tr.s; if (y < WALL_Y) continue;
-      for (let i = 0; i < W; i++) { const x = V.x0 + (i / dpr - tr.ox) / tr.s, d1 = Math.hypot(x - TX[0], y - TX[1]), d2 = Math.hypot(x - rx[0], y - rx[1]);
+    for (let j = 0; j < Hh; j++) { const y = V.y0 + (tr.oy - j / q) / tr.s; if (y < WALL_Y) continue;
+      for (let i = 0; i < W; i++) { const x = V.x0 + (i / q - tr.ox) / tr.s, d1 = Math.sqrt((x - TX[0]) * (x - TX[0]) + (y - TX[1]) * (y - TX[1])), d2 = Math.sqrt((x - rx[0]) * (x - rx[0]) + (y - rx[1]) * (y - rx[1]));
         d[j * W + i] = Math.pow((0.075 / Math.max(d1 * d2, 0.25)) * Math.abs(Math.sin(k * (d1 + d2 - dDir))) * dphi * 100, 0.55); } }
     mapImg = lab.heatImage(d, W, Hh, 0, 1.9, mapImg);
   }
@@ -77,7 +77,7 @@ export async function create(stage, side, ctx, lab) {
     lab.label(c, 'search region', a[0] + 5, a[1] + 10, { color: lab.tok('--text-2'), bg: true });
     const T = toS(TX), R = toS(rxNow()), P = toS(st.p), cur = link(TX, rxNow(), st.p, st.chestMm);
     lab.line(c, [T, R], lab.tok('--accent'), 1.6); lab.line(c, [T, P, R], lab.rgba('--person', 0.9), 1.2, [3, 3]);
-    c.fillStyle = lab.tok('--text'); c.beginPath(); c.arc(T[0], T[1], 4.5, 0, 7); c.fill(); lab.label(c, 'Probe radio, at the doorway', T[0], T[1] + 16, { align: 'center', color: lab.tok('--text') });
+    c.fillStyle = lab.tok('--text'); c.beginPath(); c.arc(T[0], T[1], 4.5, 0, 7); c.fill(); lab.label(c, 'Probe radio, at the doorway', Math.max(T[0], 78), T[1] + 16, { align: 'center', color: lab.tok('--text') });
     // rover and its stops
     c.fillStyle = lab.tok('--bg-5'); c.strokeStyle = lab.tok('--accent'); c.lineWidth = 1.5; c.beginPath(); c.roundRect(R[0] - 0.17 * S, R[1] - 0.06 * S, 0.34 * S, 0.44 * S, 2); c.fill(); c.stroke();
     for (let i = 0; i < st.stops; i++) { const q = toS(rxAt(i)); c.fillStyle = i === st.stop ? lab.tok('--accent') : lab.rgba('--accent', 0.35); c.fillRect(q[0] - 1, q[1] - 7, 2, 14); }
@@ -89,7 +89,7 @@ export async function create(stage, side, ctx, lab) {
     c.fillStyle = lab.tok('--text'); c.beginPath(); c.arc(P[0], P[1], 2.5, 0, 7); c.fill();
     lab.label(c, 'zone ' + cur.zone + ' · echo ' + cur.excess.toFixed(2) + ' m longer', P[0] + 0.28 * S + 4, P[1] - 0.11 * S, { color: lab.tok('--person'), bg: true });
     // magnifier on the chest: the bands at true scale against the chest's travel
-    const mz = 14, mr = Math.min(86, hh * 0.2), mx = w - mr - 14, my = mr + (ctx.mode === 'demo' ? 64 : 14), rx = rxNow(), dDir = Math.hypot(rx[0] - TX[0], rx[1] - TX[1]), kk = (2 * Math.PI) / LAMBDA;
+    const mz = 14, mr = Math.min(86, hh * 0.2, w * 0.15), mx = w - mr - 14, my = mr + (ctx.mode === 'demo' ? 64 : 14), rx = rxNow(), dDir = Math.hypot(rx[0] - TX[0], rx[1] - TX[1]), kk = (2 * Math.PI) / LAMBDA;
     c.save(); c.beginPath(); c.arc(mx, my, mr, 0, 7); c.clip(); c.fillStyle = lab.tok('--bg-0'); c.fillRect(mx - mr, my - mr, 2 * mr, 2 * mr);
     const cell = 3; for (let j = -mr; j < mr; j += cell) for (let i = -mr; i < mr; i += cell) { const x = st.p[0] + i / (S * mz), y = st.p[1] - j / (S * mz), d1 = Math.hypot(x - TX[0], y - TX[1]), d2 = Math.hypot(x - rx[0], y - rx[1]), v = Math.abs(Math.sin(kk * (d1 + d2 - dDir))), col = lab.ramp(0.08 + 0.8 * v); c.fillStyle = 'rgb(' + col[0] + ',' + col[1] + ',' + col[2] + ')'; c.fillRect(mx + i, my + j, cell, cell); }
     // the chest moves along the bisector of the two legs, toward the radios
@@ -140,10 +140,10 @@ export async function create(stage, side, ctx, lab) {
       c.fillStyle = lab.rgba('--text-2', 0.6); for (const d of dots) c.fillRect(d[0] - 0.75, d[1] - 0.75, 1.5, 1.5);
       lab.line(c, pts, ok ? lab.tok('--person') : lab.tok('--text-3'), 1.6);
       if (on) { const xp = x + ((tNow % 10) / 10) * cw; lab.line(c, [[xp, y0], [xp, y0 + ph]], lab.rgba('--text', 0.5), 1); }
-      lab.label(c, 'Stop ' + (i + 1), x + 5, y0 - 10, { color: on ? lab.tok('--text') : lab.tok('--text-3'), font: '600 11px ' + lab.tok('--font') });
+      lab.label(c, (cw < 92 ? '' : 'Stop ') + (i + 1), x + 5, y0 - 10, { color: on ? lab.tok('--text') : lab.tok('--text-3'), font: '600 11px ' + lab.tok('--font') });
       lab.label(c, (i * STEP * 100).toFixed(1) + ' cm', x + cw - 4, y0 - 10, { align: 'right', font: '500 10.5px ' + lab.tok('--mono'), color: lab.tok('--text-3') });
       const snr = l.sens / NOISE; lab.label(c, snr.toFixed(1) + '× noise', x + 5, y0 + ph + 13, { font: '500 10.5px ' + lab.tok('--mono'), color: ok ? lab.tok('--ok') : lab.tok('--text-3') });
-      lab.label(c, ok ? (i === best ? 'shows best: listen' : 'it shows') : 'lost in the noise', x + 5, y0 + ph + 28, { color: ok ? lab.tok('--ok') : lab.tok('--text-3') });
+      lab.label(c, ok ? (i === best ? 'shows best' : 'it shows') : 'lost in the noise', x + 5, y0 + ph + 28, { color: ok ? lab.tok('--ok') : lab.tok('--text-3') });
     }
     c.fillStyle = lab.tok('--text-3'); c.textAlign = 'right'; c.textBaseline = 'middle'; for (const v of [top / 1.25, 0, -top / 1.25]) c.fillText((v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1), x0 - 6, y0 + ph / 2 - (v / top) * (ph / 2));
     lab.label(c, '%', x0 - 6, y0 - 10, { align: 'right', color: lab.tok('--text-3') });
@@ -151,14 +151,14 @@ export async function create(stage, side, ctx, lab) {
 
   // ---------- Monte Carlo ----------
   const cvMc = lab.canvas(figMc.body, (c, w, hh) => {
-    const names = ['One spot, no dither', 'Four stops, 3.1 cm apart', 'Eight stops'], x0 = 168, x1 = w - 64, rowH = Math.min(34, (hh - 50) / 3), y0 = 28 + (hh - 50 - rowH * 3) / 2, X = (v) => x0 + (x1 - x0) * (v / 0.5);
+    const names = ['One spot, no dither', 'Four stops, 3.1 cm apart', 'Eight stops'], x0 = 168, x1 = w - 64, rowH = Math.min(34, (hh - 42) / 3), y0 = 24 + (hh - 42 - rowH * 3) / 2, X = (v) => x0 + (x1 - x0) * (v / 0.5);
     c.strokeStyle = lab.tok('--line'); c.fillStyle = lab.tok('--text-3'); c.font = '500 10.5px ' + lab.tok('--mono'); c.textAlign = 'center'; c.textBaseline = 'top';
     for (const v of [0, 0.1, 0.2, 0.3, 0.4, 0.5]) { const x = Math.round(X(v)) + 0.5; c.beginPath(); c.moveTo(x, y0 - 4); c.lineTo(x, y0 + rowH * 3); c.stroke(); c.fillText(v * 100 + ' %', x, y0 + rowH * 3 + 4); }
     for (let i = 0; i < 3; i++) {
-      const y = y0 + i * rowH + 5, bh = rowH - 12, v = mc ? mc.p[i] : 0;
+      const y = y0 + i * rowH + 5, bh = Math.max(5, rowH - 12), v = mc ? mc.p[i] : 0;
       lab.label(c, names[i], x0 - 10, y + bh / 2, { align: 'right', color: lab.tok('--text') });
       c.fillStyle = lab.tok('--bg-4'); c.fillRect(x0, y, x1 - x0, bh);
-      if (mc) { c.fillStyle = i === 0 ? lab.tok('--text-3') : lab.tok('--accent'); c.fillRect(x0, y, X(v) - x0, bh); lab.label(c, (v * 100).toFixed(1) + ' %', X(v) - 7, y + bh / 2, { align: 'right', font: '500 12px ' + lab.tok('--mono'), color: lab.tok('--bg-0') }); }
+      if (mc) { c.fillStyle = i === 0 ? lab.tok('--text-3') : lab.tok('--accent'); c.fillRect(x0, y, X(v) - x0, bh); lab.label(c, (v * 100).toFixed(1) + ' %', bh < 14 ? x1 + 8 : X(v) - 7, y + bh / 2, { align: bh < 14 ? 'left' : 'right', font: (bh < 14 ? '500 10px ' : '500 12px ') + lab.tok('--mono'), color: lab.tok(bh < 14 ? '--text' : '--bg-0') }); }
       const px = Math.round(X(PROJECT[i])) + 0.5; c.strokeStyle = lab.tok('--text'); c.lineWidth = 1.5; c.beginPath(); c.moveTo(px, y - 4); c.lineTo(px, y + bh + 4); c.stroke();
     }
     lab.label(c, 'Share of still people whose breathing would show' + (mc ? ' · ' + (mcJob ? 'running, ' : '') + mc.n.toLocaleString('en-US') + ' placed' : ''), 12, 13, { color: lab.tok('--text-3') });
@@ -217,7 +217,7 @@ export async function create(stage, side, ctx, lab) {
 
   const run = lab.loop((t, dt) => {
     tNow += dt;
-    const target = st.stop * STEP; if (Math.abs(st.offset - target) > 1e-5) st.offset += (target - st.offset) * Math.min(1, dt * 9); else st.offset = target;
+    const target = st.stop * STEP; if (Math.abs(st.offset - target) > 2e-4) st.offset += (target - st.offset) * Math.min(1, dt * 9); else st.offset = target;
     if ((st.auto || ctx.mode === 'demo') && !drag) { autoT += dt; if (autoT > 3) { autoT = 0; go((st.stop + 1) % st.stops); } }
     if (mcJob) { stepMc(); cvMc.redraw(); }
     redraw();

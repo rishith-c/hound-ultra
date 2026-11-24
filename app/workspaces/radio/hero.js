@@ -3,7 +3,7 @@
 //   the person     a second solve without them runs beside it; the difference is what the body scattered (orange)
 //   the channel    rf.js traced paths plus the body's echoes on the 51 subcarriers, 100 packets a second
 //   the score      the real network, on the last ten seconds of those packets (nnworker.js, same code and weights)
-// The building, furniture, rubble and rover are the twin's own builders (read only), lit by the field itself.
+// The building, furniture and rubble are the twin's own builders (read only), lit by the field itself.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as U from '../../twin/util.js';
@@ -150,8 +150,15 @@ export async function createHero(host, ctx, lab) {
     for (let i = 0; i < 3; i++) { const a = (i / 3) * 6.283 + 0.4, l = add(new THREE.CylinderGeometry(0.008, 0.011, 0.74, 10), dark, Math.cos(a) * 0.14, 0.33, Math.sin(a) * 0.14); l.rotation.set(Math.sin(a) * -0.39, 0, Math.cos(a) * 0.39); }
     add(new THREE.CylinderGeometry(0.02, 0.02, 0.1, 16), al, 0, 0.66, 0); add(new THREE.BoxGeometry(0.13, 0.07, 0.085), shell, 0, 0.74, 0); add(new THREE.BoxGeometry(0.134, 0.012, 0.089), dark, 0, 0.74, 0); add(new THREE.CylinderGeometry(0.006, 0.007, 0.12, 12), dark, 0.045, 0.83, 0); add(new THREE.CylinderGeometry(0.006, 0.007, 0.12, 12), dark, -0.045, 0.83, 0);
     const led = add(new THREE.SphereGeometry(0.007, 10, 8), new THREE.MeshBasicMaterial({ color: col('--accent').multiplyScalar(4) }), 0.04, 0.752, 0.044); led.castShadow = false; }
-  let rover = null; const body = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.48, metalness: 0.25, envMapIntensity: 4 }), lamp = new THREE.MeshBasicMaterial({ color: col('--ok') });
-  const roverState = { units: { 'HOUND-01': { pos: RX0.slice(0, 2), heading: 0, mode: 'sensing', odo: 0, battery: 1 } }, faults: {}, hold: false, phase: 'search' };
+  // the rover, drawn here at its plan size (0.44 x 0.34 m): four mecanum wheels, a deck, a mast with the receiver
+  const rover = new THREE.Group(); scene.add(rover);
+  { const rub = new THREE.MeshStandardMaterial({ color: 0x24272b, roughness: 0.8, emissive: 0x07090b }), shell = new THREE.MeshStandardMaterial({ color: 0xc9ced3, roughness: 0.42, emissive: 0x23282d }), dark = new THREE.MeshStandardMaterial({ color: 0x363b41, roughness: 0.5, metalness: 0.4, emissive: 0x0c0f12 });
+    const add = (g, m, x, y, z, rx = 0, ry = 0, rz = 0) => { const o = new THREE.Mesh(g, m); o.position.set(x, y, z); o.rotation.set(rx, ry, rz); o.castShadow = true; rover.add(o); return o; };
+    add(new THREE.BoxGeometry(0.42, 0.07, 0.2), dark, 0, 0.115, 0); add(new THREE.BoxGeometry(0.36, 0.05, 0.22), shell, 0, 0.175, 0); add(new THREE.BoxGeometry(0.1, 0.07, 0.16), dark, 0.1, 0.235, 0); add(new THREE.BoxGeometry(0.02, 0.035, 0.12), rub, 0.16, 0.24, 0);
+    const wheel = new THREE.CylinderGeometry(0.068, 0.068, 0.06, 28).rotateX(Math.PI / 2), hub = new THREE.CylinderGeometry(0.03, 0.03, 0.064, 18).rotateX(Math.PI / 2), roll = new THREE.CapsuleGeometry(0.012, 0.045, 4, 8);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const x = sx * 0.145, z = sz * 0.145; add(wheel, rub, x, 0.075, z); add(hub, shell, x, 0.075, z); for (let k = 0; k < 9; k++) { const a = (k / 9) * 6.283, r = add(roll, dark, x + Math.cos(a) * 0.063, 0.075 + Math.sin(a) * 0.063, z, Math.PI / 2, 0, 0); r.rotation.set(Math.PI / 2, 0, sx * sz * 0.785); r.castShadow = false; } }
+    add(new THREE.CylinderGeometry(0.009, 0.011, 0.22, 12), shell, -0.09, 0.31, 0); add(new THREE.BoxGeometry(0.05, 0.04, 0.09), shell, -0.09, 0.44, 0); for (const z of [-0.035, 0.035]) add(new THREE.CylinderGeometry(0.005, 0.006, 0.1, 10), dark, -0.09, 0.51, z);
+    const led = add(new THREE.SphereGeometry(0.009, 10, 8), new THREE.MeshBasicMaterial({ color: col('--accent').multiplyScalar(4) }), -0.06, 0.445, 0.04); led.castShadow = false; for (const m of [rub, shell, dark]) patch(m, shared, false); }
 
   // ---------- handles you can drag ----------
   const st = { tx: TX0.slice(0, 2), rx: RX0.slice(0, 2), person: [82.4, 48.2], on: 0, walk: 0, heading: Math.PI, auto: true, paused: false, T: 0, freeUntil: 0, drag: null };
@@ -181,7 +188,7 @@ export async function createHero(host, ctx, lab) {
     const c = rf.channel(paths, 0.8 / Math.hypot(d.a[0], d.a[1]) / Math.max(1, Math.hypot(T[0] - Rr[0], T[1] - Rr[1]) / 1.5));
     for (let k = 0; k < 51; k++) { base.re[k] = c.re[k]; base.im[k] = c.im[k]; base.amp[k] = Math.hypot(c.re[k], c.im[k]); }
     let m = 0; for (let k = 0; k < 51; k++) m += base.amp[k]; st.gain = 30 / (m / 51);
-    shared.uTxw.value.set(st.tx[0], 0, -st.tx[1]); probe.position.set(st.tx[0], 0, -st.tx[1]); roverState.units['HOUND-01'].pos = st.rx.slice();
+    shared.uTxw.value.set(st.tx[0], 0, -st.tx[1]); probe.position.set(st.tx[0], 0, -st.tx[1]); rover.position.set(st.rx[0], 0, -st.rx[1]);
   }
   function packetChannel(t) {
     H.re.set(base.re); H.im.set(base.im); if (!st.on) return;
@@ -294,10 +301,9 @@ export async function createHero(host, ctx, lab) {
     if (dt && !reduced() && time > st.freeUntil && !st.drag) { drift += dt; const a = Math.sin(drift * 0.11) * 0.00042, ca = Math.cos(a), sa = Math.sin(a), dx = camera.position.x - controls.target.x, dz = camera.position.z - controls.target.z; camera.position.x = controls.target.x + dx * ca - dz * sa; camera.position.z = controls.target.z + dx * sa + dz * ca; }
     controls.update();
     fig.root.visible = st.on > 0.01; fig.uniforms.uA.value = st.on; fig.root.position.set(st.person[0], 0, -st.person[1]); fig.root.rotation.y = st.heading; fig.pose(st.walk, st.phase || 0, time);
-    if (rover) { const u = roverState.units['HOUND-01']; u.pos[0] = st.rx[0]; u.pos[1] = st.rx[1]; try { rover.update(roverState, Math.max(dt, 0.001), time); } catch (e) { rover = null; console.warn('[radio] rover', e); } }
     const rk = st.drag || hoverKey; ring.material.opacity += ((rk ? 0.8 : 0) - ring.material.opacity) * 0.2; if (rk) ring.position.set(st[rk][0], 0.03, -st[rk][1]);
     renderer.toneMappingExposure = 1.0 * fade; post.render(time);
-    place(pinTx, st.tx[0], 0.95, -st.tx[1], 0.9); place(pinRx, st.rx[0], 0.75, -st.rx[1], 0.9); place(pinP, st.person[0], 1.86, -st.person[1], st.on);
+    place(pinTx, st.tx[0], 0.95, -st.tx[1], 0.9); place(pinRx, st.rx[0], 0.6, -st.rx[1], 0.9); place(pinP, st.person[0], 1.86, -st.person[1], st.on);
     if (time - lastTxt > 0.09 || !dt) { lastTxt = time; set(fNs, field.ns.toFixed(0)); set(fCh, change.toFixed(change < 1 ? 2 : 1)); if (Number.isFinite(score)) { shown = Number.isFinite(shown) ? shown + (score - shown) * 0.35 : score; set(fP, shown.toFixed(2)); const on = score > thr; if (figs.lastChild.dataset.on !== String(on)) figs.lastChild.dataset.on = String(on); set(fPcap, on ? 'network: person' : 'network: nobody'); } }
   }
   const run = lab.loop(frame);
@@ -310,14 +316,13 @@ export async function createHero(host, ctx, lab) {
     const next = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
     try {
       await next(); const [{ createTextures }, { createMaterials }] = await Promise.all([import('../../twin/textures.js'), import('../../twin/materials.js')]);
-      const tex = createTextures(world, Math.min(16, renderer.capabilities.getMaxAnisotropy())); await next(); const mats = createMaterials(tex); marks.push(['mats', performance.now()]); await next();
+      const tex = createTextures(world, Math.min(16, renderer.capabilities.getMaxAnisotropy())); await next(); const mats = createMaterials(tex); mats.cut.color.set(0x4a525b); marks.push(['mats', performance.now()]); await next();
       const stub = new Proxy(function () {}, { get: (o, k) => (k === 'then' ? undefined : stub), apply: () => stub, set: () => true });
       const t = { THREE, scene, camera, renderer, ctx, world, quality: 'high', v3: U.v3, groundY: 0, reduced: reduced(), pickable: (o) => o, unpickable() {}, label: () => stub, glow: (o) => o, addUpdate: () => () => {}, heightAt: () => 0 };
       const env = { ...t, t, tex, mats, U, rng: U.rng, environment: { heightAt: () => 0 }, layer: (id) => id !== 'roof' && id !== 'walls-xray' };
       const real = new THREE.Group(); const groups = [];
       for (const id of ['building', 'rubble', 'interior']) { const before = new Set(scene.children); const mod = await import('../../twin/' + id + '.js'); await next(); const p = mod.build(env); p?.setLayer?.('roof', false); p?.setLayer?.('labels', false); marks.push([id, performance.now()]); if (p?.group) { p.group.visible = false; if (!p.group.parent) scene.add(p.group); groups.push(p); } for (const o of scene.children) if (!before.has(o) && o !== p?.group) o.visible = false, groups.push({ group: o }); for (let i = 0; i < 3; i++) p?.update?.(1, 1, { phase: 'search', units: {} }, { pose: { dist: 20 } }); await next(); }
       const gmat = mats.mud.clone(); gmat.color.set(0x23262a); gmat.roughness = 0.7; const gg = new THREE.Mesh(U.worldUV(new THREE.PlaneGeometry(300, 300).rotateX(-Math.PI / 2), 0.4), gmat); gg.position.set(64, -0.03, -44); gg.receiveShadow = true; gg.visible = false; scene.add(gg); groups.push({ group: gg });
-      try { const mod = await import('../../twin/actors/rover.js'), had = new Set(scene.children); rover = mod.default.create(t); for (const o of [...scene.children]) if (!had.has(o) && o.name !== 'HOUND-01') scene.remove(o); rover.update(roverState, 0.016, 0); scene.traverse((o) => { if (o.name !== 'HOUND-01') return; const off = []; o.traverse((m) => { if (m.isLight || m.isPoints || m.material?.isShaderMaterial) off.push(m); }); for (const m of off) m.parent.remove(m); /* headlights stay off: this is radio light only */ o.traverse((m) => { const n = m.geometry?.attributes?.normal; if (n) { for (let i = 0; i < n.count; i++) { const x = n.getX(i), y = n.getY(i), z = n.getZ(i); if (!(x * x + y * y + z * z > 0.01)) n.setXYZ(i, 0, 1, 0); } n.needsUpdate = true; } if (m.isMesh) { m.material = m.geometry.attributes.color ? body : m.material.isMeshBasicMaterial ? lamp : m.material; if (m.material === body || m.material === lamp) m.castShadow = true; else if (m.material.isMeshStandardMaterial) patch(m.material, shared, false); } }); }); patch(body, shared, false); } catch (e) { rover = null; console.warn('[radio] rover model left out', e); }
       const glass = new Set([mats.inner, mats.plaster, mats.cut, mats.concrete, mats.paint, mats.wood].slice(0, 4));
       for (const g of groups) g.group.traverse((o) => { for (const m of Array.isArray(o.material) ? o.material : o.material ? [o.material] : []) if (m.isMeshStandardMaterial) patch(m, shared, glass.has(m)); });
       probe.traverse((o) => { if (o.material?.isMeshStandardMaterial) patch(o.material, shared, false); });

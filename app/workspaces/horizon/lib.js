@@ -199,7 +199,7 @@ export function button({ label, icon: ic, primary = false, hint, onClick }) { re
 export function stat(label, { unit = '', hint } = {}) {
   const b = h('b.num', null, '–'), u = unit ? h('small', null, unit) : null, sub = h('span', null, label);
   const el = h('div.stat.horizon-stat', hint ? { title: hint } : null, h('div', null, b, u), sub);
-  return { el, set(v, newLabel) { b.textContent = v; if (newLabel != null) sub.textContent = newLabel; }, tone(t) { el.dataset.tone = t || ''; } };
+  return { el, set(v, newLabel) { b.textContent = v; if (u) u.style.display = /\d/.test(String(v)) ? '' : 'none'; if (newLabel != null) sub.textContent = newLabel; }, tone(t) { el.dataset.tone = t || ''; } };
 }
 export const group = (title, ...kids) => h('div.horizon-group', null, title ? h('h4', null, title) : null, ...kids);
 export const row = (...kids) => h('div.row.wrap', null, ...kids);

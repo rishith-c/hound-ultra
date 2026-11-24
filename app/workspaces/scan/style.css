@@ -60,7 +60,7 @@
 .scan-compass { position: absolute; left: 14px; bottom: calc(12px + var(--tb)); z-index: 2; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line-2); background: var(--glass); display: grid; place-items: center; pointer-events: none; }
 .scan-compass i { position: absolute; inset: 3px; }
 .scan-compass i::before { content: ""; position: absolute; left: 50%; top: 0; width: 0; height: 0; margin-left: -4px; border: 4px solid transparent; border-top: 0; border-bottom: 9px solid var(--text); }
-.scan-compass span { font-size: 10px; color: var(--text-3); margin-top: 6px; }
+.scan-compass span { font-size: var(--fs-11); color: var(--text-3); margin-top: 6px; }
 
 /* replay transport */
 .scan-transport { left: 12px; right: 12px; bottom: 12px; display: flex; align-items: center; gap: 12px; }
@@ -87,9 +87,9 @@
 .scan-tag-drone { translate: 16px -50%; color: var(--focus); font-family: var(--mono); text-shadow: 0 1px 4px var(--bg-0); }
 .scan-tag-void { translate: -50% calc(-100% - 20px); pointer-events: auto; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px 0 3px; border-radius: var(--r-1); border: 1px solid var(--warn-line); background: var(--glass); color: var(--text); font-family: var(--mono); }
 .scan-tag-void::after { content: ""; position: absolute; left: 50%; top: 100%; width: 1px; height: 20px; background: var(--warn-line); }
-.scan-tag-void b { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; background: var(--warn); color: var(--bg-0); font: 700 10px var(--font); }
+.scan-tag-void b { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; background: var(--warn); color: var(--bg-0); font: 700 11px var(--font); }
 .scan-tag-void.on { border-color: var(--warn); box-shadow: 0 0 0 3px var(--warn-soft); }
-.scan-tag-lead { translate: -50% calc(-100% - 2px); padding: 2px 7px; border-radius: 4px; background: color-mix(in srgb, var(--bg-0) 84%, transparent); border: 1px solid var(--warn); color: var(--warn); }
+.scan-tag-lead { translate: 14px 14px; padding: 2px 7px; border-radius: 4px; background: color-mix(in srgb, var(--bg-0) 84%, transparent); border: 1px solid var(--warn); color: var(--warn); }
 .scan-tag-lead.person { border-color: var(--person); color: var(--person); }
 .scan-tag-lead b { color: var(--text); }
 .scan-tag-handle { translate: 12px -50%; pointer-events: auto; cursor: grab; display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px 0 8px; border-radius: var(--r-1); border: 1px solid var(--line-3); background: color-mix(in srgb, var(--bg-0) 86%, transparent); color: var(--text); font: 500 var(--fs-12) var(--mono); touch-action: none; }

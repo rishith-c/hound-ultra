@@ -227,11 +227,11 @@ export default {
       g.fillStyle = T.bg0; g.beginPath(); g.rect(rx - 6, ry - 6, 12, 12); g.fill(); g.stroke(); g.lineWidth = 1.25; g.beginPath(); g.arc(rx, ry, 2.5, -2.3, -0.8); g.stroke(); g.beginPath(); g.arc(rx, ry + 2, 1.2, 0, TAU); g.fillStyle = T.accent; g.fill();
       // labels, leader-lined, placed away from the cloud
       const side = (px) => (px > mx + mw * 0.55 ? -1 : 1), up = (py) => (py > my + mh * 0.5 ? -1 : 1);
-      L.callout(g, 'hot spot, truth (simulated): drag', hx + HOT.sig * sc * 0.72 * side(hx), hy - HOT.sig * sc * 0.72, hx + 34 * side(hx), hy - HOT.sig * sc - 14, { color: 'danger', dot: false });
+      L.callout(g, 'hot spot, truth (simulated): drag', hx + HOT.sig * sc * 0.72 * side(hx), hy - HOT.sig * sc * 0.72, hx + (hx + 220 < w ? 34 : 34 * side(hx)), hy - HOT.sig * sc - 14, { color: 'danger', dot: false });
       if (A.hotSeen && P.view !== 'truth') L.callout(g, 'hottest point of the rebuilt map', X(A.hotEst[0]), Y(A.hotEst[1]) + 7, X(A.hotEst[0]) + 22 * side(hx), Y(A.hotEst[1]) + 30, { color: 'accent2', dot: false });
       L.callout(g, 'reader: drag', rx + 7 * side(rx), ry + 6, rx + 26 * side(rx), ry + 22, { color: 'accent2', dot: false });
       L.callout(g, 'aim point: drag', ax + 5 * side(ax), ay + 5 * -up(ay), ax + 30 * side(ax), ay - 26 * up(ay), { color: 'accent2', dot: false });
-      const lmx = X(lb[0]), lmy = Y(lb[1]); if (lmx > mx + 40 && lmx < mx + mw - 40 && lmy > my + 20 && lmy < my + mh - 20) L.callout(g, 'release line, ' + L.fix(F.drift, 0) + ' m upwind of the aim', lmx, lmy, lmx + 18 * side(lmx), lmy + 20 * (lmy > my + mh / 2 ? 1 : -1), { color: 'accent2', dot: false });
+      const lmx = X(lb[0]), lmy = Y(lb[1]); if (lmx > mx + 40 && lmx < mx + mw - 40 && lmy > my + 20 && lmy < my + mh - 20) L.callout(g, 'release line, ' + L.fix(F.drift, 0) + ' m upwind of the aim', lmx, lmy, lmx + 18 * side(lmx), lmy + 24, { color: 'accent2', dot: false });
       else L.text(g, 'the release line is ' + L.fix(F.drift, 0) + ' m upwind, off this map', mx + mw / 2, my + 16, { color: 'accent2', size: 11, align: 'center', halo: true });
       g.restore();
       // wind dial (drag to turn the wind), north, scale, clock
@@ -246,7 +246,7 @@ export default {
       // key row
       const ky = my + mh + 20; let kx = mx + 2; const cw = Math.min(130, mw * 0.2);
       if (P.view === 'error') L.colorbar(g, kx, ky, cw, L.heat, '0', '8 °C', 'absolute error'); else L.colorbar(g, kx, ky, cw, L.heat, TR[0] + '', TR[1] + ' °C', 'air temperature at the ground');
-      kx += cw + 34; const items = [[{ heard: true }, 'answers the reader'], [{ state: 'ok' }, 'working, out of reach'], [{ state: 'x' }, 'failed or on a roof']], compact = mw < 560;
+      kx += Math.max(cw + 34, 172); const items = [[{ heard: true }, 'answers the reader'], [{ state: 'ok' }, 'working, out of reach'], [{ state: 'x' }, 'failed or on a roof']], compact = mw < 560;
       items.forEach(([s, lab], i) => { const yy = compact ? ky - 4 + i * 13 : ky + 4, xx = compact ? kx : kx + i * 148; seedMark(g, xx + 4, yy, s, 3); L.text(g, lab, xx + 13, yy + 4, { color: 'text2', size: 10.5 }); });
       if (!compact || mw > 430) { const xx = compact ? kx + 150 : kx + 3 * 148; g.strokeStyle = L.rgba('text', 0.75); g.setLineDash([5, 4]); g.beginPath(); g.ellipse(xx + 8, ky + 3, 8, 5, 0, 0, TAU); g.stroke(); g.setLineDash([]); if (xx + 150 < mx + mw) L.text(g, 'forecast footprint (2σ)', xx + 22, ky + 7, { color: 'text2', size: 10.5 }); }
       // ---- side view: height against distance downwind ----
@@ -265,7 +265,7 @@ export default {
       // wind profile at the right, where no seed flies
       const px0 = B.x + B.w - 86, umax = P.wind * (top / 10) ** ASSUME.shear; g.strokeStyle = L.rgba('accent', 0.8); g.fillStyle = T.accent; g.lineWidth = 1;
       for (let q = 1; q <= 4; q++) { const z = (top * 0.96 * q) / 4.4 + top * 0.1, u = P.wind * (z / 10) ** ASSUME.shear, len = (u / umax) * 54, yy = Math.round(Pl.Y(z)) + 0.5; if (yy > B.y + B.h * 0.62) continue; g.beginPath(); g.moveTo(px0, yy); g.lineTo(px0 + len, yy); g.stroke(); g.beginPath(); g.moveTo(px0 + len + 4, yy); g.lineTo(px0 + len - 2, yy - 3); g.lineTo(px0 + len - 2, yy + 3); g.fill(); L.text(g, L.fix(u, 1), px0 - 5, yy + 3.5, { color: 'text3', size: 10.5, mono: true, align: 'right', weight: 400 }); }
-      L.text(g, 'wind by height, m/s', px0 - 26, B.y + 9, { color: 'accent2', size: 10.5 });
+      L.text(g, 'wind by height, m/s', px0 - 26, B.y - 7, { color: 'accent2', size: 10.5 });
     };
     const HANDLES = () => [['hot', P.hot], ['aim', P.aim], ['reader', P.reader]];
     fMap.onPointer((ev) => {
@@ -318,9 +318,9 @@ export default {
         if (xs.length > 1) { g.fillStyle = L.rgba('accent', 0.13); g.beginPath(); xs.forEach((x, i) => (i ? g.lineTo(Pl.X(x), Pl.Y(hi[i])) : g.moveTo(Pl.X(x), Pl.Y(hi[i])))); for (let i = xs.length - 1; i >= 0; i--) g.lineTo(Pl.X(xs[i]), Pl.Y(lo[i])); g.closePath(); g.fill(); }
         MCN.forEach((n, i) => { g.fillStyle = L.rgba('accent', 0.4); for (const v of mc.rms[i]) { g.beginPath(); g.arc(Pl.X(n), Pl.Y(v), 1.6, 0, TAU); g.fill(); } });
         L.trace(g, Pl, xs, md, { color: 'accent', width: 2 }); L.dots(g, Pl, xs, md, { color: 'accent', r: 3 });
-        if (xs.length) L.text(g, 'median of ' + mc.rms[0].length + ' drops', Pl.X(xs[xs.length - 1]) + 2, Pl.Y(md[md.length - 1]) - 9, { color: 'accent2', size: 10.5, align: 'right', halo: true });
+        if (xs.length) L.text(g, 'median of ' + mc.rms[0].length + ' drops', Pl.X(xs[0]) - 4, Math.max(Pl.Y(md[0]), Pl.Y(flat)) + 34, { color: 'accent2', size: 10.5, halo: true });
         if (mc.k < MCN.length * MCT) L.text(g, 'running drop ' + mc.k + ' of ' + MCN.length * MCT, B.x + B.w - 4, B.y + B.h - 8, { color: 'text3', size: 10.5, align: 'right', mono: true }); }
-      if (Number.isFinite(A.rms)) { const px = Pl.X(clamp(P.n, 7, 450)), py = Pl.Y(A.rms); g.strokeStyle = L.tokens().text; g.fillStyle = L.tokens().bg0; g.lineWidth = 1.5; g.beginPath(); g.arc(px, py, 4.5, 0, TAU); g.fill(); g.stroke(); L.callout(g, 'this drop', px, py, px + (P.n > 100 ? -22 : 22), py - 22, { color: 'text', dot: false }); }
+      if (Number.isFinite(A.rms)) { const px = Pl.X(clamp(P.n, 7, 450)), py = Pl.Y(A.rms); g.strokeStyle = L.tokens().text; g.fillStyle = L.tokens().bg0; g.lineWidth = 1.5; g.beginPath(); g.arc(px, py, 4.5, 0, TAU); g.fill(); g.stroke(); L.callout(g, 'this drop', px, py, px + (P.n > 100 ? -22 : 22), py + 34, { color: 'text', dot: false }); }
     };
     function titleConv() {
       if (!mc || mc.rms[0].length < 2) { fConv.setTitle('Repeating the drop to see how the error falls with the number of seeds…'); return; }

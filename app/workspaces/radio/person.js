@@ -176,7 +176,7 @@ export async function create(stage, side, ctx, lab) {
   const SPEED = 2.5;
 
   // ---------- figures ----------
-  const figPlan = lab.figure('The rover listens through the wall of Classroom 112', { tag: h('span.tag.tag-sim', null, 'Simulated room'), caption: 'Plan view, to scale. Radio positions are the layout the network was trained on. Drag the person.' });
+  const figPlan = lab.figure('Listening through the wall', { tag: h('span.tag.tag-sim', null, 'Simulated room'), caption: 'Plan view, to scale. Radio positions are the layout the network was trained on. Drag the person.' });
   const figTrace = lab.figure('How little a person changes the signal', { caption: 'One subcarrier over the 10 s window. Line: the channel alone. Dots: what the ESP32 model reports, 20 bins a second.' });
   const figWin = lab.figure('What the network is given: 51 subcarriers and a motion row, 10 s', { caption: 'Each subcarrier as % change from its own mean (ml/csi_window.py).' });
   const verdict = h('div.radio-person-verdict');
@@ -198,10 +198,10 @@ export async function create(stage, side, ctx, lab) {
     const [wx0, wy] = toS([WALL_X, VIEW.y0]), [wx1] = toS([WALL_X, VIEW.y1]), th = Math.max(4, m(0.1));
     c.fillStyle = lab.tok('--bg-4'); c.fillRect(0, wy - th / 2, w, th); c.strokeStyle = lab.tok('--line-3'); c.strokeRect(-1, Math.round(wy - th / 2) + 0.5, w + 2, Math.round(th));
     lab.label(c, 'Plasterboard partition', w - 10, wy - th / 2 - 9, { align: 'right', color: lab.tok('--text-3') });
-    lab.label(c, 'Classroom 112', 10, 14, { color: lab.tok('--text-2') }); lab.label(c, 'Classroom 111, rover side', 10, wy + th / 2 + 11, { color: lab.tok('--text-2') });
+    lab.label(c, 'Classroom 112', 10, 14, { color: lab.tok('--text-2') }); lab.label(c, 'Classroom 111', 10, wy + th / 2 + 11, { color: lab.tok('--text-2') });
     // trained region
     const a = toS([REGION.x1, REGION.y0]), b = toS([REGION.x0, REGION.y1]); c.setLineDash([4, 4]); c.strokeStyle = lab.tok('--line-3'); c.strokeRect(a[0], a[1], b[0] - a[0], b[1] - a[1]); c.setLineDash([]);
-    lab.label(c, 'training region', a[0] + 5, a[1] + 10, { color: lab.tok('--text-3') });
+    lab.label(c, 'training region', a[0] - 8, (a[1] + b[1]) / 2, { align: 'right', color: lab.tok('--text-3') });
     // static link
     const T = toS(TX), Rr = toS(RX);
     lab.line(c, [T, Rr], lab.tok('--accent'), 1.6);
@@ -216,10 +216,10 @@ export async function create(stage, side, ctx, lab) {
       else { const hd = toS([px, py + 0.68]); c.beginPath(); c.roundRect(P[0] - m(0.95), P[1] - m(0.2), m(1.5), m(0.4), m(0.18)); c.fill(); c.stroke(); c.beginPath(); c.arc(hd[0], hd[1], m(0.1), 0, 7); c.fillStyle = lab.rgba('--person', 0.5); c.fill(); c.stroke(); }
       const pts = bodyPts[st.posture]; c.fillStyle = lab.tok('--person'); for (const q of pts) { const s = toS([px + q.x, py + q.y]); c.fillRect(s[0] - 1, s[1] - 1, 2, 2); }
       lab.label(c, (st.who === 'moving' ? 'Moving' : 'Still') + ', ' + st.posture + (inRegion ? '' : ' · outside the trained region'), P[0] + m(0.3) + 4, P[1] - m(0.2) - 6, { color: inRegion ? lab.tok('--person') : lab.tok('--warn'), bg: true });
-      if (cur && cur.excess) lab.label(c, 'echo travels ' + cur.excess.toFixed(2) + ' m further: ' + (cur.excess / LAMBDA).toFixed(1) + ' wavelengths', (chestPt[0] + T[0]) / 2 + 8, (chestPt[1] + T[1]) / 2, { color: lab.tok('--text-2'), bg: true });
+      if (cur && cur.excess) lab.label(c, 'echo ' + cur.excess.toFixed(2) + ' m longer: ' + (cur.excess / LAMBDA).toFixed(1) + ' λ', (chestPt[0] + T[0]) / 2 + 8, (chestPt[1] + T[1]) / 2, { color: lab.tok('--text-2'), bg: true });
       // the chest, magnified
       if (st.who === 'still' && cur) {
-        const bx = w - 190, by = Math.min(wy + th / 2 + 12, hh - 56), mm = cur.chest[i] * 1000, half = Math.max(1, st.depthMm / 2);
+        const bx = w - 190, by = 12, mm = cur.chest[i] * 1000, half = Math.max(1, st.depthMm / 2);
         c.fillStyle = lab.rgba('--bg-0', 0.82); c.fillRect(bx - 8, by - 6, 190, 50); c.strokeStyle = lab.tok('--line-2'); c.strokeRect(bx - 7.5, by - 5.5, 189, 49);
         lab.label(c, 'Chest wall, drawn 12×', bx, by + 5, { color: lab.tok('--text-2') }); lab.label(c, lab.sgn(mm, 1) + ' mm', bx + 174, by + 5, { align: 'right', font: '500 11px ' + lab.tok('--mono'), color: lab.tok('--text') });
         const pxmm = 12 * (S / 1000), mid = bx + 87; c.strokeStyle = lab.tok('--line-3'); c.beginPath(); c.moveTo(mid - half * pxmm, by + 17); c.lineTo(mid - half * pxmm, by + 37); c.moveTo(mid + half * pxmm, by + 17); c.lineTo(mid + half * pxmm, by + 37); c.stroke();

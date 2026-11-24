@@ -1,0 +1,36 @@
+/* Vision lab, Demo mode. */
+.vision-demo { position: absolute; inset: 0; overflow: hidden; background: var(--bg-0); }
+:root[data-mode="demo"] .vision { position: absolute; inset: 0; }
+.vision-demo-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; cursor: grab; }
+.vision-demo-canvas:active { cursor: grabbing; }
+.vision-demo-canvas:focus-visible { box-shadow: inset 0 0 0 2px var(--focus); }
+.vision-demo-shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to top, color-mix(in srgb, var(--bg-0) 92%, transparent) 0, color-mix(in srgb, var(--bg-0) 40%, transparent) 26%, transparent 44%), radial-gradient(70% 90% at 0% 100%, color-mix(in srgb, var(--bg-0) 78%, transparent), transparent 70%), radial-gradient(120% 120% at 55% 45%, transparent 55%, color-mix(in srgb, var(--bg-0) 70%, transparent)); }
+.vision-demo-text { position: absolute; left: 32px; bottom: 34px; width: 500px; display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; }
+.vision-demo-text > * { pointer-events: auto; }
+.vision-demo-tags { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.vision-demo-rec { font: 500 var(--fs-12)/1 var(--font); color: var(--text-2); }
+.vision-demo-title { margin: 0 0 8px; min-height: 44px; font: 400 40px/1.08 var(--font-display); color: var(--text); white-space: nowrap; }
+.vision-demo-title.typing::after { content: ""; display: inline-block; width: 2px; height: 34px; margin-left: 4px; vertical-align: -5px; background: var(--accent); animation: vision-caret 1s steps(2, jump-none) infinite; }
+@keyframes vision-caret { 50% { opacity: 0; } }
+.vision-demo-line { margin: 0 0 10px; font: 400 15px/1.45 var(--font); color: var(--text-2); text-wrap: pretty; }
+.vision-demo-cap { margin: 0 0 16px; min-height: 22px; font: 500 15px/1.4 var(--font); color: var(--text); text-wrap: pretty; }
+.vision-demo-cap.person { color: var(--person); } .vision-demo-cap.warn { color: var(--warn); }
+.vision-demo-figs { position: absolute; right: 32px; bottom: 34px; display: flex; gap: 40px; text-align: right; pointer-events: none; }
+.vision-demo-figs > div { display: flex; flex-direction: column; gap: 4px; min-width: 96px; }
+.vision-demo-figs b { font: 400 40px/1 var(--font-display); font-variant-numeric: lining-nums tabular-nums; color: var(--text); }
+.vision-demo-figs small { margin-left: 5px; font: 400 14px/1 var(--mono); color: var(--text-2); }
+.vision-demo-figs span { font: 400 var(--fs-12)/1.3 var(--font); color: var(--text-2); white-space: nowrap; }
+.vision-demo-figs .person b { color: var(--person); } .vision-demo-figs .warn b { color: var(--warn); }
+.vision-demo-steps { position: absolute; right: 24px; top: 16px; display: flex; align-items: center; gap: 2px; }
+.vision-demo-stepname { margin-right: 12px; font: 500 13px/1 var(--font); color: var(--text); text-shadow: 0 0 8px var(--bg-0); }
+.vision-demo-steps button { width: 32px; height: 32px; padding: 0; border: 0; border-bottom: 1px solid var(--line-3); background: color-mix(in srgb, var(--bg-0) 60%, transparent); color: var(--text-2); font: 500 12px/1 var(--mono); cursor: pointer; }
+.vision-demo-steps button:hover { color: var(--text); border-bottom-color: var(--text-2); }
+.vision-demo-steps button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.vision-demo-steps button[aria-current="true"] { color: var(--text); border-bottom-color: var(--accent); box-shadow: inset 0 -1px 0 var(--accent); }
+.vision-demo-pin { position: absolute; left: 0; top: 0; will-change: transform; white-space: nowrap; pointer-events: none; }
+.vision-demo-pin i { position: absolute; left: 0; bottom: 0; width: 1px; height: 44px; background: linear-gradient(to top, transparent, var(--text)); }
+.vision-demo-pin span { position: absolute; left: 0; bottom: 44px; padding: 5px 8px; border-left: 2px solid var(--accent); background: color-mix(in srgb, var(--bg-0) 82%, transparent); font: 500 13px/1 var(--font); color: var(--text); }
+.vision-demo-pin.person span { border-left-color: var(--person); } .vision-demo-pin.warn span { border-left-color: var(--warn); }
+.vision-demo-aside { position: absolute; left: 32px; top: 24px; pointer-events: none; }
+.vision-demo-veil { position: absolute; inset: 0; background: var(--bg-0); opacity: 0; pointer-events: none; transition: opacity 220ms var(--ease); }
+.vision-demo-veil.on { opacity: 1; }

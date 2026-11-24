@@ -23,6 +23,8 @@
 .horizon-node.flip { flex-direction: row-reverse; transform: translateX(calc(-100% + 44px)); padding: 0 0 0 8px; border-radius: 4px 22px 22px 4px; text-align: right; } .horizon-node.flip .horizon-node-label { align-items: flex-end; }
 
 .horizon-placard { margin-top: 6px; display: flex; flex-direction: column; gap: 12px; padding-top: var(--s-5); border-top: 1px solid var(--line-2); min-height: 318px; }
+.horizon-ov-left > *, .horizon-placard > * { flex: none; }
+@media (max-height: 960px) { .horizon-ov-left { gap: 12px; padding: 18px 24px 14px 28px; } .horizon-ov-head h1 { font-size: var(--fs-40); } .horizon-ov-head .tag { margin-bottom: 2px; } .horizon-ov-head .lede { margin-top: 8px; font-size: 14px; } .horizon-ov-how { margin-top: 6px; } .horizon-placard { margin-top: 0; padding-top: 12px; gap: 9px; min-height: 0; } .horizon-placard-num { font-size: 28px; } .horizon-placard-hook { min-height: 0; line-height: 1.4; } .horizon-ov-foot { padding-top: 10px; } .horizon-ov-foot > :nth-last-child(-n+2) { display: none; } }
 .horizon-placard-num { font: 400 var(--fs-40)/1 var(--font-display); color: var(--accent); font-variant-numeric: lining-nums; }
 .horizon-placard-num span { font-size: var(--fs-16); color: var(--text-3); }
 .horizon-placard h2 { font: var(--type-title); }

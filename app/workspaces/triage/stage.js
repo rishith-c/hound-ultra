@@ -3,8 +3,10 @@
 import { createTwin } from '../../twin/index.js';
 import { createEngine } from '../../core/sim.js';
 
+export function ensureCss(ctx) { if (!document.getElementById('th-css')) document.head.append(ctx.kit.h('link', { id: 'th-css', rel: 'stylesheet', href: new URL('./hero.css', import.meta.url).href })); }
+
 // ---------- a private engine, advanced in short slices so the page never stalls ----------
-export function newEngine(ctx, emit) { const e = createEngine({ nn: ctx.nn, windows: 'scripted', keep: { autoplay: true, speed: 1 }, emit: (t, p) => emit?.(t, p) }); e.command('start'); return e; }
+export function newEngine(ctx, emit, autoplay = true) { const e = createEngine({ nn: ctx.nn, windows: 'scripted', keep: { autoplay, speed: 1 }, emit: (t, p) => emit?.(t, p) }); e.command('start'); return e; }
 export async function advance(engine, until, alive = () => true) {
   for (let n = 0; n < 24000 && !engine.done; ) {
     const t0 = performance.now();
@@ -28,6 +30,7 @@ export const ease = (x) => { x = clamp(x, 0, 1); return x * x * x * (x * (x * 6 
 const wrap = (a) => { a = (a + Math.PI) % (Math.PI * 2); if (a < 0) a += Math.PI * 2; return a - Math.PI; };
 
 export async function createStage(host, ctx, engine, { light = 'dawn' } = {}) {
+  ensureCss(ctx);
   const bus = localBus(ctx.bus), box = { engine };
   const sim = { get state() { return box.engine.state; }, plan: (...a) => box.engine.plan(...a), get grid() { return box.engine.grid; }, command: (...a) => box.engine.command(...a) };
   const priv = Object.create(ctx, { sim: { value: sim }, bus: { value: bus }, select: { value: () => {} }, selection: { value: null } });
@@ -111,7 +114,7 @@ export async function createStage(host, ctx, engine, { light = 'dawn' } = {}) {
     const mk = (depth, k) => { const m = new THREE.Mesh(geo, new THREE.ShaderMaterial({ ...basis, side: THREE.DoubleSide, depthFunc: depth, uniforms: { ...u, uK: { value: k } },
       vertexShader: 'attribute float aHot; varying vec2 v; varying float vB; void main(){ v=uv; vB=aHot; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }',
       fragmentShader: 'uniform float uTime,uTo,uLen,uA,uK; uniform vec3 uColor,uBad; varying vec2 v; varying float vB; void main(){ float s=v.x; if(s>uTo) discard; float y=abs(v.y)*1.6, fw=fwidth(v.y)*1.6; float line=1.-smoothstep(.2,.2+fw*1.4+.05,y); float edge=exp(-pow((y-.38)/(.05+fw),2.)); float glow=exp(-y*y*1.7); float head=exp(-(uTo-s)*.55); float flow=pow(.5+.5*cos(6.2832*(s*.16-uTime*.55)),10.);'
-        + 'vec3 c=mix(uColor,uBad,smoothstep(.2,.8,vB)); float a=(line*.62+edge*.0+glow*.2+flow*line*.5+head*(line*2.6+glow*1.1))*smoothstep(0.,1.2,s); gl_FragColor=vec4(mix(c,vec3(1.),clamp(head*line*.8,0.,.8))*a*uA*uK*1.25,a*uA*uK); }' })); m.frustumCulled = false; m.renderOrder = 30; scene.add(m); return m; };
+        + 'vec3 c=mix(uColor,uBad,smoothstep(.2,.8,vB)); float a=(line*.5+glow*.13+flow*line*.5+head*(line*1.3+glow*.55))*smoothstep(0.,1.2,s); gl_FragColor=vec4(mix(c,vec3(1.),clamp(head*line*.6,0.,.6))*a*uA*uK*1.25,a*uA*uK); }' })); m.frustumCulled = false; m.renderOrder = 30; scene.add(m); return m; };
     const front = mk(THREE.LessEqualDepth, 1), behind = mk(THREE.GreaterDepth, 0.2);
     return { length: s, to(m) { u.uTo.value = m; }, alpha(a) { u.uA.value = a; front.visible = behind.visible = a > 0.004; },
       at(m, out) { m = clamp(m, 0, s); let i = 1; while (i < n - 1 && cum[i] < m) i++; const k = (m - cum[i - 1]) / Math.max(1e-4, cum[i] - cum[i - 1]); out.x = pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * k; out.z = -(pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * k); return out; },
@@ -125,7 +128,7 @@ export async function createStage(host, ctx, engine, { light = 'dawn' } = {}) {
     const mk = (depth, k) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w + 1.2, hgt + 1.2).translate(0, hgt / 2 + 0.1, 0), new THREE.ShaderMaterial({ ...basis, side: THREE.DoubleSide, depthFunc: depth, uniforms: { ...u, uK: { value: k } },
       vertexShader: 'varying vec2 v; void main(){ v=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }',
       fragmentShader: 'uniform float uTime,uDraw,uA,uK; uniform vec3 uColor; uniform vec2 uSize; varying vec2 v; void main(){ vec2 p=(v-.5)*(uSize+1.2), b=uSize*.5; vec2 q=abs(p)-b; float d=length(max(q,0.))+min(max(q.x,q.y),0.); float ang=fract(atan(p.x,-p.y)/6.28318+.5+.5); float on=smoothstep(ang,ang+.004,uDraw*1.01); float fw=fwidth(d); float line=exp(-d*d/max(.0005,fw*fw)); float glow=exp(-abs(d)*7.)*.45; float tip=exp(-pow((ang-uDraw)/.012,2.))*step(uDraw,.995)*exp(-abs(d)*14.)*4.; float inside=step(d,0.); float hatch=smoothstep(.85,.95,abs(fract((p.x+p.y)*5.)-.5)*2.)*inside*.3*smoothstep(.9,1.,uDraw); float fill=inside*.08*smoothstep(.6,1.,uDraw);'
-        + 'float a=(line*1.8+glow)*on+tip+hatch+fill; gl_FragColor=vec4(mix(uColor,vec3(1.),clamp(line*on*.5+tip,0.,.9))*a*uA*uK,a*uA*uK); }' })); m.renderOrder = 45; m.position.z = 0.02; g.add(m); return m; };
+        + 'float a=(line*.8+glow*.42)*on+tip*.6+hatch*.45+fill*.6; gl_FragColor=vec4(mix(uColor,vec3(1.),clamp(line*on*.35+tip*.6,0.,.8))*a*uA*uK,a*uA*uK); }' })); m.renderOrder = 45; m.position.z = 0.02; g.add(m); return m; };
     mk(THREE.LessEqualDepth, 1.3); mk(THREE.GreaterDepth, 0.4);
     return { group: g, draw(x) { u.uDraw.value = x; }, alpha(a) { u.uA.value = a; g.visible = a > 0.004; } };
   }

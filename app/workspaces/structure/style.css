@@ -123,6 +123,7 @@ button.structure-label:hover span, button.structure-label:focus-visible span { b
 .structure-fig small { font: 400 var(--fs-16)/1 var(--font); color: var(--text-2); }
 .structure-fig span { font: 400 var(--fs-12)/1.3 var(--font); color: var(--text-2); }
 .structure-fig[data-tone="bad"] b { color: var(--danger); } .structure-fig[data-tone="ok"] b { color: var(--ok); }
+.structure-note { font: var(--type-caption, var(--type-label)); font-size: var(--fs-12); color: var(--text-3); }
 .structure-foot { position: absolute; left: 44px; right: 44px; bottom: 20px; display: grid; gap: 10px; }
 .structure-steps { display: flex; gap: 26px; }
 .structure-steps button { background: none; border: 0; padding: 4px 0; color: var(--text-3); font: var(--type-label); cursor: pointer; display: inline-flex; gap: 8px; align-items: baseline; transition: color var(--t-fast) var(--ease); }
@@ -132,3 +133,4 @@ button.structure-label:hover span, button.structure-label:focus-visible span { b
 .structure-prog { height: 1px; background: var(--line-2); overflow: hidden; } .structure-prog i { display: block; height: 100%; width: 100%; background: var(--text-2); transform: scaleX(0); transform-origin: left; }
 @media (max-width: 1500px) { .structure-title { left: 32px; } .structure-figs { right: 32px; gap: 28px; } .structure-fig b { font-size: var(--fs-40); } .structure-foot { left: 32px; right: 32px; } }
 @media (prefers-reduced-motion: reduce) { .structure-cap, .structure-fig { transition: none; } }
+.structure-act.is-off { visibility: hidden; }

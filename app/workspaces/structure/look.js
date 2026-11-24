@@ -48,8 +48,9 @@ let TX = null;
 export function textures() { if (!TX) TX = { conc: concreteTex(3, { board: 0, cracks: 6 }), form: concreteTex(8, { board: 1, cracks: 3 }), rough: concreteTex(21, { coarse: 0.5, cracks: 5 }), brick: brickTex(5), wood: woodTex(4), soil: concreteTex(44, { coarse: 0.28, cracks: 0 }) }; return TX; }
 
 // ------------------------------------------------------------ the one surface material
+export const XR = { value: 0 };   // film x-ray chapters: 1 = night and glass
 const TRI = `
-uniform sampler2D uTex; uniform float uS, uBump, uDust, uGhost, uMask; uniform vec3 uTint, uTint2; uniform vec4 uHeat; uniform mat3 normalMatrix;
+uniform sampler2D uTex; uniform float uS, uBump, uDust, uGhost, uMask, uXR; uniform vec3 uTint, uTint2; uniform vec4 uHeat; uniform mat3 normalMatrix;
 varying vec3 vOP; varying vec3 vON; varying vec3 vWP;
 vec4 gT; vec3 gDN; float gM;
 void triSample(){ vec3 bw = pow(abs(normalize(vON)), vec3(6.0)); bw /= (bw.x + bw.y + bw.z);
@@ -59,7 +60,7 @@ void triSample(){ vec3 bw = pow(abs(normalize(vON)), vec3(6.0)); bw /= (bw.x + b
   gM = texture2D(uTex, vOP.xz * uS * 0.17 + vOP.y * 0.07).r; }
 `;
 export function surface({ tex, scale = 0.8, bump = 0.9, dust = 0.75, tint = 0xffffff, tint2 = null, rough = 0.92, metal = 0, clip = null, side = THREE.FrontSide }) {
-  const u = { uTex: { value: tex }, uS: { value: scale }, uBump: { value: bump }, uDust: { value: dust }, uGhost: { value: 0 }, uMask: { value: tint2 == null ? 0 : 1 }, uTint: { value: new THREE.Color(tint) }, uTint2: { value: new THREE.Color(tint2 ?? tint) }, uHeat: { value: new THREE.Vector4(0, 0, 0, 0) }, uOff: { value: new THREE.Vector3() } };
+  const u = { uTex: { value: tex }, uS: { value: scale }, uBump: { value: bump }, uDust: { value: dust }, uGhost: { value: 0 }, uMask: { value: tint2 == null ? 0 : 1 }, uTint: { value: new THREE.Color(tint) }, uTint2: { value: new THREE.Color(tint2 ?? tint) }, uHeat: { value: new THREE.Vector4(0, 0, 0, 0) }, uOff: { value: new THREE.Vector3() }, uXR: XR };
   const m = new THREE.MeshStandardMaterial({ roughness: rough, metalness: metal, side }); m.userData.u = u; if (clip) { m.clippingPlanes = [clip]; m.clipShadows = true; }
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, u);
@@ -69,7 +70,7 @@ export function surface({ tex, scale = 0.8, bump = 0.9, dust = 0.75, tint = 0xff
       .replace('#include <normal_fragment_maps>', `{ vec3 on = normalize(vON) + gDN * uBump; vec3 vn = normalize(normalMatrix * on); normal = normalize(mix(normal, vn * (gl_FrontFacing ? 1.0 : -1.0), 1.0)); }
         { vec3 wn = inverseTransformDirection(normal, viewMatrix); float du = smoothstep(0.3, 0.95, wn.y) * uDust * smoothstep(0.2, 0.62, gT.r + gM * 0.5 - 0.12); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.33, 0.30, 0.265) * (0.8 + 0.5 * gT.r), du); roughnessFactor = min(1.0, roughnessFactor + du * 0.2); }`)
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = clamp(roughnessFactor + (gT.r - 0.5) * 0.18, 0.05, 1.0);')
-      .replace('#include <emissivemap_fragment>', `{ float nv = 1.0 - abs(dot(normalize(vViewPosition), normal)); totalEmissiveRadiance += uHeat.rgb * uHeat.a * (0.25 + 1.1 * pow(nv, 2.0) + 0.45 * smoothstep(0.42, 0.2, gT.r)); if (uGhost > 0.001) diffuseColor.a = mix(1.0, 0.05 + 0.34 * pow(nv, 1.6), uGhost); }`);
+      .replace('#include <emissivemap_fragment>', `{ float nv = 1.0 - abs(dot(normalize(vViewPosition), normal)); totalEmissiveRadiance += uHeat.rgb * uHeat.a * (0.16 + 0.75 * pow(nv, 2.6) + 0.22 * smoothstep(0.40, 0.16, gT.r)); totalEmissiveRadiance += vec3(0.20, 0.48, 0.80) * uXR * uGhost * (0.10 + 1.5 * pow(nv, 2.4)); if (uGhost > 0.001) diffuseColor.a = mix(1.0, 0.05 + 0.34 * pow(nv, 1.6), uGhost); }`);
   };
   m.customProgramCacheKey = () => 'structure-surface';
   return m;
@@ -112,7 +113,7 @@ export function plankGeo(h, seed) {
 export function bars(list, seed) {
   const r = rng(seed * 97 + 3), gs = [];
   for (const [x, y, z, dx, dy, dz, rad, len] of list) {
-    const L = len * (0.45 + r() * 0.9), bend = (r() - 0.35) * 1.1, a = r() * 6.28, side = new THREE.Vector3(Math.cos(a), Math.sin(a), Math.cos(a * 1.7)), d = new THREE.Vector3(dx, dy, dz); side.addScaledVector(d, -side.dot(d)).normalize();
+    const L = len * (0.35 + r() * 0.8), bend = (r() - 0.35) * 0.8, a = r() * 6.28, side = new THREE.Vector3(Math.cos(a), Math.sin(a), Math.cos(a * 1.7)), d = new THREE.Vector3(dx, dy, dz); side.addScaledVector(d, -side.dot(d)).normalize();
     const p0 = new THREE.Vector3(x, y, z), p1 = p0.clone().addScaledVector(d, L * 0.5).addScaledVector(side, bend * L * 0.12), p2 = p0.clone().addScaledVector(d, L * 0.92).addScaledVector(side, bend * L * 0.55); p2.y -= L * 0.2 * r();
     const g = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([p0.clone().addScaledVector(d, -0.05), p1, p2]), 7, rad, 5, false); g.deleteAttribute('uv'); gs.push(g);
   }
@@ -123,11 +124,11 @@ export function bars(list, seed) {
 export function personGeo() {
   // lying on the back, head toward +x, 1.72 m long, one knee bent, one arm across the chest
   const C = [ // ax ay az bx by bz ra rb
-    [0.74, 0.02, 0.0, 0.78, 0.03, 0.0, 0.1, 0.1], [0.62, 0.0, 0, 0.5, 0, 0, 0.055, 0.07], [0.47, 0.0, 0.15, 0.47, 0.0, -0.15, 0.085, 0.085], [0.42, 0.01, 0.06, 0.02, 0.0, 0.05, 0.12, 0.105], [0.42, 0.01, -0.06, 0.02, 0.0, -0.05, 0.12, 0.105], [0.02, 0, 0.07, -0.06, 0, -0.07, 0.11, 0.11],
+    [0.74, 0.02, 0.0, 0.78, 0.03, 0.0, 0.1, 0.1], [0.62, 0.0, 0, 0.5, 0, 0, 0.055, 0.07], [0.735, 0.112, 0, 0.757, 0.134, 0, 0.013, 0.019], [0.8, 0.02, 0.0, 0.83, 0.0, 0, 0.085, 0.07], [0.68, 0.06, 0, 0.7, 0.075, 0, 0.045, 0.05], [0.47, 0.0, 0.15, 0.47, 0.0, -0.15, 0.085, 0.085], [0.42, 0.01, 0.06, 0.02, 0.0, 0.05, 0.12, 0.105], [0.42, 0.01, -0.06, 0.02, 0.0, -0.05, 0.12, 0.105], [0.02, 0, 0.07, -0.06, 0, -0.07, 0.11, 0.11],
     [-0.06, 0, 0.09, -0.36, 0.2, 0.13, 0.085, 0.066], [-0.36, 0.2, 0.13, -0.62, -0.03, 0.12, 0.06, 0.045], [-0.62, -0.05, 0.12, -0.72, 0.0, 0.15, 0.045, 0.04], [-0.06, -0.01, -0.09, -0.46, -0.03, -0.12, 0.085, 0.062], [-0.46, -0.03, -0.12, -0.82, -0.05, -0.13, 0.058, 0.044], [-0.82, -0.05, -0.13, -0.86, 0.06, -0.16, 0.045, 0.036],
     [0.46, 0.0, 0.2, 0.2, -0.01, 0.3, 0.056, 0.046], [0.2, -0.01, 0.3, 0.16, 0.13, 0.08, 0.042, 0.036], [0.46, 0.0, -0.2, 0.22, -0.05, -0.31, 0.056, 0.046], [0.22, -0.05, -0.31, -0.02, -0.07, -0.34, 0.042, 0.036] ];
-  const sd = (x, y, z) => { let d = 9; for (const [ax, ay, az, bx, by, bz, ra, rb] of C) { const px = x - ax, py = y - ay, pz = z - az, ex = bx - ax, ey = by - ay, ez = bz - az, t = Math.max(0, Math.min(1, (px * ex + py * ey + pz * ez) / (ex * ex + ey * ey + ez * ez))), q = Math.hypot(px - ex * t, py - ey * t, pz - ez * t) - (ra + (rb - ra) * t), k = 0.045, w = Math.max(0, Math.min(1, 0.5 + 0.5 * (d - q) / k)); d = d + (q - d) * w - k * w * (1 - w); } return d + (vnoise(x * 22, y * 22, z * 22) - 0.5) * 0.012; };
-  const nx = 88, ny = 24, nz = 44, s = 0.0225, ox = -0.99, oy = -0.2, oz = -0.5, F = new Float32Array(nx * ny * nz); for (let k = 0; k < nz; k++) for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) F[i + nx * (j + ny * k)] = sd(ox + i * s, oy + j * s, oz + k * s);
+  const sd = (x, y, z) => { let d = 9; for (const [ax, ay, az, bx, by, bz, ra, rb] of C) { const px = x - ax, py = y - ay, pz = z - az, ex = bx - ax, ey = by - ay, ez = bz - az, t = Math.max(0, Math.min(1, (px * ex + py * ey + pz * ez) / (ex * ex + ey * ey + ez * ez))), q = Math.hypot(px - ex * t, py - ey * t, pz - ez * t) - (ra + (rb - ra) * t), k = 0.045, w = Math.max(0, Math.min(1, 0.5 + 0.5 * (d - q) / k)); d = d + (q - d) * w - k * w * (1 - w); } const cloth = x < 0.56 ? 1 : 0.15; return d + ((vnoise(x * 34, y * 15, z * 15) - 0.5) * 0.02 + (vnoise(x * 70, y * 50, z * 50) - 0.5) * 0.008 + Math.sin(x * 95 + z * 30 + vnoise(x * 9, y * 9, z * 9) * 9) * 0.0022) * cloth; };
+  const nx = 126, ny = 35, nz = 64, s = 0.0157, ox = -0.99, oy = -0.2, oz = -0.5, F = new Float32Array(nx * ny * nz); for (let k = 0; k < nz; k++) for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) F[i + nx * (j + ny * k)] = sd(ox + i * s, oy + j * s, oz + k * s);
   const vi = new Int32Array(F.length).fill(-1), pos = [], idx = [], at = (i, j, k) => F[i + nx * (j + ny * k)];
   for (let k = 0; k < nz - 1; k++) for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) { let sx = 0, sy = 0, sz = 0, n = 0; const E = [[0,0,0,1,0,0],[0,1,0,1,1,0],[0,0,1,1,0,1],[0,1,1,1,1,1],[0,0,0,0,1,0],[1,0,0,1,1,0],[0,0,1,0,1,1],[1,0,1,1,1,1],[0,0,0,0,0,1],[1,0,0,1,0,1],[0,1,0,0,1,1],[1,1,0,1,1,1]];
     for (const [a, b, c, d, e, f] of E) { const u = at(i + a, j + b, k + c), v = at(i + d, j + e, k + f); if ((u < 0) !== (v < 0)) { const t = u / (u - v); sx += a + (d - a) * t; sy += b + (e - b) * t; sz += c + (f - c) * t; n++; } }
@@ -135,7 +136,7 @@ export function personGeo() {
   const V = (i, j, k) => vi[i + nx * (j + ny * k)], quad = (a, b, c, d, f) => { if (a < 0 || b < 0 || c < 0 || d < 0) return; f ? idx.push(a, b, c, a, c, d) : idx.push(a, c, b, a, d, c); };
   for (let k = 1; k < nz - 1; k++) for (let j = 1; j < ny - 1; j++) for (let i = 1; i < nx - 1; i++) { const a = at(i, j, k) < 0; if (a !== at(i + 1, j, k) < 0) quad(V(i, j - 1, k - 1), V(i, j, k - 1), V(i, j, k), V(i, j - 1, k), a); if (a !== at(i, j + 1, k) < 0) quad(V(i - 1, j, k - 1), V(i - 1, j, k), V(i, j, k), V(i, j, k - 1), a); if (a !== at(i, j, k + 1) < 0) quad(V(i - 1, j - 1, k), V(i, j - 1, k), V(i, j, k), V(i - 1, j, k), a); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
-  const col = new Float32Array(pos.length); for (let i = 0; i < pos.length / 3; i++) { const x = pos[i * 3], z = pos[i * 3 + 2], y = pos[i * 3 + 1]; const skin = (x > 0.6 && x < 0.86 && y > -0.02) || (Math.abs(z) > 0.28 && x < 0.1 && x > -0.1) || (x > 0.1 && x < 0.22 && z < 0.12 && z > 0.02 && y > 0.1); const c = skin ? [0.62, 0.36, 0.25] : x > 0.6 ? [0.06, 0.04, 0.03] : x > -0.02 ? [0.66, 0.24, 0.06] : x > -0.66 ? [0.07, 0.085, 0.12] : [0.05, 0.045, 0.04]; col.set(c, i * 3); }
+  const col = new Float32Array(pos.length); for (let i = 0; i < pos.length / 3; i++) { const x = pos[i * 3], z = pos[i * 3 + 2], y = pos[i * 3 + 1]; const skin = (x > 0.6 && x < 0.815 && y > 0.028 - (x < 0.7 ? 0.05 : 0)) || (Math.abs(z) > 0.28 && x < 0.1 && x > -0.1) || (x > 0.1 && x < 0.22 && z < 0.12 && z > 0.02 && y > 0.1); const c = skin ? [0.62, 0.36, 0.25] : x > 0.6 ? [0.06, 0.04, 0.03] : x > -0.02 ? [0.46, 0.155, 0.05] : x > -0.66 ? [0.07, 0.085, 0.12] : [0.05, 0.045, 0.04]; col.set(c, i * 3); }
   g.setAttribute('color', new THREE.BufferAttribute(col, 3)); return g;
 }
 
@@ -144,8 +145,8 @@ export const SUN_DIR = new THREE.Vector3(0.86, 0.265, -0.44).normalize();
 const SKY = `
 vec3 skyCol(vec3 d, vec3 sun){ float h = max(d.y, 0.0), m = max(dot(d, sun), 0.0);
   vec3 zen = vec3(0.045, 0.085, 0.16), mid = vec3(0.21, 0.235, 0.285), hor = vec3(0.86, 0.47, 0.215);
-  vec3 c = mix(mid, zen, smoothstep(0.08, 0.62, h)); c = mix(c, hor * (0.35 + 0.9 * pow(m, 2.0)), exp(-h * 8.5));
-  c += vec3(1.0, 0.5, 0.18) * pow(m, 9.0) * 0.3; c += vec3(1.0, 0.66, 0.32) * pow(m, 90.0) * 1.6; return c; }
+  vec3 c = mix(mid, zen, smoothstep(0.08, 0.62, h)); c = mix(c, hor * (0.22 + 0.50 * pow(m, 2.0)), exp(-h * 9.5));
+  c += vec3(1.0, 0.5, 0.18) * pow(m, 9.0) * 0.3; c += vec3(1.0, 0.66, 0.32) * pow(m, 90.0) * 1.0; return c; }
 float hs(vec2 p){ return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5453); }
 float ns(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hs(i), hs(i + vec2(1, 0)), f.x), mix(hs(i + vec2(0, 1)), hs(i + vec2(1, 1)), f.x), f.y); }
 float fb(vec2 p){ float a = 0.0, w = 0.5; for (int i = 0; i < 5; i++) { a += w * ns(p); p = p * 2.03 + 7.1; w *= 0.5; } return a; }
@@ -162,16 +163,16 @@ export function makeSky() {
 export function makeSurroundings(T) {
   const g = new THREE.Group(), r = rng(77);
   // ground: crushed yard, wet in the hollows away from the bay
-  const gm = surface({ tex: T.soil, scale: 0.21, bump: 1.15, dust: 0, tint: 0x6a6259, rough: 0.96 }); const base = gm.onBeforeCompile;
-  gm.onBeforeCompile = (sh) => { base(sh); sh.fragmentShader = sh.fragmentShader.replace('roughnessFactor = clamp(', `float far = smoothstep(6.5, 11.0, length(vWP.xz)); float wet = smoothstep(0.5, 0.42, texture2D(uTex, vWP.xz * 0.024 + 0.31).r) * far; diffuseColor.rgb *= mix(1.0, 0.32, wet); gDN *= 1.0 - wet * 0.96; float lt = smoothstep(9.0, 3.0, length(vWP.xz * vec2(0.8, 0.95))); diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.5, 1.45, 1.38) + 0.012, lt); roughnessFactor = mix(roughnessFactor, 0.06, wet); roughnessFactor = clamp(`); };
+  const gm = surface({ tex: T.soil, scale: 0.34, bump: 0.62, dust: 0, tint: 0x37373a, rough: 0.98 }); const base = gm.onBeforeCompile;
+  gm.onBeforeCompile = (sh) => { base(sh); sh.fragmentShader = sh.fragmentShader.replace('roughnessFactor = clamp(', `float far = smoothstep(6.5, 11.0, length(vWP.xz)); float wet = smoothstep(0.455, 0.40, texture2D(uTex, vWP.xz * 0.024 + 0.31).r) * far; diffuseColor.rgb *= mix(1.0, 0.5, wet); gDN *= 1.0 - wet * 0.96; float lt = smoothstep(9.0, 3.0, length(vWP.xz * vec2(0.8, 0.95))); diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.5, 1.45, 1.38) + 0.012, lt); roughnessFactor = mix(roughnessFactor, 0.5, wet); roughnessFactor = clamp(`); };
   gm.customProgramCacheKey = () => 'structure-ground';
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600).rotateX(-Math.PI / 2), gm); ground.receiveShadow = true; ground.position.y = -0.004; g.add(ground);
   // neighbouring blocks in the haze, a few windows still lit
   const bm = new THREE.MeshStandardMaterial({ color: 0x3b3b3e, roughness: 0.95 });
   bm.onBeforeCompile = (sh) => { sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vP; varying vec3 vNN; varying float vId;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvP = (instanceMatrix * vec4(position, 1.0)).xyz; vNN = normal; vId = instanceMatrix[3].x;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vP; varying vec3 vNN; varying float vId; float hh(vec2 p){ return fract(sin(dot(p, vec2(12.98, 78.23))) * 43758.5453); }').replace('#include <emissivemap_fragment>', `if (abs(vNN.y) < 0.5) { vec2 uv = vec2(abs(vNN.x) > 0.5 ? vP.z : vP.x, vP.y) / vec2(2.4, 3.1); vec2 c = floor(uv), f = fract(uv); float w = step(0.24, f.x) * step(f.x, 0.76) * step(0.3, f.y) * step(f.y, 0.78); float fl = step(f.y, 0.06); diffuseColor.rgb *= mix(1.0, 0.16, w) * (1.0 + 0.5 * fl) * (0.8 + 0.4 * hh(c + vId)); roughnessFactor = mix(roughnessFactor, 0.2, w); totalEmissiveRadiance += w * step(0.972, hh(c * 1.7 + vId)) * vec3(1.0, 0.55, 0.22) * 0.55; }`); };
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vP; varying vec3 vNN; varying float vId; float hh(vec2 p){ return fract(sin(dot(p, vec2(12.98, 78.23))) * 43758.5453); }').replace('#include <emissivemap_fragment>', `if (abs(vNN.y) < 0.5) { vec2 uv = vec2(abs(vNN.x) > 0.5 ? vP.z : vP.x, vP.y) / vec2(2.4, 3.1); vec2 c = floor(uv), f = fract(uv); float w = step(0.24, f.x) * step(f.x, 0.76) * step(0.3, f.y) * step(f.y, 0.78); float fl = step(f.y, 0.06); diffuseColor.rgb *= mix(1.0, 0.16, w) * (1.0 + 0.5 * fl) * (0.8 + 0.4 * hh(c + vId)); roughnessFactor = mix(roughnessFactor, 0.2, w); totalEmissiveRadiance += w * step(0.972, hh(c * 1.7 + vId)) * vec3(1.0, 0.55, 0.22) * 0.3; }`); };
   const nb = 64, city = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), bm, nb), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0); let k = 0;
-  while (k < nb) { const a = r() * 6.283, d = 34 + r() * 110; p.set(Math.cos(a) * d, 0, Math.sin(a) * d); const hgt = 7 + r() * 13 + (d > 80 ? r() * 18 : 0); s.set(9 + r() * 13, hgt, 9 + r() * 12); if (p.x * SUN_DIR.x + p.z * SUN_DIR.z > d * 0.93 && d < 90) continue; p.y = hgt / 2 - 0.2; q.setFromAxisAngle(up, Math.round(r() * 4) * 0.3926 + (r() - 0.5) * 0.1); m4.compose(p, q, s); city.setMatrixAt(k++, m4); }
+  while (k < nb) { const a = r() * 6.283, d = 52 + r() * 110; p.set(Math.cos(a) * d, 0, Math.sin(a) * d); const hgt = 7 + r() * 13 + (d > 80 ? r() * 18 : 0); s.set(9 + r() * 13, hgt, 9 + r() * 12); if (p.x * SUN_DIR.x + p.z * SUN_DIR.z > d * 0.93 && d < 90) continue; p.y = hgt / 2 - 0.2; q.setFromAxisAngle(up, Math.round(r() * 4) * 0.3926 + (r() - 0.5) * 0.1); m4.compose(p, q, s); city.setMatrixAt(k++, m4); }
   city.receiveShadow = false; g.add(city);
   // utility poles and sagging wire
   const dark = new THREE.MeshStandardMaterial({ color: 0x15130f, roughness: 0.95 }), wires = []; const poles = [[17, -15], [21, 4], [25, 24], [13, -34]];
@@ -250,9 +251,9 @@ export function makePost(renderer) {
   const mAtm = mk(DEP + '#include <packing>\n' + SKY + `varying vec2 vUv; uniform vec3 uCam, uSun; uniform sampler2D tShadow; uniform mat4 uSM; uniform float uHaze, uShaft, uTime, uGain; uniform vec3 uPocket; uniform float uPk;
     float ig(vec2 p){ return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715)))); }
     void main(){ float z = texture2D(tDepth, vUv).x; vec4 w = uVI * vec4(vpos(vUv, z), 1.0); vec3 rd = w.xyz - uCam; float L = length(rd); rd /= L; bool sky = z > 0.99999; float D = min(L, 40.0), st = D / 22.0, t = st * ig(gl_FragCoord.xy); float T = 1.0; vec3 acc = vec3(0.0); float c = max(dot(rd, uSun), 0.0); float ph = 0.2 + 1.35 * pow(c, 6.0) + 0.4 * pow(c, 2.0);
-      for (int i = 0; i < 22; i++) { vec3 p = uCam + rd * t; float hgt = exp(-max(p.y, 0.0) * 0.28); float nse = 0.65 + 0.7 * ns(p.xz * 0.55 + vec2(uTime * 0.06, p.y * 0.8)); float den = uHaze * hgt * nse; float lit = 1.0; vec4 sc = uSM * vec4(p, 1.0); vec3 sp = sc.xyz / sc.w; if (sp.x > 0.0 && sp.x < 1.0 && sp.y > 0.0 && sp.y < 1.0 && sp.z < 1.0) lit = step(sp.z - 0.002, unpackRGBAToDepth(textureLod(tShadow, sp.xy, 0.0)));
+      for (int i = 0; i < 22; i++) { vec3 p = uCam + rd * t; float hgt = exp(-max(p.y, 0.0) * 0.28); float nse = 0.65 + 0.7 * ns(p.xz * 0.55 + vec2(uTime * 0.06, p.y * 0.8)); float den = uHaze * hgt * nse; float lit = 1.0; vec4 sc = uSM * vec4(p, 1.0); vec3 sp = sc.xyz / sc.w; if (sp.x > 0.0 && sp.x < 1.0 && sp.y > 0.0 && sp.y < 1.0 && sp.z < 1.0) { float an = 6.283 * ig(gl_FragCoord.yx + float(i) * 5.588), rr = 0.003 + 0.016 * ig(gl_FragCoord.xy * 1.7 + float(i) * 3.1); lit = step(sp.z - 0.002, unpackRGBAToDepth(textureLod(tShadow, sp.xy + vec2(cos(an), sin(an)) * rr, 0.0))); }
         float s = den * st; acc += T * s * (vec3(1.0, 0.58, 0.27) * lit * ph * uShaft + vec3(0.10, 0.12, 0.155)); T *= exp(-s); t += st; }
-      float far = max(0.0, (sky ? 260.0 : L) - 22.0); float ft = 1.0 - exp(-far * 0.0062 * exp(-max(uCam.y + rd.y * min(L, 120.0), 0.0) * 0.035)); if (sky) ft *= exp(-max(rd.y, 0.0) * 10.0) * 0.55; vec3 fc = skyCol(normalize(vec3(rd.x, 0.03, rd.z)), uSun) * 0.4; acc += T * ft * fc * uGain; T *= 1.0 - ft; gl_FragColor = vec4(acc, T); }`, { ...common(), uCam: { value: new THREE.Vector3() }, uSun: { value: SUN_DIR }, tShadow: { value: null }, uSM: { value: new THREE.Matrix4() }, uHaze: { value: 0.012 }, uShaft: { value: 1.6 }, uTime: { value: 0 }, uGain: { value: 1 }, uPocket: { value: new THREE.Vector3() }, uPk: { value: 0 } });
+      float far = max(0.0, (sky ? 260.0 : L) - 22.0); float ft = 1.0 - exp(-far * 0.0042 * exp(-max(uCam.y + rd.y * min(L, 120.0), 0.0) * 0.035)); if (sky) ft *= exp(-max(rd.y, 0.0) * 10.0) * 0.55; vec3 fc = skyCol(normalize(vec3(rd.x, 0.03, rd.z)), uSun) * 0.3; acc += T * ft * fc * uGain; T *= 1.0 - ft; gl_FragColor = vec4(acc, T); }`, { ...common(), uCam: { value: new THREE.Vector3() }, uSun: { value: SUN_DIR }, tShadow: { value: null }, uSM: { value: new THREE.Matrix4() }, uHaze: { value: 0.012 }, uShaft: { value: 1.6 }, uTime: { value: 0 }, uGain: { value: 1 }, uPocket: { value: new THREE.Vector3() }, uPk: { value: 0 } });
   const mComp = mk(DEP + `varying vec2 vUv; uniform sampler2D tMain, tAO, tAtm; uniform vec2 uHalf; uniform float uAO;
     void main(){ float z0 = lin(texture2D(tDepth, vUv).x); vec2 px = 1.0 / uHalf; float a = 0.0, w = 0.0; vec4 at = vec4(0.0); float wa = 0.0;
       for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) { vec2 q = vUv + vec2(float(i), float(j)) * px * 0.8; float z = lin(texture2D(tDepth, q).x); float k = exp(-abs(z - z0) / (0.04 * z0 + 0.02)); a += texture2D(tAO, q).x * k; w += k; float k2 = k * 0.9 + 0.1; at += texture2D(tAtm, q) * k2; wa += k2; }

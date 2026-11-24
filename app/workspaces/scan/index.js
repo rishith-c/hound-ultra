@@ -89,6 +89,8 @@ export default {
       h('div.scan-film-right', null, h('div.scan-film-figs', null, [['points', 0], ['voids found', 1], ['m³ of possible space', 2]].map(([t, i]) => h('div', null, film.fig[i], film.cap[i] = h('span', null, t)))), film.dots));
     stage.append(filmBox);
     const PASS_SAY = { aerial: 'A drone sweeps the site. Every beam that returns becomes a point.', orbit: 'It circles the collapse and looks in from the side.', close: 'Closer, for the cables, bars and bent roof sheets.', interior: 'Then inside, through every open door.', survey: 'A drone sweeps the building.', all: 'A simulated scan: every point is one beam that came back.' };
+    // on the exercise site the roofs stand to the south, so look at the collapses from the north, as the film does
+    function openSide(i) { const d = S.data; return d.kind !== 'site' ? undefined : d.voids.list[i].centre[0] > 88 ? 342 : 36; }
     function filmSay() {
       const s = film.hero.S, d = S.data, v = s.cur && s.cur.v;
       if (s.act === 'scan' && d.kind === 'file') return (S.file && S.file.sample ? 'The simulated sample scan, ' : d.name + ', ') + N(d.n) + ' points.';
@@ -96,7 +98,7 @@ export default {
       if (s.act === 'open') return 'The roof lifts away. Now the search runs: free space, flooded inward from open air.';
       if (!v) return 'No space in this scan is big enough for a person.';
       if (s.act === 'voids') return v.kind.split(':')[0] + '. ' + v.clear.toFixed(1) + ' m of headroom. ' + (v.places ? 'Floor for ' + v.places + (v.places === 1 ? ' person' : ' people') + ' lying down, assuming 2.0 by 0.6 m each.' : 'Too short to lie flat, long enough to crouch.');
-      return 'At the mouth of ' + v.id + '. ' + (v.seen == null ? 'A place to check, not a person found.' : 'Beams reached ' + Math.round(v.seen * 100) + ' % of it. A place to check, not a person found.');
+      return 'Looking into ' + v.id + '. ' + (v.seen == null ? 'A place to check, not a person found.' : 'Beams reached ' + Math.round(v.seen * 100) + ' % of it. A place to check, not a person found.');
     }
     function filmHtml(v) { return '<b>' + v.id + '</b><span>' + v.volume.toFixed(0) + ' m³</span><em>' + (v.places ? 'fits ' + v.places + ' lying down' : 'room to crouch') + '</em>'; }
     function filmAction() { const H = film.hero; if (!H) return; H.go(H.S.act === 'inside' || !H.big ? 'scan' : 'inside'); tickFilm(true); }
@@ -144,7 +146,7 @@ export default {
       else if (was === 'classify' && id !== 'classify' && S.mode === 'class') setMode(S.prevMode === 'class' ? 'natural' : S.prevMode);
       applyLayers(); drawSteps(); drawDock(); drawTransport();
       if (!S.data || !byUser && !S.auto) return;
-      if (id === 'voids') { if (S.sel < 0 && S.data.voids.list.length) selectVoid(0, true); else if (S.sel >= 0) view.focusVoid(S.sel); }
+      if (id === 'voids') { if (S.sel < 0 && S.data.voids.list.length) selectVoid(0, true); else if (S.sel >= 0) view.focusVoid(S.sel, openSide(S.sel)); }
       else if (id === 'map') view.topView();
       else if (id === 'capture' && byUser && was !== 'capture') view.home();
     }
@@ -283,7 +285,7 @@ export default {
     function selectVoid(i, flyThere) {
       if (film.hero) return;
       S.sel = i; S.route = null; view.selectVoid(i); view.setRoutes([]);
-      if (flyThere && i >= 0) view.focusVoid(i);
+      if (flyThere && i >= 0) view.focusVoid(i, openSide(i));
       if (S.step === 'voids') drawDock(); if (S.step === 'map') drawMap();
     }
     view.on('void', (i) => { if (S.step !== 'voids') setStep('voids', true); selectVoid(i, false); });

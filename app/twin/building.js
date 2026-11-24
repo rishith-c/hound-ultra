@@ -222,12 +222,12 @@ export function build(env) {
     update(dt, time, S, cams) {
       // the whole building, or just the few metres the rover is listening through
       const gl = cams && cams.glass; let goal = 0;
-      if (wantX) { goal = RALL; if (spring.r < 0.05 && gl) RV.uC.value.set(gl.x, gl.z); } else if (gl && gl.r > 0) { goal = gl.r; cGoal.set(gl.x, gl.z); if (spring.r < 0.3) RV.uC.value.copy(cGoal); else RV.uC.value.lerp(cGoal, 1 - Math.exp(-2.2 * dt)); }
+      if (wantX) { goal = RALL; if (spring.r < 0.05 && gl) RV.uC.value.set(gl.x, gl.z); } else if (gl && gl.r > 0) { goal = gl.r; cGoal.set(gl.x, gl.z); if (spring.r < 0.3) RV.uC.value.copy(cGoal); else RV.uC.value.lerp(cGoal, 1 - Math.exp(-5 * dt)); }
       const tr = wantRoof && !wantX ? 0 : 1; xmat.uniforms.uTime.value = t.reduced ? 0 : time;
       if (t.light) { xmat.uniforms.uSunDir.value.copy(t.light.sunDir); xmat.uniforms.uSun.value.copy(t.light.sunColor); xmat.uniforms.uSky.value.copy(t.light.hemi.color).multiplyScalar(0.8); }
       if (t.reduced || first) { spring.r = goal; spring.v = 0; rk = tr; first = false; apply(); return; }
       if (Math.abs(spring.r - goal) < 0.004 && Math.abs(spring.v) < 0.01 && rk === tr) { if (spring.r !== goal) { spring.r = goal; apply(); } return; }
-      const w = goal > spring.r ? 2.6 : 3.4, k = Math.exp(-w * dt), d = spring.r - goal, q = (spring.v + w * d) * dt; spring.v = (spring.v - w * q) * k; spring.r = goal + (d + q) * k;
+      const w = goal > spring.r ? 4.2 : 3.6, k = Math.exp(-w * dt), d = spring.r - goal, q = (spring.v + w * d) * dt; spring.v = (spring.v - w * q) * k; spring.r = goal + (d + q) * k;
       rk = clamp(rk + Math.sign(tr - rk) * dt / 2.4, 0, 1); if (Math.abs(rk - tr) < 0.005) rk = tr;
       apply();
     },

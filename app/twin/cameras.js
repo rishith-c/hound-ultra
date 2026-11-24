@@ -35,7 +35,7 @@ export function createCameras({ camera, dom, ctx, world, reduced = () => false, 
   // ---------- the director ----------
   const offs = [];
   if (ctx.bus) {
-    offs.push(ctx.bus.on('detection', (d) => { if (d && d.pos && d.status !== 'rejected') find = { pos: d.pos.slice(), until: now + 5.5, id: d.id }; }));
+    offs.push(ctx.bus.on('detection', (d) => { if (d && d.pos && d.status !== 'rejected') find = { pos: d.pos.slice(), until: now + (d.p < 0.5 ? 3.6 : 5.5), id: d.id }; }));
     offs.push(ctx.bus.on('survivor', (s) => { if (s && s.pos) find = { pos: s.pos.slice(), until: now + 5, id: s.id }; }));
     offs.push(ctx.bus.on('route', (r) => { if (r && r.status === 'planned') routeUntil = now + 7; }));
     offs.push(ctx.bus.on('reset', () => { find = null; routeUntil = 0; shot.key = ''; snap = true; }));
@@ -55,11 +55,11 @@ export function createCameras({ camera, dom, ctx, world, reduced = () => false, 
     survey(S, tau, k) { const d = unit(S, 'DRONE-01'); u3(tmp, d.pos, 0).lerp(siteC, 0.72); D.target.copy(tmp).setY(14); D.yaw = 0.02 - tau * 0.009 * k; D.pitch = 0.08; D.dist = 82; D.fov = 42; },
     drone(S, tau, k) { const d = unit(S, 'DRONE-01'); u3(D.target, d.pos, (d.alt || 0) * 0.9); D.yaw = -0.2 + tau * 0.015 * k; D.pitch = 0.2; D.dist = 19; D.fov = 36; },
     track(S, tau, k) { const r = unit(S, 'HOUND-01'); u3(D.target, r.pos, 0.55); D.yaw = yawBehind(r.heading) + 0.55 - 0.25 * slowIn(tau, 14) * k; D.pitch = 0.13; D.dist = 5.6 - 0.8 * slowIn(tau, 14) * k; D.fov = 36; },
-    inside(S, tau, k) { const r = unit(S, 'HOUND-01'); u3(D.target, r.pos, 0.35); D.yaw = 0.3 + Math.sin(tau * 0.07) * 0.2 * k; D.pitch = 0.6; D.dist = 12.5; D.fov = 34; },
-    listen(S, tau, k) { const r = unit(S, 'HOUND-01'); u3(D.target, r.pos, 0.45); D.yaw = shot.yaw0 + tau * 0.03 * k; D.pitch = 0.46; D.dist = 9.5 - 2.6 * slowIn(tau, 9) * k; D.fov = 34; },
-    find(S, tau, k) { const r = unit(S, 'HOUND-01'); u3(D.target, find ? find.pos : [64, 44], 0.5); D.yaw = shot.yaw0 + tau * 0.025 * k; D.pitch = 0.46 - 0.14 * slowIn(tau, 5) * k; D.dist = 10.5 - 4.2 * slowIn(tau, 6) * k; D.fov = 32; },
+    inside(S, tau, k) { const r = unit(S, 'HOUND-01'); u3(D.target, r.pos, 0.35); D.yaw = 0.3 + Math.sin(tau * 0.07) * 0.2 * k; D.pitch = 0.82; D.dist = 13; D.fov = 34; },
+    listen(S, tau, k) { const r = unit(S, 'HOUND-01'); u3(D.target, r.pos, 0.45); D.yaw = shot.yaw0 + tau * 0.03 * k; D.pitch = 0.8 - 0.14 * slowIn(tau, 9) * k; D.dist = 12 - 2.8 * slowIn(tau, 9) * k; D.fov = 34; },
+    find(S, tau, k) { const r = unit(S, 'HOUND-01'); u3(D.target, find ? find.pos : [64, 44], 0.5); D.yaw = shot.yaw0 + tau * 0.025 * k; D.pitch = 0.78 - 0.26 * slowIn(tau, 6) * k; D.dist = 11.5 - 4.4 * slowIn(tau, 6) * k; D.fov = 32; },
     route(S, tau, k) { const b = routeBox(S) || [20, 8, 84, 58], far = clamp(Math.max(b[2] - b[0], (b[3] - b[1]) * 1.5) * 1.15 + 14, 40, 130), u = k ? slowIn(tau, 6) : 1; D.target.set((b[0] + b[2]) / 2, 0, -(b[1] + b[3]) / 2); D.yaw = -0.22 + tau * 0.008 * k; D.pitch = 0.42 + 0.34 * u; D.dist = far * (0.5 + 0.5 * u); D.fov = 36; },
-    team(S, tau, k) { const m = unit(S, 'TEAM-1'), i = inB(m.pos); u3(D.target, m.pos, 0.9); D.yaw = (i ? 0.3 : yawBehind(m.heading || 0) + 0.7) + Math.sin(tau * 0.08) * 0.15 * k; D.pitch = i ? 0.6 : 0.16; D.dist = i ? 13 : 9; D.fov = 34; },
+    team(S, tau, k) { const m = unit(S, 'TEAM-1'), i = inB(m.pos); u3(D.target, m.pos, 0.9); D.yaw = (i ? 0.3 : yawBehind(m.heading || 0) + 0.7) + Math.sin(tau * 0.08) * 0.15 * k; D.pitch = i ? 0.82 : 0.16; D.dist = i ? 13 : 9; D.fov = 34; },
     done(S, tau, k) { D.target.copy(siteC).setY(13); D.yaw = -0.1 - tau * 0.008 * k; D.pitch = 0.07; D.dist = 78; D.fov = 42; },
   };
   const DOF = { establish: 0, survey: 0, drone: 0.5, track: 0.6, inside: 0.25, listen: 0.5, find: 0.55, route: 0, team: 0.5, done: 0 };
@@ -240,7 +240,7 @@ export function createCameras({ camera, dom, ctx, world, reduced = () => false, 
     // radio passes through the walls around the rover while it listens, and around a person as they are found
     const listening = S && S.sensors && S.sensors.listen, gk = mode === 'cinematic' || mode === 'follow' || mode === 'orbit';
     if (gk && find && now < find.until) { glass.x = find.pos[0]; glass.z = -find.pos[1]; glass.r = 5.5; }
-    else if (gk && listening) { const r = unit(S, 'HOUND-01'); glass.x = r.pos[0]; glass.z = -r.pos[1]; glass.r = 6.2; } else glass.r = 0;
+    else if (gk && S) { const team = mode === 'cinematic' && shot.key === 'team', u = unit(S, team ? 'TEAM-1' : 'HOUND-01'); glass.x = u.pos[0]; glass.z = -u.pos[1]; glass.r = inB(u.pos) ? (listening && !team ? 6.2 : 4.8) : 0; } else glass.r = 0;
     const near = clamp(C.dist * 0.02, 0.06, 2.5), far = 5200, vx = Math.round(-safeC.x * 2) / 2, vy = Math.round(-safeC.y * 2) / 2;
     if (camera.fov !== C.fov || camera.near !== near || camera.aspect !== aspect || view.x !== vx || view.y !== vy || view.w !== viewW || view.h !== viewH) {
       camera.fov = C.fov; camera.near = near; camera.far = far; camera.aspect = aspect; view.x = vx; view.y = vy; view.w = viewW; view.h = viewH;

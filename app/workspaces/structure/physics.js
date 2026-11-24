@@ -295,11 +295,11 @@ export function protectedMetrics(pile, world, box) {
   world.updateSceneQueries?.();
   const cy = Math.cos(box.yaw || 0), sy = Math.sin(box.yaw || 0);
   const W = (u, v, w) => ({ x: box.c[0] + u * cy + w * sy, y: box.c[1] + v, z: box.c[2] - u * sy + w * cy });
-  let inside = 0, total = 0;
+  let inside = 0, total = 0; const within = new Set();
   const nx = Math.max(2, Math.round(box.h[0] * 2 / 0.14)), ny = Math.max(2, Math.round(box.h[1] * 2 / 0.14)), nz = Math.max(2, Math.round(box.h[2] * 2 / 0.14));
   for (let a = 0; a < nx; a++) for (let b = 0; b < ny; b++) for (let c = 0; c < nz; c++) {
     const pt = W(((a + 0.5) / nx * 2 - 1) * box.h[0], ((b + 0.5) / ny * 2 - 1) * box.h[1], ((c + 0.5) / nz * 2 - 1) * box.h[2]);
-    let hit = false; world.intersectionsWithPoint(pt, (col) => { if (col.handle !== pile.ground) { hit = true; return false; } return true; });
+    let hit = false; world.intersectionsWithPoint(pt, (col) => { if (col.handle !== pile.ground) { hit = true; const b = col.parent(), i = b ? pile.byBodyAny(world, b.handle) : -1; if (i >= 0) within.add(i); return false; } return true; });
     total++; if (hit) inside++;
   }
   let headroom = Infinity; const roof = new Set(); let open = 0, rays = 0;
@@ -310,7 +310,7 @@ export function protectedMetrics(pile, world, box) {
     const d = hit.timeOfImpact - box.h[1] * 0.8; headroom = Math.min(headroom, Math.max(0, d));
     const b = hit.collider.parent(); if (b) { const i = pile.byBodyAny(world, b.handle); if (i >= 0) roof.add(i); }
   }
-  return { intrusion: inside / total, headroom: headroom === Infinity ? 8 : headroom, roof: [...roof], open: open / rays };
+  return { intrusion: inside / total, headroom: headroom === Infinity ? 8 : headroom, roof: [...roof], open: open / rays, within: [...within] };
 }
 
 // Every loose piece that lies anywhere above the protected volume (rays straight up through the whole stack).

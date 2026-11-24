@@ -8,7 +8,7 @@ const { h, icon, realityTag, tokens, rgba, text, TAU, clamp } = lib;
 // Order here does not matter; exhibits are sorted by readiness once loaded. A missing or broken file is skipped.
 const FILES = ['atoms', 'corners', 'seeds', 'laser', 'insects', 'smell', 'passive', 'earthfm', 'phones', 'legged', 'insar'];
 const BANDS = [
-  { label: 'Lab result', sub: 'shown in a laboratory or a controlled test' },
+  { label: 'Lab result', sub: 'in a laboratory or a set-piece test' },
   { label: 'Field trial', sub: 'tried outdoors or at a real incident' },
   { label: 'Fielded', sub: 'in routine use somewhere. Not by HOUND.' },
 ];
@@ -32,7 +32,7 @@ export default {
     const load = (f) => import('./exhibits/' + f + '.js').catch(() => new Promise((r) => setTimeout(r, 400)).then(() => import('./exhibits/' + f + '.js?retry=1')));
     const loaded = await Promise.allSettled(FILES.map(load));
     const EX = [];
-    loaded.forEach((r, i) => { if (r.status === 'fulfilled' && r.value.default?.id) EX.push(r.value.default); else console.warn('[horizon] exhibit "' + FILES[i] + '" is not available', r.reason?.message || ''); });
+    loaded.forEach((r, i) => { if (r.status === 'fulfilled' && r.value.default?.id) EX.push(r.value.default); else console.error('[horizon] exhibit "' + FILES[i] + '" is not available', r.reason?.message || ''); });
     EX.sort((a, b) => a.readiness - b.readiness);
     EX.forEach((e, i) => { e.num = String(i + 1).padStart(2, '0'); });
     if (!demo()) opening.remove(); else opening.hidden = !!dive;
