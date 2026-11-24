@@ -3,7 +3,7 @@
 import { CORNERS, bearing as bearingTo, haversine } from './geo.js';
 
 const VERSION = '5.24.1';
-const LIB = 'https://cdn.jsdelivr.net/npm/maplibre-gl@' + VERSION + '/dist/maplibre-gl';
+const LIB = new URL('../../../vendor/maplibre/maplibre-gl', import.meta.url).href;
 const IMAGERY = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?blankTile=false';
 const TERRAIN = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
 const VECTOR = 'https://tiles.openfreemap.org/planet';

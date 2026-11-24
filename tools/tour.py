@@ -28,7 +28,8 @@ def browser(a):
     proc = subprocess.Popen([shoot.CHROME, "--headless=new", "--remote-debugging-port=0", f"--user-data-dir={prof}", f"--window-size={a.w},{a.h}", "--hide-scrollbars",
                              "--no-first-run", "--mute-audio", "--disable-extensions", "--disable-background-timer-throttling", "--disable-renderer-backgrounding",
                              "--disable-backgrounding-occluded-windows", "--autoplay-policy=no-user-gesture-required", "--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream",
-                             "--enable-precise-memory-info", "--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist", "about:blank"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                             "--enable-precise-memory-info", *(["--disable-3d-apis", "--disable-gpu"] if a.nogl else ["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"]),
+                             *(["--host-resolver-rules=MAP * ~NOTFOUND , EXCLUDE 127.0.0.1"] if a.block else []), "about:blank"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     pf = os.path.join(prof, "DevToolsActivePort")
     for _ in range(300):
         if os.path.exists(pf) and open(pf).read().strip():
@@ -53,6 +54,8 @@ def main():
     ap.add_argument("--dwell", type=float, default=7)
     ap.add_argument("--out", default="/tmp/hound-tour")
     ap.add_argument("--fresh", action="store_true")
+    ap.add_argument("--block", action="store_true", help="no outside servers at all: only this site can be reached")
+    ap.add_argument("--nogl", action="store_true", help="a computer with no 3-D graphics")
     a = ap.parse_args()
     ids = a.ids.split(",") if a.ids else IDS
     os.makedirs(a.out, exist_ok=True)

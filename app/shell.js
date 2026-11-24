@@ -5,6 +5,7 @@ import { loadNN } from './core/nn.js';
 import { createSim, PHASE_INFO, FAULTS, COMMANDS } from './core/sim.js';
 import world from './core/world.js';
 import * as kit from './ui/kit.js';
+import * as film from './core/recording.js';
 const { h, icon, realityTag, fmt } = kit;
 
 // id, title, group, icon, reality (see kit.REALITY), one-line purpose. The module lives at workspaces/<id>/index.js.
@@ -91,7 +92,8 @@ const ctx = { bus, world, kit, prefs, manifest: MANIFEST, PHASE_INFO, FAULTS, CO
   setPref(k, v) { prefs[k] = v; savePrefs(); applyPrefs(); bus.emit('prefs', prefs); if (k === 'mode') { refreshMode(); bus.emit('mode', { mode: ctx.mode }); } },
   setMode(m) { if (m !== ctx.mode) ctx.setPref('mode', m); },
   select(sel) { ctx.selection = sel; bus.emit('select', sel); },
-  shell: { toast, confirm: confirmDialog, open: (id, params) => openWorkspace(id, params), current: () => current },
+  shell: { toast, confirm: confirmDialog, open: (id, params) => openWorkspace(id, params), current: () => current, film: (id) => { if (ctx.mode === 'demo' && film.has(id) && !live.has(id) && !mounted.get(id)?.recorded) { filmed.add(id); reopen(id); } },
+    clip: (id) => (mounted.get(id)?.recorded ? mounted.get(id).api?.seconds?.() || 40 : 0) },
 };
 window.HOUND = ctx; // for debugging and for the automated checks
 
@@ -123,7 +125,48 @@ function keepRecent(id) {
 // In Demo the mission plays only while you watch it, so every chapter starts from its own beginning.
 function demoClock(id) {
   if (ctx.mode !== 'demo' || !ctx.sim || new URLSearchParams(location.search).has('paused')) return;
-  if (id === 'mission') ctx.sim.play(); else ctx.sim.pause();
+  if (id === 'mission' && !mounted.get(id)?.recorded) ctx.sim.play(); else ctx.sim.pause();
+}
+
+// ---------- computers that cannot draw a chapter ----------
+const filmed = new Set(), live = new Set();   // chapters shown as a recording, and chapters the viewer asked to run live
+const wantsFilm = (id) => ctx.mode === 'demo' && film.has(id) && !live.has(id) && (filmed.has(id) || !!film.cannotDraw());
+function record(rec, root, m) {
+  rec.recorded = true;
+  rec.api = film.show(root, m, ctx, () => { live.add(m.id); filmed.delete(m.id); reopen(m.id); });
+}
+function reopen(id) {
+  const rec = mounted.get(id), here = current === id; if (here) current = null;
+  if (rec && !rec.api) { mounted.delete(id); rec.root.remove(); } else evict(id);
+  if (here) openWorkspace(id);
+}
+// Files come from this site, but a connection can still drop: try again before giving up.
+async function load(id) {
+  for (let i = 0; ; i++) {
+    try { return await import(`./workspaces/${id}/index.js${i ? '?try=' + i : ''}`); }
+    catch (e) { if (i === 2 || !/dynamically imported module|module script failed/i.test(String(e))) throw e; await new Promise((f) => setTimeout(f, 600 * (i + 1))); }
+  }
+}
+// Demo: if a chapter stays under 13 frames a second for six seconds, its recording takes over. After two such chapters all of them do.
+function watchFrames() {
+  let last = 0, n = 0, t0 = 0, bad = 0, at = null, since = 0, slow = 0;
+  const tick = (now) => {
+    requestAnimationFrame(tick);
+    const dt = now - last; last = now;
+    if (current !== at || dt > 4000 || document.hidden || mounting || opened < opening) { at = current; since = now; n = 0; t0 = now; bad = 0; return; }
+    if (now - since < 5000) { n = 0; t0 = now; return; }
+    n++;
+    if (now - t0 < 2000) return;
+    const fps = n * 1000 / (now - t0); n = 0; t0 = now; bad = fps < 13 ? bad + 1 : 0;
+    const rec = mounted.get(current);
+    if (bad >= 3 && rec && !rec.recorded && !live.has(current) && ctx.mode === 'demo' && film.has(current)) { bad = 0; if (++slow > 1) film.rememberSlow(); filmed.add(current); reopen(current); }
+  };
+  requestAnimationFrame(tick);
+  $('main').addEventListener('webglcontextlost', (e) => {
+    const c = e.target, id = current; if (c.clientWidth < 400 || c.closest('.ws')?.dataset.ws !== id) return;
+    setTimeout(() => { const gl = realGetContext.call(c, 'webgl2'); if (current === id && c.isConnected && (!gl || gl.isContextLost()) && ctx.mode === 'demo' && film.has(id) && !mounted.get(id)?.recorded) { filmed.add(id); reopen(id); } }, 2500);
+  }, true);
+  bus.on('mode', () => { const rec = mounted.get(current); if (rec?.api && !!rec.recorded !== wantsFilm(current) && (rec.recorded || film.cannotDraw())) reopen(current); });
 }
 
 function refreshMode() {
@@ -196,7 +239,7 @@ function refreshChrome() {
 const reduced = () => document.documentElement.dataset.motion === 'reduce' || matchMedia('(prefers-reduced-motion: reduce)').matches;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const frames = (n) => new Promise((r) => { const f = () => (n-- > 0 ? requestAnimationFrame(f) : r()); f(); });
-let opening = 0;
+let opening = 0, opened = 0;
 async function veil(on) {
   const v = $('veil'); if (reduced()) { v.classList.remove('on'); return; }
   v.classList.toggle('on', on); if (on) await wait(150);
@@ -218,24 +261,31 @@ async function openWorkspace(id, params = {}) {
   const label = $('veil-label'); label.textContent = CHAPTERS.find((c) => c.id === m.id)?.label || m.title;
   if (!first) await veil(true);
   if (token !== opening) return;                                   // a newer click won
+  document.querySelectorAll('.ws[data-failed]').forEach((x) => x.remove());      // a page that failed is not left under the next one
   if (current && mounted.has(current)) { const prev = mounted.get(current); prev.root.hidden = true; try { prev.api?.onHide?.(); } catch (e) { console.error(e); } }
   current = m.id;
   let rec = mounted.get(m.id);
+  if (rec?.api && rec.recorded && !wantsFilm(m.id)) { current = null; evict(m.id); current = m.id; rec = null; }
   if (!rec) {
     const root = h('div.ws', { id: 'ws-' + m.id, 'data-ws': m.id, role: 'region', 'aria-label': m.title });
     root.append(h('div.empty', null, h('div.spinner'), h('p', null, `Opening ${m.title}…`)));
     $('main').append(root); rec = { root, api: null, offs: [] }; mounted.set(m.id, rec); mounting = m.id;
     try {
-      const mod = await import(`./workspaces/${m.id}/index.js`);
+      if (wantsFilm(m.id)) record(rec, root, m);
+      else {
+      const mod = await load(m.id);
       root.replaceChildren();
       const own = { ...ctx, params, manifestEntry: m, bus: { ...bus, on: (type, fn) => { const off = bus.on(type, fn); rec.offs.push(off); return off; } } };
       for (const k of ['selection', 'mode']) Object.defineProperty(own, k, { get: () => ctx[k], set: (v) => { if (k === 'selection') ctx.selection = v; }, configurable: true, enumerable: true });
       rec.api = (await mod.default.mount(root, own)) || {};
+      }
     } catch (e) {
       console.error(`[shell] workspace "${m.id}" failed`, e);
+      if (ctx.mode === 'demo' && film.has(m.id)) { filmed.add(m.id); rec.offs.forEach((f) => f()); rec.offs = []; record(rec, root, m); } else {
       const missing = /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(String(e));
-      root.replaceChildren(h('div.empty', null, icon('alert', 28), h('h2', null, missing ? `${m.title} is not built yet` : `${m.title} could not start`), h('p.muted', { style: { maxWidth: '520px' } }, missing ? m.blurb : String(e.message || e)), realityTag(m.reality)));
-      mounted.delete(m.id); if (current === m.id) rec.failed = true;
+      root.replaceChildren(h('div.empty', null, icon('alert', 28), h('h2', null, missing ? `${m.title} did not load` : `${m.title} could not start`), h('p.muted', { style: { maxWidth: '520px' } }, missing ? m.blurb : String(e.message || e)), realityTag(m.reality), h('button.btn.btn-primary', { onclick: () => location.reload() }, 'Try again')));
+      mounted.delete(m.id); root.dataset.failed = ''; if (current === m.id) rec.failed = true;
+      }
     }
   } else { rec.root.hidden = false; rec.api?.onParams?.(params); }
   if (current === m.id) { try { rec.api?.onShow?.(); } catch (e) { console.error(e); } }
@@ -243,6 +293,7 @@ async function openWorkspace(id, params = {}) {
   if (mounting === m.id) mounting = null;
   if (current === m.id) { keepRecent(m.id); demoClock(m.id); }
   bus.emit('workspace', m.id);
+  opened = token; document.documentElement.toggleAttribute('data-recorded', !!mounted.get(current)?.recorded);
   if (token === opening) { if (!first) await frames(2); veil(false); preloadNext(m.id); }
 }
 
@@ -275,6 +326,7 @@ async function boot() {
     else if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey && ctx.mode === 'demo' && (e.key === '[' || e.key === ']')) stepChapter(e.key === ']' ? 1 : -1);
   });
   ctx.deepLink = location.hash;   // read by the opening title before the first chapter writes its own address
+  watchFrames();
   for (const g of GLOBALS) import(`./global/${g}.js`).then((mod) => mod.init?.(ctx)).catch(() => {});
   refreshChrome();
   await openWorkspace(location.hash.replace(/^#\/?/, '').split('?')[0] || (ctx.mode === 'demo' ? CHAPTERS[0].id : 'mission'));

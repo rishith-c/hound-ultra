@@ -1,7 +1,7 @@
 // Structure lab: the rigid-body world. Rapier 3-D (WebAssembly) does the dynamics; this file builds the bay,
 // fails its supports, and runs every "what if" (lift, tremor) in a restored copy of the world.
 // Units: metres, kilograms, seconds, newtons. y is up.
-const RAPIER_URL = 'https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.17.3/+esm';
+const RAPIER_URL = new URL('../../../vendor/rapier/dimforge-rapier3d-compat-0.17.3.js', import.meta.url).href;
 export const RAPIER_VERSION = '0.17.3';
 let R = null;
 export async function loadRapier() {

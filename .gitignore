@@ -4,3 +4,6 @@ orchestration/logs/
 __pycache__/
 *.pyc
 node_modules/
+
+# recordings for weak computers: made by tools/film.py + tools/clips.py, deployed, not kept in git
+/film/

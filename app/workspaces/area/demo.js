@@ -31,7 +31,7 @@ export function createDemo(root, ctx, opts) {
   }
   async function ensure() {
     if (film) return film;
-    starting ||= import('./film.js').then(({ createFilm }) => { if (gone) return null; film = createFilm(host, { ...opts, onInfo, reduced: reducedMotion, onFail: () => ctx.shell.toast('The satellite tiles are not loading. The valley is drawn from the saved elevation grid.', { level: 'info' }) }); return film; });
+    starting ||= import('./film.js').then(({ createFilm }) => { if (gone) return null; film = createFilm(host, { ...opts, onInfo, reduced: reducedMotion, onFail: () => ctx.shell.film('area') }); return film; });
     return starting;
   }
   return { ui, get film() { return film; }, async start() { el.fly.hidden = el.again.hidden = reducedMotion(); const f = await ensure(); f?.start(); return f; }, stop() { film?.stop(); }, dispose() { gone = true; film?.destroy(); film = null; ui.remove(); } };

@@ -75,7 +75,7 @@ async function startOffline() {
     tell({ state: 'online' }); await new Promise((r) => setTimeout(r, 4000)); await saveLoaded();
   } catch (e) { tell({ state: 'error', message: String(e.message || e) }); }
 }
-const wanted = (u) => { try { const x = new URL(u, location.href); return (x.origin === location.origin || x.hostname === 'cdn.jsdelivr.net') && !x.search.includes('fresh='); } catch { return false; } };
+const wanted = (u) => { try { const x = new URL(u, location.href); return (x.origin === location.origin || x.hostname === 'cdn.jsdelivr.net') && !x.search.includes('fresh=') && !/\.mp4$/.test(x.pathname); } catch { return false; } };
 async function post(urls) { const w = (await navigator.serviceWorker.ready).active; tell({ total: urls.length, done: 0, failed: 0 }); w.postMessage({ type: 'save', urls }); }
 // What this page has already loaded, so opening it again works with no network.
 const saveLoaded = () => post([...new Set([location.href.split('#')[0].split('?')[0], new URL('../', location.href).href, ...performance.getEntriesByType('resource').map((r) => r.name).filter(wanted)])]);
@@ -92,7 +92,7 @@ async function saveAll() {
     let src; try { const r = await fetch(u); if (!r.ok) { seen.delete(u); continue; } src = await r.text(); } catch { seen.delete(u); continue; }
     for (const m of src.matchAll(REF)) {
       const s = m[1]; let t = null; if (/[{}$*\\]/.test(s)) continue;
-      if (/^(\.{1,2}\/|\/)/.test(s)) t = s; else if (map[s]) t = map[s]; else { const p = Object.keys(map).find((k) => k.endsWith('/') && s.startsWith(k)); if (p) t = map[p] + s.slice(p.length); else if (/^[\w./-]+\.(css|js|webp|jpg|png|svg|woff2|json|bin|glb)$/.test(s)) t = s; }
+      if (/^(\.{1,2}\/|\/)/.test(s)) t = s; else if (map[s]) t = new URL(map[s], base).href; else { const p = Object.keys(map).find((k) => k.endsWith('/') && s.startsWith(k)); if (p) t = new URL(map[p] + s.slice(p.length), base).href; else if (/^[\w./-]+\.(css|js|webp|jpg|png|svg|woff2|json|bin|glb)$/.test(s)) t = s; }
       if (t) try { queue.push(new URL(t, u).href); } catch { /* not an address */ }
     }
   }

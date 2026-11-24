@@ -44,8 +44,9 @@ export function init(ctx) {
     const id = ctx.shell.current();
     if (shown !== id || document.hidden || root.dataset.intro || document.querySelector('.scrim, [aria-modal="true"]')) return;
     t += dt;
-    let p;
-    if (id === 'mission') {
+    let p; const clip = ctx.shell.clip(id);            // a recording plays once through
+    if (clip) { p = Math.min(1, t / clip); if (p >= 1) return next(); }
+    else if (id === 'mission') {
       const S = ctx.sim.state;
       if (S.phase === 'complete') held += dt;
       p = S.phase === 'complete' ? 1 : Math.min(0.99, S.t / MISSION_END);

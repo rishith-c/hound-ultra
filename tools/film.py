@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """film.py: record shots of the running site frame by frame, so the video is smooth whatever this computer is doing.
 
-    python3 tools/film.py SHOTS.json [--only name,name] [--w 1920] [--h 1080] [--dpr 1] [--fps 60] [--out DIR]
+    python3 tools/film.py SHOTS.json [--only name,name] [--w 1920] [--h 1080] [--dpr 1] [--fps 60] [--out DIR] [--sheet SECONDS]
 
 The page's clock is replaced: after a shot has settled, time only moves when a frame has been saved. requestAnimationFrame,
 timers, performance.now, Date and CSS / Web animations all follow that clock. Each shot becomes one H.264 file.
-A shot: {"name", "url", "settle": s, "before": "js", "seconds": s, "do": [[t, "js"], ...], "hide": "css"}
+A shot: {"name", "url", "settle": s, "before": "js", "seconds": s, "do": [[t, "js"], ...], "hide": "css", "size": [w, h, dpr]}
+Default 1440 x 810 at 1.3333, which saves 1920 x 1080 with the type a third larger.
 """
 import argparse, base64, json, os, shutil, subprocess, sys, tempfile, time, urllib.request
 import shoot
@@ -36,9 +37,10 @@ CLOCK = r"""(() => {
 })();"""
 
 
-def chrome(a):
+def chrome(a, size):
+    w, h, dpr = size
     prof = tempfile.mkdtemp(prefix="hound-film-")
-    proc = subprocess.Popen([shoot.CHROME, "--headless=new", "--remote-debugging-port=0", f"--user-data-dir={prof}", f"--window-size={a.w},{a.h}", "--hide-scrollbars", "--no-first-run",
+    proc = subprocess.Popen([shoot.CHROME, "--headless=new", "--remote-debugging-port=0", f"--user-data-dir={prof}", f"--window-size={w},{h}", "--hide-scrollbars", "--no-first-run",
                              "--mute-audio", "--disable-extensions", "--disable-background-timer-throttling", "--disable-renderer-backgrounding", "--disable-backgrounding-occluded-windows",
                              "--autoplay-policy=no-user-gesture-required", "--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", "--use-angle=metal", "--enable-gpu",
                              "--ignore-gpu-blocklist", "--force-color-profile=srgb", "about:blank"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -53,14 +55,30 @@ def chrome(a):
     for m in ("Page.enable", "Runtime.enable", "Log.enable"):
         page.call(m)
     page.call("Page.addScriptToEvaluateOnNewDocument", {"source": CLOCK})
-    page.call("Emulation.setDeviceMetricsOverride", {"width": a.w, "height": a.h, "deviceScaleFactor": a.dpr, "mobile": False})
+    page.call("Emulation.setDeviceMetricsOverride", {"width": w, "height": h, "deviceScaleFactor": dpr, "mobile": False})
     return proc, prof, page
 
 
+def sheet(cells, out, cols=4, w=640):
+    from PIL import Image, ImageDraw
+    import io
+    ims = [(t, Image.open(io.BytesIO(d)).convert("RGB")) for t, d in cells]
+    hh = round(ims[0][1].height * w / ims[0][1].width)
+    big = Image.new("RGB", (cols * w, -(-len(ims) // cols) * hh))
+    d = ImageDraw.Draw(big)
+    for i, (t, im) in enumerate(ims):
+        x, y = i % cols * w, i // cols * hh
+        big.paste(im.resize((w, hh)), (x, y))
+        d.rectangle((x, y, x + 60, y + 16), fill=(0, 0, 0))
+        d.text((x + 4, y + 2), f"{t:.1f} s", fill=(255, 255, 255))
+    big.save(out, quality=85)
+
+
 def record(a, shot, base):
-    proc, prof, page = chrome(a)
+    proc, prof, page = chrome(a, shot.get("size") or (a.w, a.h, a.dpr))
     out = os.path.join(a.out, shot["name"] + ".mp4")
     n = int(round(shot["seconds"] * a.fps))
+    every = int(round(a.sheet * a.fps)) if a.sheet else 1
     t0 = time.time()
     try:
         page.call("Page.navigate", {"url": base + shot["url"]})
@@ -74,8 +92,9 @@ def record(a, shot, base):
                 print("  before:", r["__error__"][:300])
         page.pump(shot.get("after", 0.2))
         todo = sorted(shot.get("do", []), key=lambda x: x[0])
-        enc = subprocess.Popen([FFMPEG, "-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", str(a.fps), "-c:v", "mjpeg", "-i", "-", "-c:v", "libx264", "-preset", "medium", "-crf", "12",
+        enc = None if a.sheet else subprocess.Popen([FFMPEG, "-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", str(a.fps), "-c:v", "mjpeg", "-i", "-", "-c:v", "libx264", "-preset", "medium", "-crf", "12",
                                 "-pix_fmt", "yuv420p", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709", out], stdin=subprocess.PIPE)
+        cells = []
         page.eval("__film.freeze()")
         for k in range(n):
             t = k / a.fps
@@ -84,10 +103,18 @@ def record(a, shot, base):
                 if isinstance(r, dict) and "__error__" in r:
                     print("  do:", r["__error__"][:300])
             page.call("Runtime.evaluate", {"expression": f"__film.step({1000 / a.fps})"}, timeout=120)
+            if k % every:
+                continue
             data = page.call("Page.captureScreenshot", {"format": "jpeg", "quality": 96, "optimizeForSpeed": True}, timeout=120)["data"]
-            enc.stdin.write(base64.b64decode(data))
-        enc.stdin.close()
-        enc.wait()
+            if a.sheet:
+                cells.append((t, base64.b64decode(data)))
+            else:
+                enc.stdin.write(base64.b64decode(data))
+        if a.sheet:
+            sheet(cells, os.path.join(a.out, shot["name"] + ".jpg"))
+        else:
+            enc.stdin.close()
+            enc.wait()
         print(f"{shot['name']:14s} {n} frames in {time.time() - t0:.0f} s, errors {len(page.errors)}", page.errors[:2], flush=True)
     finally:
         proc.terminate()
@@ -98,10 +125,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("shots")
     ap.add_argument("--only")
-    ap.add_argument("--w", type=int, default=1920)
-    ap.add_argument("--h", type=int, default=1080)
-    ap.add_argument("--dpr", type=float, default=1)
+    ap.add_argument("--w", type=int, default=1440)
+    ap.add_argument("--h", type=int, default=810)
+    ap.add_argument("--dpr", type=float, default=4 / 3)
     ap.add_argument("--fps", type=int, default=60)
+    ap.add_argument("--sheet", type=float, default=0, help="scout: save one frame every N seconds as a contact sheet instead of a film")
     ap.add_argument("--out", default=os.path.expanduser("~/Developer/.hound-release/film"))
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)

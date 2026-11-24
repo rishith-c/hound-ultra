@@ -38,7 +38,7 @@ export function createStreamer(renderer, { onFail = () => {} } = {}) {
   }
   return {
     mosaic,
-    start() { queue.sort((a, b) => a.p - b.p); pump(); },
+    start() { queue.sort((a, b) => a.p - b.p); pump(); setTimeout(() => { if (!dead && ok === 0 && bad < 12) onFail(); }, 9000); },
     // Called once a frame: a few tiles at a time, so streaming never shows as a stutter.
     upload(now, budget = 4) {
       if (!ready.length && !touched.size) return;

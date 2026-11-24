@@ -1,3 +1,302 @@
 [
-  {"name": "test-forge", "url": "/app/?mode=demo&intro=0&paused#/forge", "settle": 6, "seconds": 2}
+ {
+  "name": "open",
+  "url": "/app/?mode=demo&intro=1",
+  "settle": 3,
+  "seconds": 32,
+  "hide": "#dock{opacity:0!important} .intro-act{visibility:hidden} .intro p{animation:none!important;opacity:0;transform:none!important}",
+  "do": [
+   [
+    0.7,
+    "(e=>e.animate([{opacity:0,transform:'translateY(14px)',filter:'blur(8px)'},{opacity:1,transform:'none',filter:'blur(0)'}],{duration:1300,easing:'cubic-bezier(.16,.8,.24,1)',fill:'forwards'}))(document.querySelectorAll('.intro p')[0])&&1"
+   ],
+   [
+    2.5,
+    "(e=>e.animate([{opacity:0,transform:'translateY(14px)',filter:'blur(8px)'},{opacity:1,transform:'none',filter:'blur(0)'}],{duration:1300,easing:'cubic-bezier(.16,.8,.24,1)',fill:'forwards'}))(document.querySelectorAll('.intro p')[1])&&1"
+   ],
+   [
+    5.0,
+    "(e=>e.animate([{opacity:0,transform:'translateY(14px)',filter:'blur(8px)'},{opacity:1,transform:'none',filter:'blur(0)'}],{duration:1300,easing:'cubic-bezier(.16,.8,.24,1)',fill:'forwards'}))(document.querySelectorAll('.intro p')[2])&&1"
+   ],
+   [
+    8.0,
+    "document.querySelectorAll('.intro p').forEach(e=>e.animate([{opacity:1},{opacity:0}],{duration:520,easing:'ease-in',fill:'forwards'})),1"
+   ],
+   [
+    8.6,
+    "(document.querySelector('.intro-act button').click(),1)"
+   ],
+   [
+    9.0,
+    "(HOUND.story&&HOUND.story.set(false),1)"
+   ]
+  ]
+ },
+ {
+  "name": "area",
+  "url": "/app/?mode=demo&intro=0&paused#/area",
+  "settle": 4,
+  "seconds": 25,
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "radio",
+  "url": "/app/?mode=demo&intro=0&paused#/radio",
+  "settle": 4,
+  "seconds": 32,
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "forge",
+  "url": "/app/?mode=demo&intro=0&paused#/forge",
+  "settle": 4,
+  "seconds": 25,
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "sense",
+  "url": "/app/?mode=demo&intro=0&paused#/sense",
+  "settle": 4,
+  "seconds": 22,
+  "hide": "#dock{opacity:0!important}",
+  "before": "(()=>{const b=[...document.querySelectorAll('button')].find(x=>x.offsetParent&&x.textContent.trim()===\"Moving\");if(b)b.click();return !!b})()",
+  "after": 0.05
+ },
+ {
+  "name": "rover",
+  "url": "/app/?mode=demo&intro=0&paused#/rover",
+  "settle": 4,
+  "seconds": 22,
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "mission",
+  "url": "/app/?mode=demo&intro=0#/mission",
+  "settle": 4.5,
+  "seconds": 124,
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "fusion",
+  "url": "/app/?mode=demo&intro=0&paused#/fusion",
+  "settle": 4,
+  "seconds": 26,
+  "hide": "#dock{opacity:0!important}",
+  "before": "(()=>{const b=[...document.querySelectorAll('button')].find(x=>x.offsetParent&&x.textContent.trim()===\"Behind a wall\");if(b)b.click();return !!b})()",
+  "after": 0.05
+ },
+ {
+  "name": "report",
+  "url": "/app/?mode=demo&intro=0&paused#/report",
+  "settle": 4,
+  "seconds": 18,
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "wall",
+  "url": "/app/?mode=demo&intro=0&paused#/status",
+  "settle": 2.5,
+  "seconds": 22,
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "broken",
+  "url": "/app/?mode=demo&intro=0&paused#/status",
+  "settle": 4,
+  "before": "(()=>{const b=[...document.querySelectorAll('button')].find(x=>x.offsetParent&&x.textContent.trim()===\"Broken on purpose\");if(b)b.click();return !!b})()",
+  "after": 7,
+  "seconds": 42,
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "aerial",
+  "url": "/app/?mode=demo&intro=0&paused#/aerial",
+  "settle": 4,
+  "seconds": 28,
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "scan",
+  "url": "/app/?mode=demo&intro=0&paused#/scan",
+  "settle": 4,
+  "seconds": 32,
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "swarm",
+  "url": "/app/?mode=demo&intro=0&paused#/swarm",
+  "settle": 4,
+  "seconds": 32,
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "structure",
+  "url": "/app/?mode=demo&intro=0&paused#/structure",
+  "settle": 4,
+  "seconds": 28,
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "horizon",
+  "url": "/app/?mode=demo&intro=0&paused#/horizon",
+  "settle": 3,
+  "seconds": 30,
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "a_mission",
+  "url": "/app/?mode=advanced#/mission",
+  "settle": 4,
+  "before": "(HOUND.sim.seek(430),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 4,
+  "seconds": 2.2,
+  "size": [
+   1920,
+   1080,
+   1
+  ]
+ },
+ {
+  "name": "a_sense",
+  "url": "/app/?mode=advanced#/sense",
+  "settle": 4,
+  "before": "(HOUND.sim.seek(430),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 4,
+  "seconds": 2.2,
+  "size": [
+   1920,
+   1080,
+   1
+  ]
+ },
+ {
+  "name": "a_radio",
+  "url": "/app/?mode=advanced#/radio",
+  "settle": 4,
+  "before": "(HOUND.sim.seek(430),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 4,
+  "seconds": 2.2,
+  "size": [
+   1920,
+   1080,
+   1
+  ]
+ },
+ {
+  "name": "a_fusion",
+  "url": "/app/?mode=advanced#/fusion",
+  "settle": 4,
+  "before": "(HOUND.sim.seek(430),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 4,
+  "seconds": 2.2,
+  "size": [
+   1920,
+   1080,
+   1
+  ]
+ },
+ {
+  "name": "a_deepscan",
+  "url": "/app/?mode=advanced#/deepscan",
+  "settle": 4,
+  "before": "(HOUND.sim.seek(430),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 4,
+  "seconds": 2.2,
+  "size": [
+   1920,
+   1080,
+   1
+  ]
+ },
+ {
+  "name": "a_globe",
+  "url": "/app/?mode=advanced#/globe",
+  "settle": 4,
+  "before": "(HOUND.sim.seek(430),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 4,
+  "seconds": 2.2,
+  "size": [
+   1920,
+   1080,
+   1
+  ]
+ },
+ {
+  "name": "a_signals",
+  "url": "/app/?mode=advanced#/signals",
+  "settle": 4,
+  "before": "(HOUND.sim.seek(430),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 4,
+  "seconds": 2.2,
+  "size": [
+   1920,
+   1080,
+   1
+  ]
+ },
+ {
+  "name": "a_strategy",
+  "url": "/app/?mode=advanced#/strategy",
+  "settle": 4,
+  "before": "(HOUND.sim.seek(430),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 4,
+  "seconds": 2.2,
+  "size": [
+   1920,
+   1080,
+   1
+  ]
+ },
+ {
+  "name": "a_timelines",
+  "url": "/app/?mode=advanced#/timelines",
+  "settle": 4,
+  "before": "(HOUND.sim.seek(430),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 4,
+  "seconds": 2.2,
+  "size": [
+   1920,
+   1080,
+   1
+  ]
+ },
+ {
+  "name": "a_area",
+  "url": "/app/?mode=advanced#/area",
+  "settle": 4,
+  "before": "(HOUND.sim.seek(430),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 4,
+  "seconds": 2.2,
+  "size": [
+   1920,
+   1080,
+   1
+  ]
+ },
+ {
+  "name": "a_triage",
+  "url": "/app/?mode=advanced#/triage",
+  "settle": 4,
+  "before": "(HOUND.sim.seek(430),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 4,
+  "seconds": 2.2,
+  "size": [
+   1920,
+   1080,
+   1
+  ]
+ },
+ {
+  "name": "a_vision",
+  "url": "/app/?mode=advanced#/vision",
+  "settle": 4,
+  "before": "(HOUND.sim.seek(430),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 4,
+  "seconds": 2.2,
+  "size": [
+   1920,
+   1080,
+   1
+  ]
+ }
 ]
