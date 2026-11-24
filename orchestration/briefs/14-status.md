@@ -32,6 +32,15 @@ HOW TO WORK
 - When finished, write orchestration/reports/<your agent name>.md as described in ARCHITECTURE.md, and end your
   final message with a short summary: what works, what is labelled how, what you verified, what is not done.
 
+LATEST DIRECTION FROM THE OWNER (his words, after seeing the previous version and an early scaffold):
+"What Codex generated was the tip of the iceberg. The live picture animation was OK, the animation was bad. I need
+the most hyper-realistic, elite thing. The dashboard needs a lot of work: it is too round and bouncy. Legit make
+the best thing ever. This is not even close to what I am aiming for: Palantir Gotham should see this and be like
+'I need to recruit him'. Don't skimp on features."
+So: hyper-real imagery and lighting; sharp, dense, engineered interface (small radii, hairlines, no bouncy easing,
+no pill-shaped candy, no oversized rounded cards); animation that is precise and physical, never floaty; and
+completeness: every listed feature present and finished.
+
 AGENT NAME: status
 YOUR FILES: app/workspaces/status/* , app/global/a11y.js , tests/* (except tests/smoke.html, which you may read
 and extend into your own files), sw.js and manifest.webmanifest at the repository root

@@ -13,6 +13,10 @@ This file is the goal every agent works toward. Read it first, then `ARCHITECTUR
 > "Think of 30+ hella cool stuff, like insane high graphics detail, like Tesla and GTA 6, insane assets, graphics and detail for everything, the animation. You know what I was going for but Codex failed miserably. Make this the craziest of all time. I want you to add tons of theoretical features, this is the tip of the iceberg, but use the most cutting-edge technology. Use theoretical stuff, like use certain drone imaging, repurposing it to find humans for cheap, or crazy stuff. I believe in you. LOCK IN."
 >
 > "Be 100000000x more ambitious than me."
+>
+> "What Codex generated was the tip of the iceberg... I need the most hyper-realistic, elite thing. The dashboard
+> needs a lot of work: it is too round and bouncy... Palantir Gotham should see this and be like 'I need to recruit
+> him'. Don't skimp on features."
 
 ## The same goal, ten times bigger
 
@@ -110,6 +114,32 @@ Command and trust
 43. Accessibility: keyboard, screen reader labels, high contrast, colour-blind palette, reduced motion
 44. Works offline after first load (DEV)
 45. Bluetooth link to a real rover (DEV; the rover firmware side is not written yet)
+
+## The frontier wing (added on his instruction: "30+, far more niche, frontier, what-the-f*** level")
+
+His words: "These are my ideas. I told you to come up with 30+, 10000x more niche, 1000x frontier technologies,
+using the most mind-boggling technologies, and the same goes for every pixel of this website."
+
+Eight labs, each a set of working exhibits tied to verified research (workspace ids in brackets):
+
+- **Radio twin** [radio]: ray-traced Wi-Fi digital twin; a person in the channel fed to the real network; the
+  quarter-wavelength Fresnel dither (the project's own idea); synthetic-aperture imaging through a wall;
+  compressive sensing; intelligent reflecting surfaces; Wi-Fi sensing as a standard.
+- **Deep scan** [deepscan]: muon tomography; quantum gravity gradiometry; ground-penetrating radar migration;
+  fibre-optic distributed acoustic sensing; seismic tap location; echolocation of a void.
+- **Vision lab** [vision]: search an image by words (CLIP); Segment Anything; one photo to 3-D; pulse from pixels
+  and Eulerian magnification; event-camera view; short-wave infrared skin index; audio events and Whisper.
+- **Search strategy** [strategy]: Bayesian search theory; information-gain "where to listen next"; Monte-Carlo
+  tree search on the mission as a POMDP, measured; quantum-inspired annealing for team routing; the value of a sensor.
+- **Timelines** [timelines]: fork the mission, decide differently, compare worlds; sensitivity sweeps;
+  counterfactuals; regret against the best branch.
+- **Model forge** [forge]: train the network in the browser; int8 for a microcontroller; pruning; calibration,
+  conformal prediction and out-of-distribution detection; a spiking version; clean vs. messy simulator.
+- **Structure** [structure]: collapse by rigid-body physics; test the lift; shake test; shoring; topological void
+  count; vine and snake robot routes.
+- **Horizon** [horizon]: cyborg-insect searchers; dandelion sensor seeds; the chemical signature of a person; laser
+  vibrometry; passive radar; InSAR damage maps; Rydberg and diamond sensors; phones as beacons; legged carriers;
+  Earth foundation models.
 
 ## Non-negotiables
 
