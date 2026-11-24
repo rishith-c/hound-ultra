@@ -42,7 +42,7 @@ export const CHAPTERS = [
   { id: 'structure', label: 'The collapse' }, { id: 'horizon', label: 'The horizon' },
 ];
 // Optional app-wide add-ons. Each exports init(ctx). Missing files are skipped silently.
-const GLOBALS = ['intro', 'palette', 'copilot-dock', 'narration', 'a11y', 'sound'];
+const GLOBALS = ['story', 'intro', 'palette', 'copilot-dock', 'narration', 'a11y', 'sound'];
 
 const $ = (id) => document.getElementById(id);
 const bus = createBus();

@@ -83,7 +83,7 @@ const saveLoaded = () => post([...new Set([location.href.split('#')[0].split('?'
 async function saveAll() {
   if (!['online', 'ready'].includes(off.state)) return false;
   const seen = new Set(), base = new URL('./', location.href), at = (p) => new URL(p, base).href;
-  const queue = [at('./'), at('../'), at('shell.js'), at('../data/nn.json'), ...ctx.manifest.map((m) => at('workspaces/' + m.id + '/index.js')), ...['palette', 'copilot-dock', 'narration', 'a11y', 'sound', 'intro'].map((g) => at('global/' + g + '.js'))];
+  const queue = [at('./'), at('../'), at('shell.js'), at('../data/nn.json'), ...ctx.manifest.map((m) => at('workspaces/' + m.id + '/index.js')), ...['palette', 'copilot-dock', 'narration', 'a11y', 'sound', 'intro', 'story'].map((g) => at('global/' + g + '.js'))];
   const map = JSON.parse(document.querySelector('script[type="importmap"]')?.textContent || '{"imports":{}}').imports;
   const REF = /(?:from\s*|import\s*\(\s*|import\s+|new URL\(\s*|file:\s*|href=|src=|url\()\s*["'\x60]?([^"'\x60)\s>]+)/g;
   while (queue.length) {
