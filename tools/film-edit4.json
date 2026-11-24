@@ -1050,14 +1050,7 @@
      0
     ]
    ],
-   "html": [
-    [
-     0.76,
-     1.45,
-     "<div style=\"position:absolute;left:112px;bottom:200px;font:400 104px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">The neural network</div>",
-     0.25
-    ]
-   ],
+   "html": [],
    "voice": [
     [
      "../v4/guide_n1",

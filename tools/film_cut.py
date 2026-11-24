@@ -240,14 +240,14 @@ def main():
     total = sum(s["d"] / s.get("s", 1) for s in ed["segments"])
     print(f"{len(jobs)} segments, {total:.1f} s = {int(total // 60)}:{total % 60:04.1f}")
     if a.srt:
-        t, k, lines = 0, 0, []
+        t, caps = 0, []
         f = lambda x: f"{int(x // 3600):02d}:{int(x % 3600 // 60):02d}:{int(x % 60):02d},{int(x * 1000 % 1000):03d}"
         for s in ed["segments"]:
             for t0, t1, text, *_ in s.get("cap", []):
-                k += 1
-                lines.append(f"{k}\n{f(t + t0)} --> {f(t + t1)}\n{text}\n")
+                if caps and caps[-1][2] == text and t + t0 - caps[-1][1] < .1: caps[-1][1] = t + t1        # one line across a cut
+                else: caps.append([t + t0, t + t1, text])
             t += s["d"] / s.get("s", 1)
-        open(os.path.join(FILM, a.out + ".srt"), "w").write("\n".join(lines))
+        open(os.path.join(FILM, a.out + ".srt"), "w").write("\n".join(f"{k}\n{f(x)} --> {f(y)}\n{text}\n" for k, (x, y, text) in enumerate(caps, 1)))
         return
     wav = os.path.join(tmp, "music.wav")
     if a.part:

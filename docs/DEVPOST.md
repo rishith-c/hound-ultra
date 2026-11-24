@@ -17,7 +17,8 @@ A camera cannot see through a wall. A dog needs a handler and gets tired. A list
 Radar that sees through walls exists and costs thousands of dollars, so a volunteer fire department or a district team usually
 does not own one. People are sent in blind, or not at all.
 
-HOUND is a small rover built from parts a school team can buy. A rescuer drives it into a space that is not safe for people. It
+HOUND is a small robot built from parts a school team can buy. We built it, trained its neural network, and designed and
+simulated a drone to fly ahead of it. A rescuer drives it into a space that is not safe for people. It
 stops, goes quiet, and listens with Wi-Fi. HOUND Command is the operating picture for the person running that search: where to
 look first, what each reading means, how sure we are, and the safe way to the person.
 
@@ -81,7 +82,7 @@ Expect 60 frames a second on a recent laptop. Nothing needs to be installed, and
 
 - On Wi-Fi alone, over the same 955 windows: a moving person is found 86.9 %, a still person who only breathes 21.4 %, an empty
   room raises a false alarm 11.1 %. That is why HOUND adds radar and heat before it confirms anyone.
-- Nothing has been recorded with real people. The first trial is one person behind one drywall wall.
+- No result here comes from real people. The first trial is one person behind one drywall wall.
 - The buildings, people, hazards, readings and the movement of every machine are simulated. The terrain, imagery and map of the
   valley are real. The network and its measured results are real, on simulated signals.
 - The console is not connected to the rover. The drone, extra rovers, beacons, gas sensing and the deep scans are concepts, and
