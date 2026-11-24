@@ -16,10 +16,12 @@ export function createMap(canvas, { world, kit, onPick, onPlace, onHover }) {
     hatch = null; dirty = true;
   }
   colours();
-  const stop = kit.fitCanvas(canvas, (c, w, h) => { g = c; W = w; H = h; dirty = true; draw(); });
+  // The canvas has no size before its first layout: aim and snap the camera once it does.
+  const stop = kit.fitCanvas(canvas, (c, w, h) => { g = c; W = w; H = h; camTo = target(o.run ? stateAt(o.run, o.t) : null); cam = camTo.slice(); dirty = true; draw(); });
 
   // ----- camera -----
   function fit(v) { // widen the view so the canvas aspect is filled
+    if (!W || !H) return v.slice();
     let [x0, y0, x1, y1] = v; const a = W / Math.max(1, H), vw = x1 - x0, vh = y1 - y0;
     if (vw / vh < a) { const need = vh * a; x0 -= (need - vw) / 2; x1 += (need - vw) / 2; } else { const need = vw / a; y0 -= (need - vh) / 2; y1 += (need - vh) / 2; }
     return [x0, y0, x1, y1];
@@ -31,7 +33,7 @@ export function createMap(canvas, { world, kit, onPick, onPlace, onHover }) {
 
   // ----- drawing helpers -----
   function poly(pts, close = true) { g.beginPath(); pts.forEach((p, i) => (i ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1])))); if (close) g.closePath(); }
-  function label(text, x, y, { colour = C.text2, size = 10, align = 'left', mono = false, weight = 500, halo = true } = {}) {
+  function label(text, x, y, { colour = C.text2, size = 11, align = 'left', mono = false, weight = 500, halo = true } = {}) {
     g.font = weight + ' ' + size + 'px ' + (mono ? C.mono : C.font); g.textAlign = align; g.textBaseline = 'middle';
     if (halo) { g.lineWidth = 3; g.strokeStyle = rgba(C.bg0, 0.85); g.lineJoin = 'round'; g.strokeText(text, x, y); }
     g.fillStyle = colour; g.fillText(text, x, y);
@@ -68,7 +70,7 @@ export function createMap(canvas, { world, kit, onPick, onPlace, onHover }) {
   }
 
   function draw() {
-    if (!g || !W) return; dirty = false;
+    if (!g || !W || !Number.isFinite(cam[0] + cam[1] + cam[2] + cam[3])) return; dirty = false;
     const s = o.run ? stateAt(o.run, o.t) : null, k = scale();
     g.clearRect(0, 0, W, H); g.fillStyle = C.bg0; g.fillRect(0, 0, W, H);
     // grid: 10 m, and 2 m when zoomed in
@@ -99,7 +101,7 @@ export function createMap(canvas, { world, kit, onPick, onPlace, onHover }) {
       else if (c && c.status === 'blocked') { g.fillStyle = rgba(C.text3, 0.08); g.fillRect(x, y, w, h); }
       if (!r.corridor && k > 4.5) {
         label(r.id, x + 5, y + 9, { colour: C.text3, mono: true, halo: false });
-        if (c && k > 6) { const word = c.status === 'clear' ? 'clear · ' + (c.residual * 100).toFixed(0) + ' % missed' : c.status === 'blocked' ? 'not searched' : c.status === 'lead' ? 'lead' : c.status === 'person' ? 'person' : ''; if (word) label(word, x + 5, y + h - 8, { colour: c.status === 'clear' ? C.ok : c.status === 'lead' ? C.warn : c.status === 'person' ? C.person : C.text3, size: 9.5, halo: false }); }
+        if (c && k > 6) { const word = c.status === 'clear' ? 'clear · ' + (c.residual * 100).toFixed(0) + ' % missed' : c.status === 'blocked' ? 'not searched' : c.status === 'lead' ? 'lead' : c.status === 'person' ? 'person' : ''; if (word) label(word, x + 5, y + h - 8, { colour: c.status === 'clear' ? C.ok : c.status === 'lead' ? C.warn : c.status === 'person' ? C.person : C.text3, size: 11, halo: false }); }
       }
     }
     // hazards known at this moment
@@ -121,7 +123,7 @@ export function createMap(canvas, { world, kit, onPick, onPlace, onHover }) {
     for (const ob of OBSTACLES) if (ob.kind === 'furniture') { poly(ob.poly); g.fillStyle = C.bg4; g.fill(); g.strokeStyle = C.line3; g.lineWidth = 1; g.stroke(); }
     if (!s) return;
     // listening stops
-    if (k > 3.2) for (const st of STOPS) { const x = X(st.pos[0]), y = Y(st.pos[1]); g.strokeStyle = C.text3; g.lineWidth = 1; g.strokeRect(Math.round(x) - 3.5, Math.round(y) - 3.5, 7, 7); if (k > 6) label(st.id, x + 7, y - 7, { colour: C.text3, mono: true, size: 9.5 }); }
+    if (k > 3.2) for (const st of STOPS) { const x = X(st.pos[0]), y = Y(st.pos[1]); g.strokeStyle = C.text3; g.lineWidth = 1; g.strokeRect(Math.round(x) - 3.5, Math.round(y) - 3.5, 7, 7); if (k > 6) label(st.id, x + 7, y - 7, { colour: C.text3, mono: true, size: 11 }); }
     // trails from the per-second record
     const f = o.run.frames, n = Math.min(f.n - 1, Math.floor(s.t));
     const trail = (arr, w, col, dash) => { g.beginPath(); let px = NaN, py = NaN; for (let i = 0; i <= n; i++) { const x = arr[i * w], y = arr[i * w + 1]; if (i === 0) g.moveTo(X(x), Y(y)); else if (x !== px || y !== py) g.lineTo(X(x), Y(y)); px = x; py = y; } g.strokeStyle = col; g.lineWidth = 1.25; g.setLineDash(dash); g.stroke(); g.setLineDash([]); };
@@ -133,7 +135,7 @@ export function createMap(canvas, { world, kit, onPick, onPlace, onHover }) {
         if (!leg.ok) continue;
         poly(leg.path, false); g.strokeStyle = rgba(C.accent, planned ? 0.7 : 0.38); g.lineWidth = 2; g.setLineDash(planned ? [5, 4] : []); g.lineJoin = 'round'; g.stroke(); g.setLineDash([]);
         const a = leg.access, d = s.dets.find((x) => x.id === leg.det);
-        if (!leg.reached && d) { g.beginPath(); g.moveTo(X(a[0]), Y(a[1])); g.lineTo(X(d.pos[0]), Y(d.pos[1])); g.strokeStyle = C.person; g.lineWidth = 1.5; g.setLineDash([2, 2]); g.stroke(); g.setLineDash([]); if (k > 5) label('break through ' + leg.gap.toFixed(1) + ' m', X(a[0]) + 6, Y(a[1]) + 12, { colour: C.person, size: 9.5 }); }
+        if (!leg.reached && d) { g.beginPath(); g.moveTo(X(a[0]), Y(a[1])); g.lineTo(X(d.pos[0]), Y(d.pos[1])); g.strokeStyle = C.person; g.lineWidth = 1.5; g.setLineDash([2, 2]); g.stroke(); g.setLineDash([]); if (k > 5) label('break through ' + leg.gap.toFixed(1) + ' m', X(a[0]) + 6, Y(a[1]) + 12, { colour: C.person, size: 11 }); }
         g.fillStyle = C.accent; g.fillRect(X(a[0]) - 2.5, Y(a[1]) - 2.5, 5, 5);
       }
     }
@@ -141,21 +143,21 @@ export function createMap(canvas, { world, kit, onPick, onPlace, onHover }) {
     if (s.listen >= 0) { const x = X(s.rover.pos[0]), y = Y(s.rover.pos[1]), r = SENSORS.csi.range * k; g.strokeStyle = rgba(C.text, 0.16); g.lineWidth = 1; g.beginPath(); g.arc(x, y, r, 0, 7); g.stroke(); g.strokeStyle = C.text; g.lineWidth = 1.5; g.beginPath(); g.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + s.listen * Math.PI * 2); g.stroke(); }
     // ground truth, only behind the switch
     if (o.truth && o.run.truth) {
-      for (const p of o.run.truth.people) { const x = X(p.pos[0]), y = Y(p.pos[1]); g.strokeStyle = C.sim; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - 5, y - 5); g.lineTo(x + 5, y + 5); g.moveTo(x + 5, y - 5); g.lineTo(x - 5, y + 5); g.stroke(); label(p.id + ' truth: ' + p.motion, x + 8, y + 10, { colour: C.sim, size: 9.5 }); }
-      for (const d of o.run.truth.decoys) { const x = X(d.pos[0]), y = Y(d.pos[1]); g.strokeStyle = C.sim; g.lineWidth = 1; g.strokeRect(x - 3.5, y - 3.5, 7, 7); label('truth: ' + (d.kind === 'fan' ? 'fan' : 'hot pipe'), x + 8, y + 10, { colour: C.sim, size: 9.5 }); }
+      for (const p of o.run.truth.people) { const x = X(p.pos[0]), y = Y(p.pos[1]); g.strokeStyle = C.sim; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - 5, y - 5); g.lineTo(x + 5, y + 5); g.moveTo(x + 5, y - 5); g.lineTo(x - 5, y + 5); g.stroke(); label(p.id + ' truth: ' + p.motion, x + 8, y + 10, { colour: C.sim, size: 11 }); }
+      for (const d of o.run.truth.decoys) { const x = X(d.pos[0]), y = Y(d.pos[1]); g.strokeStyle = C.sim; g.lineWidth = 1; g.strokeRect(x - 3.5, y - 3.5, 7, 7); label('truth: ' + (d.kind === 'fan' ? 'fan' : 'hot pipe'), x + 8, y + 10, { colour: C.sim, size: 11 }); }
     }
     // the other world's units, where they are not in the same place
     if (o.other) {
       const q = stateAt(o.other, Math.min(o.t, o.other.endT)), far = (a, c) => Math.hypot(a[0] - c[0], a[1] - c[1]) > 0.75;
       const link = (a, c) => { g.strokeStyle = rgba(C.text3, 0.7); g.lineWidth = 1; g.setLineDash([1, 3]); g.beginPath(); g.moveTo(X(a[0]), Y(a[1])); g.lineTo(X(c[0]), Y(c[1])); g.stroke(); g.setLineDash([]); };
-      if (far(q.rover.pos, s.rover.pos)) { link(q.rover.pos, s.rover.pos); rover(q.rover.pos, q.rover.heading, { ghost: true }); label('rover in ' + o.otherTag, X(q.rover.pos[0]) + 10, Y(q.rover.pos[1]) - 9, { colour: C.text3, size: 9.5 }); }
-      if (far(q.team.pos, s.team.pos)) { link(q.team.pos, s.team.pos); team(q.team.pos, true); label('team in ' + o.otherTag, X(q.team.pos[0]) + 9, Y(q.team.pos[1]) - 9, { colour: C.text3, size: 9.5 }); }
+      if (far(q.rover.pos, s.rover.pos)) { link(q.rover.pos, s.rover.pos); rover(q.rover.pos, q.rover.heading, { ghost: true }); label('rover in ' + o.otherTag, X(q.rover.pos[0]) + 10, Y(q.rover.pos[1]) - 9, { colour: C.text3, size: 11 }); }
+      if (far(q.team.pos, s.team.pos)) { link(q.team.pos, s.team.pos); team(q.team.pos, true); label('team in ' + o.otherTag, X(q.team.pos[0]) + 9, Y(q.team.pos[1]) - 9, { colour: C.text3, size: 11 }); }
     }
     // leads and people
     for (const d of s.dets) {
       if (Number.isNaN(d.pos[0])) continue;
       const x = X(d.pos[0]), y = Y(d.pos[1]), sel = o.selected === d.id, reached = s.reached.includes(d.id);
-      if (d.status === 'rejected') { g.strokeStyle = rgba(C.ok, 0.8); g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - 3.5, y - 3.5); g.lineTo(x + 3.5, y + 3.5); g.moveTo(x + 3.5, y - 3.5); g.lineTo(x - 3.5, y + 3.5); g.stroke(); if (k > 5 || sel) label(d.id + ' closed', x + 7, y - 8, { colour: C.ok, size: 9.5, mono: false }); }
+      if (d.status === 'rejected') { g.strokeStyle = rgba(C.ok, 0.8); g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - 3.5, y - 3.5); g.lineTo(x + 3.5, y + 3.5); g.moveTo(x + 3.5, y - 3.5); g.lineTo(x - 3.5, y + 3.5); g.stroke(); if (k > 5 || sel) label(d.id + ' closed', x + 7, y - 8, { colour: C.ok, size: 11, mono: false }); }
       else {
         const col = d.status === 'confirmed' ? C.person : C.warn;
         if (d.sigma * k > 9) { g.strokeStyle = rgba(col, 0.35); g.lineWidth = 1; g.setLineDash([2, 3]); g.beginPath(); g.arc(x, y, d.sigma * k, 0, 7); g.stroke(); g.setLineDash([]); }
@@ -164,18 +166,18 @@ export function createMap(canvas, { world, kit, onPick, onPlace, onHover }) {
         g.strokeStyle = col; g.beginPath(); g.arc(x, y, 6.5, -Math.PI / 2, -Math.PI / 2 + d.p * Math.PI * 2); g.stroke();
         if (d.status === 'confirmed') { g.fillStyle = col; g.beginPath(); g.arc(x, y, 3, 0, 7); g.fill(); }
         if (reached) { g.strokeStyle = C.accent; g.lineWidth = 1.5; g.strokeRect(x - 10.5, y - 10.5, 21, 21); }
-        label(d.id + ' ' + (d.p * 100).toFixed(0) + ' %' + (reached ? ' reached' : d.status === 'possible' && d.needsTeam ? ' team to check' : ''), x + 11, y - 9, { colour: col, mono: true, size: 10 });
+        label(d.id + ' ' + (d.p * 100).toFixed(0) + ' %' + (reached ? ' reached' : d.status === 'possible' && d.needsTeam ? ' team to check' : ''), x + 11, y - 9, { colour: col, mono: true, size: 11 });
       }
       if (sel) { g.strokeStyle = C.text; g.lineWidth = 1; g.strokeRect(Math.round(x) - 12.5, Math.round(y) - 12.5, 25, 25); }
     }
     // units
     if (s.drone.alt > 0.5) drone(s.drone.pos, s.drone.alt, false);
     team(s.team.pos, false); rover(s.rover.pos, s.rover.heading, { mode: s.rover.mode });
-    if (k > 2.6) { label('HOUND-01', X(s.rover.pos[0]) + 11, Y(s.rover.pos[1]) + 11, { colour: C.text2, size: 9.5 }); label('Rescue team', X(s.team.pos[0]) + 10, Y(s.team.pos[1]) + 11, { colour: C.accent, size: 9.5 }); }
+    if (k > 2.6) { label('HOUND-01', X(s.rover.pos[0]) + 11, Y(s.rover.pos[1]) + 11, { colour: C.text2, size: 11 }); label('Rescue team', X(s.team.pos[0]) + 10, Y(s.team.pos[1]) + 11, { colour: C.accent, size: 11 }); }
     // scale bar
     const bar = [5, 10, 20, 50].find((m) => m * k >= 44) || 50, bx = 12, by = H - 12;
     g.strokeStyle = C.text2; g.lineWidth = 1; g.beginPath(); g.moveTo(bx + 0.5, by - 4); g.lineTo(bx + 0.5, by + 0.5); g.lineTo(bx + bar * k + 0.5, by + 0.5); g.lineTo(bx + bar * k + 0.5, by - 4); g.stroke();
-    label(bar + ' m', bx + bar * k + 6, by - 2, { colour: C.text2, mono: true, size: 9.5 });
+    label(bar + ' m', bx + bar * k + 6, by - 2, { colour: C.text2, mono: true, size: 11 });
   }
 
   // ----- pointer -----

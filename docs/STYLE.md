@@ -92,3 +92,17 @@ recolour, outline or rotate the mark.
 Use d3 or plain canvas. Start from the tokens: one hue per meaning, direct labels instead of legends where you can,
 thin gridlines (`--line`), tabular numbers in `--mono`. A chart must make one point and its title says what the
 point is. Canvas text: `ctx.font = '500 11px ' + kit.cssVar('--mono')`.
+
+## Demo mode: the film version
+
+Demo is the version a judge sees first. Compose it like a frame from a film, not a dashboard.
+
+- One subject. Everything else dims, shrinks or leaves. Leave 40 % of the frame with nothing but the world in it.
+- Depth: foreground, subject, background. Light from one side. Real materials, contact shadows, haze that separates
+  planes. Fine detail that survives a zoom (rivets, cracks, cables, grain), never a flat coloured box.
+- Motion you can follow: one slow camera move, one clear event, one held beat at the end where the answer is readable.
+  Eased in and out, nothing bounces, nothing pops. Target 60 frames a second; measure it.
+- Text sits in the lower left third, never on the subject: serif headline up to 40 px, one line of Instrument Sans.
+- Colour stays rare. The frame is graphite, concrete, mud and steel; the person is the only warm thing in it.
+- Moments worth a screenshot: the instant a weak signal becomes a person, a wall turning to glass as radio passes
+  through it, the route drawing itself around a hazard. Build to one such moment and hold it.

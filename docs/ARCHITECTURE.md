@@ -7,10 +7,9 @@ All URLs in the site are **relative** (the site is served from `/ultra/` locally
 
 ## Running and checking
 
-- The site is already served at **http://localhost:4391/ultra/** (console: `/ultra/app/`). If that port is dead,
-  start your own: `python3 -m http.server <a port between 4400 and 4499> -d ~/Developer/hound-ultra` in the
-  background, and use `http://localhost:<port>/app/`.
-- Look at your work with `python3 tools/shoot.py URL --out /tmp/x.png --do …` (read `tools/shoot.py --help`). It runs
+- **Do not start any server.** `tools/shoot.py` serves this repository by itself: pass a bare path such as
+  `/app/?mode=demo#/mission` (old localhost addresses also work).
+- Look at your work with `python3 tools/shoot.py /app/?mode=demo#/<id> --out /tmp/x.png --do …` (read `tools/shoot.py --help`). It runs
   headless Chrome with the GPU on, prints console errors, runs JavaScript, clicks, and saves screenshots. Open the
   screenshots with the Read tool and actually look at them.
 - `node`, `rm` and `curl` are blocked in this shell. Use Python for scripts, `mv <file> ~/.Trash/` to delete.
@@ -144,11 +143,32 @@ twin.setCamera('orbit' | 'top' | 'follow' | 'fpv' | 'cinematic');   twin.focus({
 twin.setLayer(name, on);   // walls-xray, hazards, coverage, heat, route, trail, scan, labels, truth, grid
 twin.layers()              // [{ id, label, on }]
 twin.start(); twin.stop(); twin.resize(); twin.dispose();
+twin.setSafeArea({ left, top, right, bottom });   // pixels covered by your panels: framing and labels stay in what is left
 twin.screenshot() -> dataURL;    twin.three -> { scene, camera, renderer } for advanced use
 ```
 
 The twin reads `ctx.sim.state` every frame and listens for `select`, `reset`, `seek`. It calls `ctx.select()` when
 something is clicked. Coordinates: world `[x, y]` maps to three.js `(x, height, -y)`.
+
+## Demo mode and Advanced mode (required for every workspace)
+
+The console opens in **Demo**. Rishith's words: "it shouldn't be super overloaded; advanced mode shows all that, but
+only the sexy thing in the non-advanced demo." A switch in the top bar changes mode at any time.
+
+- Read it: `ctx.mode` is `'demo'` or `'advanced'` (always current). Hear it: `bus.on('mode', ({ mode }) => …)`.
+  Style it: `:root[data-mode="demo"]` / `:root[data-mode="advanced"]`, and the classes `.adv-only` (hidden in Demo)
+  and `.demo-only` (hidden in Advanced). Test with `?mode=demo` and `?mode=advanced`.
+- In Demo the rail, search and telemetry are gone: your workspace is the full window between the top bar and a 60 px
+  row of chapters (about 1680×888 and 1440×788).
+- **What Demo shows.** One hero visual that fills the whole workspace edge to edge, already moving within a second,
+  no click needed, looping or playing a short story by itself. Over it, at most: a title block (serif title, one
+  sentence, the reality tag), one primary action, one caption saying what is happening right now, and up to three
+  live figures. About 40 words on screen in total. No tables, no sliders, no settings, no tabs full of text, no
+  stacked panels. If your workspace has several exhibits, Demo shows the best one as the hero with a quiet stepper
+  (numbered dots or short names) to the others, each also full-bleed.
+- **What Advanced shows.** Everything you have built. Nothing is lost; it moves behind `.adv-only`.
+- Switching keeps state, never reloads, and resizes the canvas smoothly (a `resize` event is fired for you).
+- Direct manipulation is welcome in Demo (drag the person, fly the camera, scrub the time); forms are not.
 
 ## Reality labels (required)
 
@@ -158,7 +178,8 @@ Assumed numbers (anything not measured) are marked "assumed" where they are show
 
 ## Definition of done for every agent
 
-1. Your workspace opens with no console errors (`tools/shoot.py … --strict`), at 1680×1000 and 1440×900.
+1. Your workspace opens with no console errors (`tools/shoot.py … --strict`), at 1680×1000 and 1440×900, in Demo and
+   in Advanced, and holds 60 frames a second while its hero animates (`--do fps:3`).
 2. Every control does what its label says. Nothing is a stub. Empty, loading and error states exist.
 3. Keyboard works (Tab reaches everything, Enter/Space activate, Escape closes); buttons have accessible names.
 4. Animation stops in `onHide` and under reduced motion (`ctx.kit.reducedMotion()`).

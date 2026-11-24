@@ -426,7 +426,6 @@ export function build(env) {
 
   let tris = 0, calls = 0; group.traverse((o) => { if (o.isMesh) { calls++; tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3 * (o.isInstancedMesh ? o.count : 1); } });
   group.userData.stats = { calls, triangles: Math.round(tris) };
-  console.error('INTERIOR STATS ' + JSON.stringify(group.userData.stats) + ' desks ' + DEF.desk.list.length + ' tables ' + DEF.table.list.length + ' chairs ' + DEF.chair.list.length + ' litter ' + litter.length);
 
   return {
     group,

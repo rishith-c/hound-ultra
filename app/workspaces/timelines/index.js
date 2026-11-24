@@ -373,7 +373,7 @@ export default {
         compOpts.append(h('p.tl-c-q', null, 'Change a line the console draws, from ' + clock(t) + ' on.'), ...P.map(([key, label, min, max, step, def, f, hint]) => {
           const val = C.params[key] ?? def, out = h('output', null, f(val)), note = h('small.tl-c-lr');
           const upd = (v) => { if (Math.abs(v - def) < step / 2) delete C.params[key]; else C.params[key] = v; out.textContent = f(v); out.classList.toggle('changed', C.params[key] != null); if (key === 'csiThreshold') { const lr = app.csiLR(v); note.textContent = lr ? 'On the 955 simulated test windows: finds ' + (lr.tpr * 100).toFixed(0) + ' % of people, alarms on ' + (lr.fpr * 100).toFixed(0) + ' % of empty rooms. A "person" reading is worth ×' + lr.pos.toFixed(1) + '.' : ''; } refreshSummary(); };
-          const inp = h('input.slider', { type: 'range', min, max, step, value: val, 'aria-label': label, title: hint, style: { '--p': ((val - min) / (max - min)) * 100 + '%' }, oninput: (e) => { e.target.style.setProperty('--p', ((+e.target.value - min) / (max - min)) * 100 + '%'); upd(+e.target.value); } });
+          const inp = h('input.slider', { type: 'range', min, max, step, value: val, 'aria-label': label, title: hint, style: '--p:' + ((val - min) / (max - min)) * 100 + '%', oninput: (e) => { e.target.style.setProperty('--p', ((+e.target.value - min) / (max - min)) * 100 + '%'); upd(+e.target.value); } });
           out.classList.toggle('changed', C.params[key] != null); if (key === 'csiThreshold') upd(val);
           return h('div.tl-c-slider', null, h('div.slider-row', null, h('span.label', null, label), inp, out), key === 'csiThreshold' ? note : null);
         }));
