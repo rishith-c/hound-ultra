@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HOUND Command</title>
+<meta name="description" content="HOUND Command: a search-and-rescue console that finds people through walls with a Wi-Fi neural network. Simulated scenario.">
+<link rel="icon" href="../assets/img/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="ui/tokens.css">
+<link rel="stylesheet" href="ui/base.css">
+<link rel="stylesheet" href="shell.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+  "d3": "https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm"
+} }
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the workspace</a>
+<div id="shell">
+  <header id="topbar"></header>
+  <nav id="rail" aria-label="Workspaces"></nav>
+  <main id="main" tabindex="-1"></main>
+  <footer id="statusbar"></footer>
+</div>
+<div id="toasts" aria-live="polite"></div>
+<div id="overlays"></div>
+<noscript>HOUND Command needs JavaScript.</noscript>
+<script type="module" src="shell.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!doctype html><meta charset="utf-8"><title>HOUND core smoke test</title><pre id="out">running…</pre>
+<script type="module">
+import { loadNN } from '../app/core/nn.js';
+import { createEngine, monteCarlo, fmtClock } from '../app/core/sim.js';
+const out=document.getElementById('out'); const L=[]; const p=(...a)=>{L.push(a.join(' '));out.textContent=L.join('\n')};
+try{
+ const nn=await loadNN();
+ let match=0; nn.samples.forEach((s,i)=>{ if(nn.inferSample(i).matchesPython) match++ }); p('nn parity',match+'/'+nn.samples.length);
+ const e=createEngine({nn}); let g=0; const t0=performance.now(); while(!e.done&&g++<60000) e.step();
+ p('done',e.done,'t',fmtClock(e.state.t),'steps',g,'ms',(performance.now()-t0).toFixed(0),'phase',e.state.phase);
+ for(const d of e.state.detections) p(d.id,e.truthOf(d.id),d.status,d.kind,'p='+d.p.toFixed(3),'room',d.room,'ev',d.evidence.map(x=>x.sensor+':'+x.result).join(','));
+ p('survivors',JSON.stringify(Object.values(e.state.survivors).map(s=>[s.id,s.room,s.motion,s.status])));
+ p('coverage',JSON.stringify(Object.values(e.state.coverage).map(c=>[c.room,c.status,+c.reach.toFixed(2),+c.residual.toFixed(3)])));
+ const r=e.state.routes.rescue; p('route',r?.status,r?.length.toFixed(1),JSON.stringify(r?.legs.map(l=>[l.det,l.ok,l.kind,l.length?.toFixed(1),l.gap?.toFixed(1)])),'avoided',JSON.stringify(r?.avoided));
+ p('events',e.state.events.length); for(const ev of e.state.events) p(' ',fmtClock(ev.t),ev.level,ev.code,ev.text);
+ const mc=await monteCarlo({nn,runs:40}); p('mc',JSON.stringify({people:mc.people,falseConfirmed:mc.falseConfirmed,meanTime:mc.meanTime.toFixed(0)}));
+ p('OK');
+}catch(err){p('ERROR',err.stack||err)}
+</script>

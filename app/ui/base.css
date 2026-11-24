@@ -1,0 +1,75 @@
+/* Base styles and the shared component classes. Workspaces build from these so the whole console looks like one product. */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg-0); color: var(--text); font: 400 var(--fs-13)/1.45 var(--font); -webkit-font-smoothing: antialiased; overflow: hidden; }
+h1, h2, h3, h4, p { margin: 0; }
+h1 { font: 600 var(--fs-28)/1.1 var(--font-display); letter-spacing: -0.02em; }
+h2 { font: 600 var(--fs-20)/1.2 var(--font-display); letter-spacing: -0.015em; }
+h3 { font: 600 var(--fs-14)/1.3 var(--font); }
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-1); }
+::selection { background: rgba(90,169,255,0.35); }
+.num, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--text-2); } .dim { color: var(--text-3); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.skip { position: absolute; left: 8px; top: -40px; background: var(--accent); color: var(--accent-ink); padding: 8px 12px; border-radius: var(--r-2); z-index: 100; }
+.skip:focus { top: 8px; }
+* { scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+
+/* Buttons. One .btn-primary per view: the main thing to do next. */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: var(--r-2); background: var(--bg-3); color: var(--text); font-weight: 500; cursor: pointer; transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease); white-space: nowrap; }
+.btn:hover { background: var(--bg-4); border-color: #44505f; }
+.btn:active { transform: scale(0.98); }
+.btn[disabled], .btn[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn-primary:hover { background: #7bbaff; border-color: #7bbaff; }
+.btn-danger { background: var(--danger); border-color: var(--danger); color: #1b0206; font-weight: 600; }
+.btn-danger:hover { background: #ff6f7d; border-color: #ff6f7d; }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--text-2); }
+.btn-ghost:hover { background: var(--bg-3); color: var(--text); }
+.btn-lg { min-height: 40px; padding: 0 16px; font-size: var(--fs-14); }
+.btn-sm { min-height: 26px; padding: 0 8px; font-size: var(--fs-12); }
+.btn-icon { width: 32px; padding: 0; }
+.btn svg { width: 16px; height: 16px; flex: none; }
+
+/* Panels */
+.panel { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-3); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.panel-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); min-height: 40px; }
+.panel-head h3 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.panel-body { padding: 12px; overflow: auto; min-height: 0; flex: 1; }
+.panel-body.flush { padding: 0; }
+.glass { background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--r-3); box-shadow: var(--shadow-1); }
+
+/* Tags: small labelled chips. Always a word, never colour alone. */
+.tag { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: 999px; font-size: var(--fs-11); font-weight: 600; line-height: 1; white-space: nowrap; background: var(--bg-4); color: var(--text-2); }
+.tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.tag.plain::before { display: none; }
+.tag-person { background: var(--person-soft); color: var(--person); }
+.tag-warn { background: var(--warn-soft); color: var(--warn); }
+.tag-ok { background: var(--ok-soft); color: var(--ok); }
+.tag-danger { background: var(--danger-soft); color: var(--danger); }
+.tag-accent { background: var(--accent-soft); color: var(--accent); }
+.tag-sim { background: var(--sim-soft); color: var(--sim); }
+
+/* Key / value rows */
+.kv { display: grid; grid-template-columns: minmax(96px, auto) 1fr; gap: 6px 12px; align-items: baseline; }
+.kv dt { color: var(--text-3); font-size: var(--fs-12); } .kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.stat { display: flex; flex-direction: column; gap: 2px; } .stat b { font: 600 var(--fs-20)/1.1 var(--font-display); font-variant-numeric: tabular-nums; } .stat span { color: var(--text-3); font-size: var(--fs-12); }
+
+/* Segmented control and inputs */
+.seg { display: inline-flex; background: var(--bg-3); border: 1px solid var(--line-2); border-radius: var(--r-2); padding: 2px; gap: 2px; }
+.seg button { border: 0; background: transparent; color: var(--text-2); min-height: 26px; padding: 0 10px; border-radius: 4px; cursor: pointer; font-weight: 500; }
+.seg button[aria-pressed="true"], .seg button[aria-selected="true"] { background: var(--bg-1); color: var(--text); box-shadow: 0 0 0 1px var(--line-2); }
+.input, .select { min-height: 32px; padding: 0 10px; background: var(--bg-1); border: 1px solid var(--line-2); border-radius: var(--r-2); color: var(--text); width: 100%; }
+.input:hover, .select:hover { border-color: #44505f; }
+.check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; min-height: 28px; } .check input { accent-color: var(--accent); width: 15px; height: 15px; }
+.table { width: 100%; border-collapse: collapse; font-size: var(--fs-12); } .table th { text-align: left; font-weight: 500; color: var(--text-3); padding: 6px 8px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg-2); } .table td { padding: 6px 8px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; } .table tr[aria-selected="true"] td { background: var(--accent-soft); } .table tbody tr:hover td { background: var(--bg-3); }
+
+/* Notes that explain what is real */
+.note { display: flex; gap: 8px; padding: 8px 10px; border-radius: var(--r-2); background: var(--sim-soft); color: #d9ccff; font-size: var(--fs-12); line-height: 1.4; }
+.note.warn { background: var(--warn-soft); color: #ffe0a3; } .note.danger { background: var(--danger-soft); color: #ffc2c8; } .note.ok { background: var(--ok-soft); color: #b9f3dd; }
+.empty { display: grid; place-items: center; text-align: center; gap: 8px; padding: 32px; color: var(--text-2); height: 100%; }
+.bar { height: 6px; border-radius: 3px; background: var(--bg-4); overflow: hidden; } .bar > i { display: block; height: 100%; background: var(--accent); border-radius: 3px; transition: width var(--t-med) var(--ease); }
+kbd { font: 500 11px var(--mono); padding: 1px 5px; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 4px; color: var(--text-2); background: var(--bg-1); }
+.row { display: flex; align-items: center; gap: 8px; } .col { display: flex; flex-direction: column; gap: 8px; } .grow { flex: 1; min-width: 0; } .wrap { flex-wrap: wrap; }

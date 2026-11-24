@@ -1,0 +1,6 @@
+.DS_Store
+.vercel
+orchestration/logs/
+__pycache__/
+*.pyc
+node_modules/

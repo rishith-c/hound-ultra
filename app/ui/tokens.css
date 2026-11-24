@@ -1,0 +1,57 @@
+/* HOUND design tokens. Every colour, size and radius in the console comes from here. Do not hard-code colours. */
+:root {
+  color-scheme: dark;
+  /* surfaces, darkest first */
+  --bg-0: #07090c;      /* page, 3-D viewport backdrop */
+  --bg-1: #0d1014;      /* app chrome */
+  --bg-2: #13171d;      /* panels */
+  --bg-3: #1a1f27;      /* raised: cards, inputs */
+  --bg-4: #232a34;      /* hover */
+  --line: #232a33;
+  --line-2: #323b47;
+  /* text */
+  --text: #e9edf2;
+  --text-2: #a8b2bf;
+  --text-3: #74808e;    /* 4.6:1 on --bg-2; never smaller than 12px */
+  /* meaning. Colour is never the only signal: pair with an icon or a word. */
+  --accent: #5aa9ff;    /* interactive, routes, focus */
+  --accent-ink: #06131f;
+  --person: #ff6a45;    /* a person, the most important thing on screen */
+  --person-soft: rgba(255, 106, 69, 0.16);
+  --warn: #ffb224;      /* possible, needs attention */
+  --warn-soft: rgba(255, 178, 36, 0.14);
+  --ok: #41d6a0;        /* clear, done, healthy */
+  --ok-soft: rgba(65, 214, 160, 0.13);
+  --danger: #ff4d5e;    /* hazard, stop */
+  --danger-soft: rgba(255, 77, 94, 0.15);
+  --sim: #b79cff;       /* "this is simulated / concept" labels */
+  --sim-soft: rgba(183, 156, 255, 0.14);
+  --accent-soft: rgba(90, 169, 255, 0.14);
+  /* data ramps */
+  --heat-0: #10151c; --heat-1: #2b3f6b; --heat-2: #7a3f8f; --heat-3: #d8504d; --heat-4: #ffb24a; --heat-5: #fff3c4;
+  /* type */
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace; /* numbers and code only */
+  --fs-11: 11px; --fs-12: 12px; --fs-13: 13px; --fs-14: 14px; --fs-16: 16px; --fs-20: 20px; --fs-28: 28px; --fs-40: 40px;
+  /* space: 4-point grid */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px;
+  --r-1: 4px; --r-2: 6px; --r-3: 10px; --r-4: 14px;
+  --shadow-1: 0 1px 0 rgba(255,255,255,0.03) inset, 0 8px 24px rgba(0,0,0,0.35);
+  --shadow-2: 0 1px 0 rgba(255,255,255,0.04) inset, 0 18px 48px rgba(0,0,0,0.55);
+  --glass: rgba(16, 20, 26, 0.72);
+  --blur: saturate(160%) blur(18px);
+  /* motion */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --t-fast: 120ms; --t-med: 220ms;
+  /* layout */
+  --topbar-h: 48px; --rail-w: 212px; --status-h: 26px;
+}
+:root[data-contrast="high"] {
+  --bg-2: #0a0c0f; --bg-3: #11151a; --line: #5b6877; --line-2: #8695a6; --text-2: #d6dde6; --text-3: #b3bdc9;
+}
+:root[data-palette="cb"] { /* colour-blind safe: blue / orange / yellow, no red-green pair */
+  --person: #ff8a1f; --person-soft: rgba(255,138,31,0.18); --ok: #4cc3ff; --ok-soft: rgba(76,195,255,0.14); --danger: #ff5fa2; --danger-soft: rgba(255,95,162,0.16);
+}
+@media (prefers-reduced-motion: reduce) { :root { --t-fast: 0ms; --t-med: 0ms; } }
+:root[data-motion="reduce"] { --t-fast: 0ms; --t-med: 0ms; }
