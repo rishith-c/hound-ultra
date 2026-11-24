@@ -1,6 +1,6 @@
 // HOUND Command service worker. Network first, always: a visitor who is online never gets an old file. Each good answer
 // is also kept, and the kept copy is used only when the network fails. Only complete, successful answers are kept.
-const VERSION = 'hound-2026-11-23-2';
+const VERSION = 'hound-2026-11-23-3';
 const CDN = 'cdn.jsdelivr.net';
 const HOME = self.registration.scope;
 const mine = (url) => url.origin === self.location.origin || url.hostname === CDN;

@@ -131,10 +131,11 @@ def main():
     ap.add_argument("--fps", type=int, default=60)
     ap.add_argument("--sheet", type=float, default=0, help="scout: save one frame every N seconds as a contact sheet instead of a film")
     ap.add_argument("--out", default=os.path.expanduser("~/Developer/.hound-release/film"))
+    ap.add_argument("--work", action="store_true", help="film the working tree instead of the release snapshot")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     site = os.path.expanduser("~/Developer/.hound-release/site")
-    if os.path.isdir(site):
+    if os.path.isdir(site) and not a.work:
         shoot.ROOT = site
     base = f"http://127.0.0.1:{shoot.serve()}"
     for s in json.load(open(a.shots)):

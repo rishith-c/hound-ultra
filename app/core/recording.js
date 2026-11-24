@@ -21,6 +21,8 @@ export function cannotDraw() {
 }
 export function rememberSlow() { verdict = 'too slow'; try { sessionStorage.setItem('hound.film', '1'); } catch { /* no storage */ } }
 
+export function warm(id) { const v = document.createElement('video'); v.preload = 'auto'; v.muted = true; v.src = url(id, '.mp4'); }
+
 export function show(root, m, ctx, live) {
   const { h } = ctx.kit;
   const v = h('video.rec-film', { src: url(m.id, '.mp4'), poster: url(m.id, '.jpg'), loop: true, preload: 'auto', 'aria-label': m.title + ', recorded from the live console' });

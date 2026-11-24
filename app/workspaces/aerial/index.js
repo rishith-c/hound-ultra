@@ -11,6 +11,7 @@ import { createViewer } from './viewer.js';
 import { BENCH, CBENCH, DIFFS, pairSetup, nms, tileGrid, iouOf, colourName, eig3 } from './shared.js';
 import { conceptPanel } from './concepts.js';
 import { createHero } from './hero.js';
+import { createDrone, SENSORS } from './drone.js';
 
 const MAX_WORK = 1.6e6;          // pixels: larger images are analysed at this size (the detector still sees full resolution)
 const SITE_PPM = 12;
@@ -87,7 +88,8 @@ export default {
       { id: 'rx', label: 'Colour anomaly', sub: 'RX detector', reality: 'live-algo' },
       { id: 'change', label: 'Before / after', sub: 'Change detection', reality: 'live-algo' },
     ];
-    const toolSeg = h('div.aerial-toolseg', { role: 'tablist', 'aria-label': 'Method' }, ...TOOLS.map((t) => h('button', { role: 'tab', id: 'aerial-tab-' + t.id, 'aria-selected': 'false', onclick: () => setTool(t.id) }, h('b', null, t.label), h('span', null, t.sub), realityTag(t.reality))));
+    const droneTab = h('button', { role: 'tab', id: 'aerial-tab-drone', 'aria-selected': 'false', onclick: () => showDrone(true) }, h('b', null, 'The drone'), h('span', null, 'Every sensor, in flight'), realityTag('concept'));
+    const toolSeg = h('div.aerial-toolseg', { role: 'tablist', 'aria-label': 'Method' }, droneTab, ...TOOLS.map((t) => h('button', { role: 'tab', id: 'aerial-tab-' + t.id, 'aria-selected': 'false', onclick: () => setTool(t.id) }, h('b', null, t.label), h('span', null, t.sub), realityTag(t.reality))));
     const viewHost = h('div.aerial-view');
     const hudMeta = h('div.aerial-hud-meta');
     const hudCoord = h('div.aerial-hud.aerial-hud-coord.glass.num', { hidden: true, 'aria-hidden': 'true' });
@@ -100,11 +102,13 @@ export default {
     const cover = h('div.aerial-cover', { hidden: true });
     const dropHint = h('div.aerial-drop', { hidden: true }, icon('upload', 28), h('b', null, 'Drop an aerial photo'), h('span', null, 'It stays on this computer. All three methods will run on it.'));
     const hudBar = h('div.aerial-hudbar', null, hudMeta, hudZoom); viewHost.append(hudBar, hudCoord, hudScale, hudRun, cover, dropHint);
+    const advFly = h('div.ad-host', { hidden: true });
     const stage = h('section.aerial-stage', { 'aria-label': 'Frame viewer' }, toolSeg, viewHost);
     const side = h('aside.aerial-side', { 'aria-label': 'Method controls and results' });
     const scorePanel = h('section.aerial-card.aerial-score', { 'aria-label': 'Measured on the synthetic test set' });
     const missionPanel = h('section.aerial-card.aerial-mission', { 'aria-label': 'Link to the mission' });
     const strip = h('div.aerial-strip', null, scorePanel, missionPanel, conceptPanel(kit));
+    stage.append(advFly);
     const advanced = h('div.aerial-adv.adv-only', null, head, h('div.aerial-main', null, film, stage, side), strip), demo = h('section.aerial-demo.demo-only', { 'aria-label': 'Drone imagery, the short film' });
     root.append(advanced, demo);
 
@@ -269,6 +273,7 @@ export default {
       if (f.status === 'ready') runTool({ auto: true });
     }
     function setTool(id) {
+      if (st.fly) { showDrone(false); if (st.tool === id) return; }
       if (st.tool === id) return; cancelRun(); st.tool = id; st.sel = null;
       toolSeg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', String(b.id === 'aerial-tab-' + id)));
       if (id === 'change' && cur() && !cur().pair && cur().kind !== 'user') { selectFrame('S-03'); return; }   // a lone photograph has nothing to compare with
@@ -929,9 +934,46 @@ export default {
       { name: 'Compare', title: 'What moved since', line: 'Two flights, lined up and compared. What changed stays lit.', tags: () => [realityTag('live-algo'), h('span.tag.tag-sim.plain', { title: 'Both flights are drawn by this page, so every change is known and the result can be scored.' }, 'Synthetic frames')] },
     ];
     const dTags = h('div.ah-tags'), dTitle = h('h1.ah-title'), dLine = h('p.ah-line'), dCap = h('p.ah-cap', { role: 'status' }), dFig = h('div.ah-figs'), dBtn = h('button.btn.btn-primary.ah-btn');
-    const dSteps = ACTS.map((a, i) => h('button.ah-step', { 'aria-pressed': String(i === 0), onclick: () => hero?.go(i) }, h('span', null, a.name), h('i', null, h('b'))));
-    demo.append(h('div.ah-stage'), h('div.ah-copy', null, dTags, dTitle, dLine, h('div.ah-act', null, dBtn, dCap)), h('div.ah-right', null, dFig, h('div.ah-steps', { role: 'group', 'aria-label': 'Part of the film' }, ...dSteps)));
+    const dSteps = ACTS.map((a, i) => h('button.ah-step', { 'aria-pressed': String(i === 0), onclick: () => endFly(i) }, h('span', null, a.name), h('i', null, h('b'))));
+    const demoFly = h('div.ad-host'), flyStep = h('button.ah-step', { 'aria-pressed': 'false', onclick: () => startFly(true) }, h('span', null, 'Fly'), h('i', null, h('b')));
+    demo.append(h('div.ah-stage'), demoFly, h('div.ah-copy', null, dTags, dTitle, dLine, h('div.ah-act', null, dBtn, dCap)), h('div.ah-right', null, dFig, h('div.ah-steps', { role: 'group', 'aria-label': 'Part of the film' }, flyStep, ...dSteps)));
+    // ---------- the drone in flight (drone.js): the opening of the Demo chapter, and the first tab in Advanced ----------
+    const FLY = { title: 'Four senses in the air', line: 'It looks with colour, heat and laser. Then it listens with Wi-Fi.', tags: () => [realityTag('concept'), realityTag('sim'), h('span.tag.plain', { title: 'The ground is made from AI-generated pictures. The boxes are the detector\'s recorded output on them. The drone is drawn larger than life.' }, 'Illustration frames')] };
+    let flying = false, flown = false;
+    function makeFly(host, inDemo) {
+      const f = { api: null, p: null, rows: SENSORS.map((s, i) => h('button.ad-row', { 'aria-pressed': 'false', onclick: () => f.api?.go(i) }, h('b', null, s.name), h('em.num', null, ''), h('span', null, s.line), h('i', null, h('u')))) };
+      const onMode = (i) => { f.rows.forEach((r, k) => { r.setAttribute('aria-pressed', String(k === i)); r.querySelector('u').style.transform = 'scaleX(' + (k < i ? 1 : 0) + ')'; }); if (inDemo) { say(SENSORS[i].line); if (i === 3) startHero(); } };
+      onMode.progress = (i, k) => { f.rows[i].querySelector('u').style.transform = 'scaleX(' + k.toFixed(3) + ')'; if (inDemo) flyStep.querySelector('b').style.transform = 'scaleX(' + ((i + k) / 4).toFixed(3) + ')'; };
+      f.open = () => (f.p ??= (async () => {
+        await Promise.all([recReady, genReady]);
+        const st0 = h('div.ad-stage'); host.replaceChildren(st0, h('div.ad-scrim', { 'aria-hidden': 'true' }), h('div.ad-panel', { role: 'group', 'aria-label': 'Sensors on the drone' }, ...f.rows));
+        f.api = await createDrone(st0, { h, css, reduced: kit.reducedMotion(), recorded, minScore: DET_DEFAULT, shift: inDemo ? -0.015 : -0.06, onMode, onRead: (r) => f.rows.forEach((x, k) => { const e = x.querySelector('em'); if (e.textContent !== r[k]) e.textContent = r[k]; }), onEnd: inDemo ? () => { if (flying) endFly(0); } : null,
+          loadBitmap: async (id) => { const x = frames.get(id); if (!x) throw new Error('frame ' + id + ' is missing'); const r = await fetch(x.url); if (!r.ok) throw new Error(id + ' could not be fetched (' + r.status + ')'); return createImageBitmap(await r.blob()); } });
+        onMode(f.api.mode); return f.api;
+      })());
+      f.start = () => f.open().then((a) => { if (f.on()) a.start(); }).catch((e) => { console.warn('aerial: the drone scene did not start:', e); host.hidden = true; if (inDemo) endFly(0); else showDrone(false); });
+      f.close = () => { f.api?.dispose(); f.api = null; f.p = null; host.replaceChildren(); };
+      return f;
+    }
+    const fly = makeFly(demoFly, true), advDrone = makeFly(advFly, false);
+    fly.on = () => flying && st.shown && ctx.mode === 'demo'; advDrone.on = () => st.fly && st.shown && ctx.mode !== 'demo';
+    const say = (text) => { if (dCap.textContent !== text) { dCap.textContent = text; dCap.classList.remove('is-in'); void dCap.offsetWidth; dCap.classList.add('is-in'); } };
+    function startFly(again) {
+      flying = flown = true; hero?.stop(); demo.classList.add('is-flying'); demo.dataset.act = 'fly'; demoFly.hidden = false;
+      dTags.replaceChildren(...FLY.tags()); dTitle.textContent = FLY.title; dLine.textContent = FLY.line; dBtn.hidden = true; flyStep.setAttribute('aria-pressed', 'true'); dSteps.forEach((b) => { b.setAttribute('aria-pressed', 'false'); b.querySelector('b').style.transform = 'scaleX(0)'; });
+      if (again) fly.api?.restart(); fly.start();
+    }
+    function endFly(i) {
+      if (flying) { flying = false; fly.api?.stop(); demo.classList.remove('is-flying'); flyStep.setAttribute('aria-pressed', 'false'); flyStep.querySelector('b').style.transform = 'scaleX(0)'; setTimeout(() => { if (!flying) demoFly.hidden = true; }, 700); paintAct(i); startHero(); }
+      hero?.go(i);
+    }
+    function showDrone(on) {
+      st.fly = on; advanced.classList.toggle('is-flying', on); advFly.hidden = !on; viewHost.hidden = on;
+      toolSeg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', String(b.id === 'aerial-tab-' + (on ? 'drone' : st.tool))));
+      if (on) { viewer.stop(); advDrone.start(); } else { advDrone.close(); if (st.shown && ctx.mode !== 'demo') { pick(); viewer.start(); viewer.kick(); } }
+    }
     function paintAct(i) {
+      if (flying) return;
       const a = ACTS[i]; demo.dataset.act = i; dTags.replaceChildren(...a.tags()); dTitle.textContent = a.title; dLine.textContent = a.line;
       dSteps.forEach((b, k) => { b.setAttribute('aria-pressed', String(k === i)); if (k !== i) b.querySelector('b').style.transform = 'scaleX(0)'; });
       dBtn.hidden = i === 2; dBtn.replaceChildren(...(i === 0 ? [icon('play'), 'Run it live'] : outdoorLeads().length ? [icon('mission'), 'Send to the mission'] : [icon('play'), 'Fly the survey']));
@@ -955,25 +997,25 @@ export default {
     const tileCs = new Map();
     async function tileCanvas(src) { if (!tileCs.has(src)) tileCs.set(src, canvasFrom(src, src.width, src.height)); return tileCs.get(src); }
     async function startHero() {
-      if (heroState !== 'none') { hero?.start(); return; }
-      heroState = 'loading'; paintAct(0); dCap.textContent = 'Loading the frames';
+      if (heroState !== 'none') { if (!flying) hero?.start(); return; }
+      heroState = 'loading'; paintAct(0); if (!flying) dCap.textContent = 'Loading the frames';
       await Promise.all([recReady, genReady]);
       try {
-        const onState = (m) => { if (m.kind === 'act') paintAct(m.act); else if (m.kind === 'live') { const t = dTags.querySelector('.ah-mode'); if (t) t.textContent = 'One frame live, the rest recorded'; } else if (m.kind === 'caption') { if (dCap.textContent !== m.text) { dCap.textContent = m.text; dCap.classList.remove('is-in'); void dCap.offsetWidth; dCap.classList.add('is-in'); } const same = dFig.children.length === m.figures.length; if (same) m.figures.forEach(([v, l], i) => { const b = dFig.children[i]; if (b.firstChild.textContent !== v) b.firstChild.textContent = v; if (b.lastChild.textContent !== l) b.lastChild.textContent = l; }); else dFig.replaceChildren(...m.figures.map(([v, l]) => h('div.ah-fig', null, h('b.num', null, v), h('span', null, l)))); } };
-        onState.progress = (i, k) => { dSteps[i].querySelector('b').style.transform = 'scaleX(' + k.toFixed(3) + ')'; };
+        const onState = (m) => { if (flying && m.kind !== 'live') return; if (m.kind === 'act') paintAct(m.act); else if (m.kind === 'live') { const t = dTags.querySelector('.ah-mode'); if (t) t.textContent = 'One frame live, the rest recorded'; } else if (m.kind === 'caption') { if (dCap.textContent !== m.text) { dCap.textContent = m.text; dCap.classList.remove('is-in'); void dCap.offsetWidth; dCap.classList.add('is-in'); } const same = dFig.children.length === m.figures.length; if (same) m.figures.forEach(([v, l], i) => { const b = dFig.children[i]; if (b.firstChild.textContent !== v) b.firstChild.textContent = v; if (b.lastChild.textContent !== l) b.lastChild.textContent = l; }); else dFig.replaceChildren(...m.figures.map(([v, l]) => h('div.ah-fig', null, h('b.num', null, v), h('span', null, l)))); } };
+        onState.progress = (i, k) => { if (flying) return;  dSteps[i].querySelector('b').style.transform = 'scaleX(' + k.toFixed(3) + ')'; };
         hero = await createHero(demo.querySelector('.ah-stage'), { surveying: () => ctx.sim.state.started && !outdoorLeads().length && ['aerial', 'standby'].includes(ctx.sim.state.phase), h, css, world, reduced: kit.reducedMotion(), recorded, minScore: DET_DEFAULT, rxThr: RX_DEFAULT, chgThr: CHG_DEFAULT, siteSpec, outdoorLeads, onState,
           warn: (m) => shell.toast(m, { level: 'alert' }),
           release: () => { heroCv?.end(); heroCv = null; },
           rpc: () => (heroCv ??= rpc(new Worker(new URL('./cv.worker.js', import.meta.url), { type: 'module' }))),
           loadBitmap: async (id) => { const f = frames.get(id); if (!f) throw new Error('frame ' + id + ' is missing'); const r = await fetch(f.url); if (!r.ok) throw new Error(id + ' could not be fetched (' + r.status + ')'); return createImageBitmap(await r.blob()); } });
-        heroState = 'ready'; if (st.shown && ctx.mode === 'demo') hero.start();
+        heroState = 'ready'; if (st.shown && ctx.mode === 'demo' && !flying) hero.start();
       } catch (e) { heroState = 'failed'; demo.classList.add('is-failed'); dBtn.hidden = true; const still = frames.get('G-01'); if (still) demo.querySelector('.ah-stage').style.background = 'center / cover url("' + still.url + '")'; console.warn('aerial: the film did not start:', e); dCap.textContent = 'The film could not start: it needs WebGL and a network connection. The tools are in Advanced.'; }
     }
     let thumbs = false;
     function applyMode() {
       if (!st.shown) return;
-      if (ctx.mode === 'demo') { viewer.stop(); cancelRun(); startHero(); return; }
-      hero?.stop(); pick(); viewer.start(); onTick(); renderMission(true); renderSide(); renderScore();
+      if (ctx.mode === 'demo') { viewer.stop(); cancelRun(); advDrone.close(); if (!flown || flying) startFly(); else startHero(); return; }
+      hero?.stop(); fly.api?.stop(); if (st.fly === undefined && !picked) st.fly = true; if (st.fly) showDrone(true); else { pick(); viewer.start(); } onTick(); renderMission(true); renderSide(); renderScore();
       if (st.bench.rxState === 'idle' && !started) { started = true; setTimeout(() => { started = false; if (st.shown && ctx.mode !== 'demo' && st.bench.rxState === 'idle') runBench(); }, 1200); }
       if (!thumbs) { thumbs = true; (async () => { await genReady; for (const id of [...order]) { const f = frames.get(id); if (f.status === 'idle') await loadFrame(f); } })(); }   // thumbnails, one at a time
     }
@@ -982,6 +1024,7 @@ export default {
     // ---------- start ----------
     buildFilm(); renderScore(); renderMission(true);
     toolSeg.querySelector('#aerial-tab-' + st.tool).setAttribute('aria-selected', 'true');
+    if (ctx.params?.frame || ctx.params?.tool || ctx.params?.detection) st.fly = false;
     const startId = ctx.params?.frame && frames.has(ctx.params.frame) ? ctx.params.frame : 'R-01';
     if (ctx.params?.tool && TOOLS.some((t) => t.id === ctx.params.tool)) { st.tool = ctx.params.tool; toolSeg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', String(b.id === 'aerial-tab-' + st.tool))); }
     const pick = () => { if (!picked) { picked = true; selectFrame(startId); } };
@@ -990,11 +1033,11 @@ export default {
     function release() { heroCv?.end(); heroCv = null; bench?.end(); bench = null; if (det) { det.end(); det = null; st.det.status = 'idle'; } tileCs.clear(); }
     const api = {
       onShow() { st.shown = true; applyMode(); },
-      onHide() { st.shown = false; viewer.stop(); hero?.strip.live?.cancel?.(); hero?.stop(); cancelRun(); release(); },
-      dispose() { st.shown = false; viewer.stop(); cancelRun(); hero?.dispose(); hero = null; release(); cvW?.end(); cvW = null; for (const f of offs) f?.(); if (window.HOUND_AERIAL === api.debug) delete window.HOUND_AERIAL; },
-      onParams(p) { if (p?.frame || p?.tool || p?.detection) pick(); if (p?.tool && TOOLS.some((t) => t.id === p.tool)) setTool(p.tool); if (p?.frame && frames.has(p.frame)) selectFrame(p.frame); if (p?.detection) { const d = S().detections.find((x) => x.id === p.detection); if (d?.pos) showLead(d); } },
+      onHide() { st.shown = false; viewer.stop(); fly.api?.stop(); advDrone.close(); hero?.strip.live?.cancel?.(); hero?.stop(); cancelRun(); release(); },
+      dispose() { st.shown = false; viewer.stop(); cancelRun(); fly.close(); advDrone.close(); hero?.dispose(); hero = null; release(); cvW?.end(); cvW = null; for (const f of offs) f?.(); if (window.HOUND_AERIAL === api.debug) delete window.HOUND_AERIAL; },
+      onParams(p) { if (p?.frame || p?.tool || p?.detection) { if (st.fly) showDrone(false); st.fly = false; pick(); } if (p?.tool && TOOLS.some((t) => t.id === p.tool)) setTool(p.tool); if (p?.frame && frames.has(p.frame)) selectFrame(p.frame); if (p?.detection) { const d = S().detections.find((x) => x.id === p.detection); if (d?.pos) showLead(d); } },
       // for the automated checks
-      debug: { st, frames, loadFrame, loadDetector, runBench, runDetBench, viewer, detectFrame, selectFrame, setTool, runTool, select, get cur() { return cur(); }, get hero() { return hero; } },
+      debug: { st, frames, loadFrame, loadDetector, runBench, runDetBench, viewer, detectFrame, selectFrame, setTool, runTool, select, get cur() { return cur(); }, get hero() { return hero; }, get fly() { return fly.api; }, get drone() { return advDrone.api; }, startFly, endFly, showDrone },
     };
     window.HOUND_AERIAL = api.debug;
     return api;

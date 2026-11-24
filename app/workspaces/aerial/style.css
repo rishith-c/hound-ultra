@@ -206,3 +206,20 @@
 .aerial-miss-thumbs { flex: 1 1 0; min-width: 0; flex-wrap: wrap; height: 36px; }
 @media (max-width: 1500px) { .aerial-cellbar { display: none; } .aerial-cell { text-align: left; } .aerial-table th, .aerial-table tbody th, .aerial-table td { padding-left: 5px; padding-right: 5px; } }
 .aerial-demo.is-failed .ah-btn, .aerial-demo.is-failed .ah-steps, .aerial-demo.is-failed .ah-mode { display: none; }
+
+/* the drone in flight */
+.ad-host { position: absolute; inset: 0; overflow: hidden; background: var(--bg-0); } .ad-host[hidden] { display: none; }
+.aerial-stage .ad-host { position: relative; inset: auto; flex: 1; min-height: 0; }
+.ad-stage, .ad-gl, .ad-ov { position: absolute; inset: 0; width: 100%; height: 100%; display: block; } .ad-ov { cursor: grab; touch-action: none; outline-offset: -3px; } .ad-ov:active { cursor: grabbing; }
+.ad-scrim { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(58% 66% at 0% 100%, rgba(6,8,10,0.92) 0, rgba(6,8,10,0.66) 40%, rgba(6,8,10,0) 100%), linear-gradient(270deg, rgba(6,8,10,0.86) 0, rgba(6,8,10,0.5) 22%, rgba(6,8,10,0) 40%), linear-gradient(0deg, rgba(6,8,10,0.7) 0, rgba(6,8,10,0) 24%); }
+.aerial-stage .ad-scrim { background: linear-gradient(270deg, rgba(6,8,10,0.78) 0, rgba(6,8,10,0) 40%); }
+.ad-panel { position: absolute; right: 40px; bottom: 112px; width: 318px; display: flex; flex-direction: column; gap: 2px; }
+.aerial-stage .ad-panel { right: 24px; bottom: 24px; }
+.ad-row { display: grid; grid-template-columns: 1fr auto; gap: 3px 14px; padding: 11px 0 12px; border: 0; background: none; color: var(--text-3); text-align: left; position: relative; cursor: pointer; transition: color 240ms var(--ease); }
+.ad-row b { font: 400 21px/1.1 var(--font-display); } .ad-row em { font: 500 var(--fs-13)/1.2 var(--font); font-style: normal; align-self: end; color: var(--text-3); } .ad-row span { grid-column: 1 / -1; font-size: var(--fs-13); line-height: 1.35; color: var(--text-2); max-height: 0; opacity: 0; overflow: hidden; transition: max-height 420ms var(--ease), opacity 300ms var(--ease); }
+.ad-row:hover, .ad-row[aria-pressed="true"] { color: var(--text); } .ad-row[aria-pressed="true"] span { max-height: 40px; opacity: 1; } .ad-row[aria-pressed="true"] em { color: var(--text); }
+.ad-row i { position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: rgba(236, 238, 241, 0.16); overflow: hidden; } .ad-row u { display: block; height: 100%; background: var(--text); transform: scaleX(0); transform-origin: 0 50%; }
+.aerial-demo .ad-host { opacity: 0; transition: opacity 600ms var(--ease-in-out); pointer-events: none; } .aerial-demo.is-flying .ad-host { opacity: 1; pointer-events: auto; }
+.aerial-demo.is-flying .ah-figs, .aerial-demo.is-flying .ah-act { display: none; }
+.aerial-adv.is-flying .aerial-film, .aerial-adv.is-flying .aerial-side, .aerial-adv.is-flying .aerial-strip, .aerial-adv.is-flying .aerial-reveal, .aerial-adv.is-flying .aerial-head .btn { display: none; } .aerial-adv.is-flying .aerial-main { grid-template-columns: minmax(0, 1fr); }
+.aerial-view[hidden] { display: none; }

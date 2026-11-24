@@ -32,8 +32,9 @@ No build step and nothing to install.
 git clone https://github.com/rishith-c/hound-ultra.git && cd hound-ultra && python3 -m http.server 4400
 ```
 
-Then open http://localhost:4400/ . Two libraries load from jsDelivr at exact versions (three.js 0.180.0 and d3 7.9.0), plus a
-few in single Advanced exhibits, so the first load needs the internet. After one full visit it also works offline.
+Then open http://localhost:4400/ . Every library is in `vendor/` at an exact version, so nothing waits on another site: only the
+valley's satellite tiles and one optional Advanced model come from outside. On a computer that cannot draw 3-D, Demo plays
+recordings of the same chapters, made from the live console. After one full visit it also works offline.
 
 Checks: open `/tests/` for the unit tests and `/app/?mode=advanced#/status` for the live System check, which runs the same
 tests and the fault drills in front of you.

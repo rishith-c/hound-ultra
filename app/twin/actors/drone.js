@@ -10,7 +10,7 @@ import { palette, SCALE, Y, damp, dampAngle, clamp, smoothstep, stateWatcher, di
 import { surfaceFor } from './scan.js';
 
 const ID = 'DRONE-01';
-const ARM_R = 0.275, ARM_Y = 0.128, PROP_Y = 0.186, PROP_R = 0.127;
+export const ARM_R = 0.275, ARM_Y = 0.128, PROP_Y = 0.186, PROP_R = 0.127;
 // How hard the drawn position chases the simulated one. Stiffer at high sim speed so the lag stays a few metres.
 export const chase = (speed) => 10 + 1.2 * (speed || 1);
 
@@ -21,7 +21,7 @@ const MAT = {
   copper: [0x3b2c22, 0.5, 0.4, 0], wire: [0x1d1f22, 0.5, 0, 0], wire2: [0x4d5157, 0.5, 0, 0], glass: [0x05070b, 0.05, 0.5, 0], window: [0x10161e, 0.09, 0.4, 0],
 };
 
-function buildAirframe(THREE, low) {
+export function buildAirframe(THREE, low) {
   const body = [], head = [], col = new THREE.Color();
   const prep = (g, m) => {
     if (g.index) { const n = g.toNonIndexed(); g.dispose(); g = n; }
@@ -109,7 +109,7 @@ function buildAirframe(THREE, low) {
   return { body: mergeGeometries(body), head: mergeGeometries(head), tips };
 }
 
-function bladeGeometry(THREE) {
+export function bladeGeometry(THREE) {
   const pos = [], idx = [], n = 14;
   for (let b = 0; b < 2; b++) {
     const s = b ? -1 : 1, base = pos.length / 3;
@@ -127,7 +127,7 @@ function bladeGeometry(THREE) {
 }
 
 // One material for the whole airframe: colour, roughness, metalness and carbon weave come from the vertices.
-function frameMaterial(THREE) {
+export function frameMaterial(THREE) {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 1 });
   m.envMapIntensity = 2.2;
   m.onBeforeCompile = (sh) => {

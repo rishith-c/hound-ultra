@@ -297,12 +297,50 @@ async function openWorkspace(id, params = {}) {
   if (token === opening) { if (!first) await frames(2); veil(false); preloadNext(m.id); }
 }
 
-// Fetch the next chapter's code while this one plays, so moving on is instant.
+// Fetch the next chapter's code while this one plays, so moving on is instant. Then everything else, quietly, in story order.
 function preloadNext(id) {
   const i = CHAPTERS.findIndex((c) => c.id === id); if (i < 0 || ctx.mode !== 'demo') return;
   const next = CHAPTERS[(i + 1) % CHAPTERS.length].id;
-  const go = () => { if (!document.querySelector(`link[data-preload="${next}"]`)) document.head.append(h('link', { rel: 'modulepreload', href: `workspaces/${next}/index.js`, 'data-preload': next })); };
-  (window.requestIdleCallback || ((f) => setTimeout(f, 1500)))(go, { timeout: 4000 });
+  if (wantsFilm(next)) film.warm(next);
+  else (window.requestIdleCallback || ((f) => setTimeout(f, 1500)))(() => warm(`workspaces/${next}/index.js`), { timeout: 4000 });
+  if (!preloading) { preloading = true; setTimeout(preloadAll, 2500); }
+}
+let preloading = false; const warmed = new Set();
+function warm(u) {
+  if (warmed.has(u)) return null; warmed.add(u);
+  if (/\.js$/.test(u) && !/worker|vendor\/rapier/.test(u)) return new Promise((done) => { const l = h('link', { rel: 'modulepreload', href: u, fetchPriority: 'low' }); l.onload = l.onerror = done; document.head.append(l); });
+  return fetch(u, { priority: 'low' }).then((r) => r.blob()).catch(() => {});
+}
+async function preloadAll() {
+  if (navigator.connection?.saveData || film.cannotDraw()) return;
+  const list = await fetch(new URL('./preload.json', import.meta.url)).then((r) => r.json()).catch(() => null); if (!list) return;
+  const at = Math.max(0, CHAPTERS.findIndex((c) => c.id === current)), order = [...CHAPTERS.slice(at + 1), ...CHAPTERS.slice(0, at)].map((c) => c.id);
+  const urls = [...order.flatMap((id) => list[id] || []), ...MANIFEST.filter((m) => !list[m.id]).map((m) => `workspaces/${m.id}/index.js`)];
+  const lane = async () => { for (let u; (u = urls.shift());) await warm(u); };
+  await Promise.all([lane(), lane(), lane()]);
+}
+
+// Demo: scrolling moves through the story, one chapter per gesture, like a page. The horizon uses the scroll
+// itself until its own end. Pinching still zooms.
+function scrollStory() {
+  const OWN = new Set(['horizon']), main = $('main');
+  let sum = 0, last = 0, lock = 0, was = 0, held = false;
+  const room = (e) => { for (let n = e.target; n && n !== main; n = n.parentElement) if (n.scrollHeight > n.clientHeight + 4 && /auto|scroll/.test(getComputedStyle(n).overflowY) && (e.deltaY > 0 ? n.scrollTop + n.clientHeight < n.scrollHeight - 2 : n.scrollTop > 2)) return true; return false; };
+  const on = (e) => {
+    if (ctx.mode !== 'demo' || e.ctrlKey || e.metaKey || !e.deltaY || Math.abs(e.deltaX) > Math.abs(e.deltaY) || room(e)) return;
+    if (OWN.has(current) !== (e.eventPhase === 3)) return;
+    const now = performance.now(), d = e.deltaMode === 1 ? e.deltaY * 32 : e.deltaY, a = Math.abs(d), gap = now - last; last = now;
+    if (e.defaultPrevented) { held = true; was = a; lock = now + 300; return; }
+    e.preventDefault(); e.stopPropagation();
+    if (held && now > lock && (gap > 160 || a > was + 24)) { held = false; sum = 0; }     // a new push, not the tail of the last one
+    was = a;
+    if (held || now < lock) return;
+    if (gap > 400 || Math.sign(d) !== Math.sign(sum)) sum = 0;
+    sum += d; if (Math.abs(sum) < 80) return;
+    const dir = Math.sign(sum), i = CHAPTERS.findIndex((c) => c.id === current) + dir; sum = 0; held = true; lock = now + 900;
+    if (i >= 0 && i < CHAPTERS.length) stepChapter(dir);
+  };
+  main.addEventListener('wheel', on, { capture: true, passive: false }); main.addEventListener('wheel', on, { passive: false });
 }
 
 async function boot() {
@@ -326,7 +364,7 @@ async function boot() {
     else if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey && ctx.mode === 'demo' && (e.key === '[' || e.key === ']')) stepChapter(e.key === ']' ? 1 : -1);
   });
   ctx.deepLink = location.hash;   // read by the opening title before the first chapter writes its own address
-  watchFrames();
+  watchFrames(); scrollStory();
   for (const g of GLOBALS) import(`./global/${g}.js`).then((mod) => mod.init?.(ctx)).catch(() => {});
   refreshChrome();
   await openWorkspace(location.hash.replace(/^#\/?/, '').split('?')[0] || (ctx.mode === 'demo' ? CHAPTERS[0].id : 'mission'));

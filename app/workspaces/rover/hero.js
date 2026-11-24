@@ -75,7 +75,7 @@ export function createHero({ ctx, stage, st, R }) {
   const moveWipe = (e) => { const b = stage.getBoundingClientRect(); wipeUser = clamp((e.clientX - b.left - rect.x) / rect.s, ...LIM); };
   stage.addEventListener('pointermove', (e) => { if (!drag || !demo()) return; if (drag.wipe) return moveWipe(e); gy = drag.gy - (e.clientX - drag.x) * .0052; gp = clamp(drag.gp + (e.clientY - drag.y) * .0036, -.6, .75); });
   const drop = () => { drag = null; stage.classList.remove('grabbing'); }; stage.addEventListener('pointerup', drop); stage.addEventListener('pointercancel', drop);
-  stage.addEventListener('wheel', (e) => { if (!demo() || reducedMotion()) return; e.preventDefault(); wipeUser = null; playing = false; scrubIdle = 0; goal = clamp(goal + clamp(e.deltaY, -120, 120) * .0052, 0, T.end); }, { passive: false });
+  stage.addEventListener('wheel', (e) => { if (!demo() || reducedMotion() || (e.deltaY > 0 ? goal >= T.end - 0.02 : goal <= 0.02)) return; e.preventDefault(); wipeUser = null; playing = false; scrubIdle = 0; goal = clamp(goal + clamp(e.deltaY, -120, 120) * .0052, 0, T.end); }, { passive: false });
   const onKey = (e) => { if (!demo() || !visible || e.target.closest?.('input,textarea,select')) return; if (!atPhoto()) return; if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); wipeUser = clamp((wipeUser ?? REST) + (e.key === 'ArrowLeft' ? -16 : 16), ...LIM); } else if (e.key === 'Home') wipeUser = LIM[0]; else if (e.key === 'End') wipeUser = LIM[1]; };
   addEventListener('keydown', onKey, true);
   let visible = true;
