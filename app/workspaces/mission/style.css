@@ -279,7 +279,7 @@
 .film-left { display: flex; align-items: flex-end; gap: 28px; min-width: 0; }
 .film-title { max-width: 620px; transition: opacity 240ms var(--ease-in-out); }
 .film-title.swap { opacity: 0; }
-.film-credit { position: absolute; right: 40px; bottom: 14px; margin: 0; font-size: var(--fs-11); color: rgba(226,232,238,0.38); }
+.film-credit { position: absolute; right: 40px; bottom: 3px; margin: 0; font-size: var(--fs-11); color: rgba(226,232,238,0.38); }
 .film-tags { display: flex; gap: 6px; margin-bottom: 12px; min-height: 20px; }
 .film-head { font: 400 var(--fs-40)/1.04 var(--font-display); letter-spacing: -0.005em; text-wrap: balance; margin: 0; }
 .film-line { margin-top: 8px; font-size: var(--fs-16); line-height: 1.4; color: var(--text-2); text-wrap: pretty; }
