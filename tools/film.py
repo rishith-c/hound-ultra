@@ -5,7 +5,7 @@
 
 The page's clock is replaced: after a shot has settled, time only moves when a frame has been saved. requestAnimationFrame,
 timers, performance.now, Date and CSS / Web animations all follow that clock. Each shot becomes one H.264 file.
-A shot: {"name", "url", "settle": s, "before": "js", "seconds": s, "do": [[t, "js"], ...], "hide": "css", "size": [w, h, dpr]}
+A shot: {"name", "url", "settle": s, "before": "js", "seconds": s, "do": [[t, "js"], ...], "hide": "css", "size": [w, h, dpr], "skip": s played but not saved}
 Default 1440 x 810 at 1.3333, which saves 1920 x 1080 with the type a third larger.
 """
 import argparse, base64, json, os, shutil, subprocess, sys, tempfile, time, urllib.request
@@ -103,7 +103,7 @@ def record(a, shot, base):
                 if isinstance(r, dict) and "__error__" in r:
                     print("  do:", r["__error__"][:300])
             page.call("Runtime.evaluate", {"expression": f"__film.step({1000 / a.fps})"}, timeout=120)
-            if k % every:
+            if k % every or t < shot.get("skip", 0):
                 continue
             data = page.call("Page.captureScreenshot", {"format": "jpeg", "quality": 96, "optimizeForSpeed": True}, timeout=120)["data"]
             if a.sheet:

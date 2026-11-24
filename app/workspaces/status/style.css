@@ -6,7 +6,7 @@
 .status-demo > .status-stage { position: absolute; inset: 0; } /* stronger than .twin-host, which is position: relative */
 .status-wall-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .status-scrim { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 62% 70% at 0% 100%, rgba(4, 6, 8, 0.86), rgba(4, 6, 8, 0.45) 46%, transparent 72%); }
-.status-demo[data-view="film"] .status-scrim { background: radial-gradient(ellipse 60% 74% at 0% 100%, rgba(4, 6, 8, 0.94), rgba(4, 6, 8, 0.62) 48%, transparent 76%), radial-gradient(ellipse 46% 42% at 100% 100%, rgba(4, 6, 8, 0.86), rgba(4, 6, 8, 0.4) 55%, transparent 80%), radial-gradient(ellipse 34% 48% at 100% 0%, rgba(4, 6, 8, 0.9), rgba(4, 6, 8, 0.5) 60%, transparent 86%), linear-gradient(0deg, rgba(4, 6, 8, 0.5), transparent 34%); }
+.status-demo[data-view="film"] .status-scrim { background: linear-gradient(0deg, rgba(4, 6, 8, 0.97), rgba(4, 6, 8, 0.93) 130px, rgba(4, 6, 8, 0.72) 190px, transparent 300px), radial-gradient(ellipse 60% 74% at 0% 100%, rgba(4, 6, 8, 0.94), rgba(4, 6, 8, 0.62) 48%, transparent 76%), radial-gradient(ellipse 46% 42% at 100% 100%, rgba(4, 6, 8, 0.86), rgba(4, 6, 8, 0.4) 55%, transparent 80%), radial-gradient(ellipse 34% 48% at 100% 0%, rgba(4, 6, 8, 0.9), rgba(4, 6, 8, 0.5) 60%, transparent 86%), linear-gradient(0deg, rgba(4, 6, 8, 0.5), transparent 34%); }
 .status-demo[data-view="film"] :is(.status-steps button:not([aria-pressed="true"]), .status-fig span) { color: var(--text-2); }
 .status-demo[data-view="real"] .status-scrim { display: none; }
 .status-block { position: absolute; left: 44px; bottom: 34px; width: min(520px, 42vw); display: flex; flex-direction: column; gap: 10px; pointer-events: none; }

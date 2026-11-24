@@ -485,7 +485,7 @@ export async function createHero(host, o) {
     const f = site.focus, k = ease((t - 2.2) / 6.2), az = 0.10 + (t - 8) * 0.021 + ptr.ox * -0.004, el = lerp(1.5699, 0.56, k) + ptr.oy * 0.0016 * k, dist = lerp(150, 47, k);
     site.rel.scale.y = lerp(0.02, 1, ease((t - 2.6) / 4.6)); for (const m of site.mist) m.position.x = m.userData.x + Math.sin(time * 0.05 + m.userData.x) * 12;
     const cx = lerp(60, f[0] - 5, k), cy = lerp(45, f[1] - 5, k), e = clamp(el, 0.2, 1.5699), a = lerp(0, az, k) - Math.PI / 2;
-    cam2.position.set(cx + Math.cos(a) * Math.cos(e) * dist, Math.sin(e) * dist + 1, -cy - Math.sin(a) * Math.cos(e) * dist); cam2.up.set(0, 1, 0); if (k < 0.001) cam2.up.set(0, 0, -1); cam2.lookAt(cx, lerp(0, 4, k), -cy); if (t < 9) renderer.shadowMap.needsUpdate = true;
+    cam2.position.set(cx + Math.cos(a) * Math.cos(e) * dist, Math.sin(e) * dist + 1, -cy - Math.sin(a) * Math.cos(e) * dist); cam2.up.set(0, 1, 0); if (k < 0.001) cam2.up.set(0, 0, -1); cam2.lookAt(cx, lerp(0, 4, k), -cy); s2.fog.near = Math.max(50, dist * 1.1); s2.fog.far = Math.max(118, dist * 2.2); if (t < 9) renderer.shadowMap.needsUpdate = true;   // the haze stays behind the subject, also from high up
     u2.uHeatK.value = clamp((t - 1) / 1.5); u2.uTime.value = time;
     site.pins.forEach((n, i) => { n.t0 ??= n.main ? 8.4 : 5.2 + i * 0.45; const q = out((t - n.t0) / 0.9); n.mesh.scale.y = Math.max(0.001, n.h * q); n.mesh.position.y = n.z + (1 - q) * 14; n.mesh.material.opacity = q; const c = n.main ? ((time * 0.55) % 1) : 1; const rr = n.main ? 1.2 + c * 5.5 : 1.1; n.ring.scale.setScalar(rr); n.ring.material.opacity = q * (n.main ? (1 - c) * 0.9 : 0.6); });
   }

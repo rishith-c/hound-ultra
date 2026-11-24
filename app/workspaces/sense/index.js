@@ -11,7 +11,7 @@ const VIEWS = [
 export default {
   async mount(root, ctx) {
     const { h, icon, realityTag } = ctx.kit;
-    for (const f of ['style.css', 'eval.css', 'story.css', 'hero.css']) {
+    for (const f of ['style.css', 'eval.css', 'story.css', 'flat.css']) {
       const href = new URL('./' + f, import.meta.url).href;
       if (!document.querySelector(`link[href="${href}"]`)) document.head.append(h('link', { rel: 'stylesheet', href }));
     }
@@ -53,10 +53,10 @@ export default {
     const route = (p = {}) => show(p.view || (p.sample != null ? 'bench' : current || 'bench'), p);
     ctx.bus.on('prefs', clearTokens);
 
-    // Demo: one film-like hero. Advanced: the three views. Only the one on screen runs; the other is built when first needed.
+    // Demo: the flat picture of the network. Advanced: the three views. Only the one on screen runs; the other is built when first needed.
     let hero = null, heroLoad = null; root.senseHero = () => hero;
     async function openHero(p) {
-      if (!heroLoad) heroLoad = import('./hero.js').then((m) => m.create(stage, ctx)).then((a) => (hero = a)).catch((e) => { console.error('[sense] the demo view failed', e); heroLoad = null; stage.replaceChildren(h('div.empty', null, icon('alert', 28), h('h3', null, 'The demo could not start'), h('p.muted', null, String(e.message || e)), h('button.btn', { onclick: () => { stage.replaceChildren(); enter(); } }, 'Try again'))); });
+      if (!heroLoad) heroLoad = import('./flat.js').then((m) => m.create(stage, ctx)).then((a) => (hero = a)).catch((e) => { console.error('[sense] the demo view failed', e); heroLoad = null; stage.replaceChildren(h('div.empty', null, icon('alert', 28), h('h3', null, 'The demo could not start'), h('p.muted', null, String(e.message || e)), h('button.btn', { onclick: () => { stage.replaceChildren(); enter(); } }, 'Try again'))); });
       else if (p && Object.keys(p).length) hero?.onParams(p);
       await heroLoad;
       if (visible && ctx.mode !== 'advanced') hero?.onShow();

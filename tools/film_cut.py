@@ -4,7 +4,8 @@
     python3 tools/film_cut.py tools/film-edit.json [--out NAME] [--no-captions] [--only-audio]
 
 The edit file: {"segments": [{"clip", "a": start, "d": seconds used from the clip, "s": speed, "fi", "fo": fades,
-"cap": [[t0, t1, text], ...], "band": true, "card": "html"}], "music": [{"file", "at": block, "db", "fi", "fo"}], "block": seconds}
+"cap": [[t0, t1, text], ...], "band": true, "card": "html", "zoom": [from, to, cx, cy], "blur", "dim", "html": [[t0, t1, html, fade], ...],
+"over": [{"clip", "a", "s", "d", "x", "y", "w", "h", "at", "fi", "fo", "frame"}], "voice": [[name, t], ...]}], "music": [{"file", "at": block, "db", "fi", "fo"}], "block": seconds}
 Captions are set in the site's own type by Chrome and laid over the lower bar, so no picture is covered.
 """
 import argparse, base64, concurrent.futures, json, os, subprocess, sys, tempfile
@@ -51,25 +52,79 @@ def cut(job):
     dur = seg["d"] / sp
     out = os.path.join(tmp, f"{i:03d}.mp4")
     cmd = [FF, "-y", "-loglevel", "error", "-ss", f"{seg['a']:.3f}", "-t", f"{seg['d']:.3f}", "-i", os.path.join(FILM, seg["clip"] + ".mp4")]
-    g = f"[0:v]setpts=(PTS-STARTPTS)/{sp},fps=60,scale=1920:1080:flags=lanczos,setsar=1"
+    g = f"[0:v]setpts=(PTS-STARTPTS)/{sp},fps=60,"
+    if seg.get("zoom"):   # sub-pixel push: the corners of the picture are read from a slowly shrinking window
+        z0, z1, cx, cy = seg["zoom"]
+        z = f"({z0}+({z1 - z0})*(0.5-0.5*cos(PI*min(1,on/{dur * 60:.1f}))))"
+        l, r = f"{cx}*W*(1-1/{z})", f"({cx}*W*(1-1/{z})+W/{z})"
+        t, o = f"{cy}*H*(1-1/{z})", f"({cy}*H*(1-1/{z})+H/{z})"
+        g += f"scale=2880:1620:flags=lanczos,perspective=x0='{l}':y0='{t}':x1='{r}':y1='{t}':x2='{l}':y2='{o}':x3='{r}':y3='{o}':interpolation=cubic:eval=frame,"
+    g += "scale=1920:1080:flags=lanczos,setsar=1"
+    if seg.get("blur"):
+        g += f",gblur=sigma={seg['blur']}"
+    if seg.get("dim"):
+        g += f",lutyuv=y='16+(val-16)*{seg['dim']}':u='128+(val-128)*{(1 + seg['dim']) / 2}':v='128+(val-128)*{(1 + seg['dim']) / 2}'"
+    g += "[b]"
+    last, k = "b", 1
+    for o in seg.get("over", []):
+        os_, at, d = o.get("s", 1), o.get("at", 0), o["d"]
+        cmd += ["-ss", f"{o.get('a', 0):.3f}", "-t", f"{d * os_:.3f}", "-i", os.path.join(FILM, o["clip"])]
+        f = f"[{k}:v]setpts=(PTS-STARTPTS)/{os_},fps=60,format=rgba"
+        if o.get("h"):
+            f += f",scale={o['w']}:{o['h']}:force_original_aspect_ratio=increase:flags=lanczos,crop={o['w']}:{o['h']}"
+        else:
+            f += f",scale={o['w']}:-2:flags=lanczos"
+        if o.get("frame"):
+            f += ",drawbox=x=0:y=0:w=iw:h=ih:t=2:color=0xcfe0f2@0.34"
+        for kind, st in (("fi", 0), ("fo", d - o.get("fo", 0))):
+            if o.get(kind):
+                f += f",fade=t={'in' if kind == 'fi' else 'out'}:st={st:.3f}:d={o[kind]}:alpha=1"
+        g += f";{f},setpts=PTS+{at:.3f}/TB[p{k}];[{last}][p{k}]overlay={o['x']}:{o['y']}:eof_action=pass:format=auto[q{k}]"
+        last = f"q{k}"
+        k += 1
+    tail = []
     if seg.get("band"):
-        g += ",drawbox=x=0:y=1000:w=1920:h=80:color=0x0a0d11:t=fill"
+        tail.append("drawbox=x=0:y=1000:w=1920:h=80:color=0x0a0d11:t=fill")
     if seg.get("fi"):
-        g += f",fade=t=in:st=0:d={seg['fi']}:color=0x06080a"
+        tail.append(f"fade=t=in:st=0:d={seg['fi']}:color=0x06080a")
     if seg.get("fo"):
-        g += f",fade=t=out:st={dur - seg['fo']:.3f}:d={seg['fo']}:color=0x06080a"
-    g += "[v]"
-    last = "v"
-    for k, (png, t0, t1, f) in enumerate(caps):
+        tail.append(f"fade=t=out:st={dur - seg['fo']:.3f}:d={seg['fo']}:color=0x06080a")
+    if tail:
+        g += f";[{last}]{','.join(tail)}[v]"
+        last = "v"
+    for n, (png, t0, t1, f) in enumerate(caps):
         cmd += ["-loop", "1", "-framerate", "60", "-t", f"{t1 - t0:.3f}", "-i", png]
         fades = f",fade=t=in:st=0:d={f}:alpha=1,fade=t=out:st={t1 - t0 - f:.3f}:d={f}:alpha=1" if f else ""
-        g += f";[{k + 1}:v]format=rgba{fades},setpts=PTS-STARTPTS+{t0:.3f}/TB[c{k}];[{last}][c{k}]overlay=0:0:eof_action=pass:format=auto[o{k}]"
-        last = f"o{k}"
+        g += f";[{k + n}:v]format=rgba{fades},setpts=PTS-STARTPTS+{t0:.3f}/TB[c{n}];[{last}][c{n}]overlay=0:0:eof_action=pass:format=auto[o{n}]"
+        last = f"o{n}"
     cmd += ["-filter_complex", g + f";[{last}]format=yuv420p[out]", "-map", "[out]", "-t", f"{dur:.3f}", "-an"] + ENC + [out]
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode:
-        sys.exit(f"segment {i} {seg['clip']}: {r.stderr[-800:]}")
+        sys.exit(f"segment {i} {seg['clip']}: {r.stderr[-1500:]}")
     return out, dur
+
+
+def voices(ed):
+    """Every spoken line with its time on the film."""
+    t, res = 0, []
+    for s in ed["segments"]:
+        res += [(n, t + x) for n, x in s.get("voice", [])]
+        t += s["d"] / s.get("s", 1)
+    return res
+
+
+def speak(ed, total, bed, out):
+    """Lay the spoken lines over the music, which steps back under them."""
+    v = voices(ed)
+    cmd = [FF, "-y", "-loglevel", "error", "-i", bed]
+    g = []
+    for k, (n, at) in enumerate(v):
+        cmd += ["-i", os.path.join(FILM, "voice", n + ".wav")]
+        g.append(f"[{k + 1}:a]aresample=48000,aformat=channel_layouts=stereo,adelay={int(at * 1000)}|{int(at * 1000)}[v{k}]")
+    g.append("".join(f"[v{k}]" for k in range(len(v))) + f"amix=inputs={len(v)}:normalize=0:duration=longest,apad,atrim=0:{total:.3f},volume={ed.get('voice_db', 1.5)}dB,asplit[v][sc]")
+    g.append("[0:a][sc]sidechaincompress=threshold=0.018:ratio=3.2:attack=45:release=520:knee=4[m]")
+    g.append(f"[m][v]amix=inputs=2:normalize=0,alimiter=limit=0.87:level=false,atrim=0:{total:.3f}[a]")
+    subprocess.run(cmd + ["-filter_complex", ";".join(g), "-map", "[a]", "-ar", "48000", out], check=True)
 
 
 def music(ed, total, out):
@@ -125,6 +180,11 @@ def main():
             n += 1
             items.append((png, f'<div class="tag">{s["tag"]}</div>'))
             caps.append((os.path.join(tmp, png), 0, s["d"] / s.get("s", 1), 0))
+        for t0, t1, body, f in s.get("html", []):
+            png = f"c{n:03d}.png"
+            n += 1
+            items.append((png, body))
+            caps.append((os.path.join(tmp, png), t0, t1, f))
         if s.get("card"):
             png = f"c{n:03d}.png"
             n += 1
@@ -145,6 +205,9 @@ def main():
         return
     wav = os.path.join(tmp, "music.wav")
     music(ed, total, wav)
+    if voices(ed):
+        speak(ed, total, wav, wav + ".v.wav")
+        wav += ".v.wav"
     if a.only_audio:
         os.replace(wav, os.path.join(FILM, a.out + ".wav"))
         return

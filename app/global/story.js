@@ -1,7 +1,7 @@
 // The story plays itself. After Begin, each Demo chapter runs for its own length and hands over to the next, so the whole
 // thing can be watched like a film. Touching the scene stops it; Play starts it again. A chapter may hand over sooner by
 // emitting 'chapter:done'. Never starts by itself for anyone who prefers reduced motion. ?story=1 starts it at once.
-const SECS = { area: 50, radio: 36, forge: 42, sense: 46, rover: 25, fusion: 52, report: 44, status: 78, aerial: 76, scan: 56, swarm: 60, structure: 58, horizon: 110 };
+const SECS = { area: 32, radio: 24, forge: 28, sense: 23, rover: 25, fusion: 34, status: 38, aerial: 76, scan: 46, swarm: 60, structure: 58, horizon: 110 };
 const MISSION_END = 690, MISSION_HOLD = 6;   // simulated seconds a mission takes, and how long the last picture is held
 
 export function init(ctx) {

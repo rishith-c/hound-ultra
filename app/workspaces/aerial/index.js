@@ -939,7 +939,7 @@ export default {
     demo.append(h('div.ah-stage'), demoFly, h('div.ah-copy', null, dTags, dTitle, dLine, h('div.ah-act', null, dBtn, dCap)), h('div.ah-right', null, dFig, h('div.ah-steps', { role: 'group', 'aria-label': 'Part of the film' }, flyStep, ...dSteps)));
     // ---------- the drone in flight (drone.js): the opening of the Demo chapter, and the first tab in Advanced ----------
     const FLY = { title: 'Four senses in the air', line: 'It looks with colour, heat and laser. Then it listens with Wi-Fi.', tags: () => [realityTag('concept'), realityTag('sim'), h('span.tag.plain', { title: 'The ground is made from AI-generated pictures. The boxes are the detector\'s recorded output on them. The drone is drawn larger than life.' }, 'Illustration frames')] };
-    let flying = false, flown = false;
+    let flying = false, flown = false, wantAct = 0;   // a step picked before the film has loaded
     function makeFly(host, inDemo) {
       const f = { api: null, p: null, rows: SENSORS.map((s, i) => h('button.ad-row', { 'aria-pressed': 'false', onclick: () => f.api?.go(i) }, h('b', null, s.name), h('em.num', null, ''), h('span', null, s.line), h('i', null, h('u')))) };
       const onMode = (i) => { f.rows.forEach((r, k) => { r.setAttribute('aria-pressed', String(k === i)); r.querySelector('u').style.transform = 'scaleX(' + (k < i ? 1 : 0) + ')'; }); if (inDemo) { say(SENSORS[i].line); if (i === 3) startHero(); } };
@@ -965,7 +965,7 @@ export default {
     }
     function endFly(i) {
       if (flying) { flying = false; fly.api?.stop(); demo.classList.remove('is-flying'); flyStep.setAttribute('aria-pressed', 'false'); flyStep.querySelector('b').style.transform = 'scaleX(0)'; setTimeout(() => { if (!flying) demoFly.hidden = true; }, 700); paintAct(i); startHero(); }
-      hero?.go(i);
+      if (hero) hero.go(i); else wantAct = i;
     }
     function showDrone(on) {
       st.fly = on; advanced.classList.toggle('is-flying', on); advFly.hidden = !on; viewHost.hidden = on;
@@ -1008,7 +1008,7 @@ export default {
           release: () => { heroCv?.end(); heroCv = null; },
           rpc: () => (heroCv ??= rpc(new Worker(new URL('./cv.worker.js', import.meta.url), { type: 'module' }))),
           loadBitmap: async (id) => { const f = frames.get(id); if (!f) throw new Error('frame ' + id + ' is missing'); const r = await fetch(f.url); if (!r.ok) throw new Error(id + ' could not be fetched (' + r.status + ')'); return createImageBitmap(await r.blob()); } });
-        heroState = 'ready'; if (st.shown && ctx.mode === 'demo' && !flying) hero.start();
+        heroState = 'ready'; if (st.shown && ctx.mode === 'demo' && !flying) { hero.start(); if (wantAct) hero.go(wantAct); }
       } catch (e) { heroState = 'failed'; demo.classList.add('is-failed'); dBtn.hidden = true; const still = frames.get('G-01'); if (still) demo.querySelector('.ah-stage').style.background = 'center / cover url("' + still.url + '")'; console.warn('aerial: the film did not start:', e); dCap.textContent = 'The film could not start: it needs WebGL and a network connection. The tools are in Advanced.'; }
     }
     let thumbs = false;

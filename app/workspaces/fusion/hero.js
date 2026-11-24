@@ -22,7 +22,9 @@ const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v)), lerp = (a, b, k)
 const ease = (x) => { x = clamp(x); return x * x * x * (x * (x * 6 - 15) + 10); }, span = (t, a, b) => ease((t - a) / (b - a));
 const word = (p) => (p >= THRESHOLDS.confirmed ? 'confirmed' : p >= THRESHOLDS.possible ? 'possible' : 'closed');
 
-async function record(nn) { // run the scripted mission once and keep every reading with where the rover stood
+// Run the scripted mission once and keep every reading with where the rover stood. The result is the same every time, so it is kept
+// in proof.json (made by tools/proof.py with this function) and the chapter opens without running a whole mission first.
+export async function record(nn) {
   const e = createEngine({ nn, keep: { autoplay: true } }), got = {}, cov = {}; let was = {};
   for (let g = 0; !e.done && g < 40000; g++) {
     e.step(); const S = e.state, r = S.units['HOUND-01'];
@@ -51,7 +53,7 @@ export async function createHero(host, ctx, { openEvidence }) {
     h('div.fusion-hero-side', null, h('div.fusion-hero-chips', { role: 'group', 'aria-label': 'Sensors in the sum' }, h('span', null, 'Take one away'), chips), h('div.fusion-hero-steps', { role: 'group', 'aria-label': 'Choose a lead' }, steps, hold)));
 
   for (const r of ctx.world.ROOMS) if (!r.corridor) { const el = h('div.fusion-hero-prior', { 'aria-hidden': 'true' }, '10 %'); el.roomId = r.id; priors.push(el); host.insertBefore(el, num); }
-  const rec = await record(ctx.nn);
+  const rec = await fetch(new URL('./proof.json', import.meta.url)).then((r) => r.json()).catch(() => record(ctx.nn));
   const off = new Set();
   const stories = STORIES.filter((s) => rec.got[s.det]).map((s) => {
     const list = rec.got[s.det].filter((x) => fuse([x.ev]).steps[0].lr !== 1 && GROUP[x.ev.sensor]);

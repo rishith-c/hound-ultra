@@ -38,12 +38,12 @@ export const MANIFEST = [
 // Demo mode: the short, cinematic path through the product. Everything else is one click away in Advanced.
 export const CHAPTERS = [
   { id: 'area', label: 'The problem', part: 'How HOUND finds people' }, { id: 'radio', label: 'The idea' }, { id: 'forge', label: 'The training' }, { id: 'sense', label: 'The network' }, { id: 'rover', label: 'The rover' },
-  { id: 'mission', label: 'The search' }, { id: 'fusion', label: 'The proof' }, { id: 'report', label: 'The rescue' }, { id: 'status', label: 'The test' },
+  { id: 'mission', label: 'The search' }, { id: 'fusion', label: 'The proof' }, { id: 'status', label: 'The test' },
   { id: 'aerial', label: 'Drone eyes', part: 'What comes next' }, { id: 'scan', label: 'Inside the rubble' }, { id: 'swarm', label: 'Many rovers' },
   { id: 'structure', label: 'The collapse' }, { id: 'horizon', label: 'The horizon' },
 ];
 // Optional app-wide add-ons. Each exports init(ctx). Missing files are skipped silently.
-const GLOBALS = ['story', 'intro', 'palette', 'copilot-dock', 'narration', 'a11y', 'sound'];
+const GLOBALS = ['story', 'intro', 'showcase', 'palette', 'copilot-dock', 'narration', 'a11y', 'sound'];
 
 const $ = (id) => document.getElementById(id);
 const bus = createBus();
@@ -213,6 +213,7 @@ function buildChrome() {
 
 function stepChapter(d) {
   const i = CHAPTERS.findIndex((c) => c.id === current);
+  if (d > 0 && i === CHAPTERS.length - 1) { ctx.setMode('advanced'); openWorkspace('mission'); return; }   // the story ends in the console
   openWorkspace(CHAPTERS[(Math.max(i, 0) + (i < 0 ? 0 : d) + CHAPTERS.length) % CHAPTERS.length].id);
 }
 
@@ -241,25 +242,24 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const frames = (n) => new Promise((r) => { const f = () => (n-- > 0 ? requestAnimationFrame(f) : r()); f(); });
 let opening = 0, opened = 0;
 async function veil(on) {
-  const v = $('veil'); if (reduced()) { v.classList.remove('on'); return; }
-  v.classList.toggle('on', on); if (on) await wait(150);
+  $('veil').classList.toggle('on', on); if (on && !reduced()) await wait(150);
 }
 
 async function openWorkspace(id, params = {}) {
   const m = MANIFEST.find((x) => x.id === id) || MANIFEST[0];
   if (current === m.id && mounted.has(m.id)) { mounted.get(m.id).api?.onParams?.(params); return; }
-  const token = ++opening, first = !current;
+  const token = ++opening;
   document.querySelectorAll('.rail-item').forEach((a) => a.setAttribute('aria-current', a.id === 'rail-' + m.id ? 'page' : 'false'));
   const at = CHAPTERS.findIndex((c) => c.id === m.id);
   document.querySelectorAll('.dock-item').forEach((a, i) => { a.setAttribute('aria-current', i === at ? 'page' : 'false'); a.classList.toggle('done', at >= 0 && i < at); });
   document.querySelectorAll('.dock-group').forEach((g, i) => g.classList.toggle('open', at < 0 ? i === 0 : g.contains($('dock-' + m.id))));
   document.documentElement.dataset.ws = m.id;
   const nx = CHAPTERS[(at + 1) % CHAPTERS.length];
-  $('dock-next-label').textContent = at < 0 ? 'Back to the story' : at === CHAPTERS.length - 1 ? 'Start again' : nx.label;
+  $('dock-next-label').textContent = at < 0 ? 'Back to the story' : at === CHAPTERS.length - 1 ? 'Open the console' : nx.label;
   document.title = `${m.title} · HOUND`;
   if (location.hash !== '#/' + m.id) history.replaceState(null, '', '#/' + m.id);
   const label = $('veil-label'); label.textContent = CHAPTERS.find((c) => c.id === m.id)?.label || m.title;
-  if (!first) await veil(true);
+  await veil(true);
   if (token !== opening) return;                                   // a newer click won
   document.querySelectorAll('.ws[data-failed]').forEach((x) => x.remove());      // a page that failed is not left under the next one
   if (current && mounted.has(current)) { const prev = mounted.get(current); prev.root.hidden = true; try { prev.api?.onHide?.(); } catch (e) { console.error(e); } }
@@ -294,7 +294,8 @@ async function openWorkspace(id, params = {}) {
   if (current === m.id) { keepRecent(m.id); demoClock(m.id); }
   bus.emit('workspace', m.id);
   opened = token; document.documentElement.toggleAttribute('data-recorded', !!mounted.get(current)?.recorded);
-  if (token === opening) { if (!first) await frames(2); veil(false); preloadNext(m.id); }
+  if (token !== opening) return;
+  await frames(2); veil(false); preloadNext(m.id);
 }
 
 // Fetch the next chapter's code while this one plays, so moving on is instant. Then everything else, quietly, in story order.
@@ -346,7 +347,7 @@ function scrollStory() {
 async function boot() {
   buildChrome();
   const loading = h('div.empty', { id: 'boot' }, h('div.boot-mark', { 'aria-hidden': 'true' }, h('i'), h('i'), h('b')), h('p.boot-line', { role: 'status' }, 'Loading the neural network, 23,372 numbers'), h('div.bar.indeterminate.boot-bar', null, h('i')));
-  $('main').append(loading, h('div', { id: 'veil', 'aria-hidden': 'true' }, h('span', { id: 'veil-label' })));
+  $('main').append(loading, h('div', { id: 'veil', role: 'status' }, h('div.boot-mark', { 'aria-hidden': 'true' }, h('i'), h('i'), h('b')), h('span', { id: 'veil-label' }), h('div.bar.indeterminate.boot-bar', { 'aria-hidden': 'true' }, h('i'))));
   let nn;
   try { nn = await loadNN(); }
   catch (e) { loading.replaceChildren(icon('alert', 28), h('h2', null, 'The neural network did not load'), h('p.muted', null, String(e.message || e)), h('button.btn.btn-primary', { onclick: () => location.reload() }, 'Try again')); return; }

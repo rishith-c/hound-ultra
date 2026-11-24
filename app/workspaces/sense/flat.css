@@ -1,0 +1,15 @@
+/* The Demo's flat network. Drawn in a 1920 by 1000 space and scaled to fit. */
+.nf { position: absolute; inset: 0; overflow: hidden; background: #06080a; }
+.nf-box { position: absolute; left: 0; top: 0; width: 1920px; height: 1000px; transform-origin: 0 0; }
+.nf-canvas { display: block; width: 1920px; height: 1000px; }
+.nf-tags { position: absolute; right: 44px; top: 28px; display: flex; gap: 8px; }
+.nf-ledger { position: absolute; left: 84px; right: 84px; top: 838px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; }
+.nf-cell { position: relative; display: grid; grid-template-columns: 1fr auto; row-gap: 6px; align-items: baseline; padding: 22px 0 8px; border: 0; border-top: 2px solid rgba(143, 163, 184, .3); background: none; color: #f2f5f8; text-align: left; cursor: pointer; }
+.nf-cell:hover { border-top-color: rgba(196, 222, 255, .7); }
+.nf-cell:focus-visible { outline: 2px solid #5aa9ff; outline-offset: 4px; }
+.nf-name { grid-column: 1 / -1; font: 500 24px/1.1 'Instrument Sans', HSans, sans-serif; }
+.nf-says, .nf-pct { font: 400 42px/1.1 'Instrument Serif', HSerif, serif; letter-spacing: -.01em; white-space: nowrap; }
+.nf-says { color: #c4deff; }
+.nf-cell.is-person .nf-says { color: #ffb252; }
+.nf-line { position: absolute; left: 0; right: 0; top: -2px; height: 2px; background: #5aa9ff; transform-origin: 0 0; transform: scaleX(0); }
+.nf-cell.is-person .nf-line { background: #ffb252; }

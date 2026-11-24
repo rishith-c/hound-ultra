@@ -160,9 +160,12 @@
 @keyframes boot-dot { from { opacity: 0.25; } to { opacity: 1; } }
 .boot-line { color: var(--text-2); }
 .boot-bar { width: 220px; }
-#veil { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: var(--bg-0); opacity: 0; pointer-events: none; transition: opacity 420ms var(--ease-in-out); }
+#veil { position: absolute; inset: 0; z-index: 5; display: grid; place-content: center; justify-items: center; gap: 22px; background: var(--bg-0); opacity: 0; pointer-events: none; transition: opacity 420ms var(--ease-in-out); }
 #veil.on { opacity: 1; transition-duration: 150ms; }
-#veil span { font: italic 400 28px/1 var(--font-display); color: var(--text-3); }
+#veil span { font: italic 400 30px/1 var(--font-display); color: var(--text-2); }
+#veil .boot-mark, #veil .boot-bar { opacity: 0; transition: opacity 240ms var(--ease-in-out); }
+#veil.on .boot-mark, #veil.on .boot-bar { opacity: 1; transition-delay: 260ms; }   /* a quick change of chapter shows only the name */
+#veil:not(.on) .boot-mark i, #veil:not(.on) .boot-mark b, #veil:not(.on) .boot-bar i { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) { .boot-mark i, .boot-mark b { animation: none; } }
 
 /* ---------- Demo flow: one story, and only the controls the current chapter needs ---------- */

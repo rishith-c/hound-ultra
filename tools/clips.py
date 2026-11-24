@@ -11,7 +11,7 @@ import film
 SRC = os.path.expanduser("~/Developer/.hound-release/film")
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "film")
 CROP = "crop=1920:930:0:70"                       # 52 px of top bar and 60 px of dock, at 1.3333
-CLIPS = {"area": ("area", 0, 25), "radio": ("radio", 0, 32), "forge": ("forge", 0, 25), "sense": ("sense", 0.9, 21), "rover": ("rover", 0, 22), "mission": ("mission", 0, 124),
+CLIPS = {"area": ("area", 0, 25), "radio": ("radio", 0, 32), "forge": ("forge", 0, 25), "rover": ("rover", 0, 22), "mission": ("mission", 0, 124),
          "fusion": ("fusion", 1.2, 24.8), "report": ("report", 0, 18), "status": ("wall", 0, 22), "aerial": ("drone", 0, 26), "scan": ("scan", 0, 32), "swarm": ("swarm", 0, 32),
          "structure": ("structure", 0, 28), "horizon": ("horizon", 0, 30)}
 

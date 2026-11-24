@@ -342,5 +342,158 @@
   "after": 7,
   "seconds": 9,
   "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "n_globe",
+  "url": "/app/?mode=advanced&intro=0#/globe",
+  "settle": 8,
+  "after": 0.4,
+  "size": [
+   1440,
+   810,
+   2
+  ],
+  "seconds": 5.0,
+  "before": "((HOUND.sim.seek(430),HOUND.sim.play&&HOUND.sim.play(),1),(()=>{const b=[...document.querySelectorAll('button')].find(x=>x.offsetParent&&x.textContent.trim()===\"Replay the week\");if(b)b.click();return !!b})())"
+ },
+ {
+  "name": "n_mission",
+  "url": "/app/?mode=advanced&intro=0#/mission",
+  "settle": 8,
+  "after": 0.4,
+  "size": [
+   1440,
+   810,
+   2
+  ],
+  "seconds": 5.0,
+  "before": "(HOUND.sim.seek(398),HOUND.sim.play&&HOUND.sim.play(),1)"
+ },
+ {
+  "name": "n_sense",
+  "url": "/app/?mode=advanced&intro=0#/sense",
+  "settle": 8,
+  "after": 0.4,
+  "size": [
+   1440,
+   810,
+   2
+  ],
+  "seconds": 4.6,
+  "before": "(HOUND.sim.seek(430),HOUND.sim.play&&HOUND.sim.play(),1)"
+ },
+ {
+  "name": "n_radio",
+  "url": "/app/?mode=advanced&intro=0#/radio",
+  "settle": 8,
+  "after": 0.4,
+  "size": [
+   1440,
+   810,
+   2
+  ],
+  "seconds": 4.6,
+  "before": "(HOUND.sim.seek(430),HOUND.sim.play&&HOUND.sim.play(),1)"
+ },
+ {
+  "name": "n_strategy",
+  "url": "/app/?mode=advanced&intro=0#/strategy",
+  "settle": 8,
+  "after": 0.4,
+  "size": [
+   1440,
+   810,
+   2
+  ],
+  "seconds": 4.6,
+  "before": "(HOUND.sim.seek(430),HOUND.sim.play&&HOUND.sim.play(),1)"
+ },
+ {
+  "name": "n_signals",
+  "url": "/app/?mode=advanced&intro=0#/signals",
+  "settle": 8,
+  "after": 0.4,
+  "size": [
+   1440,
+   810,
+   2
+  ],
+  "seconds": 4.6,
+  "before": "(HOUND.sim.seek(440),HOUND.sim.play&&HOUND.sim.play(),1)"
+ },
+ {
+  "name": "n_deepscan",
+  "url": "/app/?mode=advanced&intro=0#/deepscan",
+  "settle": 8,
+  "after": 0.4,
+  "size": [
+   1440,
+   810,
+   2
+  ],
+  "seconds": 4.6,
+  "before": "((HOUND.sim.seek(430),HOUND.sim.play&&HOUND.sim.play(),1),(()=>{const b=[...document.querySelectorAll('button')].find(x=>x.offsetParent&&x.textContent.trim()===\"Run the exposure\");if(b)b.click();return !!b})())"
+ },
+ {
+  "name": "n_triage",
+  "url": "/app/?mode=advanced&intro=0#/triage",
+  "settle": 8,
+  "after": 0.4,
+  "size": [
+   1440,
+   810,
+   2
+  ],
+  "seconds": 4.6,
+  "before": "(HOUND.sim.seek(470),HOUND.sim.play&&HOUND.sim.play(),1)"
+ },
+ {
+  "name": "find2",
+  "url": "/app/?mode=demo&intro=0&paused#/aerial",
+  "settle": 8,
+  "size": [
+   1440,
+   810,
+   2
+  ],
+  "seconds": 64,
+  "hide": "#dock{opacity:0!important}",
+  "before": "HOUND_AERIAL.endFly(0); 1"
+ },
+ {
+  "name": "netflat",
+  "url": "/tools/film/netflat.html",
+  "settle": 2,
+  "size": [
+   1920,
+   1080,
+   1.5
+  ],
+  "seconds": 20,
+  "before": "JSON.stringify(NETFLAT.start())"
+ },
+ {
+  "name": "horizon2",
+  "url": "/app/?mode=demo&intro=0&paused#/horizon",
+  "settle": 4,
+  "hide": "#dock{opacity:0!important}",
+  "skip": 32.5,
+  "seconds": 57
+ },
+ {
+  "name": "horizon3",
+  "url": "/app/?mode=demo&intro=0&paused#/horizon",
+  "settle": 4,
+  "hide": "#dock{opacity:0!important}",
+  "skip": 56.5,
+  "seconds": 87.5
+ },
+ {
+  "name": "scan2",
+  "url": "/app/?mode=demo&intro=0&paused#/scan",
+  "settle": 4,
+  "hide": "#dock{opacity:0!important}",
+  "skip": 28.8,
+  "seconds": 46
  }
 ]

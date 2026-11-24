@@ -41,7 +41,9 @@ export async function createEngine(host, ctx, opts = {}) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, depth: false, stencil: false, powerPreference: 'high-performance' });   // throws without WebGL: index.js shows the message
   renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.12;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.autoClear = false; renderer.shadowMap.autoUpdate = false; renderer.info.autoReset = false;
-  const maxPR = quality === 'high' ? 1.5 : 1.1; let pr = Math.min(maxPR, window.devicePixelRatio || 1); renderer.setPixelRatio(1);
+  const maxPR = quality === 'high' ? 1.25 : 1.1; let pr = Math.min(maxPR, window.devicePixelRatio || 1); renderer.setPixelRatio(1);
+  // What to give up, in order, when frames take longer than 20 ms: pixels first, then occlusion, focus blur and shadow rate.
+  const TIERS = [[maxPR, 1, 3], [1, 1, 3], [1, 0, 4], [0.85, 0, 6], [0.75, 0, 8]]; let tier = 0, spent = 0, counted = 0; try { tier = Math.min(TIERS.length - 1, +sessionStorage.getItem('hound-twin-tier') || 0); } catch (e) { /* private window */ }
   const scene = new THREE.Scene(); scene.name = 'twin';
   const camera = new THREE.PerspectiveCamera(38, 1.6, 0.5, 5200);
   const tex = createTextures(world, Math.min(16, renderer.capabilities.getMaxAnisotropy()));
@@ -171,13 +173,15 @@ export async function createEngine(host, ctx, opts = {}) {
   const ro = new ResizeObserver(() => { resize(); if (!running && !disposed) frame(performance.now(), true); }); ro.observe(host);
 
   // ---- the frame ----
-  let running = false, disposed = false, raf = 0, last = 0, time = 0, slow = 0, frames = 0, ms = 16, lost = false;
+  let running = false, disposed = false, raf = 0, last = 0, time = 0, frames = 0, ms = 16, lost = false;
   const stats = { fps: 60, ms: 16, calls: 0, triangles: 0, pr };
+  function applyTier() { pr = Math.min(TIERS[tier][0], window.devicePixelRatio || 1); stats.pr = pr; stats.tier = tier; post.setAO(!!TIERS[tier][1]); post.setDof(!!TIERS[tier][1]); try { sessionStorage.setItem('hound-twin-tier', tier); } catch (e) { /* private window */ } }
+  if (tier) applyTier();
   function frame(nowMs, once = false) {
     if (disposed) return; if (!once) raf = requestAnimationFrame(frame);
     if (lost || !host.isConnected || host.clientWidth < 2 || host.clientHeight < 2) { last = nowMs; return; }
     const raw = last ? (nowMs - last) / 1000 : 0.016; last = nowMs; const dt = Math.min(0.1, Math.max(0, raw)); time += dt; frames++;
-    if (!once) { ms += (raw * 1000 - ms) * 0.05; if (ms > 19.5 && frames > 120) { if (++slow > 70 && pr > 0.75) { pr = Math.max(0.75, pr - 0.125); slow = 0; stats.pr = pr; } } else slow = Math.max(0, slow - 2); }
+    if (!once) { ms += (raw * 1000 - ms) * 0.05; if (raw < 0.25 && frames > 60) { spent += raw; if (++counted >= 40) { const avg = spent / counted * 1000; spent = counted = 0; if (avg > 20 && tier < TIERS.length - 1) { tier = Math.min(TIERS.length - 1, tier + (avg > 34 ? 2 : 1)); applyTier(); } } } }
     resize();
     const S = ctx.sim ? ctx.sim.state : null, animate = !t.reduced;
     if (S && !roofManual) { const want = S.phase === 'standby' || S.phase === 'aerial'; if (layerState.roof !== want) { layerState.roof = want; sync(); tell(); } }
@@ -193,7 +197,7 @@ export async function createEngine(host, ctx, opts = {}) {
     }
     labels.update(dt, W, H); hoverB.update(); selB.update();
     post.setFog(environment.fog, 1 - 0.85 * U.smooth(0.8, 1.45, cams.pose.pitch)); post.setFocus(camera.position.distanceTo(cams.pose.target), cams.dof, dt);
-    renderer.shadowMap.needsUpdate = once || frames % 2 === 0;
+    renderer.shadowMap.needsUpdate = once || frames % TIERS[tier][2] === 0;
     renderer.info.reset(); post.render(time);
     stats.ms = ms; stats.fps = 1000 / ms; stats.calls = renderer.info.render.calls; stats.triangles = renderer.info.render.triangles;
   }

@@ -81,7 +81,7 @@ export function createPost(renderer, scene, camera, { quality = 'high' } = {}) {
   const air = M(AIR, { tScene: { value: null }, tDepth: { value: depthTexture }, tAO: { value: white }, uInvVP: { value: ivp }, uVP: { value: vp }, uCam: { value: cam }, uFogCol: { value: new THREE.Color() }, uFogSun: { value: new THREE.Color() }, uSunDir: { value: new THREE.Vector3(0, 1, 0) }, uFog: { value: new THREE.Vector4(0, 0, 0.03, 0) }, uTime: { value: 0 }, uAO: { value: 0.95 }, uSSR: { value: high ? 1 : 0 }, uRes: { value: new THREE.Vector2(1, 1) } });
   const dof = M(DOF, { tColor: { value: null }, tDepth: { value: depthTexture }, uInvVP: { value: ivp }, uCam: { value: cam }, uFocus: { value: 20 }, uRange: { value: 1.6 }, uMax: { value: 7 }, uTexel: { value: new THREE.Vector2(1, 1) } });
   const final = new THREE.RawShaderMaterial({ uniforms: { tDiffuse: { value: null }, tBlur: { value: null }, uDof: { value: 0 }, toneMappingExposure: { value: 1 }, uTime: { value: 0 }, uGrain: { value: 0.032 }, uVignette: { value: 0.42 }, uRes: { value: new THREE.Vector2(1, 1) } }, vertexShader: 'precision highp float; attribute vec3 position; attribute vec2 uv; varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }', fragmentShader: FINAL, depthTest: false, depthWrite: false });
-  const quad = new FullScreenQuad(air), bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.38, 0.6, 1.25); let aoOn = high, dofK = 0;
+  const quad = new FullScreenQuad(air), bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.38, 0.6, 1.25); let aoOn = high, dofOn = high, dofK = 0;
   return {
     sceneRT, bloom, gtao,
     setSize(w, h, pr) {
@@ -89,6 +89,7 @@ export function createPost(renderer, scene, camera, { quality = 'high' } = {}) {
       sceneRT.setSize(W, H); airRT.setSize(W, H); dofRT.setSize(W >> 1, H >> 1); gtao && gtao.setSize(Math.round(W * s), Math.round(H * s)); bloom.setSize(W >> 1, H >> 1); final.uniforms.uRes.value.set(W, H); air.uniforms.uRes.value.set(W, H); dof.uniforms.uTexel.value.set(2 / W, 2 / H);
     },
     setAO(on) { aoOn = on && !!gtao; },
+    setDof(on) { dofOn = on && high; },
     setFog(f, k = 1) { air.uniforms.uFogCol.value.copy(f.color); air.uniforms.uFogSun.value.copy(f.sun); air.uniforms.uSunDir.value.copy(f.dir); air.uniforms.uFog.value.set(f.a * k, f.h * k, f.b, f.base); },
     setFocus(dist, amount, dt = 0.016) { const k = 1 - Math.exp(-4 * dt); dof.uniforms.uFocus.value += (dist - dof.uniforms.uFocus.value) * k; dofK += (amount - dofK) * k; },
     render(time, target = null) {
@@ -97,7 +98,7 @@ export function createPost(renderer, scene, camera, { quality = 'high' } = {}) {
       if (aoOn) gtao.render(renderer, airRT, sceneRT);
       air.uniforms.tScene.value = sceneRT.texture; air.uniforms.tAO.value = aoOn ? gtao.pdRenderTarget.texture : white; air.uniforms.uTime.value = time;
       quad.material = air; renderer.setRenderTarget(airRT); quad.render(renderer);
-      const useDof = high && dofK > 0.02; if (useDof) { dof.uniforms.tColor.value = airRT.texture; quad.material = dof; renderer.setRenderTarget(dofRT); quad.render(renderer); }
+      const useDof = dofOn && dofK > 0.02; if (useDof) { dof.uniforms.tColor.value = airRT.texture; quad.material = dof; renderer.setRenderTarget(dofRT); quad.render(renderer); }
       bloom.render(renderer, null, airRT, 0, false);
       const u = final.uniforms; u.tDiffuse.value = airRT.texture; u.tBlur.value = dofRT.texture; u.uDof.value = useDof ? dofK : 0; u.toneMappingExposure.value = renderer.toneMappingExposure; u.uTime.value = time;
       quad.material = final; renderer.setRenderTarget(target); quad.render(renderer);

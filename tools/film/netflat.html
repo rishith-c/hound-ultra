@@ -1,0 +1,22 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>HOUND network, flat</title>
+<link rel="stylesheet" href="../../app/workspaces/sense/flat.css">
+<style>
+@font-face{font-family:HSerif;src:url(../../assets/brand/fonts/instrument-serif-latin-400-normal.woff2)}
+@font-face{font-family:HSerif;font-style:italic;src:url(../../assets/brand/fonts/instrument-serif-latin-400-italic.woff2)}
+@font-face{font-family:HSans;font-weight:400 700;src:url(../../assets/brand/fonts/instrument-sans-latin-wdth-normal.woff2)}
+html,body{margin:0;background:#06080a;overflow:hidden}
+</style>
+<div class="nf" id="n"><div class="nf-box" id="b"></div></div>
+<script type="module">
+import { loadNN } from '../../app/core/nn.js';
+import { createFlat } from '../../app/workspaces/sense/flat.js';
+const nn = await loadNN();
+await Promise.all(['400 60px HSerif', 'italic 400 60px HSerif', '500 24px HSans'].map((f) => document.fonts.load(f)));
+const flat = createFlat(document.getElementById('b'), nn, { dpr: devicePixelRatio || 1 });
+let t0 = performance.now(), run = false;
+window.NETFLAT = { start() { t0 = performance.now(); run = true; return flat.examples.map((e) => [e.name, e.r.person, e.r.moving, e.r.matchesPython]); } };
+(function loop() { requestAnimationFrame(loop); if (run) flat.draw((performance.now() - t0) / 1000); })();
+flat.draw(0);
+</script>

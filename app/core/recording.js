@@ -1,7 +1,7 @@
 // When a computer cannot draw a chapter (no WebGL 2, a software renderer, a lost graphics context, a file that will not load, or a
 // frame rate too low to watch), Demo shows the same chapter as a recording of the live console. Advanced always runs live.
 // The recordings are made by tools/film.py and tools/clips.py. ?film=1 shows them everywhere, ?live=1 never.
-const CLIPS = new Set(['area', 'radio', 'forge', 'sense', 'rover', 'mission', 'fusion', 'report', 'status', 'aerial', 'scan', 'swarm', 'structure', 'horizon']);
+const CLIPS = new Set(['area', 'radio', 'forge', 'rover', 'mission', 'fusion', 'report', 'status', 'aerial', 'scan', 'swarm', 'structure', 'horizon']);
 const q = new URLSearchParams(location.search);
 const url = (id, ext) => new URL('../../film/' + id + ext, import.meta.url).href;
 export const has = (id) => CLIPS.has(id) && q.get('live') !== '1';
