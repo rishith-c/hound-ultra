@@ -192,6 +192,7 @@ ol.cop-tree > li { border-left: 1px solid var(--line-2); padding-left: 8px; }
 .cop-drawer { position: fixed; top: var(--topbar-h); right: 0; bottom: var(--status-h); width: min(452px, calc(100vw - 80px)); z-index: 70; display: flex; flex-direction: column; background: rgba(9, 11, 14, 0.94); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); border-left: 1px solid var(--glass-line); box-shadow: -24px 0 64px rgba(0, 0, 0, 0.5);
   transform: translateX(104%); visibility: hidden; transition: transform var(--t-med) var(--ease), visibility 0s linear var(--t-med); }
 .cop-drawer.open { transform: none; visibility: visible; transition: transform var(--t-med) var(--ease), visibility 0s; }
+:root[data-mode="demo"] .cop-drawer { bottom: 60px; }
 .cop-drawer-head { display: flex; align-items: center; gap: var(--s-2); padding: 0 8px 0 14px; min-height: 46px; border-bottom: 1px solid var(--glass-line); flex: none; }
 .cop-drawer-head h2 { font: var(--type-heading); flex: 1; }
 :root[data-contrast="high"] .cop-drawer { background: var(--bg-0); }

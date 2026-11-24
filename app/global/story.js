@@ -40,7 +40,7 @@ export function init(ctx) {
   function frame(now) {
     if (!on) return;
     raf = requestAnimationFrame(frame);
-    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    const dt = Math.min(0.25, (now - last) / 1000); last = now;
     const id = ctx.shell.current();
     if (shown !== id || document.hidden || root.dataset.intro || document.querySelector('.scrim, [aria-modal="true"]')) return;
     t += dt;

@@ -10,7 +10,7 @@ import os, shutil, subprocess, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.expanduser("~/Developer/.hound-release/site")
 KEEP = ["app", "assets", "data", "landing", "tests", "index.html", "login.html", "manifest.webmanifest", "sw.js", "vercel.json", "README.md"]
-SKIP = shutil.ignore_patterns(".DS_Store", "__pycache__", "*.pyc", "*.blend", "*.blend1", "*.py", "brick-raw*", ".vercel", "reference.html")
+SKIP = shutil.ignore_patterns(".DS_Store", "__pycache__", "*.pyc", "*.blend", "*.blend1", "*.py", "brick-raw*", ".vercel")
 VERCEL = "/Users/rishith/.nvm/versions/node/v22.16.0/bin/vercel"
 
 def snapshot():
