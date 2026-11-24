@@ -1,0 +1,67 @@
+<!doctype html><meta charset=utf-8><body><script type=module>
+window.R = {};
+const T = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/+esm');
+window.T = T;
+T.env.allowLocalModels = false;
+window.gpu = async () => { try { const a = await navigator.gpu?.requestAdapter(); return a ? { ok: true, f16: a.features.has('shader-f16'), info: a.info ? { vendor: a.info.vendor, arch: a.info.architecture } : null } : { ok: false }; } catch (e) { return { ok: false, e: String(e) }; } };
+window.img = async (url) => T.RawImage.read(url);
+window.clip = async (model, device, dtype, tdtype) => {
+  const out = { model, device, dtype };
+  let t = performance.now();
+  const tok = await T.AutoTokenizer.from_pretrained(model);
+  const text = await T.CLIPTextModelWithProjection.from_pretrained(model, { device: 'wasm', dtype: tdtype || 'q8' });
+  const proc = await T.AutoProcessor.from_pretrained(model);
+  const vis = await T.CLIPVisionModelWithProjection.from_pretrained(model, { device, dtype });
+  out.loadMs = Math.round(performance.now() - t);
+  const image = await T.RawImage.read('../../../assets/img/nepal-flood.webp');
+  out.imgSize = [image.width, image.height];
+  const tiles = []; const n = 4;
+  const tw = Math.floor(image.width / n), th = Math.floor(image.height / n);
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) tiles.push(await image.clone().crop([i * tw, j * th, (i + 1) * tw - 1, (j + 1) * th - 1]));
+  t = performance.now();
+  const vin = await proc(tiles);
+  out.keys = Object.keys(vin); out.pvDims = vin.pixel_values.dims;
+  const { image_embeds } = await vis(vin);
+  out.visMs = Math.round(performance.now() - t); out.embDims = image_embeds.dims;
+  t = performance.now();
+  const tin = tok(['a photo of muddy water', 'a photo of a building', 'a photo of a tree', 'a photo of a person'], { padding: 'max_length', truncation: true });
+  const { text_embeds } = await text(tin);
+  out.textMs = Math.round(performance.now() - t);
+  const ie = image_embeds.normalize(2, -1).tolist(), te = text_embeds.normalize(2, -1).tolist();
+  out.sim = te.map((q) => ie.map((v) => +v.reduce((s, x, k) => s + x * q[k], 0).toFixed(3)));
+  t = performance.now(); await vis(vin); out.visMs2 = Math.round(performance.now() - t);
+  return out;
+};
+
+window.sam = async (device, dtype) => {
+  const repo = 'Xenova/slimsam-77-uniform', out = { device, dtype }; let t = performance.now();
+  const model = await T.SamModel.from_pretrained(repo, { device, dtype, session_options: { logSeverityLevel: 3 } });
+  const proc = await T.AutoProcessor.from_pretrained(repo); out.loadMs = Math.round(performance.now() - t);
+  const image = await T.RawImage.read('../../../assets/img/gen/aerial-01.jpg');
+  t = performance.now(); const inputs = await proc(image); out.procMs = Math.round(performance.now() - t);
+  out.reshaped = inputs.reshaped_input_sizes; out.orig = inputs.original_sizes;
+  t = performance.now(); const emb = await model.get_image_embeddings(inputs); out.encMs = Math.round(performance.now() - t); out.embKeys = Object.keys(emb);
+  t = performance.now(); await model.get_image_embeddings(inputs); out.encMs2 = Math.round(performance.now() - t);
+  const rs = inputs.reshaped_input_sizes[0];
+  const run = async (x, y) => { const input_points = new T.Tensor('float32', [x / image.width * rs[1], y / image.height * rs[0]], [1, 1, 1, 2]); const input_labels = new T.Tensor('int64', [1n], [1, 1, 1]);
+    const a = performance.now(); const o = await model({ ...emb, input_points, input_labels }); const d = performance.now() - a;
+    const b = performance.now(); const masks = await proc.post_process_masks(o.pred_masks, inputs.original_sizes, inputs.reshaped_input_sizes); const pp = performance.now() - b;
+    const m = masks[0]; const n = m.dims[2] * m.dims[3]; const areas = [0, 1, 2].map((k) => { let c = 0; for (let i = 0; i < n; i++) c += m.data[k * n + i] ? 1 : 0; return c; });
+    return { decMs: Math.round(d), postMs: Math.round(pp), dims: m.dims, type: m.type, iou: Array.from(o.iou_scores.data).map((v) => +v.toFixed(3)), areas, predDims: o.pred_masks.dims }; };
+  out.a = await run(480, 560); out.b = await run(480, 560); out.c = await run(1000, 250);
+  return out;
+};
+window.depth = async (device, dtype) => {
+  const repo = 'onnx-community/depth-anything-v2-small', out = { device, dtype }; let t = performance.now();
+  const model = await T.AutoModelForDepthEstimation.from_pretrained(repo, { device, dtype, session_options: { logSeverityLevel: 3 } });
+  const proc = await T.AutoImageProcessor.from_pretrained(repo); out.loadMs = Math.round(performance.now() - t);
+  const image = await T.RawImage.read('../../../assets/img/gen/scene-corridor.jpg');
+  const inputs = await proc(image); out.pv = inputs.pixel_values.dims;
+  t = performance.now(); const { predicted_depth } = await model(inputs); out.ms = Math.round(performance.now() - t);
+  t = performance.now(); const r2 = await model(inputs); out.ms2 = Math.round(performance.now() - t);
+  const d = predicted_depth.data; let lo = Infinity, hi = -Infinity, nan = 0; for (const v of d) { if (!(v === v)) nan++; if (v < lo) lo = v; if (v > hi) hi = v; }
+  out.dims = predicted_depth.dims; out.range = [lo, hi]; out.nan = nan; out.cfg = { size: proc.size, keep: proc.config?.keep_aspect_ratio, mult: proc.config?.ensure_multiple_of };
+  return out;
+};
+window.ready = true;
+</script>

@@ -1,0 +1,61 @@
+/* Radio twin: exhibits 01 to 03 (twin, person, fresnel). Loaded by index.js beside style.css. */
+.radio-twin-view { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--bg-0); }
+.radio-twin-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; }
+.radio-twin-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
+.radio-twin-pin { position: absolute; left: 0; top: 0; margin: -8px 0 0 0; padding: 0; font: 500 var(--fs-11)/16px var(--mono); color: var(--text-3); white-space: nowrap; will-change: transform; transition: opacity var(--t-fast) var(--ease); text-shadow: 0 1px 2px var(--bg-0), 0 0 6px var(--bg-0); }
+.radio-twin-pin.room { margin-left: -12px; }
+.radio-twin-pin.tx, .radio-twin-pin.rx, .radio-twin-pin.grad { margin: -22px 0 0 10px; padding: 2px 7px; font: 600 var(--fs-11)/16px var(--font); color: var(--text); background: var(--glass); border: 1px solid var(--glass-line); border-radius: var(--r-1); text-shadow: none; }
+.radio-twin-pin.tx::before, .radio-twin-pin.rx::before { content: ""; position: absolute; left: -10px; top: 50%; width: 9px; height: 1px; background: var(--text-3); }
+.radio-twin-pin.tx { translate: calc(-100% - 20px) 0; }
+.radio-twin-pin.tx::before { left: auto; right: -10px; }
+.radio-twin-pin.rx { color: var(--accent-2); border-color: var(--accent-line); }
+.radio-twin-pin.grad { margin: -10px 0 0 6px; color: var(--ok); border-color: var(--ok-line); font-family: var(--mono); font-weight: 500; }
+.radio-twin-clock { position: absolute; left: 14px; top: 14px; z-index: 2; display: grid; grid-template-columns: auto auto; column-gap: 10px; align-items: baseline; padding: 8px 12px; border-radius: var(--r-2); }
+.radio-twin-clock span { grid-column: 1 / -1; font: var(--type-caption); color: var(--text-3); }
+.radio-twin-clock b { font: 500 var(--fs-20)/1.1 var(--mono); letter-spacing: -0.03em; color: var(--text); min-width: 96px; }
+.radio-twin-clock i { font: 400 var(--fs-11)/1.2 var(--mono); font-style: normal; color: var(--text-2); }
+.radio-twin-cam { position: absolute; right: 14px; top: 14px; z-index: 2; padding: 3px; border-radius: var(--r-2); }
+.radio-twin-cam .seg { border: 0; box-shadow: none; background: transparent; }
+.radio-twin-legend { position: absolute; left: 14px; bottom: 14px; z-index: 2; width: 236px; padding: 8px 12px 9px; border-radius: var(--r-2); display: flex; flex-direction: column; gap: 4px; font: var(--type-caption); color: var(--text-2); }
+.radio-twin-legend[hidden] { display: none; }
+.radio-twin-ramp { height: 7px; background: linear-gradient(to right, var(--heat-0), var(--heat-1), var(--heat-2), var(--heat-3), var(--heat-4), var(--heat-5)); border-radius: 1px; }
+.radio-twin-ramp-ticks { position: relative; height: 13px; font-size: 10.5px; color: var(--text-3); }
+.radio-twin-ramp-ticks i { position: absolute; top: 0; transform: translateX(-50%); font-style: normal; }
+.radio-twin-ramp-ticks i::before { content: ""; position: absolute; left: 50%; top: -5px; width: 1px; height: 4px; background: var(--text-3); }
+.radio-twin-probe { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; padding: 5px 9px; border-radius: var(--r-1); display: flex; flex-direction: column; gap: 1px; white-space: nowrap; }
+.radio-twin-probe[hidden] { display: none; }
+.radio-twin-probe b { font: 500 var(--fs-13)/1.2 var(--mono); color: var(--text); }
+.radio-twin-probe span { font: var(--type-caption); color: var(--text-2); }
+.radio-twin-hint { position: absolute; right: 16px; bottom: 12px; z-index: 2; font: var(--type-caption); color: var(--text-3); text-shadow: 0 1px 2px var(--bg-0); pointer-events: none; }
+.radio-twin-strip { flex: none; height: 214px; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.15fr) minmax(0, 0.7fr); gap: 0; border-top: 1px solid var(--line); }
+.radio-twin-strip .radio-fig { border: 0; border-right: 1px solid var(--line); border-radius: 0; }
+.radio-twin-strip .radio-fig:last-child { border-right: 0; }
+.radio-twin-table td, .radio-twin-table th { padding-left: 6px; padding-right: 6px; }
+.radio-twin-table td:first-child, .radio-twin-table th:first-child { padding-left: 0; }
+.radio-twin-table tr:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.radio-twin-table th { background: var(--bg-1); position: static; }
+.radio-cites b { color: var(--text-2); font-weight: 500; }
+
+/* exhibit 02: a person in the channel */
+.radio-person-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr); grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr); }
+.radio-person-verdict { position: absolute; inset: 0; padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; overflow: hidden; }
+.radio-person-main { display: flex; align-items: flex-end; gap: 18px; }
+.radio-person-main > div:first-child { display: flex; flex-direction: column; gap: 2px; }
+.radio-person-p { font: 400 var(--fs-56)/0.9 var(--font-display); font-variant-numeric: lining-nums tabular-nums; color: var(--text-2); }
+.radio-person-p[data-on="true"] { color: var(--person); }
+.radio-person-call { display: flex; flex-direction: column; gap: 3px; padding-bottom: 3px; min-width: 0; }
+.radio-person-word { font: 400 var(--fs-28)/1 var(--font-display); color: var(--text); }
+.radio-person-word[data-on="true"] { color: var(--person); }
+.radio-person-truth { margin: 0; font-size: var(--fs-12); color: var(--warn); }
+.radio-person-truth[data-ok="true"] { color: var(--ok); }
+.radio-person-meter { display: flex; flex-direction: column; gap: 6px; }
+.radio-person-kv dt, .radio-person-kv dd { padding-top: 3px; padding-bottom: 3px; }
+.radio-person-hist { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; min-height: 10px; }
+.radio-person-hist i { width: 10px; height: 10px; border: 1px solid var(--line-3); border-radius: 1px; }
+.radio-person-hist i[data-on="true"] { background: var(--person); border-color: var(--person); }
+.radio-person-tally { margin: 5px 0 0; font-size: var(--fs-12); color: var(--text-2); }
+
+/* exhibit 03: Fresnel dither */
+.radio-fresnel-grid { grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.78fr); grid-template-areas: "plan ph" "plan stops" "plan mc"; }
+.radio-fresnel-grid > :nth-child(1) { grid-area: plan; } .radio-fresnel-grid > :nth-child(2) { grid-area: ph; } .radio-fresnel-grid > :nth-child(3) { grid-area: stops; } .radio-fresnel-grid > :nth-child(4) { grid-area: mc; }
+.radio-fig-cap { text-wrap: pretty; }

@@ -1,0 +1,129 @@
+/* Radio twin. Class prefix: radio-. Colours come from tokens only. */
+.radio { background: var(--bg-0); }
+.radio-head { align-items: center; }
+.radio-head-tags { display: flex; gap: 6px; flex: none; }
+
+/* exhibit index: seven numbered plates */
+.radio-strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); flex: none; background: var(--bg-1); border-bottom: 1px solid var(--line); }
+.radio-tab { position: relative; display: flex; align-items: baseline; gap: 9px; min-width: 0; height: 40px; padding: 0 14px; border: 0; border-right: 1px solid var(--line); background: transparent; color: var(--text-3); cursor: pointer; text-align: left; transition: color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease); }
+.radio-tab:last-child { border-right: 0; }
+.radio-tab:hover { color: var(--text); background: var(--bg-2); }
+.radio-tab:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.radio-tab-n { font: 500 var(--fs-11)/40px var(--mono); color: var(--text-3); flex: none; }
+.radio-tab-t { font: 500 var(--fs-12)/40px var(--font); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.radio-tab[aria-selected="true"] { color: var(--text); background: var(--bg-0); }
+.radio-tab[aria-selected="true"] .radio-tab-n { color: var(--accent); }
+.radio-tab[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--accent); }
+
+.radio-body { position: relative; flex: 1; min-height: 0; }
+.radio-exhibit { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr) 348px; }
+.radio-exhibit[hidden] { display: none; }
+.radio-stage { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.radio-side { min-height: 0; overflow-y: auto; border-left: 1px solid var(--line); background: var(--bg-1); display: flex; flex-direction: column; scrollbar-width: thin; }
+
+/* placard: the museum label */
+.radio-placard { padding: 16px 18px 14px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.radio-placard-n { font: 500 var(--fs-11)/1 var(--mono); color: var(--text-3); }
+.radio-placard h2 { font: var(--type-heading); font-size: var(--fs-24); color: var(--text); margin: 0; text-wrap: balance; }
+.radio-placard-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.radio-placard-labelnote { font: var(--type-caption); color: var(--text-3); margin: -4px 0 0; }
+.radio-placard-plain p { font: 400 var(--fs-13)/1.5 var(--font); color: var(--text); margin: 0; }
+.radio-placard-plain p + p { margin-top: 6px; color: var(--text-2); }
+.radio-placard-block h4, .radio-group h4 { font: 600 var(--fs-11)/1.2 var(--font); color: var(--text-3); margin: 0 0 6px; }
+.radio-cites { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.radio-cites li { display: flex; flex-direction: column; gap: 1px; font-size: var(--fs-12); line-height: 1.4; padding-left: 9px; border-left: 1px solid var(--line-2); }
+.radio-cites a { color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-weight: 500; width: fit-content; }
+.radio-cites a:hover { color: var(--accent-2); text-decoration: underline; }
+.radio-cites a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.radio-cites span { color: var(--text-3); }
+.radio-honest { padding: 9px 10px; border: 1px solid var(--line-2); border-left: 2px solid var(--warn); background: var(--bg-2); border-radius: var(--r-1); }
+.radio-honest p { margin: 0; font-size: var(--fs-12); line-height: 1.45; color: var(--text-2); }
+.radio-honest .radio-unknown { margin-top: 5px; color: var(--text-3); }
+.radio-honest .radio-unknown b { color: var(--text-2); font-weight: 600; }
+
+/* controls and readouts under the placard */
+.radio-side-controls { display: flex; flex-direction: column; }
+.radio-group { padding: 12px 18px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.radio-group:last-child { border-bottom: 0; }
+.radio-group h4 { margin-bottom: 2px; }
+.radio-group p { margin: 0; font-size: var(--fs-12); line-height: 1.45; color: var(--text-2); }
+.radio-slider { grid-template-columns: 104px 1fr auto; font-size: var(--fs-12); color: var(--text-2); }
+.radio-slider output { min-width: 58px; color: var(--text); }
+.radio-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--line); border-radius: var(--r-1); background: var(--bg-2); }
+.radio-stats.three { grid-template-columns: 1fr 1fr 1fr; }
+.radio-stat { padding: 8px 10px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); min-width: 0; display: flex; flex-direction: column; gap: 3px; margin: -0.5px; }
+.radio-stat > span { font: var(--type-caption); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.radio-stat b { font: 500 var(--fs-16)/1 var(--mono); letter-spacing: -0.02em; color: var(--text); }
+.radio-stat small { font: 500 var(--fs-11)/1 var(--font); color: var(--text-3); margin-left: 3px; }
+.radio-stat[data-tone="ok"] b { color: var(--ok); } .radio-stat[data-tone="warn"] b { color: var(--warn); } .radio-stat[data-tone="person"] b { color: var(--person); } .radio-stat[data-tone="danger"] b { color: var(--danger); } .radio-stat[data-tone="accent"] b { color: var(--accent); }
+.radio-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.radio-row > .seg { flex: none; }
+.radio-row-label { font-size: var(--fs-12); color: var(--text-2); min-width: 104px; }
+
+/* figures on the stage */
+.radio-canvas { display: block; width: 100%; height: 100%; }
+.radio-fig { margin: 0; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--bg-1); border: 1px solid var(--line); border-radius: var(--r-1); }
+.radio-fig-head { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 10px 0 12px; border-bottom: 1px solid var(--line); flex: none; }
+.radio-fig-head h3 { flex: 1; min-width: 0; font: 600 var(--fs-12)/1.3 var(--font); color: var(--text); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.radio-fig-body { position: relative; flex: 1; min-height: 0; min-width: 0; }
+.radio-fig-cap { padding: 6px 12px 7px; border-top: 1px solid var(--line); font: var(--type-caption); color: var(--text-3); flex: none; }
+.radio-fig-cap b { color: var(--text-2); font-weight: 600; }
+.radio-grid { flex: 1; min-height: 0; display: grid; gap: 8px; padding: 8px; }
+
+/* ---- exhibits 06 ris (Steering radio through gaps) and 07 bf (Every router is a sensor) ---- */
+.radio-ris-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 206px; }
+.radio-ris-scene { grid-column: 1 / -1; }
+.radio-ris-body > canvas, .radio-bf-host > canvas { position: absolute; inset: 0; }
+.radio-ris-handle { position: absolute; width: 36px; height: 36px; margin: -18px 0 0 -18px; padding: 0; border: 0; border-radius: var(--r-1); background: transparent; cursor: grab; touch-action: none; }
+.radio-ris-handle:hover { background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent-line); }
+.radio-ris-handle.is-drag { cursor: grabbing; }
+.radio-ris-handle:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.radio-ris-btn { align-self: stretch; }
+.radio-group p.radio-ris-hint, .radio-group p.radio-bf-hint { font-size: var(--fs-11); line-height: 1.4; color: var(--text-3); }
+.radio-bf-grid { grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.radio-bf-col { display: grid; gap: 8px; min-width: 0; min-height: 0; }
+.radio-bf-col-a { grid-template-rows: minmax(0, 1fr) 214px; }
+.radio-bf-col-b { grid-template-rows: minmax(0, 1fr) 262px; }
+.radio-bf-body { display: flex; flex-direction: column; }
+.radio-bf-host { position: relative; flex: 1; min-height: 0; }
+.radio-bf-note { flex: none; margin: 0; min-height: 46px; padding: 7px 12px; border-top: 1px solid var(--line); font-size: var(--fs-12); line-height: 1.4; color: var(--text-2); }
+.radio-bf-note b { color: var(--text); font-weight: 600; }
+.radio-bf-host.is-pick { cursor: pointer; }
+.radio-bf-host.is-drag { cursor: ew-resize; }
+
+/* ===== exhibits 04 sar + 05 sparse (sar.js, sparse.js, sarcore.js). Prefixes: radio-sar-, radio-sparse-. ===== */
+.radio-sar-grid { grid-template-columns: minmax(0, 1.68fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+.radio-sar-main { grid-row: 1 / 3; }
+.radio-sar-main .radio-fig-body { display: flex; flex-direction: column; }
+.radio-sar-view { position: relative; flex: 1; min-height: 0; background: var(--bg-1); }
+.radio-sar-view > canvas, .radio-sar-chart .radio-fig-body > canvas { position: absolute; inset: 0; }
+.radio-sar-bar { display: flex; align-items: center; gap: 8px; flex: none; padding: 6px 10px; border-top: 1px solid var(--line); background: var(--bg-2); }
+.radio-sar-bar .btn-primary { min-width: 128px; }
+.radio-sar-bar .slider { flex: 1; min-width: 60px; }
+.radio-sar-bar-l { font-size: var(--fs-12); color: var(--text-3); margin-left: 6px; }
+.radio-sar-bar output { font-size: var(--fs-11); color: var(--text-2); white-space: nowrap; min-width: 112px; text-align: right; }
+.radio-sar-derived { font-size: var(--fs-11) !important; color: var(--text-3) !important; }
+.radio-sar-note { margin-top: 2px; }
+.radio-sar-note[hidden] { display: none; }
+.radio-sar-list { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r-1); background: var(--bg-2); }
+.radio-sar-item { display: flex; align-items: center; gap: 2px; padding-right: 2px; border-bottom: 1px solid var(--line); }
+.radio-sar-item:last-child { border-bottom: 0; }
+.radio-sar-pick { flex: 1; min-width: 0; display: grid; grid-template-columns: 18px 96px 1fr; align-items: center; gap: 6px; height: 28px; padding: 0 8px; border: 0; background: transparent; color: var(--text-2); font-size: var(--fs-11); text-align: left; cursor: pointer; }
+.radio-sar-pick:hover { background: var(--bg-3); }
+.radio-sar-pick:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.radio-sar-pick[aria-pressed="true"] { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); color: var(--text); }
+.radio-sar-pick b { font: 600 var(--fs-12)/1 var(--font); color: var(--text); }
+.radio-sar-err { text-align: right; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.radio-sar-err[data-tone="warn"] { color: var(--warn); }
+.radio-sparse-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1.5fr) minmax(0, 1fr); }
+.radio-sparse-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; min-height: 0; }
+.radio-sparse-bottom { display: grid; grid-template-columns: minmax(0, 0.74fr) minmax(0, 1.3fr) minmax(0, 1.08fr); gap: 8px; min-height: 0; }
+.radio-sparse-img .radio-fig-body > canvas, .radio-sparse-chart .radio-fig-body > canvas { position: absolute; inset: 0; }
+.radio-sparse-head { display: flex; align-items: center; gap: 6px; flex: none; }
+.radio-sparse-head .seg button { min-height: 20px; padding: 0 8px; font-size: var(--fs-11); }
+.radio-sparse-chart .radio-fig-head .btn-sm, .radio-sparse-head .btn-sm { min-height: 24px; }
+.radio-sparse-table td:first-child { color: var(--text-2); }
+.radio-sparse-table th { background: transparent; }
+.radio-sparse-table td[data-tone="ok"] { color: var(--ok); } .radio-sparse-table td[data-tone="warn"] { color: var(--warn); }
+.radio-sparse-sweeptxt { font-size: var(--fs-11) !important; color: var(--text-3) !important; }
+.radio-sparse-note[hidden] { display: none; }

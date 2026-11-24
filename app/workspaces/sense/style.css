@@ -1,0 +1,111 @@
+/* Wi-Fi AI workspace. Frame and bench. Tokens only; hex codes live in the data ramps (common.js) and 3-D materials. */
+.sense { background: var(--bg-0); }
+.sense-head { display: flex; align-items: center; gap: var(--s-4); padding: 0 var(--s-4); min-height: 52px; border-bottom: 1px solid var(--line); background: var(--bg-1); flex: none; }
+.sense-title { display: flex; align-items: center; gap: var(--s-2); color: var(--text); flex: none; }
+.sense-title svg { color: var(--accent); }
+.sense-lede { color: var(--text-2); font-size: var(--fs-13); max-width: 560px; line-height: 1.35; min-width: 0; }
+.sense-body { position: relative; flex: 1; min-height: 0; }
+.sense-view { position: absolute; inset: 0; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.sense-view[hidden] { display: none; }
+@media (max-width: 1500px) { .sense-lede { max-width: 400px; font-size: var(--fs-12); } }
+
+/* Shared by all three views */
+.sense-figtitle { font: 600 var(--fs-13)/1.3 var(--font); color: var(--text); }
+.sense-figsub { font-size: var(--fs-12); color: var(--text-3); line-height: 1.35; }
+.sense-axis { font: 400 var(--fs-11)/1 var(--font); fill: var(--text-3); color: var(--text-3); }
+.sense-word-person { color: var(--person); } .sense-word-ok { color: var(--ok); } .sense-word-warn { color: var(--warn); } .sense-word-danger { color: var(--danger); }
+
+/* ---------------------------------------------------------------- bench */
+.sense-bench { flex: 1; min-height: 0; display: grid; grid-template-columns: 244px minmax(0, 1fr) 318px; gap: var(--s-2); padding: var(--s-2); }
+.sense-centre, .sense-right { display: flex; flex-direction: column; gap: var(--s-2); min-height: 0; min-width: 0; }
+.sense-specpanel { flex: 0 0 34%; } .sense-anapanel { flex: 1; }
+.sense-anspanel { flex: none; } .sense-trypanel { flex: none; }
+.sense-right > .panel:nth-child(2) { flex: 1; min-height: 110px; }
+.sense-right .panel-body { padding: 10px 12px; }
+.sense-bench .panel-head { min-height: 36px; padding: 7px 12px; }
+
+/* left: the windows */
+.sense-left .panel-body { display: flex; flex-direction: column; gap: 10px; }
+.sense-browser { display: flex; flex-direction: column; gap: 8px; }
+.sense-grp-head { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--fs-12); color: var(--text); font-weight: 500; margin-bottom: 4px; }
+.sense-grp-note { color: var(--text-3); font-weight: 400; font-size: var(--fs-11); }
+.sense-tiles { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.sense-tile { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 2px; padding: 2px 2px 1px; border: 1px solid var(--line); border-radius: var(--r-1); background: var(--bg-1); cursor: pointer; color: var(--text-3); font-size: var(--fs-11); line-height: 1.2; transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease); }
+.sense-tile canvas { width: 100%; height: 20px; display: block; border-radius: 2px; image-rendering: pixelated; opacity: 0.9; transition: opacity var(--t-fast) var(--ease); }
+.sense-tile:hover { border-color: var(--line-2); background: var(--bg-3); } .sense-tile:hover canvas { opacity: 1; }
+.sense-tile:active { transform: scale(0.96); }
+.sense-tile[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--text); box-shadow: 0 0 0 1px var(--accent); } .sense-tile[aria-pressed="true"] canvas { opacity: 1; }
+.sense-tile.alarm span { color: var(--text); font-weight: 600; }
+.sense-tile-mark { position: absolute; top: 3px; right: 3px; width: 12px; height: 12px; border-radius: 50%; display: none; place-items: center; background: var(--bg-2); }
+.sense-tile.ran .sense-tile-mark { display: grid; } .sense-tile.right .sense-tile-mark { color: var(--ok); box-shadow: 0 0 0 1px var(--ok); } .sense-tile.wrong .sense-tile-mark { color: var(--danger); box-shadow: 0 0 0 1px var(--danger); }
+.sense-tile.flash { animation: sense-flash 320ms var(--ease); }
+@keyframes sense-flash { from { background: var(--bg-4); border-color: var(--text-2); } }
+@media (prefers-reduced-motion: reduce) { .sense-tile.flash { animation: none; } }
+:root[data-motion="reduce"] .sense-tile.flash { animation: none; }
+.sense-runrow { display: flex; } .sense-runrow .btn { flex: 1; }
+.sense-cm { width: 100%; border-collapse: separate; border-spacing: 3px; table-layout: fixed; margin: 0 -3px; }
+.sense-cm th { font-size: var(--fs-11); font-weight: 500; color: var(--text-3); text-align: center; padding: 0 0 1px; } .sense-cm tbody th { text-align: left; width: 64px; color: var(--text-2); }
+.sense-cm td { text-align: center; font-size: var(--fs-20); font-weight: 600; padding: 7px 0; border-radius: var(--r-1); background: var(--bg-3); color: var(--text-2); transition: background var(--t-med) var(--ease); }
+.sense-cm td.good { color: var(--ok); background: var(--ok-soft); } .sense-cm td.bad { color: var(--danger); background: var(--danger-soft); }
+.sense-conf { display: flex; flex-direction: column; gap: 6px; } .sense-conf-line { font-size: var(--fs-12); color: var(--text-2); } .sense-conf-line b { color: var(--text); }
+.sense-foot { margin-top: auto; padding-top: var(--s-2); border-top: 1px solid var(--line); font-size: var(--fs-11); }
+@media (max-height: 940px) { .sense-mark { display: none; } .sense-left .panel-body > .sense-figsub:first-child { display: none; } .sense-ans { gap: 6px; } }
+
+/* centre top: the window */
+.sense-spec-wrap { position: relative; width: 100%; height: 100%; }
+.sense-spec { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; border-radius: 0 0 var(--r-3) var(--r-3); }
+.sense-spec:focus-visible { outline-offset: -2px; }
+.sense-spec-read { position: absolute; top: 4px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 3px 10px; border-radius: var(--r-2); background: var(--bg-3); border: 1px solid var(--line-2); box-shadow: var(--shadow-1); font-size: var(--fs-12); color: var(--text-2); white-space: nowrap; pointer-events: none; z-index: 2; }
+.sense-spec-read b { color: var(--text); } .sense-spec-read[hidden] { display: none; }
+.sense-legend { display: flex; align-items: center; gap: 6px; font-size: var(--fs-11); color: var(--text-3); white-space: nowrap; } .sense-legend i { width: 84px; height: 8px; border-radius: 2px; border: 1px solid var(--line-2); } .sense-legend span:last-child { margin-right: var(--s-2); }
+.sense-spot { font-size: var(--fs-12); color: var(--text-2); min-height: 22px; white-space: nowrap; }
+
+/* centre bottom: the network */
+.sense-anapanel .panel-body { display: flex; flex-direction: column; overflow: hidden; }
+.sense-ana { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--bg-0); }
+.sense-ana-canvas { position: absolute; inset: 0; }
+.sense-ana-gl, .sense-ana-flat { display: block; position: absolute; inset: 0; } .sense-ana-gl { cursor: grab; touch-action: none; } .sense-ana-gl:active { cursor: grabbing; }
+.sense-ana-gl[hidden], .sense-ana-flat[hidden], .sense-ana-labels[hidden] { display: none; }
+.sense-ana-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.sense-ana-label { position: absolute; left: 0; top: 0; display: flex; align-items: baseline; gap: 6px; padding-right: 12px; white-space: nowrap; transition: opacity var(--t-med) var(--ease); will-change: transform; }
+.sense-ana-label::after { content: ""; position: absolute; right: 0; top: 50%; width: 8px; height: 1px; background: var(--line-2); }
+.sense-ana-label b { font-size: var(--fs-12); font-weight: 600; color: var(--text-2); line-height: 1.25; } .sense-ana-label span { font-size: var(--fs-11); color: var(--text-3); line-height: 1.2; font-variant-numeric: tabular-nums; }
+.sense-ana-label.now b { color: var(--text); } .sense-ana-label.now::after { background: var(--text); width: 10px; } .sense-ana-label.dim { opacity: 0.35; }
+.sense-ana-out { position: absolute; left: 0; top: 0; display: flex; flex-direction: column; white-space: nowrap; will-change: transform; transition: opacity var(--t-med) var(--ease); } .sense-ana-out.dim { opacity: 0; }
+.sense-ana-out b { font: 600 var(--fs-20)/1.05 var(--font-display); color: var(--text); font-variant-numeric: tabular-nums; } .sense-ana-out span { font-size: var(--fs-11); color: var(--text-2); }
+.sense-ana-ax { position: absolute; left: 0; top: 0; font-size: var(--fs-11); color: var(--text-3); margin-left: -8px; will-change: transform; }
+.sense-ana-tip { position: absolute; left: 0; top: 0; display: flex; flex-direction: column; gap: 1px; padding: 6px 10px; font-size: var(--fs-12); pointer-events: none; z-index: 3; max-width: 240px; color: var(--text-2); } .sense-ana-tip b { color: var(--text); } .sense-ana-tip[hidden] { display: none; }
+.sense-ana-refused { position: absolute; left: 50%; bottom: 14%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 2px; align-items: center; text-align: center; padding: 10px 16px; border-radius: var(--r-2); background: var(--danger-soft); border: 1px solid var(--danger); color: var(--text); font-size: var(--fs-12); max-width: 80%; -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); } .sense-ana-refused[hidden] { display: none; } .sense-ana-refused b { font-size: var(--fs-14); }
+.sense-ana-hint { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.sense-ana-ctl { display: flex; align-items: flex-end; gap: var(--s-3); padding: 6px 12px 4px; border-top: 1px solid var(--line); flex: none; }
+.sense-scrubwrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sense-stages { display: grid; grid-template-columns: repeat(9, 1fr); }
+.sense-stages button { border: 0; background: transparent; color: var(--text-3); font-size: var(--fs-11); padding: 2px 0 3px; cursor: pointer; text-align: right; padding-right: 2px; border-right: 1px solid var(--line-2); white-space: nowrap; overflow: hidden; transition: color var(--t-fast) var(--ease); }
+.sense-stages button:hover { color: var(--text); } .sense-stages button[aria-current="step"] { color: var(--text); font-weight: 600; border-right-color: var(--text); }
+.sense-scrub { -webkit-appearance: none; appearance: none; width: 100%; height: 16px; margin: 0; background: transparent; cursor: pointer; }
+.sense-scrub::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: var(--line-2); }
+.sense-scrub::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 16px; margin-top: -7px; border-radius: 3px; background: var(--accent); border: 2px solid var(--bg-2); }
+.sense-ana-text { padding: 2px 12px 8px 56px; flex: none; min-height: 52px; display: flex; flex-direction: column; gap: 2px; }
+.sense-ana-caption { font-size: var(--fs-13); color: var(--text); line-height: 1.35; } .sense-ana-route { font-size: var(--fs-12); color: var(--text-2); line-height: 1.35; } .sense-ana-route b { color: var(--heat-5); font-weight: 600; }
+
+/* right: answer, why, try */
+.sense-ans { display: flex; flex-direction: column; gap: 8px; }
+.sense-say { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; } .sense-say span { color: var(--text-3); font-size: var(--fs-12); width: 100%; margin-bottom: -6px; }
+.sense-say b { font: 600 34px/1.05 var(--font-display); letter-spacing: -0.03em; color: var(--text); } .sense-say.person b { color: var(--person); } .sense-say.refused b { color: var(--danger); } .sense-say em { font-style: normal; font-size: var(--fs-16); color: var(--text-2); }
+.sense-meter { display: flex; flex-direction: column; gap: 3px; } .sense-meter.off { opacity: 0.45; }
+.sense-meter-top { display: flex; justify-content: space-between; font-size: var(--fs-12); color: var(--text-2); } .sense-meter-top b { color: var(--text); font-weight: 600; }
+.sense-meter-track { position: relative; height: 8px; border-radius: 2px; background: var(--bg-4); } .sense-meter-track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: var(--text-2); transition: width var(--t-med) var(--ease); } .sense-meter-track i.person { background: var(--person); }
+.sense-meter-track u { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--text); border-radius: 1px; }
+.sense-meter-sub { font-size: var(--fs-11); color: var(--text-3); white-space: nowrap; }
+.sense-verdict { display: flex; gap: 8px; padding: 6px 10px; border-radius: var(--r-2); font-size: var(--fs-12); line-height: 1.4; color: var(--text-2); } .sense-verdict svg { flex: none; margin-top: 1px; } .sense-verdict b { color: var(--text); }
+.sense-verdict.ok { background: var(--ok-soft); } .sense-verdict.ok svg { color: var(--ok); } .sense-verdict.danger { background: var(--danger-soft); } .sense-verdict.danger svg { color: var(--danger); }
+.sense-receipt { display: flex; flex-direction: column; gap: 3px; font-size: var(--fs-12); color: var(--text-3); border-top: 1px solid var(--line); padding-top: 8px; } .sense-receipt p { display: flex; gap: 6px; align-items: baseline; } .sense-receipt p > span:first-child { flex: none; min-width: 96px; } .sense-receipt p.sense-receipt-row > span:first-child { min-width: 0; } .sense-receipt-row { white-space: nowrap; }
+.sense-bench [hidden] { display: none !important; } .sense-receipt b { color: var(--text); font-weight: 500; } .sense-receipt .tag { align-self: center; margin-left: auto; }
+.sense-dep { display: flex; flex-direction: column; gap: 6px; } .sense-dep-main { font-size: var(--fs-13); line-height: 1.4; color: var(--text); text-wrap: pretty; } .sense-dep-2 { font-size: var(--fs-12); line-height: 1.4; color: var(--text-2); } .sense-dep-how[hidden] { display: none; } .sense-dep-busy { display: flex; flex-direction: column; gap: 8px; }
+.sense-try { display: flex; flex-direction: column; gap: 6px; }
+.sense-slider { display: flex; flex-direction: column; gap: 1px; } .sense-slider-top { display: flex; justify-content: space-between; font-size: var(--fs-12); color: var(--text-2); } .sense-slider-top b { color: var(--text); font-weight: 600; }
+.sense-slider input { -webkit-appearance: none; appearance: none; width: 100%; height: 16px; margin: 0; background: transparent; cursor: pointer; }
+.sense-slider input::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: var(--line-2); } .sense-slider input::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 16px; margin-top: -7px; border-radius: 3px; background: var(--accent); border: 2px solid var(--bg-2); }
+.sense-slider { position: relative; } .sense-mark { position: relative; align-self: flex-start; font-size: var(--fs-11); color: var(--text-3); white-space: nowrap; padding-left: 5px; border-left: 1px solid var(--text-3); margin-top: -5px; line-height: 1.5; }
+.sense-checks { display: flex; gap: var(--s-4); flex-wrap: wrap; } .sense-check { font-size: var(--fs-12); min-height: 22px; }
+@media (max-width: 1500px) { .sense-bench { grid-template-columns: 224px minmax(0, 1fr) 304px; } .sense-ana-hint { display: none; } .sense-legend span:last-child { display: none; } }

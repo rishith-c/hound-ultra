@@ -1,0 +1,196 @@
+/* Triage workspace. Tokens only; the five score terms use five steps of the accent hue so the bar reads as one quantity. */
+.triage { --k-sure: color-mix(in srgb, var(--accent) 100%, var(--bg-4)); --k-need: color-mix(in srgb, var(--accent) 78%, var(--bg-4)); --k-wait: color-mix(in srgb, var(--accent) 58%, var(--bg-4)); --k-access: color-mix(in srgb, var(--accent) 40%, var(--bg-4)); --k-safe: color-mix(in srgb, var(--accent) 24%, var(--bg-4)); background: var(--bg-0); }
+.triage [data-k="sure"] { --kc: var(--k-sure); } .triage [data-k="need"] { --kc: var(--k-need); } .triage [data-k="wait"] { --kc: var(--k-wait); } .triage [data-k="access"] { --kc: var(--k-access); } .triage [data-k="safe"] { --kc: var(--k-safe); }
+.triage .bad { color: var(--danger); }
+.triage [hidden] { display: none !important; }
+
+.triage-head { align-items: center; gap: var(--s-6); padding: 12px 20px; }
+.triage-headline { flex: 1; min-width: 0; }
+.triage-headline .row { gap: 10px; }
+.triage-headline p { max-width: 86ch; }
+.triage-aid { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px 0 7px; border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent); border-radius: var(--r-1); color: var(--warn); font-size: var(--fs-12); font-weight: 600; }
+.triage-send { display: flex; align-items: center; gap: var(--s-4); flex: none; }
+.triage-sendtext { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; max-width: 430px; text-align: right; }
+.triage-sendnote { font-size: var(--fs-12); color: var(--text-2); line-height: 1.5; }
+.triage-sendnote b { color: var(--text); font-weight: 600; }
+.triage-sendnote .btn { vertical-align: middle; }
+.triage-hold { font-size: var(--fs-12); color: var(--text-2); min-height: 22px; }
+.triage-send .btn-primary.is-waiting { background: var(--bg-3); border-color: var(--line-2); color: var(--text-2); box-shadow: var(--shadow-0); cursor: help; }
+
+.triage-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(350px, 400px) minmax(0, 1fr) minmax(330px, 368px); }
+.triage-board, .triage-side { display: flex; flex-direction: column; min-height: 0; background: var(--bg-1); }
+.triage-board { border-right: 1px solid var(--line); }
+.triage-side { border-left: 1px solid var(--line); overflow-y: auto; }
+.triage-boardhead { display: flex; align-items: center; gap: 8px; padding: 12px 14px 8px; min-height: 46px; }
+.triage-boardhead h3 { flex: 1; }
+.triage-orderstate { font-size: var(--fs-12); color: var(--text-3); }
+.triage-orderstate[data-human="true"] { color: var(--text); font-weight: 600; }
+.triage-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 2px 10px 14px; }
+.triage-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+
+/* A card is a strip: grip, rank, facts, score; the contribution bar runs along its foot. */
+.triage-card { position: relative; display: grid; grid-template-columns: 18px 34px minmax(0, 1fr) auto; column-gap: 8px; align-items: start; padding: 10px 12px 0 4px; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-2); cursor: pointer; overflow: hidden; transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease); }
+.triage-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--warn); }
+.triage-card[data-status="person"]::before { background: var(--person); }
+.triage-card:hover { border-color: var(--line-2); background: var(--bg-3); }
+.triage-card[aria-selected="true"] { border-color: color-mix(in srgb, var(--accent) 60%, var(--line-2)); background: var(--bg-3); cursor: default; }
+.triage-card.is-dragging { z-index: 5; box-shadow: var(--shadow-2); border-color: var(--accent); transition: none; }
+.triage-grip { grid-row: 1 / span 1; align-self: stretch; margin-left: 4px; width: 16px; min-height: 44px; border: 0; background: transparent; color: var(--text-3); cursor: grab; display: grid; place-items: center; border-radius: var(--r-1); touch-action: none; }
+.triage-grip svg { fill: currentColor; }
+.triage-grip:hover { color: var(--text); background: var(--bg-4); }
+.triage-card.is-dragging .triage-grip { cursor: grabbing; }
+.triage-rank { font: 400 34px/0.9 var(--font-display); font-variant-numeric: lining-nums; color: var(--text); text-align: center; }
+.triage-main { min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+.triage-title { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.triage-where { font-size: var(--fs-14); font-weight: 600; }
+.triage-tags { display: inline-flex; gap: 5px; flex-wrap: wrap; }
+.triage-human { background: transparent; box-shadow: inset 0 0 0 1px var(--text-2); color: var(--text); }
+.triage-facts { margin: 0; display: grid; grid-template-columns: 64px 76px 1fr; gap: 0 12px; }
+.triage-facts dt { font-size: var(--fs-11); color: var(--text-3); }
+.triage-facts dd { margin: 0; font-size: var(--fs-13); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.triage-way { display: flex; gap: 7px; font-size: var(--fs-12); color: var(--text-2); line-height: 1.4; }
+.triage-wayicon { flex: none; color: var(--text-3); margin-top: 1px; } .triage-wayicon[data-kind="break through"] { color: var(--text); }
+.triage-haz { font-size: var(--fs-12); color: var(--danger); line-height: 1.4; padding-left: 21px; position: relative; }
+.triage-haz::before { content: ""; position: absolute; left: 3px; top: 4px; width: 8px; height: 8px; background: currentColor; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.triage-haz[data-clear="true"] { color: var(--text-3); }
+.triage-haz[data-clear="true"]::before { clip-path: none; border-radius: 50%; top: 5px; left: 4px; width: 6px; height: 6px; background: var(--ok); }
+.triage-score { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+.triage-score b { font: 500 24px/1 var(--mono); letter-spacing: -0.04em; }
+.triage-score span { font-size: var(--fs-11); color: var(--text-3); margin-top: 3px; }
+.triage-bar { grid-column: 1 / -1; margin: 10px -12px 0 -4px; height: 16px; display: flex; background: var(--bg-1); border-top: 1px solid var(--line); }
+.triage-bar i { display: block; height: 100%; background: var(--kc); transition: width var(--t-med) var(--ease); box-shadow: inset -1px 0 0 var(--bg-1); overflow: hidden; }
+.triage-bar i span { display: block; font: 600 10px/16px var(--mono); font-style: normal; color: var(--accent-ink); padding-left: 5px; }
+.triage-bar i[data-k="access"] span, .triage-bar i[data-k="safe"] span { color: var(--text); }
+.triage-bar i[data-thin="true"] span { display: none; }
+.triage-detail { grid-column: 1 / -1; margin: 0 -12px 0 -4px; padding: 10px 12px 12px; background: var(--bg-1); border-top: 1px solid var(--line); cursor: default; }
+.triage-break { width: 100%; border-collapse: collapse; font-size: var(--fs-12); }
+.triage-break th { text-align: left; font-weight: 500; color: var(--text-3); padding: 2px 6px 5px 0; font-size: var(--fs-11); }
+.triage-break td { padding: 4px 6px 4px 0; border-top: 1px solid var(--line); white-space: nowrap; }
+.triage-break td:first-child { white-space: normal; display: grid; grid-template-columns: 23px 1fr; align-items: baseline; } .triage-break tfoot td:first-child { display: table-cell; }
+.triage-termname { font-weight: 500; } .triage-seen { grid-column: 2; font-size: var(--fs-11); color: var(--text-3); }
+.triage-break .triage-chip { margin-right: 0; align-self: start; margin-top: 1px; }
+.triage-break .r { text-align: right; padding-right: 0; padding-left: 8px; }
+.triage-break tfoot td { color: var(--text-3); font-size: var(--fs-11); white-space: normal; }
+.triage-break tfoot td.num { color: var(--text); font-size: var(--fs-13); font-weight: 600; }
+.triage-chip { display: inline-grid; place-items: center; width: 16px; height: 16px; margin-right: 7px; border-radius: 3px; background: var(--kc); color: var(--accent-ink); font: 700 10px/1 var(--mono); vertical-align: -2px; }
+.triage-chip[data-k="access"], .triage-chip[data-k="safe"] { color: var(--text); }
+.triage-cardlinks { margin-top: 10px; }
+.triage-reached { margin-top: 14px; display: flex; flex-direction: column; gap: 4px; }
+.triage-reached h4 { font-size: var(--fs-12); font-weight: 500; color: var(--text-3); margin: 0 4px 4px; }
+.triage-done { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--r-2); background: transparent; color: var(--text-2); cursor: pointer; text-align: left; }
+.triage-done svg { color: var(--ok); } .triage-done b { flex: 1; font-weight: 500; color: var(--text); }
+.triage-done:hover, .triage-done[aria-pressed="true"] { background: var(--bg-3); }
+.triage-empty { height: auto; padding: 48px 24px; } .triage-empty svg { color: var(--text-3); } .triage-empty p { max-width: 300px; }
+
+/* centre: the plan, with the access planner docked under it */
+.triage-centre { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.triage-map { position: relative; flex: 1; min-height: 200px; }
+.triage-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.triage-maptop { position: absolute; left: 12px; right: 48px; top: 10px; display: flex; align-items: center; gap: 10px; pointer-events: none; }
+.triage-maptop > * { pointer-events: auto; }
+.triage-mapnote { font-size: var(--fs-12); color: var(--text-2); }
+.triage-legend { position: absolute; left: 12px; bottom: 24px; display: flex; flex-wrap: wrap; gap: 4px 14px; max-width: calc(100% - 150px); padding: 6px 10px; font-size: var(--fs-11); color: var(--text-2); pointer-events: none; background: var(--glass); border: 1px solid var(--glass-line); border-radius: var(--r-2); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+.triage-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.triage-legend i { display: inline-block; width: 10px; height: 10px; }
+.lg-person { border-radius: 50%; background: var(--person); } .lg-possible { border: 2px solid var(--warn); transform: rotate(45deg) scale(0.8); }
+.lg-route { height: 3px !important; width: 16px !important; background: var(--accent); border-radius: 2px; }
+.lg-exp { height: 4px !important; width: 16px !important; background: var(--danger); border-radius: 2px; }
+.lg-haz { background: repeating-linear-gradient(45deg, var(--danger) 0 1.5px, transparent 1.5px 4px); outline: 1px solid var(--danger); }
+.lg-sigma { border-radius: 50%; border: 1px dashed var(--person); }
+
+.triage-access { flex: none; border-top: 1px solid var(--line); background: var(--bg-1); padding: 12px 20px 14px; display: flex; flex-direction: column; gap: 10px; min-height: 172px; max-height: 52%; overflow-y: auto; }
+.triage-phead { display: flex; align-items: center; gap: 8px; }
+.triage-phead h3 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.triage-access .empty { padding: 18px; height: auto; }
+.triage-walk { display: flex; flex-direction: column; gap: 6px; }
+.triage-walkfacts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.triage-walknote { font-size: var(--fs-12); color: var(--text-2); max-width: 760px; }
+.triage-strip { width: 100%; max-width: 760px; height: auto; display: block; }
+.triage-strip .st-line { stroke: var(--accent); stroke-width: 3; stroke-linecap: round; }
+.triage-strip .st-tick { stroke: var(--bg-1); stroke-width: 1.5; }
+.triage-strip .st-num { fill: var(--text-3); font: 10px var(--mono); }
+.triage-strip .st-lab { fill: var(--text-2); font: 11px var(--font); }
+.triage-strip .st-hzfill { fill: var(--danger); } .triage-strip .st-hz { stroke: var(--danger); stroke-width: 1; }
+.triage-strip .st-hzlab { fill: var(--danger); font: 10.5px var(--font); }
+.triage-strip .st-door { fill: var(--bg-1); stroke: var(--text-2); stroke-width: 1.2; }
+.triage-strip .st-team { fill: var(--bg-1); stroke: var(--accent); stroke-width: 2; } .triage-strip .st-end { fill: var(--person); stroke: var(--bg-1); stroke-width: 2; }
+
+.triage-breach { display: grid; gap: 18px; align-items: start; }
+.triage-breachfig { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.triage-section { display: block; max-width: 100%; height: auto; background: var(--bg-0); border: 1px solid var(--line); border-radius: var(--r-2); }
+.triage-section text { font: 10.5px var(--font); fill: var(--text-2); }
+.triage-section .cs-floor { stroke: var(--text-2); stroke-width: 1.5; } .triage-section .cs-earth { stroke: var(--line-2); stroke-width: 1; }
+.triage-section .cs-ceiling { stroke: var(--line-2); stroke-width: 1; stroke-dasharray: 5 4; }
+.triage-section .cs-wall { stroke: var(--text-2); stroke-width: 1.2; fill-opacity: 1; } .triage-section .cs-dry { fill: var(--bg-3); }
+.triage-section .cs-dot { fill: var(--text-3); } .triage-section .cs-stud { stroke: var(--text-3); stroke-width: 1; }
+.triage-section .cs-crack { fill: none; stroke: var(--warn); stroke-width: 1.5; } .triage-section .cs-warn { fill: var(--warn); font-weight: 600; }
+.triage-section .cs-cut { fill: none; stroke: var(--text); stroke-width: 1.5; }
+.triage-section .cs-band { fill: var(--person-soft); } .triage-section .cs-bandline { stroke: var(--person); stroke-width: 1; stroke-dasharray: 3 3; }
+.triage-section .cs-person { fill: var(--person); }
+.triage-section .cs-personline { stroke: var(--person); stroke-width: 1; }
+.triage-section .cs-team { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .triage-section .cs-team circle { fill: var(--accent); stroke: none; }
+.triage-section .cs-fig { fill: none; stroke: var(--person); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; } .triage-section .cs-fig circle { fill: var(--person); stroke: none; }
+.triage-section .cs-lab { fill: var(--accent); }
+.triage-section .cs-dim line { stroke: var(--text-2); stroke-width: 1; } .triage-section .cs-dim .ext { stroke: var(--line-2); } .triage-section .cs-dim text { fill: var(--text); font: 10.5px var(--mono); }
+.triage-section .cs-note { fill: var(--text-3); } .triage-section .cs-dimlab { fill: var(--text); font: 10.5px var(--mono); }
+.triage-breachside { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.triage-altlede { font-size: var(--fs-12); color: var(--text-2); line-height: 1.4; }
+.triage-standoff { font-size: var(--fs-12); color: var(--text-2); line-height: 1.45; }
+.triage-standoff b { color: var(--text); font-weight: 600; }
+.triage-assumed { font-style: normal; font-size: var(--fs-11); font-weight: 600; color: var(--sim); border: 1px dashed var(--sim-line); padding: 0 5px; border-radius: var(--r-1); white-space: nowrap; }
+.triage-alts { display: flex; flex-direction: column; gap: 5px; }
+.triage-alt { display: flex; flex-flow: row wrap; align-items: baseline; justify-content: space-between; gap: 4px 14px; padding: 7px 10px; border: 1px solid var(--line-2); border-radius: var(--r-2); background: var(--bg-2); color: var(--text); text-align: left; cursor: pointer; transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease); }
+button.triage-alt:hover { background: var(--bg-3); border-color: var(--line-3); }
+.triage-alt[aria-checked="true"] { border-color: var(--accent-line); background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--bg-2); box-shadow: inset 2px 0 0 var(--accent); }
+.triage-alt.off { cursor: default; background: transparent; border-style: dashed; color: var(--text-3); }
+.triage-altname { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; } .triage-altname b { font-weight: 600; font-size: var(--fs-13); }
+.triage-altnums { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: var(--fs-12); color: var(--text-3); }
+.triage-altnums b { font-weight: 500; color: var(--text); } .triage-altnums b.bad { color: var(--danger); }
+.triage-altwhy { font-size: var(--fs-12); }
+
+/* right: model and resources */
+.triage-panel { padding: 14px 14px 16px; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid var(--line); }
+.triage-phead h3 { flex: 1; }
+.triage-access .triage-phead h3 { flex: none; }
+.triage-lede { font-size: var(--fs-12); color: var(--text-2); line-height: 1.45; }
+.triage-formula { display: flex; align-items: center; gap: 6px; padding: 10px; background: var(--bg-0); border: 1px solid var(--line); border-radius: var(--r-2); font-size: var(--fs-12); color: var(--text); overflow-x: auto; }
+.f-lhs { font-weight: 600; } .f-op { color: var(--text-3); white-space: nowrap; }
+.f-frac { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; }
+.f-num { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 4px; padding-bottom: 5px; border-bottom: 1px solid var(--text-2); }
+.f-term { white-space: nowrap; padding: 1px 4px; border-radius: 3px; box-shadow: inset 0 -2px 0 var(--kc); } .f-term i { font-style: italic; }
+.f-den { color: var(--text-2); font-style: italic; white-space: nowrap; } .triage-formula sub { font-size: 9px; font-style: normal; }
+.triage-presets { width: 100%; } .triage-presets button { flex: 1; padding: 0 4px; font-size: var(--fs-12); }
+.triage-wrow { display: flex; flex-direction: column; gap: 3px; padding-top: 8px; border-top: 1px solid var(--line); }
+.triage-wname { display: flex; align-items: center; gap: 6px; } .triage-wname b { font-weight: 600; } .triage-wname .triage-chip { margin-right: 2px; }
+.triage-wval { font-size: var(--fs-13); min-width: 24px; text-align: right; } .triage-wshare { font-size: var(--fs-11); color: var(--text-3); min-width: 34px; text-align: right; }
+.triage-wdef { font-size: var(--fs-11); color: var(--text-3); line-height: 1.4; }
+.triage-range { --accent: var(--kc); }
+
+.triage-teambody { display: flex; flex-direction: column; gap: 10px; }
+.triage-teamstats { display: flex; align-items: flex-start; gap: 16px; } .triage-teamstats .tag { margin-left: auto; }
+.triage-gantt { width: 100%; height: auto; display: block; }
+.triage-gantt .gt-grid { stroke: var(--line); stroke-width: 1; } .triage-gantt .gt-num { fill: var(--text-3); font: 10px var(--mono); }
+.triage-gantt .gt-team { fill: var(--text-2); font: 600 11px var(--font); }
+.triage-gantt .gt-walk { stroke: var(--accent); stroke-width: 3; stroke-linecap: round; }
+.triage-gantt .gt-workfill { fill: var(--text-2); } .triage-gantt .gt-work { stroke: var(--text-2); stroke-width: 1; }
+.triage-gantt .gt-stay { fill: var(--line-2); }
+.triage-gantt .gt-person { fill: var(--person); stroke: var(--bg-1); stroke-width: 2; } .triage-gantt .gt-possible { fill: var(--warn); stroke: var(--bg-1); stroke-width: 2; }
+.triage-gantt .gt-rank { fill: var(--accent-ink); font: 700 9.5px var(--mono); }
+.triage-gkey { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--fs-11); color: var(--text-3); } .triage-gkey span { display: inline-flex; align-items: center; gap: 6px; }
+.triage-gkey i { display: inline-block; width: 16px; height: 3px; border-radius: 2px; } .k-walk { background: var(--accent); } .k-stay { background: var(--line-2); }
+.k-work { height: 9px !important; background: repeating-linear-gradient(45deg, var(--text-2) 0 1.5px, transparent 1.5px 4px); outline: 1px solid var(--text-2); border-radius: 0 !important; }
+.triage-assign { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: var(--fs-12); }
+.triage-assign li { display: flex; gap: 10px; } .triage-assign b { font-weight: 600; min-width: 48px; } .triage-assign span { color: var(--text-2); font-variant-numeric: tabular-nums; }
+.triage-mini { display: flex; flex-direction: column; gap: 4px; padding-top: 8px; border-top: 1px solid var(--line); } .triage-mini p { font-size: var(--fs-12); color: var(--text-2); margin-bottom: 2px; }
+.triage-minirow { display: grid; grid-template-columns: 14px 1fr 54px; align-items: center; gap: 8px; font-size: var(--fs-12); color: var(--text-3); } .triage-minirow span:last-child { text-align: right; }
+.triage-minirow .bar > i { background: var(--line-2); } .triage-minirow[data-on="true"] { color: var(--text); } .triage-minirow[data-on="true"] .bar > i { background: var(--accent); }
+.triage-fine { font-size: var(--fs-11); color: var(--text-3); line-height: 1.4; }
+.triage-teamempty { font-size: var(--fs-12); }
+
+@media (max-width: 1500px) {
+  .triage-body { grid-template-columns: 322px minmax(0, 1fr) 296px; }
+  .triage-headline p { display: none; }
+  .triage-access { max-height: 58%; padding: 10px 14px 12px; }
+  .triage-panel { padding: 12px 12px 14px; }
+  .triage-presets button { font-size: var(--fs-11); }
+}

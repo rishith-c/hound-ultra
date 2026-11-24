@@ -1,0 +1,122 @@
+[
+ {
+  "id": "aerial-01",
+  "label": "Drone frame A",
+  "short": "Frame A",
+  "note": "Two people on rubble, one in a red jacket",
+  "view": "nadir",
+  "kind": "AI-generated illustration",
+  "src": "assets/img/gen/aerial-01.jpg",
+  "thumb": "assets/img/vision/thumb-aerial-01.jpg",
+  "gsd": 0.01982,
+  "gsdNote": "Assumed: drone at 30 m, 45 degree field of view, so the frame is 24.9 m across."
+ },
+ {
+  "id": "aerial-02",
+  "label": "Drone frame B",
+  "short": "Frame B",
+  "note": "One person in a yellow raincoat beside a fallen roof",
+  "view": "nadir",
+  "kind": "AI-generated illustration",
+  "src": "assets/img/gen/aerial-02.jpg",
+  "thumb": "assets/img/vision/thumb-aerial-02.jpg",
+  "gsd": 0.01982,
+  "gsdNote": "Assumed: drone at 30 m, 45 degree field of view, so the frame is 24.9 m across."
+ },
+ {
+  "id": "aerial-04",
+  "label": "Drone frame C",
+  "short": "Frame C",
+  "note": "Three people waving in a courtyard",
+  "view": "nadir",
+  "kind": "AI-generated illustration",
+  "src": "assets/img/gen/aerial-04.jpg",
+  "thumb": "assets/img/vision/thumb-aerial-04.jpg",
+  "gsd": 0.01982,
+  "gsdNote": "Assumed: drone at 30 m, 45 degree field of view, so the frame is 24.9 m across."
+ },
+ {
+  "id": "aerial-05",
+  "label": "Drone frame D",
+  "short": "Frame D",
+  "note": "One person in mud-coloured clothing, hard to see",
+  "view": "nadir",
+  "kind": "AI-generated illustration",
+  "src": "assets/img/gen/aerial-05.jpg",
+  "thumb": "assets/img/vision/thumb-aerial-05.jpg",
+  "gsd": 0.01982,
+  "gsdNote": "Assumed: drone at 30 m, 45 degree field of view, so the frame is 24.9 m across."
+ },
+ {
+  "id": "aerial-03",
+  "label": "Drone frame E",
+  "short": "Frame E",
+  "note": "No people. A blue barrel and red cloth as decoys",
+  "view": "nadir",
+  "kind": "AI-generated illustration",
+  "src": "assets/img/gen/aerial-03.jpg",
+  "thumb": "assets/img/vision/thumb-aerial-03.jpg",
+  "gsd": 0.01982,
+  "gsdNote": "Assumed: drone at 30 m, 45 degree field of view, so the frame is 24.9 m across."
+ },
+ {
+  "id": "hero-block",
+  "label": "School block",
+  "short": "School",
+  "note": "Street view of a school with a collapsed corner",
+  "view": "oblique",
+  "kind": "AI-generated illustration",
+  "src": "assets/img/gen/hero-block.jpg",
+  "thumb": "assets/img/vision/thumb-hero-block.jpg",
+  "gsd": null,
+  "gsdNote": null
+ },
+ {
+  "id": "scene-corridor",
+  "label": "Corridor",
+  "short": "Corridor",
+  "note": "Flood-damaged corridor, debris at the far end",
+  "view": "oblique",
+  "kind": "AI-generated illustration",
+  "src": "assets/img/gen/scene-corridor.jpg",
+  "thumb": "assets/img/vision/thumb-scene-corridor.jpg",
+  "gsd": null,
+  "gsdNote": null
+ },
+ {
+  "id": "scene-classroom",
+  "label": "Classroom",
+  "short": "Classroom",
+  "note": "Overturned desks and a cracked wall",
+  "view": "oblique",
+  "kind": "AI-generated illustration",
+  "src": "assets/img/gen/scene-classroom.jpg",
+  "thumb": "assets/img/vision/thumb-scene-classroom.jpg",
+  "gsd": null,
+  "gsdNote": null
+ },
+ {
+  "id": "scene-rover",
+  "label": "Rover in a doorway",
+  "short": "Rover",
+  "note": "The rover entering a dark building",
+  "view": "oblique",
+  "kind": "AI-generated illustration",
+  "src": "assets/img/gen/scene-rover.jpg",
+  "thumb": "assets/img/vision/thumb-scene-rover.jpg",
+  "gsd": null,
+  "gsdNote": null
+ },
+ {
+  "id": "nepal-flood",
+  "label": "Valley after the flood",
+  "short": "Valley",
+  "note": "A hillside town beside a flooded river",
+  "view": "oblique",
+  "kind": "AI-generated illustration",
+  "src": "assets/img/nepal-flood.webp",
+  "thumb": "assets/img/vision/thumb-nepal-flood.jpg",
+  "gsd": null,
+  "gsdNote": null
+ }
+]

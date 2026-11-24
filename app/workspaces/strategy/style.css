@@ -1,0 +1,130 @@
+/* Search strategy lab. Class names are prefixed "strategy-". Colours and sizes come from ui/tokens.css only. */
+.strategy { background: var(--bg-0); }
+.strategy-head { align-items: center; padding-top: 12px; padding-bottom: 12px; }
+.strategy-head p { max-width: 104ch; }
+.strategy-tabs { background: var(--bg-1); padding: 0 12px; gap: 0; }
+.strategy-tabs button { height: 38px; padding: 0 14px 0 10px; gap: 8px; font-size: var(--fs-13); }
+.strategy-tab-n { display: inline-grid; place-items: center; width: 18px; height: 18px; border: 1px solid var(--line-2); border-radius: var(--r-1); font-size: 10.5px; color: var(--text-3); background: var(--bg-0); }
+.strategy-tabs button[aria-selected="true"] .strategy-tab-n { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+.strategy-tabs button:focus-visible { outline: 2px solid var(--focus); outline-offset: -3px; border-radius: var(--r-2); }
+.strategy-stage { position: relative; flex: 1; min-height: 0; }
+.strategy-pane { position: absolute; inset: 0; display: flex; min-width: 0; min-height: 0; }
+.strategy-pane[hidden] { display: none; }
+
+/* An exhibit: brief and controls on the left, the working model in the middle, instruments on the right. */
+.strategy-ex { flex: 1; display: grid; grid-template-columns: 304px minmax(0, 1fr) 352px; min-width: 0; min-height: 0; }
+.strategy-ex.wide-side { grid-template-columns: 304px minmax(0, 1fr) 420px; }
+.strategy-col { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-y: auto; overflow-x: hidden; background: var(--bg-1); scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+.strategy-col.left { border-right: 1px solid var(--line); }
+.strategy-col.right { border-left: 1px solid var(--line); }
+.strategy-main { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--bg-0); }
+.strategy-sec { padding: 12px 14px 14px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.strategy-sec:last-child { border-bottom: 0; }
+.strategy-sec > h3 { font: var(--type-panel); color: var(--text); display: flex; align-items: center; gap: 8px; }
+.strategy-sec > h3 .tag { margin-left: auto; }
+.strategy-sec p { color: var(--text-2); font-size: var(--fs-12); line-height: 1.5; }
+.strategy-sec p b, .strategy-sec p strong { color: var(--text); font-weight: 600; }
+.strategy-point { font: 500 var(--fs-13)/1.35 var(--font); color: var(--text); }           /* a chart title that states its point */
+.strategy-chart { display: block; width: 100%; height: 150px; }
+.strategy-chart.tall { height: 196px; }
+.strategy-chart.short { height: 112px; }
+.strategy-fine { font: var(--type-caption); color: var(--text-3); line-height: 1.45; }
+.strategy-fine b { color: var(--text-2); font-weight: 600; }
+.strategy-assumed { font: 500 10.5px/1 var(--font); color: var(--sim); border: 1px dashed var(--sim-line); border-radius: var(--r-1); padding: 2px 4px; white-space: nowrap; vertical-align: 1px; }
+.strategy-measured { font: 500 10.5px/1 var(--font); color: var(--accent); border: 1px solid var(--accent-line); border-radius: var(--r-1); padding: 2px 4px; white-space: nowrap; vertical-align: 1px; }
+
+/* The brief */
+.strategy-brief-card { padding: 14px 14px 14px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 9px; background: linear-gradient(180deg, var(--bg-2), var(--bg-1)); }
+.strategy-brief-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.strategy-brief-n { font: 500 var(--fs-12)/1 var(--mono); color: var(--text-3); letter-spacing: 0; }
+.strategy-brief-title { font: var(--type-heading); font-size: var(--fs-24); color: var(--text); }
+.strategy-brief-what { color: var(--text); font-size: var(--fs-13); line-height: 1.5; }
+.strategy-sources { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.strategy-sources li { font-size: var(--fs-11); line-height: 1.4; color: var(--text-3); padding-left: 9px; border-left: 2px solid var(--line-2); }
+.strategy-sources a { color: var(--text-2); text-decoration: none; }
+.strategy-sources a b { color: var(--text); font-weight: 600; }
+.strategy-sources a:hover { color: var(--accent-2); } .strategy-sources a:hover b { color: var(--accent-2); }
+.strategy-sources a svg { display: inline; vertical-align: -1px; margin-left: 4px; color: var(--text-3); }
+.strategy-honest { margin: 2px 0 0; display: grid; grid-template-columns: 1fr; gap: 2px; font-size: var(--fs-12); line-height: 1.45; }
+.strategy-honest dt { color: var(--text-3); font-weight: 600; font-size: var(--fs-11); margin-top: 4px; }
+.strategy-honest dd { margin: 0; color: var(--text-2); }
+
+/* Controls */
+.strategy-ctl { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; font-size: var(--fs-12); color: var(--text-2); }
+.strategy-ctl output { font: var(--type-data); color: var(--text); min-width: 40px; text-align: right; }
+.strategy-ctl .slider { grid-column: 1 / -1; }
+.strategy-ctl small { grid-column: 1 / -1; color: var(--text-3); font-size: var(--fs-11); line-height: 1.35; margin-top: -2px; }
+.strategy-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+/* Small readouts */
+.strategy-readouts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--line); border-radius: var(--r-2); background: var(--bg-2); }
+.strategy-readouts.two { grid-template-columns: repeat(2, 1fr); }
+.strategy-readouts > div { padding: 8px 10px 9px; border-left: 1px solid var(--line); min-width: 0; }
+.strategy-readouts > div:first-child { border-left: 0; }
+.strategy-readouts b { display: block; font: 500 var(--fs-18)/1.1 var(--mono); letter-spacing: -0.03em; color: var(--text); white-space: nowrap; }
+.strategy-readouts b small { font: 500 var(--fs-11)/1 var(--font); color: var(--text-3); margin-left: 2px; letter-spacing: 0; }
+.strategy-readouts span { display: block; margin-top: 4px; font-size: var(--fs-11); line-height: 1.3; color: var(--text-3); }
+
+/* The map stage (exhibits 1 and 2) */
+.strategy-map { position: relative; flex: 1; min-height: 0; overflow: hidden; background: radial-gradient(ellipse 70% 60% at 50% 40%, var(--bg-2), var(--bg-0) 75%); }
+.strategy-map canvas.gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; cursor: grab; }
+.strategy-map canvas.gl:active { cursor: grabbing; }
+.strategy-map canvas.gl:focus-visible { box-shadow: inset 0 0 0 2px var(--focus); }
+.strategy-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.strategy-lab { position: absolute; left: 0; top: 0; transform: translate(-50%, -100%); white-space: nowrap; font: 500 var(--fs-11)/1.2 var(--font); color: var(--text-2); padding: 2px 5px; background: rgba(6, 8, 10, 0.72); border: 1px solid var(--line-2); border-radius: var(--r-1); will-change: transform; }
+.strategy-lab::after { content: ""; position: absolute; left: 50%; top: 100%; width: 1px; height: var(--lead, 14px); background: var(--line-3); }
+.strategy-lab b { font: 500 var(--fs-11)/1 var(--mono); color: var(--text); margin-left: 5px; }
+.strategy-lab.room { background: transparent; border-color: transparent; color: var(--text-3); padding: 0; }
+.strategy-lab.room::after { display: none; }
+.strategy-lab.room b { display: block; margin: 2px 0 0; text-align: center; color: var(--text-2); }
+.strategy-lab.best { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+.strategy-lab.best b { color: var(--accent-ink); }
+.strategy-lab.best::after { background: var(--accent); }
+.strategy-lab.stop { border-color: var(--line-3); color: var(--text); }
+.strategy-lab.lead { border-color: var(--warn-line); color: var(--warn); }
+.strategy-lab.person { border-color: var(--person-line); color: var(--person); }
+.strategy-lab.truth { border-color: var(--sim-line); border-style: dashed; color: var(--sim); }
+.strategy-lab.is-hidden { visibility: hidden; }
+.strategy-hud { position: absolute; z-index: 2; display: flex; gap: 8px; align-items: center; }
+.strategy-hud.tl { left: 12px; top: 12px; } .strategy-hud.tr { right: 12px; top: 12px; } .strategy-hud.bl { left: 12px; bottom: 12px; } .strategy-hud.br { right: 12px; bottom: 12px; }
+.strategy-hud.col { flex-direction: column; align-items: stretch; }
+.strategy-legend { padding: 8px 10px; border-radius: var(--r-2); font-size: var(--fs-11); color: var(--text-2); display: flex; flex-direction: column; gap: 5px; min-width: 196px; }
+.strategy-legend .ramp { height: 8px; border-radius: 1px; }
+.strategy-legend .scale { display: flex; justify-content: space-between; font: 400 10.5px/1 var(--mono); color: var(--text-3); }
+.strategy-probe { padding: 8px 10px; border-radius: var(--r-2); font-size: var(--fs-12); color: var(--text-2); min-width: 220px; max-width: 280px; display: flex; flex-direction: column; gap: 3px; }
+.strategy-probe b { color: var(--text); font-weight: 600; }
+.strategy-probe .num { color: var(--text); }
+.strategy-nomap { position: absolute; inset: 0; display: grid; place-items: center; }
+
+/* Ranked stops */
+.strategy-rank { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--line); border-radius: var(--r-2); background: var(--bg-2); overflow: hidden; }
+.strategy-rank button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 2px 8px; align-items: center; width: 100%; padding: 7px 10px; border-bottom: 1px solid var(--line); cursor: pointer; transition: background-color var(--t-fast) var(--ease); }
+.strategy-rank button:last-child { border-bottom: 0; }
+.strategy-rank button:hover, .strategy-rank button[aria-pressed="true"] { background: var(--bg-3); }
+.strategy-rank button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.strategy-rank .k { grid-row: span 2; width: 20px; height: 20px; display: grid; place-items: center; font: 600 var(--fs-11)/1 var(--mono); color: var(--accent); border: 1px solid var(--accent-line); border-radius: var(--r-1); background: var(--accent-soft); }
+.strategy-rank button.fixed .k { color: var(--text-2); border-color: var(--line-3); background: var(--bg-3); }
+.strategy-rank .where { font-size: var(--fs-12); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.strategy-rank .val { font: var(--type-data); color: var(--text); text-align: right; }
+.strategy-rank .sub { font-size: var(--fs-11); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.strategy-rank .bar { grid-column: 3; width: 72px; height: 3px; background: var(--bg-5); border-radius: 1px; overflow: hidden; justify-self: end; }
+.strategy-rank .bar i { display: block; height: 100%; background: var(--accent); }
+.strategy-rank button.fixed .bar i { background: var(--text-3); }
+
+/* Tables of measured results */
+.strategy-table { width: 100%; border-collapse: collapse; font-size: var(--fs-12); }
+.strategy-table th { text-align: left; font: 600 var(--fs-11)/1.25 var(--font); color: var(--text-3); padding: 6px 8px; border-bottom: 1px solid var(--line-2); vertical-align: bottom; }
+.strategy-table th.num, .strategy-table td.num { text-align: right; }
+.strategy-table td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; color: var(--text-2); }
+.strategy-table td.num { font: var(--type-data); color: var(--text); white-space: nowrap; }
+.strategy-table td.num small { color: var(--text-3); font-weight: 400; margin-left: 4px; }
+.strategy-table tr:last-child td { border-bottom: 0; }
+.strategy-table td:first-child { color: var(--text); font-weight: 500; }
+.strategy-table .up { color: var(--ok); } .strategy-table .down { color: var(--danger); } .strategy-table .flat { color: var(--text-3); }
+.strategy-key { display: inline-block; width: 9px; height: 9px; border-radius: 1px; margin-right: 7px; vertical-align: -1px; background: var(--c, var(--text-3)); }
+
+@media (max-width: 1500px) {
+  .strategy-ex { grid-template-columns: 280px minmax(0, 1fr) 320px; }
+  .strategy-ex.wide-side { grid-template-columns: 280px minmax(0, 1fr) 372px; }
+  .strategy-head p { font-size: var(--fs-12); }
+}

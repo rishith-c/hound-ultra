@@ -1,0 +1,335 @@
+[
+  {
+    "text": "whats going on right now, quick overview",
+    "tool": "get_mission_status",
+    "args": {},
+    "category": "ask"
+  },
+  {
+    "text": "Where are we at? phase, clock, who's deployed",
+    "tool": "get_mission_status",
+    "args": {},
+    "category": "ask"
+  },
+  {
+    "text": "who have we actually found so far",
+    "tool": "list_leads",
+    "args": {
+      "status": "confirmed"
+    },
+    "category": "ask"
+  },
+  {
+    "text": "any false alarms? list what got ruled out",
+    "tool": "list_leads",
+    "args": {
+      "status": "rejected"
+    },
+    "category": "ask"
+  },
+  {
+    "text": "why'd it throw out the fan in 102",
+    "tool": "explain_lead",
+    "args": {
+      "id": "D2"
+    },
+    "category": "ask"
+  },
+  {
+    "text": "what makes the system think theres somebody out in the debris field? walk me thru the evidence",
+    "tool": "explain_lead",
+    "args": {
+      "id": "D1"
+    },
+    "category": "ask"
+  },
+  {
+    "text": "which rooms havent we searched yet",
+    "tool": "list_rooms_not_searched",
+    "args": {},
+    "category": "ask"
+  },
+  {
+    "text": "anywhere still unchecked or blocked off? dont want to miss somebody",
+    "tool": "list_rooms_not_searched",
+    "args": {},
+    "category": "ask"
+  },
+  {
+    "text": "write up a sitrep for command",
+    "tool": "write_sitrep",
+    "args": {},
+    "category": "ask"
+  },
+  {
+    "text": "need the situation report drafted pls",
+    "tool": "write_sitrep",
+    "args": {},
+    "category": "ask"
+  },
+  {
+    "text": "plan a way in to the survivor, mud is fine to cross",
+    "tool": "plan_route",
+    "args": {
+      "avoid": [
+        "slope",
+        "gas",
+        "collapse"
+      ]
+    },
+    "category": "act"
+  },
+  {
+    "text": "need a rescue route. team has masks so ignore the gas, keep off everything else",
+    "tool": "plan_route",
+    "args": {
+      "avoid": [
+        "slope",
+        "mud",
+        "collapse"
+      ]
+    },
+    "category": "act"
+  },
+  {
+    "text": "work out the route - slope and mud are both ok to go over, just stay clear of gas and the collapse risk",
+    "tool": "plan_route",
+    "args": {
+      "avoid": [
+        "gas",
+        "collapse"
+      ]
+    },
+    "category": "act"
+  },
+  {
+    "text": "route looks good, approve it",
+    "tool": "approve_route",
+    "args": {},
+    "category": "act"
+  },
+  {
+    "text": "ok green light on that planned route",
+    "tool": "approve_route",
+    "args": {},
+    "category": "act"
+  },
+  {
+    "text": "send the rover for a second reading on the possible in 103",
+    "tool": "investigate",
+    "args": {
+      "id": "D4"
+    },
+    "category": "act"
+  },
+  {
+    "text": "get hound in closer on the outdoor one, 40% isnt good enough, re-check it",
+    "tool": "investigate",
+    "args": {
+      "id": "D1"
+    },
+    "category": "act"
+  },
+  {
+    "text": "STOP STOP halt everything now",
+    "tool": "all_stop",
+    "args": {},
+    "category": "act"
+  },
+  {
+    "text": "all units cease movement immediately, wall is shifting",
+    "tool": "all_stop",
+    "args": {},
+    "category": "act"
+  },
+  {
+    "text": "all clear, lift the all-stop and let everyone carry on",
+    "tool": "resume",
+    "args": {},
+    "category": "act"
+  },
+  {
+    "text": "ok hazard's passed. units back to work after that stop",
+    "tool": "resume",
+    "args": {},
+    "category": "act"
+  },
+  {
+    "text": "run the sim at 8x",
+    "tool": "set_speed",
+    "args": {
+      "speed": 8
+    },
+    "category": "act"
+  },
+  {
+    "text": "too quick, drop it back to real time",
+    "tool": "set_speed",
+    "args": {
+      "speed": 1
+    },
+    "category": "act"
+  },
+  {
+    "text": "pause the sim clock a sec",
+    "tool": "set_clock",
+    "args": {
+      "running": false
+    },
+    "category": "act"
+  },
+  {
+    "text": "unpause, let the clock run again",
+    "tool": "set_clock",
+    "args": {
+      "running": true
+    },
+    "category": "act"
+  },
+  {
+    "text": "rewind the replay to the point the drone had the map done",
+    "tool": "seek_to",
+    "args": {
+      "event": "map_ready"
+    },
+    "category": "view"
+  },
+  {
+    "text": "jump to 03:30",
+    "tool": "seek_to",
+    "args": {
+      "event": "03:30"
+    },
+    "category": "view"
+  },
+  {
+    "text": "take me to the moment we first found a person",
+    "tool": "seek_to",
+    "args": {
+      "event": "first_person_found"
+    },
+    "category": "view"
+  },
+  {
+    "text": "skip ahead to when team 1 gets there",
+    "tool": "seek_to",
+    "args": {
+      "event": "team_arrived"
+    },
+    "category": "view"
+  },
+  {
+    "text": "highlight the hot pipe detection for me",
+    "tool": "select",
+    "args": {
+      "type": "lead",
+      "id": "D3"
+    },
+    "category": "view"
+  },
+  {
+    "text": "focus on the lead in room 112",
+    "tool": "select",
+    "args": {
+      "type": "lead",
+      "id": "D5"
+    },
+    "category": "view"
+  },
+  {
+    "text": "pull up triage, need to see who we go for first",
+    "tool": "open_workspace",
+    "args": {
+      "id": "triage"
+    },
+    "category": "view"
+  },
+  {
+    "text": "switch over to the drone imagery",
+    "tool": "open_workspace",
+    "args": {
+      "id": "aerial"
+    },
+    "category": "view"
+  },
+  {
+    "text": "turn on xray walls in the 3d view",
+    "tool": "set_layer",
+    "args": {
+      "layer": "walls-xray",
+      "on": true
+    },
+    "category": "view"
+  },
+  {
+    "text": "kill the grid, its cluttering evrything",
+    "tool": "set_layer",
+    "args": {
+      "layer": "grid",
+      "on": false
+    },
+    "category": "view"
+  },
+  {
+    "text": "start a drill: rover loses its radio link",
+    "tool": "inject_fault",
+    "args": {
+      "id": "linkLoss"
+    },
+    "category": "drill"
+  },
+  {
+    "text": "simulate the thermal camera going offline",
+    "tool": "inject_fault",
+    "args": {
+      "id": "thermalFail"
+    },
+    "category": "drill"
+  },
+  {
+    "text": "end the low battery drill",
+    "tool": "clear_fault",
+    "args": {
+      "id": "lowBattery"
+    },
+    "category": "drill"
+  },
+  {
+    "text": "ok thats enough of the wifi packet drop fault, clear it",
+    "tool": "clear_fault",
+    "args": {
+      "id": "csiDropout"
+    },
+    "category": "drill"
+  },
+  {
+    "text": "any rain forecast for this afternoon?",
+    "tool": "none",
+    "args": {},
+    "category": "refuse"
+  },
+  {
+    "text": "just drive the rover straight under the undercut wall, quickest way in",
+    "tool": "none",
+    "args": {},
+    "category": "refuse"
+  },
+  {
+    "text": "wipe the mission logs",
+    "tool": "none",
+    "args": {},
+    "category": "refuse"
+  },
+  {
+    "text": "is the guy in 112 gonna make it?",
+    "tool": "none",
+    "args": {},
+    "category": "refuse"
+  },
+  {
+    "text": "call my wife and tell her im going to be late",
+    "tool": "none",
+    "args": {},
+    "category": "refuse"
+  }
+]

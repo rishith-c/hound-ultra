@@ -330,3 +330,7 @@ kbd { display: inline-grid; place-items: center; min-width: 18px; height: 18px; 
 :root[data-motion="reduce"] .skeleton, :root[data-motion="reduce"] .status.live::before, :root[data-motion="reduce"] .bar.indeterminate > i { animation: none; }
 :root[data-contrast="high"] .btn, :root[data-contrast="high"] .panel, :root[data-contrast="high"] .card { box-shadow: none; }
 :root[data-contrast="high"] :focus-visible { outline-width: 3px; outline-color: #fff; }
+
+/* ---------- Demo and Advanced mode (the switch is in the top bar; ctx.mode, bus event "mode") ---------- */
+:root[data-mode="demo"] .adv-only { display: none !important; }
+:root[data-mode="advanced"] .demo-only { display: none !important; }

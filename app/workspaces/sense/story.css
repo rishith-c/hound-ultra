@@ -1,0 +1,107 @@
+/* Why this network (story.js): an evidence ledger, one row per design decision. Tokens only. */
+.sense-why { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--bg-0); container-type: size; }
+.sense-why-head { flex: none; display: flex; align-items: center; gap: var(--s-4); padding: 0 var(--s-5); min-height: 40px; border-bottom: 1px solid var(--line-2); }
+.sense-why-head h3 { font: var(--type-heading); white-space: nowrap; }
+.sense-why-cols { flex: 1; min-width: 0; color: var(--text-3); font-size: var(--fs-12); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sense-why-note { flex: none; padding: 4px 10px; align-items: center; }
+.sense-why-note svg { flex: none; }
+
+.sense-why-rows { flex: 1; min-height: 0; overflow: auto; display: grid; grid-template-rows: repeat(5, minmax(138px, 1fr)); }
+.sense-why-row { display: grid; grid-template-columns: minmax(286px, 21.5%) minmax(0, 1fr) minmax(224px, 16%); column-gap: var(--s-6); padding: 7px var(--s-5) 6px; border-bottom: 1px solid var(--line); min-height: 0; position: relative; transition: background var(--t-med) var(--ease); }
+.sense-why-row:last-child { border-bottom: 0; }
+.sense-why-row:hover .sense-why-n, .sense-why-row:focus-within .sense-why-n { color: var(--text); }
+
+/* left: the decision */
+.sense-why-claim { display: grid; grid-template-columns: 30px minmax(0, 1fr); min-height: 0; }
+.sense-why-n { font: 400 var(--fs-28)/0.9 var(--font-display); font-variant-numeric: lining-nums; color: var(--text-3); transition: color var(--t-med) var(--ease); }
+.sense-why-text { display: flex; flex-direction: column; gap: 5px; min-height: 0; align-items: flex-start; }
+.sense-why-text h3 { font: 400 19px/1.14 var(--font-display); letter-spacing: 0; color: var(--text); text-wrap: balance; }
+.sense-why-text p { color: var(--text-2); font-size: var(--fs-12); line-height: 1.38; text-wrap: pretty; }
+.sense-why-text .btn { margin-top: 2px; }
+.sense-why-text .btn svg { width: 14px; height: 14px; }
+
+/* middle: the evidence */
+.sense-why-figs { display: flex; gap: var(--s-6); min-width: 0; min-height: 0; }
+.sense-why-fig { margin: 0; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 5px; }
+.sense-why-fig figcaption { font-size: var(--fs-12); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: none; }
+.sense-why-fig figcaption .num { font-weight: 600; }
+.sense-why-plot { position: relative; flex: 1; min-height: 0; min-width: 0; overflow: hidden; }
+.sense-why-plot svg { position: absolute; left: 0; top: 0; display: block; overflow: visible; }
+.sense-why-plotbtn { position: absolute; right: 0; top: 0; min-height: 24px; }
+.sense-why-plotbtn svg { position: static; width: 13px; height: 13px; }
+
+/* right: the number, and its caveat */
+.sense-why-key { display: flex; flex-direction: column; gap: 3px; min-height: 0; border-left: 1px solid var(--line); padding-left: var(--s-4); }
+.sense-why-big { font: 400 var(--fs-32)/1 var(--font-display); letter-spacing: 0; font-variant-numeric: lining-nums tabular-nums; color: var(--text); white-space: nowrap; display: flex; align-items: baseline; }
+.sense-why-from { color: var(--text-3); }
+.sense-why-arrow { color: var(--text-3); font: 400 var(--fs-16)/1 var(--font); margin: 0 7px; transform: translateY(-5px); }
+.sense-why-biglab { color: var(--text-2); font-size: var(--fs-12); line-height: 1.35; text-wrap: pretty; }
+.sense-why-caveat { margin-top: auto; color: var(--text-3); font-size: var(--fs-12); line-height: 1.3; text-wrap: pretty; }
+.sense-why-caveat b { color: var(--warn); font-weight: 600; white-space: nowrap; }
+.sense-why-caveat b svg { vertical-align: -1.5px; margin-right: 4px; }
+
+/* chart marks. One hue per meaning. */
+.sense-why svg text { font: 400 11px var(--font); font-variant-numeric: tabular-nums; fill: var(--text-3); }
+.sense-why svg text.sense-why-ax { fill: var(--text-3); }
+.sense-why svg text.sense-why-ax-on { fill: var(--text); }
+.sense-why svg text.sense-why-lb { fill: var(--text-2); }
+.sense-why svg text.sense-why-lb tspan { fill: var(--text); }
+.sense-why svg text.sense-why-lb-n { fill: var(--text); font-weight: 600; }
+.sense-why svg text.sense-why-val { fill: var(--text); font-weight: 600; }
+.sense-why svg text.sense-why-val tspan { fill: var(--text-3); font-weight: 400; }
+.sense-why svg text.sense-why-val-on { fill: var(--accent-ink); font-weight: 700; }
+.sense-why svg text.sense-why-t-ok { fill: var(--ok); }
+.sense-why svg text.sense-why-t-danger { fill: var(--danger); }
+.sense-why svg text.sense-why-t-person { fill: var(--person); }
+.sense-why svg text.sense-why-t-warn { fill: var(--warn); }
+.sense-why-pt { fill: var(--text); stroke: var(--bg-0); stroke-width: 1.5; }
+.sense-why-pt-mid { fill: var(--text-2); stroke: var(--bg-0); stroke-width: 1.5; }
+.sense-why-pt-person { fill: var(--person); stroke: var(--bg-0); stroke-width: 1.5; }
+.sense-why-f-net { fill: var(--text-3); }
+.sense-why-f-mid { fill: var(--text-2); }
+.sense-why-f-ink { fill: var(--text); }
+.sense-why-f-frame { fill: var(--bg-3); stroke: var(--line-2); }
+.sense-why-f-track { fill: var(--bg-3); }
+.sense-why-f-ok { fill: var(--ok); fill-opacity: 0.55; }
+.sense-why-f-danger { fill: var(--danger); }
+.sense-why-f-person { fill: var(--person); }
+.sense-why-f-person-still { fill: var(--person); fill-opacity: 0.32; }
+.sense-why-f-room { fill: var(--line-2); }
+.sense-why-f-room-fan { fill: var(--text-3); }
+.sense-why-f-noise { fill: var(--bg-3); }
+.sense-why-band { fill: var(--danger-soft); }
+.sense-why-wedge { fill: var(--text); fill-opacity: 0.045; stroke: var(--line-2); stroke-width: 1; stroke-dasharray: 2 3; }
+.sense-why-dot { fill: var(--text-2); fill-opacity: 0.85; }
+.sense-why-prior { fill: var(--bg-0); stroke: var(--text); stroke-width: 1.5; }
+.sense-why-z-unlikely { fill: var(--bg-4); }
+.sense-why-z-possible { fill: var(--warn); fill-opacity: 0.3; }
+.sense-why-z-confirmed { fill: var(--person); fill-opacity: 0.5; }
+.sense-why-nofill { fill: none; }
+.sense-why-s-bg { stroke: var(--bg-0); stroke-width: 1; }
+.sense-why-s-grid { stroke: var(--line); stroke-width: 1; shape-rendering: crispEdges; }
+.sense-why-s-line2 { stroke: var(--line-2); stroke-width: 1; shape-rendering: crispEdges; }
+.sense-why-s-thr { stroke: var(--text); stroke-width: 1; stroke-dasharray: 3 3; shape-rendering: crispEdges; }
+.sense-why-s-ink { stroke: var(--text); stroke-width: 1.5; }
+.sense-why-s-mid { stroke: var(--text-2); stroke-width: 1.25; }
+.sense-why-s-whisk { stroke: var(--text-2); stroke-width: 1.5; }
+.sense-why-s-rug { stroke: var(--text-3); stroke-width: 1; }
+.sense-why-s-noise { stroke: var(--text-3); stroke-width: 2.5; }
+.sense-why-s-ok { stroke: var(--ok); fill: none; stroke-width: 1; }
+.sense-why-s-danger { stroke: var(--danger); fill: none; stroke-width: 1; }
+.sense-why-s-person { stroke: var(--person); stroke-width: 1.5; }
+
+@container (max-width: 1340px) { .sense-why-cols { visibility: hidden; } }
+/* more room: larger type for the numbers */
+@container (min-height: 820px) {
+  .sense-why-row { padding-top: 12px; padding-bottom: 11px; }
+  .sense-why-big { font-size: var(--fs-40); }
+  .sense-why-text h3 { font-size: var(--fs-20); }
+  .sense-why-fig figcaption { font-size: var(--fs-13); }
+  .sense-why-text p { font-size: var(--fs-13); }
+}
+
+/* rows arrive in order, once */
+@keyframes sense-why-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.sense-why-anim .sense-why-row { animation: sense-why-in var(--t-med) var(--ease) both; animation-delay: calc(var(--i) * 45ms); }
+@media (prefers-reduced-motion: reduce) { .sense-why-anim .sense-why-row { animation: none; } }
+:root[data-motion="reduce"] .sense-why-anim .sense-why-row { animation: none; }

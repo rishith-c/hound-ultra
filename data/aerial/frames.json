@@ -1,0 +1,36 @@
+{
+ "note": "Frames shown in the Drone imagery workspace besides the ones it draws itself. \"asked\" is what the image generator was asked for (assets/img/gen/README.md); nobody has verified the pictures against it.",
+ "generated": [
+  {
+   "name": "Two people on rubble",
+   "src": "assets/img/gen/aerial-01.jpg",
+   "asked": "two small people, one in red sitting, one in blue waving"
+  },
+  {
+   "name": "Yellow raincoat",
+   "src": "assets/img/gen/aerial-02.jpg",
+   "asked": "one person in a yellow raincoat beside a collapsed tin roof; an orange tarp"
+  },
+  {
+   "name": "Decoys only",
+   "src": "assets/img/gen/aerial-03.jpg",
+   "asked": "no people; a blue barrel and red cloth as decoys"
+  },
+  {
+   "name": "Village courtyard",
+   "src": "assets/img/gen/aerial-04.jpg",
+   "asked": "three small people waving in a courtyard"
+  },
+  {
+   "name": "Hard to spot",
+   "src": "assets/img/gen/aerial-05.jpg",
+   "asked": "one person in mud-covered grey-brown clothing"
+  },
+  {
+   "name": "Village, after the flood",
+   "src": "assets/img/gen/aerial-after.jpg",
+   "before": "assets/img/gen/aerial-before.jpg",
+   "asked": "six buildings by a river bend; two collapsed after the flood"
+  }
+ ]
+}

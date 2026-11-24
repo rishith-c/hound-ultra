@@ -1,0 +1,125 @@
+/* Test-set view (evalview.js). One instrument: a shared alarm threshold over the 955 simulated test windows. Tokens only. */
+.sense-ev { flex: 1; min-height: 0; display: grid; grid-template-columns: clamp(276px, 21.5%, 316px) minmax(0, 1fr) clamp(304px, 24%, 348px); background: var(--bg-0); }
+.sense-ev-side { display: flex; flex-direction: column; gap: var(--s-4); padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4); background: var(--bg-1); border-right: 1px solid var(--line); min-height: 0; min-width: 0; overflow: hidden auto; }
+.sense-ev-side-r { border-right: 0; border-left: 1px solid var(--line); padding: var(--s-3) var(--s-4) var(--s-3) var(--s-3); }
+.sense-ev-fig { display: flex; flex-direction: column; gap: var(--s-1); min-height: 0; min-width: 0; }
+.sense-ev-fig + .sense-ev-fig { border-top: 1px solid var(--line); padding-top: var(--s-3); }
+.sense-ev-fig-roc { flex: none; }
+.sense-ev-side-r .sense-ev-fig { flex: none; }
+.sense-ev-fig-trade { flex: 1; }
+.sense-ev-fig-trade .sense-ev-svgbox { flex: 1; min-height: 170px; }
+.sense-ev-svgbox { position: relative; min-width: 0; margin-top: var(--s-1); }
+.sense-ev-svg { display: block; overflow: visible; touch-action: none; user-select: none; -webkit-user-select: none; }
+
+/* chart marks */
+.sense-ev-grid { stroke: var(--line); stroke-width: 1; shape-rendering: crispEdges; }
+.sense-ev-diag { stroke: var(--line-2); stroke-width: 1; stroke-dasharray: 2 4; }
+.sense-ev-line { fill: none; stroke-width: 1.75; stroke-linejoin: round; stroke-linecap: round; }
+.sense-ev-l-moving { stroke: var(--person); stroke-width: 2; }
+.sense-ev-l-still { stroke: var(--person); stroke-dasharray: 5 3; stroke-linecap: butt; }
+.sense-ev-l-all { stroke: var(--text-2); stroke-width: 1.25; }
+.sense-ev-l-fa { stroke: var(--warn); }
+.sense-ev-lab { font: 500 var(--fs-11)/1 var(--font); fill: var(--text-2); }
+.sense-ev-lab .num { fill: var(--text); font-weight: 600; }
+.sense-ev-l-moving-t, .sense-ev-l-still-t { fill: var(--person); }
+.sense-ev-l-fa-t { fill: var(--warn); }
+.sense-ev-halo { paint-order: stroke; stroke: var(--bg-1); stroke-width: 4px; stroke-linejoin: round; }
+.sense-ev-rover { fill: var(--bg-1); stroke: var(--text-2); stroke-width: 1.25; }
+.sense-ev-roverline { stroke: var(--text-2); stroke-width: 1; stroke-dasharray: 3 3; }
+.sense-ev-guide { stroke: var(--accent); stroke-width: 1; opacity: 0.7; }
+.sense-ev-guide-strong { stroke-width: 1.5; opacity: 1; }
+.sense-ev-grip { fill: var(--accent); stroke: var(--bg-1); stroke-width: 1.5; }
+.sense-ev-op { fill: var(--accent); stroke: var(--bg-1); stroke-width: 2; }
+.sense-ev-flag { font-size: var(--fs-11); fill: var(--accent); font-weight: 600; }
+.sense-ev-val .num { fill: var(--text); font-weight: 600; }
+.sense-ev-hit { fill: transparent; cursor: ew-resize; }
+
+/* the hero */
+.sense-ev-hero { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-3) var(--s-4); min-width: 0; min-height: 0; }
+.sense-ev-h { font: 600 var(--fs-16)/1.3 var(--font); letter-spacing: -0.01em; text-wrap: balance; }
+.sense-ev-herohead .sense-figsub { margin-top: var(--s-1); }
+.sense-ev-key { display: inline-flex; align-items: center; gap: 4px; margin-right: var(--s-2); color: var(--text-2); white-space: nowrap; }
+.sense-ev-key:last-of-type { margin-right: var(--s-3); }
+.sense-ev-glyph { flex: none; vertical-align: -1px; }
+.sense-ev-glyph circle { fill: none; stroke-width: 1.6; }
+.sense-ev-g-dot-person circle { fill: var(--person); stroke: none; }
+.sense-ev-g-dot-warn circle { fill: var(--warn); stroke: none; }
+.sense-ev-g-ring-danger circle { stroke: var(--danger); }
+.sense-ev-g-ring-ok circle { stroke: var(--ok); }
+.sense-ev-ctl { display: flex; align-items: baseline; gap: var(--s-3); min-height: 34px; flex-wrap: nowrap; }
+.sense-ev-ctl .btn { align-self: center; }
+.sense-ev-ctl-name { color: var(--text-2); font-size: var(--fs-13); white-space: nowrap; }
+.sense-ev-value { font-size: var(--fs-28); font-weight: 600; line-height: 1; color: var(--accent); letter-spacing: -0.02em; min-width: 4ch; }
+.sense-ev-offset { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); font-size: var(--fs-12); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.sense-ev-offset svg { align-self: center; }
+.sense-ev-offset.is-rover { color: var(--text); }
+.sense-ev-plot { position: relative; flex: 1; min-height: 300px; }
+.sense-ev-canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: ew-resize; touch-action: none; }
+.sense-ev-range { position: absolute; top: 0; height: 20px; margin: 0; padding: 0; -webkit-appearance: none; appearance: none; background: transparent; cursor: ew-resize; }
+.sense-ev-range::-webkit-slider-runnable-track { height: 2px; border-radius: 1px; background: var(--line-2); }
+.sense-ev-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 20px; margin-top: -9px; border-radius: var(--r-1); border: 2px solid var(--bg-0); background: linear-gradient(90deg, transparent 5px, var(--accent-ink) 5px, var(--accent-ink) 6px, transparent 6px, transparent 8px, var(--accent-ink) 8px, var(--accent-ink) 9px, transparent 9px) center / 100% 8px no-repeat, var(--accent); transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease); }
+.sense-ev-range:hover::-webkit-slider-thumb { transform: scaleY(1.1); }
+.sense-ev-range:focus-visible { outline: none; }
+.sense-ev-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--bg-0), 0 0 0 4px var(--accent); }
+.sense-ev-tip { position: absolute; z-index: 2; pointer-events: none; max-width: 300px; padding: var(--s-2) 10px; display: flex; flex-direction: column; gap: 3px; font-size: var(--fs-12); line-height: 1.4; color: var(--text-2); background: var(--bg-3); border: 1px solid var(--line-2); border-radius: var(--r-2); box-shadow: var(--shadow-1); }
+.sense-ev-tip[hidden] { display: none; }
+.sense-ev-tip-score { color: var(--text); font-size: var(--fs-13); }
+.sense-ev-tip-out { color: var(--text); }
+.sense-ev-tip-out .sense-ev-glyph { margin-right: 5px; }
+.sense-ev-reading { font-size: var(--fs-14); line-height: 1.45; color: var(--text-2); min-height: 60px; }
+.sense-ev-reading b { color: var(--text); font-weight: 600; }
+.sense-ev-reading-2 { display: block; font-size: var(--fs-12); color: var(--text-3); }
+
+/* the 2 by 2 table */
+.sense-ev-mx { width: 100%; border-collapse: separate; border-spacing: 4px; margin: var(--s-1) -4px 0; table-layout: fixed; }
+.sense-ev-mx thead th { font-size: var(--fs-12); font-weight: 500; color: var(--text-2); text-align: left; padding: 0 var(--s-2) 2px; }
+.sense-ev-mx thead td { width: 62px; }
+.sense-ev-mx thead th { white-space: nowrap; }
+.sense-ev-mx tbody th { font-size: var(--fs-12); font-weight: 500; color: var(--text-2); text-align: left; vertical-align: top; padding: var(--s-2) 0 0; line-height: 1.3; }
+.sense-ev-mx tbody th .num { display: block; color: var(--text-3); font-size: var(--fs-11); margin-top: 2px; }
+.sense-ev-cell { position: relative; vertical-align: top; padding: var(--s-2) var(--s-2) 7px; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-2); }
+.sense-ev-cell-top { display: flex; align-items: center; gap: 6px; }
+.sense-ev-cell-top b { font-size: var(--fs-28); font-weight: 600; line-height: 1.05; letter-spacing: -0.02em; color: var(--text); }
+.sense-ev-cell-name { font-size: var(--fs-12); font-weight: 600; margin-top: 3px; color: var(--text); }
+.sense-ev-cell-fn .sense-ev-cell-name { color: var(--danger); } .sense-ev-cell-fp .sense-ev-cell-name { color: var(--warn); }
+.sense-ev-cell-tp .sense-ev-cell-name { color: var(--person); } .sense-ev-cell-tn .sense-ev-cell-name { color: var(--ok); }
+.sense-ev-cell-means { font-size: var(--fs-11); color: var(--text-2); line-height: 1.3; min-height: 2.6em; }
+.sense-ev-share { height: 3px; border-radius: 2px; background: var(--bg-4); margin-top: 5px; overflow: hidden; }
+.sense-ev-share i { display: block; height: 100%; background: var(--text-3); border-radius: 2px; }
+.sense-ev-cell-fn .sense-ev-share i { background: var(--danger); } .sense-ev-cell-fp .sense-ev-share i { background: var(--warn); }
+.sense-ev-cell-tp .sense-ev-share i { background: var(--person); } .sense-ev-cell-tn .sense-ev-share i { background: var(--ok); }
+.sense-ev-delta { display: block; margin-top: 4px; font-size: var(--fs-11); color: var(--text-3); white-space: nowrap; }
+.sense-ev-acc { font-size: var(--fs-12); color: var(--text-2); margin-top: 2px; line-height: 1.45; min-height: 2.9em; }
+.sense-ev-acc b { color: var(--text); font-weight: 600; }
+.sense-ev-check { display: flex; gap: 6px; align-items: flex-start; font-size: var(--fs-12); line-height: 1.4; color: var(--text-2); margin-top: 2px; }
+.sense-ev-check svg { flex: none; margin-top: 2px; }
+.sense-ev-check.is-ok svg { color: var(--ok); } .sense-ev-check.is-bad { color: var(--danger); }
+.sense-ev-check .num { color: var(--text); }
+
+/* rates by situation */
+.sense-ev-split { display: flex; flex-direction: column; margin-top: var(--s-1); }
+.sense-ev-sp-head { display: flex; justify-content: space-between; font-size: var(--fs-12); font-weight: 600; color: var(--text); padding: 7px 0 2px; }
+.sense-ev-sp-head:first-child { padding-top: 2px; }
+.sense-ev-sp-head span + span { font-weight: 400; color: var(--text-3); font-size: var(--fs-11); display: none; }
+.sense-ev-sp-row, .sense-ev-sp-axis { display: grid; grid-template-columns: 88px 26px minmax(0, 1fr) 50px; column-gap: var(--s-2); align-items: center; height: 21px; }
+.sense-ev-sp-label { font-size: var(--fs-12); color: var(--text-2); white-space: nowrap; }
+.sense-ev-sp-n { font-size: var(--fs-11); color: var(--text-3); text-align: right; }
+.sense-ev-sp-val { font-size: var(--fs-12); color: var(--text); text-align: right; font-weight: 500; }
+.sense-ev-track { position: relative; height: 100%; background: linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0 / 25% 100%, linear-gradient(var(--line), var(--line)) 100% 0 / 1px 100% no-repeat; }
+.sense-ev-wh { position: absolute; top: 50%; height: 7px; margin-top: -3.5px; border: solid var(--text-2); border-width: 0 1px; background: linear-gradient(var(--text-2), var(--text-2)) 0 50% / 100% 1px no-repeat; min-width: 2px; }
+.sense-ev-pt { position: absolute; top: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: var(--person); box-shadow: 0 0 0 1.5px var(--bg-1); }
+.sense-ev-pt.is-alarm { background: var(--warn); border-radius: 1px; transform: rotate(45deg) scale(0.86); }
+.sense-ev-rv { position: absolute; top: 2px; bottom: 2px; width: 0; border-left: 1px dashed var(--text-3); }
+.sense-ev-sp-axis { height: 16px; align-items: start; }
+.sense-ev-sp-ticks { position: relative; display: block; height: 14px; font-size: var(--fs-11); color: var(--text-3); }
+.sense-ev-sp-ticks i { position: absolute; top: 2px; font-style: normal; transform: translateX(-50%); white-space: nowrap; }
+.sense-ev-sp-ticks i:nth-child(1) { left: 0; } .sense-ev-sp-ticks i:nth-child(2) { left: 25%; } .sense-ev-sp-ticks i:nth-child(3) { left: 50%; } .sense-ev-sp-ticks i:nth-child(4) { left: 75%; } .sense-ev-sp-ticks i:nth-child(5) { left: 100%; transform: translateX(-28%); }
+
+@media (max-height: 940px) {
+  .sense-ev-side { gap: var(--s-3); }
+  .sense-ev-cell-means { min-height: 0; }
+  .sense-ev-tall { display: none; }
+  .sense-ev-cell-top b { font-size: var(--fs-20); }
+  .sense-ev-sp-row { height: 19px; }
+  .sense-ev-h { font-size: var(--fs-14); }
+}

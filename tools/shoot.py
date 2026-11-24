@@ -11,18 +11,96 @@ Steps run in order after the page has loaded and `--wait` seconds have passed:
     --do type:'text'            type text into the focused element
     --do shot:path.png          save a screenshot now (viewport)
     --do size:1280x800          change the viewport
+    --do hover:'css selector'   move the real mouse over the first matching element
+    --do fps:3                  measure smoothness for 3 seconds: prints FPS mean, the slowest 5 %, the worst frame
 If --out is given, one final screenshot is saved there.
 
 Always printed at the end:
     ERRORS n                    console errors and uncaught exceptions (each listed above it as ERR ...)
 Exit code 1 if the page had errors and --strict was passed.
 
+You do not need a server. Any localhost URL (or a bare path such as /app/#/mission) is served from this repository by
+the tool itself, so old addresses like http://localhost:4391/ultra/app/#/sense keep working. --no-serve turns it off.
+Only a few browsers run at once across all agents (a lock); a call may wait for its turn. That is normal: do not retry.
+
 WebGL works: Chrome is started with the GPU enabled. Pages are loaded with timers un-throttled, so animations
 and requestAnimationFrame run at full speed even though no window is visible.
 
 Review at desktop sizes only (1680x1000 by default). Do not check phone layouts.
 """
-import argparse, base64, json, os, socket, struct, subprocess, sys, tempfile, time, shutil, urllib.request
+import argparse, base64, fcntl, functools, http.server, json, os, socket, struct, subprocess, sys, tempfile, threading, time, shutil
+import urllib.parse, urllib.request
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SLOTS = int(os.environ.get("HOUND_SHOOT_SLOTS", "5"))      # browsers allowed at once on this machine
+
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"
+    extensions_map = {**http.server.SimpleHTTPRequestHandler.extensions_map, ".js": "text/javascript", ".mjs": "text/javascript",
+                      ".glb": "model/gltf-binary", ".wasm": "application/wasm", ".json": "application/json", ".webp": "image/webp"}
+
+    def log_message(self, *a):
+        pass
+
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-store")
+        super().end_headers()
+
+    def copyfile(self, source, outputfile):
+        try:
+            super().copyfile(source, outputfile)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
+
+class Server(http.server.ThreadingHTTPServer):
+    request_queue_size = 256
+    daemon_threads = True
+
+    def handle_error(self, request, client_address):
+        pass
+
+
+def serve():
+    srv = Server(("127.0.0.1", 0), functools.partial(Handler, directory=ROOT))
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    return srv.server_address[1]
+
+
+def local_url(url):
+    """Serve localhost URLs and bare paths from this repository; leave everything else alone."""
+    if url.startswith("http"):
+        u = urllib.parse.urlsplit(url)
+        if u.hostname not in ("localhost", "127.0.0.1"):
+            return url
+        path = u.path[len("/ultra"):] if u.path.startswith("/ultra/") else u.path
+        rest = (path or "/") + (("?" + u.query) if u.query else "") + (("#" + u.fragment) if u.fragment else "")
+    else:
+        rest = "/" + url.lstrip("/")
+    return f"http://127.0.0.1:{serve()}{rest}"
+
+
+def slot():
+    """Wait for one of SLOTS lock files, so many agents cannot start dozens of browsers at once."""
+    folder = os.path.join(tempfile.gettempdir(), "hound-shoot-slots")
+    os.makedirs(folder, exist_ok=True)
+    while True:
+        for i in range(SLOTS):
+            f = open(os.path.join(folder, f"{i}.lock"), "w")
+            try:
+                fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                return f
+            except OSError:
+                f.close()
+        time.sleep(0.4)
+
+
+FPS_JS = """(async (sec) => { const t = []; let last = performance.now(); const end = last + sec * 1000;
+  await new Promise((done) => { const f = (now) => { t.push(now - last); last = now; now < end ? requestAnimationFrame(f) : done(); };
+  requestAnimationFrame((n) => { last = n; requestAnimationFrame(f); }); });
+  t.sort((a, b) => a - b); const mean = t.reduce((a, b) => a + b, 0) / t.length;
+  return { fps: +(1000 / mean).toFixed(1), slowest5pct_ms: +t[Math.floor(t.length * 0.95)].toFixed(1), worst_ms: +t[t.length - 1].toFixed(1), frames: t.length }; })"""
 
 CHROME = next((p for p in [
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -157,10 +235,13 @@ def main():
     ap.add_argument("--out")
     ap.add_argument("--do", action="append", default=[])
     ap.add_argument("--strict", action="store_true")
+    ap.add_argument("--no-serve", action="store_true", help="load localhost URLs from whatever server is already running there")
     ap.add_argument("--no-gpu", action="store_true", help="software rendering (slower, but works without a GPU)")
     a = ap.parse_args()
     if not CHROME:
         sys.exit("No Chrome-family browser found in /Applications.")
+    url = a.url if a.no_serve else local_url(a.url)
+    lock = slot()  # held until this process exits
     prof = tempfile.mkdtemp(prefix="hound-shoot-")
     gpu = ["--enable-unsafe-swiftshader"] if a.no_gpu else ["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"]
     proc = subprocess.Popen([CHROME, "--headless=new", "--remote-debugging-port=0", f"--user-data-dir={prof}", f"--window-size={a.w},{a.h}",
@@ -171,7 +252,7 @@ def main():
     code = 0
     try:
         port_file = os.path.join(prof, "DevToolsActivePort")
-        for _ in range(100):
+        for _ in range(400):
             if os.path.exists(port_file) and open(port_file).read().strip():
                 break
             time.sleep(0.1)
@@ -181,7 +262,7 @@ def main():
         for m in ("Page.enable", "Runtime.enable", "Log.enable"):
             page.call(m)
         page.call("Emulation.setDeviceMetricsOverride", {"width": a.w, "height": a.h, "deviceScaleFactor": a.dpr, "mobile": False})
-        page.call("Page.navigate", {"url": a.url})
+        page.call("Page.navigate", {"url": url})
         page.wait_event("Page.loadEventFired", 30)
         page.pump(a.wait)
         for step in a.do:
@@ -199,6 +280,15 @@ def main():
                     for t in ("mousePressed", "mouseReleased"):
                         page.call("Input.dispatchMouseEvent", {"type": t, "x": r[0], "y": r[1], "button": "left", "clickCount": 1})
                     page.pump(0.3)
+            elif kind == "hover":
+                r = page.eval(f"(()=>{{const e=document.querySelector({json.dumps(arg)});if(!e)return null;e.scrollIntoView({{block:'center'}});const b=e.getBoundingClientRect();return [b.x+b.width/2,b.y+b.height/2]}})()")
+                if not r:
+                    print("HOVER-MISS", arg)
+                else:
+                    page.call("Input.dispatchMouseEvent", {"type": "mouseMoved", "x": r[0], "y": r[1]})
+                page.pump(0.4)
+            elif kind == "fps":
+                print("FPS", json.dumps(page.eval(f"{FPS_JS}({float(arg)})")))
             elif kind == "key":
                 for t in ("keyDown", "keyUp"):
                     page.call("Input.dispatchKeyEvent", {"type": t, "key": arg, "text": arg if len(arg) == 1 and t == "keyDown" else ""})
@@ -219,6 +309,7 @@ def main():
         for e in page.errors:
             print("ERR", e)
         print("ERRORS", len(page.errors))
+        del lock
         if a.strict and page.errors:
             code = 1
     finally:

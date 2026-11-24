@@ -1,0 +1,130 @@
+/* Swarm workspace. Tokens only; see ui/tokens.css. */
+.swarm [hidden] { display: none !important; }
+.swarm { display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--bg-1); }
+.swarm-head { align-items: center; padding: 12px 20px 10px; border-bottom: 0; gap: 10px; }
+.swarm-head p { margin-top: 2px; max-width: none; }
+
+.swarm-bar { display: flex; align-items: flex-end; gap: var(--s-3); padding: 0 20px 10px; background: var(--bg-1); flex: none; flex-wrap: wrap; row-gap: 6px; border-bottom: 1px solid var(--line); }
+.swarm-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.swarm-field > span { font-size: var(--fs-11); color: var(--text-3); line-height: 1.2; white-space: nowrap; }
+.swarm-field .select { width: auto; min-height: 30px; padding-right: 6px; }
+.swarm-field .seg button { min-height: 24px; }
+.swarm-seed { display: flex; gap: 4px; }
+.swarm-seed .input { width: 64px; min-height: 30px; font-family: var(--mono); }
+.swarm-step { display: inline-flex; align-items: center; background: var(--bg-3); border: 1px solid var(--line-2); border-radius: var(--r-2); height: 30px; }
+.swarm-step button { width: 26px; height: 28px; border: 0; background: transparent; color: var(--text-2); cursor: pointer; font-size: 15px; border-radius: var(--r-1); }
+.swarm-step button:hover { background: var(--bg-4); color: var(--text); }
+.swarm-step button[disabled] { opacity: 0.35; cursor: not-allowed; }
+.swarm-step b { min-width: 22px; text-align: center; font: 600 var(--fs-13) var(--mono); }
+.swarm-step small { color: var(--text-3); font-size: var(--fs-11); padding: 0 8px 0 2px; white-space: nowrap; }
+.swarm-head .seg { flex: none; }
+@media (max-width: 1560px) { .swarm-step small { display: none; } .swarm-head p { font-size: var(--fs-12); } }
+.swarm-bar .btn { min-height: 30px; }
+.swarm-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: var(--s-2); padding: var(--s-2); }
+.swarm-left { display: grid; grid-template-rows: minmax(0, 1fr) 236px; gap: var(--s-2); min-width: 0; min-height: 0; }
+.swarm-stage { position: relative; border-radius: var(--r-3); overflow: hidden; background: var(--bg-0); border: 1px solid var(--line); min-height: 0; }
+.swarm-canvas { display: block; position: absolute; inset: 0; outline-offset: -2px; }
+.swarm-labels { position: absolute; overflow: hidden; pointer-events: none; }
+.swarm-label { position: absolute; left: 0; top: 0; font: 600 var(--fs-11)/1 var(--font); color: var(--text); padding: 3px 6px; border-radius: var(--r-1); background: var(--glass); border: 1px solid rgba(255,255,255,0.1); white-space: nowrap; will-change: transform; }
+.swarm-label::after { content: ""; position: absolute; left: 50%; top: 100%; width: 1px; height: var(--lift, 8px); background: var(--glass-line); background: color-mix(in srgb, currentColor 45%, transparent); }
+.swarm-l-robot { font-family: var(--mono); }
+.swarm-l-robot.sel { border-color: var(--accent); color: var(--accent); }
+.swarm-l-robot.warn, .swarm-l-lead.warn { color: var(--warn); border-color: rgba(255,178,36,0.4); }
+.swarm-l-robot.bad { color: var(--danger); border-color: rgba(255,77,94,0.5); }
+.swarm-l-robot.off, .swarm-l-lead.off { color: var(--text-3); opacity: 0.7; }
+.swarm-l-lead.person { color: var(--person); border-color: rgba(255,106,69,0.55); font-size: var(--fs-12); }
+.swarm-l-base { color: var(--text-2); }
+.swarm-badge { position: absolute; top: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; pointer-events: none; min-width: 168px; }
+.swarm-badge b { font: 600 var(--fs-13) var(--font); display: flex; align-items: center; gap: 6px; }
+.swarm-badge b i { font: 700 var(--fs-11) var(--mono); font-style: normal; width: 16px; height: 16px; border-radius: 4px; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); }
+.swarm-badge .swarm-big { font: 500 var(--fs-24)/1.1 var(--mono); letter-spacing: -0.03em; }
+.swarm-badge .swarm-big small { font: 500 var(--fs-12) var(--font); color: var(--text-3); letter-spacing: 0; margin-left: 6px; }
+.swarm-badge span { font-size: var(--fs-12); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.swarm-badge .bar { margin-top: 4px; height: 4px; }
+.swarm-badge.lead .swarm-win { color: var(--ok); }
+.swarm-tools { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.swarm-tools .seg { background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+.swarm-layers { padding: 6px 10px; display: flex; flex-direction: column; }
+.swarm-layers .check { min-height: 24px; font-size: var(--fs-12); color: var(--text-2); }
+.swarm-legend { position: absolute; left: 10px; bottom: 10px; padding: 6px 10px; font-size: var(--fs-11); pointer-events: none; max-width: calc(100% - 20px); }
+.swarm-legend i.hollow { border-radius: 50%; width: 9px; height: 9px; }
+.swarm-caption { position: absolute; left: 50%; bottom: 48px; transform: translateX(-50%); padding: 7px 12px; display: flex; gap: 10px; align-items: baseline; font-size: var(--fs-13); max-width: min(720px, calc(100% - 40px)); pointer-events: none; animation: swarm-cap var(--t-med) var(--ease); }
+.swarm-caption .num { color: var(--text-3); font-size: var(--fs-12); }
+.swarm-caption.alert { border-color: var(--person-line); } .swarm-caption.alert .num { color: var(--person); }
+.swarm-caption.ok .num { color: var(--ok); }
+@keyframes swarm-cap { from { opacity: 0; transform: translate(-50%, 6px); } }
+.swarm-tools .btn { background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+.swarm-link { border: 0; background: none; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; text-decoration-color: var(--accent-line); text-underline-offset: 3px; font: inherit; }
+.swarm-link:hover { color: var(--accent-2); }
+.swarm-meshbox { padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+.swarm-logbox { padding: 8px 12px; }
+.swarm-fleet .tabs { padding: 0 6px 0 4px; align-items: center; }
+.swarm-fleet .tabs .seg { margin-right: 2px; }
+.swarm-divider { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--line-2); pointer-events: none; }
+.swarm-dock { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--s-2); min-height: 0; }
+.swarm-dock .panel, .swarm-right .panel { min-height: 0; display: flex; flex-direction: column; }
+.swarm-right { display: flex; flex-direction: column; gap: var(--s-2); min-height: 0; }
+.swarm-right .panel { flex: none; }
+.swarm-right .panel.swarm-fleet { flex: 1 1 120px; }
+.swarm .panel-head { min-height: 36px; }
+.swarm .panel-body { padding: 8px 12px; }
+.swarm .panel-body.flush { padding: 0; }
+.swarm-chart { position: relative; flex: 1; min-height: 0; }
+.swarm-chart canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.swarm-kpi { width: 100%; border-collapse: collapse; font-size: var(--fs-12); table-layout: fixed; }
+.swarm-kpi th:first-child { width: 43%; overflow: hidden; text-overflow: ellipsis; }
+.swarm-kpi th { font-weight: 500; color: var(--text-3); text-align: right; padding: 2px 0 5px 8px; white-space: nowrap; }
+.swarm-kpi th:first-child, .swarm-kpi td:first-child { text-align: left; padding-left: 0; color: var(--text-2); }
+.swarm-kpi td { text-align: right; padding: 4px 0 4px 8px; font-size: 11.5px; font-family: var(--mono); font-variant-numeric: tabular-nums; border-top: 1px solid var(--line); white-space: nowrap; }
+.swarm-kpi td:first-child { font-family: var(--font); font-size: var(--fs-12); }
+.swarm-kpi th.live { color: var(--text); }
+.swarm-kpi th.live::before { content: ""; display: inline-block; width: 5px; height: 5px; border-radius: 1px; background: var(--accent); margin-right: 5px; vertical-align: 1px; }
+.swarm-kpi td.best { color: var(--ok); font-weight: 600; }
+.swarm-kpi td.none { color: var(--text-3); }
+.swarm-kpi td.part { color: var(--text-2); }
+.swarm-fleet .table th, .swarm-fleet .table td { padding-left: 7px; padding-right: 7px; white-space: nowrap; }
+.swarm-fleet .table td { padding-top: 4px; padding-bottom: 4px; }
+.swarm-fleet td.doing { color: var(--text-2); max-width: 104px; overflow: hidden; text-overflow: ellipsis; }
+.swarm-fleet td.doing.warn { color: var(--warn); } .swarm-fleet td.doing.bad { color: var(--danger); } .swarm-fleet td.doing.ok { color: var(--ok); }
+.swarm-fleet .id { font: 600 var(--fs-12) var(--mono); display: inline-flex; align-items: center; gap: 6px; }
+.swarm-fleet .id svg { color: var(--text-3); }
+.swarm-batt { display: inline-flex; align-items: center; gap: 6px; }
+.swarm-batt .meter { width: 34px; min-width: 34px; }
+.swarm-sig { display: inline-flex; align-items: flex-end; gap: 1.5px; height: 11px; margin-right: 5px; vertical-align: -1px; }
+.swarm-sig i { width: 3px; background: var(--bg-4); border-radius: 1px; } .swarm-sig i.on { background: var(--ok); } .swarm-sig.weak i.on { background: var(--warn); } .swarm-sig.none i { background: var(--danger); opacity: 0.6; }
+.swarm-mesh-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+.swarm-mesh-grid .kv { grid-template-columns: 1fr auto; }
+.swarm-mesh-grid .kv dt { padding-right: 6px; white-space: nowrap; }
+.swarm-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-12); }
+.swarm-log li { display: grid; grid-template-columns: 38px 1fr; gap: 6px; color: var(--text-2); line-height: 1.35; }
+.swarm-log li time { font-family: var(--mono); color: var(--text-3); }
+.swarm-log li.alert { color: var(--text); } .swarm-log li.alert time { color: var(--person); } .swarm-log li.warn time { color: var(--warn); } .swarm-log li.ok time { color: var(--ok); }
+.swarm-auction { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+.swarm-leadtabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.swarm-leadtabs .chip { height: 22px; }
+.swarm-leadline { font-size: var(--fs-12); color: var(--text-2); line-height: 1.4; }
+.swarm-leadline b { color: var(--text); }
+.swarm-bids th, .swarm-bids td { text-align: right; white-space: nowrap; padding-left: 6px !important; padding-right: 6px !important; }
+.swarm-bids th:first-child, .swarm-bids td:first-child { text-align: left; }
+.swarm-bids td { font-family: var(--mono); font-size: 11.5px; }
+.swarm-bids td:first-child { font-weight: 600; }
+.swarm-bids tr.won td { background: var(--accent-soft); color: var(--text); }
+.swarm-bids tr.won td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
+.swarm-bids tr.out td { color: var(--text-3); }
+.swarm-bids td.why { text-align: left; font-family: var(--font); }
+.swarm-bidbar { display: inline-block; width: 34px; height: 5px; background: var(--bg-4); border-radius: 3px; overflow: hidden; vertical-align: middle; margin-right: 6px; }
+.swarm-bidbar i { display: block; height: 100%; background: var(--accent); }
+.swarm-steps { display: flex; flex-wrap: wrap; gap: 4px; }
+.swarm-steps span { font-size: var(--fs-11); padding: 2px 6px; border-radius: var(--r-1); background: var(--bg-3); color: var(--text-2); white-space: nowrap; }
+.swarm-steps span.up { color: var(--person); } .swarm-steps span.down { color: var(--ok); } .swarm-steps span b { font-family: var(--mono); font-weight: 600; }
+.swarm-real { font-size: var(--fs-12); }
+
+.swarm-tabs { display: inline-flex; gap: 2px; }
+.swarm-bench { display: flex; flex-direction: column; gap: 6px; height: 100%; min-height: 0; }
+.swarm-bench p { font-size: var(--fs-12); color: var(--text-2); line-height: 1.4; }
+.swarm-bench p b { color: var(--text); }
+.swarm-dialog { width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 80px); overflow: auto; }
+.swarm-dialog h3 { margin-top: 6px; }
+.swarm-dialog .table td:last-child { color: var(--text-2); }
+.swarm-dialog p { color: var(--text-2); line-height: 1.5; }
+@media (max-width: 1500px) { .swarm-main { grid-template-columns: minmax(0, 1fr) 352px; } .swarm-fleet .table th:nth-child(n+5), .swarm-fleet .table td:nth-child(n+5) { display: none; } .swarm-left { grid-template-rows: minmax(0, 1fr) 216px; } .swarm-legend { gap: 9px; } }

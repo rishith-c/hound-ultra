@@ -1,0 +1,368 @@
+[
+  {
+    "text": "HOUND, status check, over",
+    "tool": "get_mission_status",
+    "args": {},
+    "category": "ask"
+  },
+  {
+    "text": "uh so who have we actually found for sure",
+    "tool": "list_leads",
+    "args": {
+      "status": "confirmed"
+    },
+    "category": "ask"
+  },
+  {
+    "text": "why u think its a person in 103?? only 58%",
+    "tool": "explain_lead",
+    "args": {
+      "id": "D4"
+    },
+    "category": "ask"
+  },
+  {
+    "text": "Request rescue route to the survivor, stay out of every hazard, over",
+    "tool": "plan_route",
+    "args": {
+      "avoid": [
+        "slope",
+        "mud",
+        "gas",
+        "collapse"
+      ]
+    },
+    "category": "act"
+  },
+  {
+    "text": "hang on hang on freeze the clock for a sec i need to read this",
+    "tool": "set_clock",
+    "args": {
+      "running": false
+    },
+    "category": "act"
+  },
+  {
+    "text": "let me see thru the walls",
+    "tool": "set_layer",
+    "args": {
+      "layer": "walls-xray",
+      "on": true
+    },
+    "category": "view"
+  },
+  {
+    "text": "ALL UNITS HALT, HALT, HALT",
+    "tool": "all_stop",
+    "args": {},
+    "category": "act"
+  },
+  {
+    "text": "um is she gonna make it the woman in one twelve do you think she'll survive",
+    "tool": "none",
+    "args": {},
+    "category": "refuse"
+  },
+  {
+    "text": "Any rooms not cleared yet, over",
+    "tool": "list_rooms_not_searched",
+    "args": {},
+    "category": "ask"
+  },
+  {
+    "text": "plan the way in for team, mud is ok they have boots, the rest stay away",
+    "tool": "plan_route",
+    "args": {
+      "avoid": [
+        "slope",
+        "gas",
+        "collapse"
+      ]
+    },
+    "category": "act"
+  },
+  {
+    "text": "can you uh get the rover to go take a second reading on that one out in the debris field",
+    "tool": "investigate",
+    "args": {
+      "id": "D1"
+    },
+    "category": "act"
+  },
+  {
+    "text": "Drill: simulate loss of radio link, over",
+    "tool": "inject_fault",
+    "args": {
+      "id": "linkLoss"
+    },
+    "category": "drill"
+  },
+  {
+    "text": "ok so um where are we at overall like whats the big picture right now",
+    "tool": "get_mission_status",
+    "args": {},
+    "category": "ask"
+  },
+  {
+    "text": "take me back to when the drone was finish with the map",
+    "tool": "seek_to",
+    "args": {
+      "event": "map_ready"
+    },
+    "category": "view"
+  },
+  {
+    "text": "Command, say reason the room 102 contact was thrown out, over",
+    "tool": "explain_lead",
+    "args": {
+      "id": "D2"
+    },
+    "category": "ask"
+  },
+  {
+    "text": "this is taking forever just put the sim on max speed",
+    "tool": "set_speed",
+    "args": {
+      "speed": 32
+    },
+    "category": "act"
+  },
+  {
+    "text": "ok im happy w/ that route, sign it off",
+    "tool": "approve_route",
+    "args": {},
+    "category": "act"
+  },
+  {
+    "text": "Where is DRONE-01, mark it for me, over",
+    "tool": "select",
+    "args": {
+      "type": "unit",
+      "id": "DRONE-01"
+    },
+    "category": "view"
+  },
+  {
+    "text": "delete all the logs from tonite",
+    "tool": "none",
+    "args": {},
+    "category": "refuse"
+  },
+  {
+    "text": "okay false alarm um you can let them all move again",
+    "tool": "resume",
+    "args": {},
+    "category": "act"
+  },
+  {
+    "text": "Need a sitrep written up for HQ, over",
+    "tool": "write_sitrep",
+    "args": {},
+    "category": "ask"
+  },
+  {
+    "text": "false alarms so far? what got ruled out",
+    "tool": "list_leads",
+    "args": {
+      "status": "rejected"
+    },
+    "category": "ask"
+  },
+  {
+    "text": "uh yeah work out a route for the team and you know the gas thing is a bad reading so ignore the gas but keep clear of everything else",
+    "tool": "plan_route",
+    "args": {
+      "avoid": [
+        "slope",
+        "mud",
+        "collapse"
+      ]
+    },
+    "category": "act"
+  },
+  {
+    "text": "Exercise start, launch the mission now, over",
+    "tool": "start_mission",
+    "args": {},
+    "category": "act"
+  },
+  {
+    "text": "lets do a drill where the thermal cam goes offline",
+    "tool": "inject_fault",
+    "args": {
+      "id": "thermalFail"
+    },
+    "category": "drill"
+  },
+  {
+    "text": "bring up the triage screen um i want to see who we go to first",
+    "tool": "open_workspace",
+    "args": {
+      "id": "triage"
+    },
+    "category": "view"
+  },
+  {
+    "text": "HOUND-01, re-check the possible in room 103, get in closer, over",
+    "tool": "investigate",
+    "args": {
+      "id": "D4"
+    },
+    "category": "act"
+  },
+  {
+    "text": "drive the rover strait into the colapse zone",
+    "tool": "none",
+    "args": {},
+    "category": "refuse"
+  },
+  {
+    "text": "Replay, go to 05:30, over",
+    "tool": "seek_to",
+    "args": {
+      "event": "05:30"
+    },
+    "category": "view"
+  },
+  {
+    "text": "what are the odds we missed somebody in the rooms we already went through",
+    "tool": "list_rooms_not_searched",
+    "args": {},
+    "category": "ask"
+  },
+  {
+    "text": "End the low battery drill, over",
+    "tool": "clear_fault",
+    "args": {
+      "id": "lowBattery"
+    },
+    "category": "drill"
+  },
+  {
+    "text": "stop evrything now!! all of them",
+    "tool": "all_stop",
+    "args": {},
+    "category": "act"
+  },
+  {
+    "text": "um the confirmed one in one twelve how do we know thats really a person whats the evidence",
+    "tool": "explain_lead",
+    "args": {
+      "id": "D5"
+    },
+    "category": "ask"
+  },
+  {
+    "text": "sim back to real time pls",
+    "tool": "set_speed",
+    "args": {
+      "speed": 1
+    },
+    "category": "act"
+  },
+  {
+    "text": "Route plan, team may cross the mud and the slope, keep off gas and the collapse zone, over",
+    "tool": "plan_route",
+    "args": {
+      "avoid": [
+        "gas",
+        "collapse"
+      ]
+    },
+    "category": "act"
+  },
+  {
+    "text": "highlight the outdoor lead for me, the debris field one",
+    "tool": "select",
+    "args": {
+      "type": "lead",
+      "id": "D1"
+    },
+    "category": "view"
+  },
+  {
+    "text": "Send the drone up for another pass, over",
+    "tool": "none",
+    "args": {},
+    "category": "refuse"
+  },
+  {
+    "text": "uh can you rewind it all the way to the very beginning",
+    "tool": "seek_to",
+    "args": {
+      "event": "start"
+    },
+    "category": "view"
+  },
+  {
+    "text": "can u write me the situation report, boss is asking",
+    "tool": "write_sitrep",
+    "args": {},
+    "category": "ask"
+  },
+  {
+    "text": "Switch to drone imagery, over",
+    "tool": "open_workspace",
+    "args": {
+      "id": "aerial"
+    },
+    "category": "view"
+  },
+  {
+    "text": "ok ok thats enough of the wifi packets dropping drill uh turn that one off",
+    "tool": "clear_fault",
+    "args": {
+      "id": "csiDropout"
+    },
+    "category": "drill"
+  },
+  {
+    "text": "Route is good, approve it, over",
+    "tool": "approve_route",
+    "args": {},
+    "category": "act"
+  },
+  {
+    "text": "unpause the clock, let time run again",
+    "tool": "set_clock",
+    "args": {
+      "running": true
+    },
+    "category": "act"
+  },
+  {
+    "text": "the labels are in the way can you uh just hide the labels",
+    "tool": "set_layer",
+    "args": {
+      "layer": "labels",
+      "on": false
+    },
+    "category": "view"
+  },
+  {
+    "text": "whats the weather doing tmrw, rain?",
+    "tool": "none",
+    "args": {},
+    "category": "refuse"
+  },
+  {
+    "text": "All clear, lift the stop, units continue, over",
+    "tool": "resume",
+    "args": {},
+    "category": "act"
+  },
+  {
+    "text": "jump to moment we first confirmed a person",
+    "tool": "seek_to",
+    "args": {
+      "event": "first_person_found"
+    },
+    "category": "view"
+  },
+  {
+    "text": "alright everyones ready um lets begin the whole mission kick it off",
+    "tool": "start_mission",
+    "args": {},
+    "category": "act"
+  }
+]

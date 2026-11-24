@@ -1,0 +1,17 @@
+<!doctype html><meta charset=utf-8><link rel="icon" href="data:,"><body><script type=module>
+const T = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/+esm');
+T.env.backends.onnx.logLevel = 'error';
+let det;
+window.go = async (src, tile, up) => {
+  const sizes = {};
+  det ??= await T.pipeline('object-detection', 'onnx-community/dfine_n_coco-ONNX', { device: 'wasm', dtype: 'fp32', progress_callback: (p) => { if (p.total) sizes[p.file] = p.total; } });
+  const im = new Image(); im.src = src; await im.decode();
+  const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0);
+  const runOn = async (x, y, w, h) => { const d = g.getImageData(x, y, w, h); const raw = new T.RawImage(d.data, w, h, 4); const t = performance.now(); const o = await det(raw, { threshold: 0.25 }); return { o, ms: performance.now() - t }; };
+  const whole = await runOn(0, 0, c.width, c.height);
+  const labels = (o) => { const m = {}; for (const b of o) m[b.label] = (m[b.label] || 0) + 1; return m; };
+  let tiles = 0, tl = {}, ms = 0, sample = null;
+  for (let y = 0; y < c.height; y += tile * 0.8) for (let x = 0; x < c.width; x += tile * 0.8) { const w = Math.min(tile, c.width - x), h = Math.min(tile, c.height - y); if (w < tile * 0.3 || h < tile * 0.3) continue; const r = await runOn(x | 0, y | 0, w | 0, h | 0); tiles++; ms += r.ms; for (const b of r.o) tl[b.label] = (tl[b.label] || 0) + 1; sample ??= r.o[0]; }
+  return { sizes, size: [c.width, c.height], whole: labels(whole.o), wholeMs: Math.round(whole.ms), tiles, tiled: tl, tileMs: Math.round(ms / tiles), sample, wsample: whole.o[0] };
+};
+</script>

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HOUND twin: test page</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../ui/tokens.css">
+<link rel="stylesheet" href="../ui/base.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
+  "d3": "https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm"
+} }
+</script>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg-0); color: var(--text); font: 13px var(--font); }
+  #view { position: absolute; inset: 0; }
+  #bar { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 8px 12px; z-index: 5; }
+  #bar label { display: inline-flex; gap: 5px; align-items: center; color: var(--text-2); font-size: 12px; white-space: nowrap; }
+  #bar .sep { width: 1px; height: 20px; background: var(--line-2); }
+  #bar input[type=range] { width: 220px; }
+  #hud { position: absolute; left: 12px; top: 12px; padding: 8px 12px; z-index: 5; font-size: 12px; color: var(--text-2); line-height: 1.5; }
+  #hud b { color: var(--text); font-weight: 600; }
+  body.bare #bar, body.bare #hud { display: none; }
+</style>
+</head>
+<body>
+<div id="view"></div>
+<div id="hud" class="glass">Loading the neural network…</div>
+<div id="bar" class="glass" role="toolbar" aria-label="Twin test controls"></div>
+<script type="module">
+// Test page for the 3-D twin (twin-core and twin-actors both use it). Not part of the product.
+//   ?t=300  seek to 5:00     ?speed=8   ?paused      ?cam=orbit|top|follow|fpv|cinematic
+//   ?quality=low   ?bare (no debug bar)   ?static (hero mode: not interactive)   ?reduced
+//   ?on=walls-xray,grid   ?off=labels,scan      ?sel=room:103     ?pose=x,y,yawDeg,pitchDeg,dist   (orbit camera pose, site metres)
+import { createBus } from '../core/bus.js';
+import { loadNN } from '../core/nn.js';
+import { createSim, PHASE_INFO, FAULTS, COMMANDS } from '../core/sim.js';
+import world from '../core/world.js';
+import * as kit from '../ui/kit.js';
+import { createTwin } from './index.js';
+
+const Q = new URLSearchParams(location.search), h = kit.h;
+if (Q.has('bare')) document.body.classList.add('bare');
+if (Q.has('reduced')) document.documentElement.dataset.motion = 'reduce';
+const bus = createBus(), nn = await loadNN(), sim = createSim({ bus, nn });
+const ctx = { sim, bus, world, nn, kit, PHASE_INFO, FAULTS, COMMANDS, prefs: { contrast: 'normal', palette: 'default', motion: Q.has('reduced') ? 'reduce' : 'auto' }, selection: null,
+  select(sel) { ctx.selection = sel; bus.emit('select', sel); },
+  setPref(k, v) { ctx.prefs[k] = v; bus.emit('prefs', ctx.prefs); },
+  shell: { toast: (s) => console.log('[toast]', s), confirm: async () => true, open() {}, current: () => 'twin-test' } };
+window.HOUND = ctx;
+
+const hud = document.getElementById('hud');
+hud.textContent = 'Building the site…';
+const twin = await createTwin(document.getElementById('view'), ctx, { interactive: !Q.has('static'), quality: Q.get('quality') === 'low' ? 'low' : 'high', camera: Q.get('cam') || 'orbit', caption: !Q.has('nocaption'), actors: !Q.has('noactors') });
+window.TWIN = twin;
+for (const id of (Q.get('on') || '').split(',').filter(Boolean)) twin.setLayer(id, true);
+for (const id of (Q.get('off') || '').split(',').filter(Boolean)) twin.setLayer(id, false);
+if (Q.get('speed')) sim.setSpeed(+Q.get('speed'));
+if (Q.get('t')) sim.seek(+Q.get('t'));
+if (Q.get('pose') && twin.ok) { const [x, y, yaw, pitch, dist] = Q.get('pose').split(',').map(Number); const T3 = twin.three.camera.position.constructor; twin.engine.cams.setPose({ target: new T3(x, 0, -y), yaw: yaw * Math.PI / 180, pitch: pitch * Math.PI / 180, dist }); }
+if (Q.get('sel')) { const [type, id] = Q.get('sel').split(':'); ctx.select({ type, id }); }
+if (!Q.has('paused')) sim.play();
+
+// ---- debug bar ----
+const bar = document.getElementById('bar');
+const seg = (items, get, set, label) => { const el = h('div.seg', { role: 'group', 'aria-label': label }, items.map((id) => h('button', { 'aria-pressed': String(get() === id), onclick: () => { set(id); refresh(); }, 'data-id': id }, id))); el.sync = () => el.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(get() === b.dataset.id))); return el; };
+const camSeg = seg(twin.cameraModes, () => twin.cameraMode, (m) => twin.setCamera(m), 'Camera');
+const play = h('button.btn.btn-sm', { onclick: () => sim.toggle() }, 'Pause');
+const speed = h('select.select', { 'aria-label': 'Simulation speed', style: { width: '70px' }, onchange: (e) => sim.setSpeed(+e.target.value) }, [1, 2, 4, 8, 16, 32].map((x) => h('option', { value: x }, x + '×')));
+const seek = h('input', { type: 'range', min: 0, max: 720, step: 1, value: 0, 'aria-label': 'Seek the mission', onchange: (e) => sim.seek(+e.target.value) });
+const clock = h('span.num', null, '00:00');
+const layerBox = h('div.row', { style: { gap: '10px', flexWrap: 'wrap' } });
+function buildLayers() { layerBox.replaceChildren(...twin.layers().map((l) => h('label', null, h('input', { type: 'checkbox', checked: l.on, onchange: (e) => twin.setLayer(l.id, e.target.checked) }), l.label))); }
+bar.append(h('span.dim', null, 'Camera'), camSeg, h('span.sep'), play, h('button.btn.btn-sm', { onclick: () => sim.reset() }, 'Restart'), speed, seek, clock, h('span.sep'), layerBox);
+buildLayers();
+bus.on('twin:layer', buildLayers); bus.on('twin:camera', () => camSeg.sync());
+function refresh() { camSeg.sync(); }
+let lastSel = '';
+bus.on('select', (s) => { lastSel = s ? s.type + ' ' + s.id : ''; });
+setInterval(() => {
+  const S = sim.state, st = twin.stats;
+  play.textContent = S.running ? 'Pause' : 'Play'; clock.textContent = kit.fmt.clock(S.t); if (document.activeElement !== seek) seek.value = S.t; if (+speed.value !== S.speed) speed.value = String(S.speed);
+  hud.replaceChildren(h('b', null, PHASE_INFO[S.phase].label), h('span', null, '  ' + kit.fmt.clock(S.t)), h('br'),
+    h('span', null, st.fps.toFixed(0) + ' frames/s · ' + st.calls + ' draw calls · ' + (st.triangles / 1000).toFixed(0) + ' k triangles · pixel ratio ' + (st.pr || 1)), h('br'),
+    h('span', null, 'camera: ' + twin.cameraMode + (twin.shot ? ' (shot: ' + twin.shot + ')' : '') + (lastSel ? ' · selected: ' + lastSel : '')));
+}, 250);
+</script>
+</body>
+</html>

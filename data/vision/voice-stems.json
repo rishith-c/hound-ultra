@@ -1,0 +1,198 @@
+{
+ "fs": 16000,
+ "made_with": "macOS say (text-to-speech) + numpy/scipy procedural synthesis; see voice-make.py",
+ "speech": [
+  {
+   "id": "en",
+   "file": "voice-speech-en.wav",
+   "lang": "en",
+   "language": "English",
+   "tts_voice": "Samantha",
+   "text": "Help. I am under the stairs. My leg is stuck.",
+   "meaning": "Help. I am under the stairs. My leg is stuck.",
+   "dur": 3.113,
+   "spans": [
+    [
+     0,
+     0.37
+    ],
+    [
+     0.59,
+     3.01
+    ]
+   ],
+   "active_rms": 0.1318
+  },
+  {
+   "id": "es",
+   "file": "voice-speech-es.wav",
+   "lang": "es",
+   "language": "Spanish",
+   "tts_voice": "Mónica",
+   "text": "Ayuda. Estoy debajo de la escalera. Tengo la pierna atrapada.",
+   "meaning": "Help. I am under the stairs. My leg is trapped.",
+   "dur": 3.703,
+   "spans": [
+    [
+     0,
+     3.61
+    ]
+   ],
+   "active_rms": 0.16807
+  },
+  {
+   "id": "fr",
+   "file": "voice-speech-fr.wav",
+   "lang": "fr",
+   "language": "French",
+   "tts_voice": "Thomas",
+   "text": "Au secours. Je suis sous l'escalier. Ma jambe est coincée.",
+   "meaning": "Help. I am under the stairs. My leg is stuck.",
+   "dur": 3.783,
+   "spans": [
+    [
+     0,
+     3.69
+    ]
+   ],
+   "active_rms": 0.12104
+  },
+  {
+   "id": "de",
+   "file": "voice-speech-de.wav",
+   "lang": "de",
+   "language": "German",
+   "tts_voice": "Anna",
+   "text": "Hilfe. Ich bin unter der Treppe. Mein Bein ist eingeklemmt.",
+   "meaning": "Help. I am under the stairs. My leg is trapped.",
+   "dur": 3.841,
+   "spans": [
+    [
+     0,
+     3.73
+    ]
+   ],
+   "active_rms": 0.08615
+  },
+  {
+   "id": "hi",
+   "file": "voice-speech-hi.wav",
+   "lang": "hi",
+   "language": "Hindi",
+   "tts_voice": "Lekha",
+   "text": "मदद करो। मैं सीढ़ियों के नीचे हूँ। मेरा पैर फँस गया है।",
+   "meaning": "Help. I am under the stairs. My leg is stuck.",
+   "dur": 4.031,
+   "spans": [
+    [
+     0,
+     2.33
+    ],
+    [
+     2.53,
+     3.95
+    ]
+   ],
+   "active_rms": 0.10653
+  },
+  {
+   "id": "ja",
+   "file": "voice-speech-ja.wav",
+   "lang": "ja",
+   "language": "Japanese",
+   "tts_voice": "Kyoko",
+   "text": "助けてください。階段の下にいます。足が挟まれて動けません。",
+   "meaning": "Please help. I am under the stairs. My leg is caught and I cannot move.",
+   "dur": 5.305,
+   "spans": [
+    [
+     0.01,
+     1.19
+    ],
+    [
+     1.41,
+     2.87
+    ],
+    [
+     3.07,
+     5.23
+    ]
+   ],
+   "active_rms": 0.12175
+  },
+  {
+   "id": "zh",
+   "file": "voice-speech-zh.wav",
+   "lang": "zh",
+   "language": "Chinese",
+   "tts_voice": "Tingting",
+   "text": "救命。我在楼梯下面。我的腿被卡住了。",
+   "meaning": "Help. I am under the stairs. My leg is stuck.",
+   "dur": 4.025,
+   "spans": [
+    [
+     0,
+     3.93
+    ]
+   ],
+   "active_rms": 0.1242
+  }
+ ],
+ "events": [
+  {
+   "id": "knock",
+   "file": "voice-knock.wav",
+   "dur": 4.0,
+   "spans": [
+    [
+     0.18,
+     1.08
+    ],
+    [
+     2.08,
+     2.98
+    ]
+   ],
+   "active_rms": 0.08409
+  },
+  {
+   "id": "cough",
+   "file": "voice-cough.wav",
+   "dur": 2.4,
+   "spans": [
+    [
+     0.13,
+     1.14
+    ],
+    [
+     1.53,
+     1.97
+    ]
+   ],
+   "active_rms": 0.06651
+  }
+ ],
+ "noise": [
+  {
+   "id": "rain",
+   "file": "voice-noise-rain.wav",
+   "label": "Rain on debris",
+   "dur": 10.25,
+   "rms": 0.08
+  },
+  {
+   "id": "generator",
+   "file": "voice-noise-generator.wav",
+   "label": "Petrol generator",
+   "dur": 10.25,
+   "rms": 0.08
+  },
+  {
+   "id": "wind",
+   "file": "voice-noise-wind.wav",
+   "label": "Wind through a gap",
+   "dur": 10.25,
+   "rms": 0.08
+  }
+ ]
+}

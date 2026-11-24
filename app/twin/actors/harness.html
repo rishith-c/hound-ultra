@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HOUND twin actors: harness</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../../ui/tokens.css">
+<link rel="stylesheet" href="../../ui/base.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+} }
+</script>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg-0); color: var(--text); font: 13px var(--font); }
+  #view { position: absolute; inset: 0; }
+  #view canvas { display: block; }
+  #labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .hl { position: absolute; left: 0; top: 0; transform: translate(-50%, -100%); white-space: nowrap; padding: 2px 7px; border-radius: var(--r-2); background: var(--glass); border: 1px solid var(--line-2); font-size: 11px; color: var(--text); }
+  .hl[data-sub]:not([data-sub=""])::before { content: attr(data-sub); order: 2; margin-left: 6px; color: var(--text-3); float: right; }
+  .hl::after { content: ''; position: absolute; left: 50%; top: 100%; width: 1px; height: 14px; background: var(--line-2); }
+  #bar { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; padding: 8px 10px; border-radius: var(--r-3); background: var(--glass); backdrop-filter: var(--blur); border: 1px solid var(--line); }
+  #bar label { display: inline-flex; gap: 4px; align-items: center; color: var(--text-2); font-size: 12px; }
+  #bar .sep { width: 1px; height: 18px; background: var(--line-2); }
+  #hud { position: absolute; left: 12px; top: 12px; padding: 6px 10px; border-radius: var(--r-2); background: var(--glass); border: 1px solid var(--line); font: 12px var(--mono); color: var(--text-2); white-space: pre; }
+  body.bare #bar, body.bare #hud { display: none; }
+</style>
+</head>
+<body>
+<div id="view"></div><div id="labels"></div>
+<div id="hud">loading…</div>
+<div id="bar"></div>
+<script type="module">
+// A minimal stand-in for twin-core, for developing the actors: a bare scene, the t object, a ground plane, the
+// walls of building B as boxes, and the simulator. Not part of the product.
+//   ?t=300        seek to 5:00            ?speed=8  ?paused      ?cam=orbit|top|rover|follow|drone|team|b|ne
+//   ?only=rover,people   load only these actor files          ?off=scan,coverage  ?on=truth    layers
+//   ?reduced  ?quality=low  ?xray=0  ?bare (hide the debug bar)  ?sel=detection:D5
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { createBus } from '../../core/bus.js';
+import { loadNN } from '../../core/nn.js';
+import { createSim, PHASE_INFO, FAULTS, COMMANDS } from '../../core/sim.js';
+import world from '../../core/world.js';
+import * as kit from '../../ui/kit.js';
+
+const Q = new URLSearchParams(location.search);
+if (Q.has('bare')) document.body.classList.add('bare');
+const hud = document.getElementById('hud'), host = document.getElementById('view');
+const bus = createBus();
+const nn = await loadNN();
+const sim = createSim({ bus, nn });
+const ctx = { sim, bus, world, nn, kit, PHASE_INFO, FAULTS, COMMANDS, prefs: { contrast: 'normal', palette: 'default', motion: 'auto' }, selection: null,
+  select(sel) { ctx.selection = sel; bus.emit('select', sel); },
+  setPref(k, v) { ctx.prefs[k] = v; if (k === 'palette') document.documentElement.dataset.palette = v; bus.emit('prefs', ctx.prefs); },
+  shell: { toast: (s) => console.log('[toast]', s), confirm: async () => true, open() {}, current: () => 'harness' } };
+window.HOUND = ctx;
+let makeGlow = null; try { ({ makeGlow } = await import('../post.js')); } catch { /* twin-core not there: no glow boost */ }
+
+// ---------- renderer and a plain world ----------
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+host.append(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x090c10); scene.fog = new THREE.FogExp2(0x0b0f14, 0.0055);
+const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; scene.environmentIntensity = 0.45;
+const camera = new THREE.PerspectiveCamera(38, 1, 0.05, 900);
+const controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.495;
+scene.add(new THREE.HemisphereLight(0xbcd0ee, 0x15171b, 0.55));
+const sun = new THREE.DirectionalLight(0xdfe8ff, 1.7); sun.position.set(30, 70, 20); sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096);
+Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 60, bottom: -60, near: 1, far: 200 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03; sun.shadow.radius = 4;
+sun.target.position.set(60, 0, -45); scene.add(sun, sun.target);
+const v3 = (p, h = 0) => new THREE.Vector3(p[0], h, -p[1]);
+
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x23272d, roughness: 0.93, metalness: 0 }));
+ground.position.set(60, 0, -45); ground.receiveShadow = true; scene.add(ground);
+const grid = new THREE.GridHelper(120, 24, 0x2c333c, 0x1c2128); grid.scale.z = 0.75; grid.position.set(60, 0.004, -45); grid.material.transparent = true; grid.material.opacity = 0.5; scene.add(grid);
+const B = world.BUILDING.rect;
+const slab = new THREE.Mesh(new THREE.BoxGeometry(B[2] - B[0], 0.02, B[3] - B[1]), new THREE.MeshStandardMaterial({ color: 0x33383f, roughness: 0.8 }));
+slab.position.set((B[0] + B[2]) / 2, 0.0, -(B[1] + B[3]) / 2); slab.receiveShadow = true; scene.add(slab);
+const wallMats = { concrete: new THREE.MeshStandardMaterial({ color: 0x8b9098, roughness: 0.9, transparent: true }), drywall: new THREE.MeshStandardMaterial({ color: 0xb9bcc0, roughness: 0.95, transparent: true }) };
+const walls = new THREE.Group(); scene.add(walls);
+for (const w of world.WALLS) {
+  if (w.state === 'collapsed') continue;
+  const len = Math.hypot(w.b[0] - w.a[0], w.b[1] - w.a[1]), thick = w.mat === 'concrete' ? 0.3 : 0.14;
+  const m = new THREE.Mesh(new THREE.BoxGeometry(len + thick, w.h, thick), wallMats[w.mat]);
+  m.position.copy(v3([(w.a[0] + w.b[0]) / 2, (w.a[1] + w.b[1]) / 2], w.h / 2)); m.rotation.y = Math.atan2(w.b[1] - w.a[1], w.b[0] - w.a[0]);
+  m.castShadow = m.receiveShadow = true; walls.add(m);
+}
+function setXray(on) { for (const m of Object.values(wallMats)) { m.opacity = on ? 0.16 : 1; m.depthWrite = !on; } walls.children.forEach((m) => { m.castShadow = !on; }); }
+for (const o of world.OBSTACLES) {
+  const shape = new THREE.Shape(o.poly.map((p) => new THREE.Vector2(p[0], -p[1])));
+  const g = new THREE.ExtrudeGeometry(shape, { depth: o.h, bevelEnabled: false }).rotateX(Math.PI / 2).translate(0, o.h, 0);
+  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: o.kind === 'building' ? 0x767b83 : o.kind === 'rubble' ? 0x5a5148 : 0x6b5a45, roughness: 0.95 }));
+  m.castShadow = m.receiveShadow = true; scene.add(m);
+}
+
+// ---------- the t object, as documented in docs/ARCHITECTURE.md ----------
+const pickables = [], labels = [], updates = [], labelHost = document.getElementById('labels');
+const t = {
+  THREE, scene, camera, renderer, ctx, world, quality: Q.get('quality') === 'low' ? 'low' : 'high', reduced: Q.has('reduced'),
+  v3, groundY: 0,
+  pickable(obj, sel) { pickables.push({ obj, sel }); obj.userData.sel = sel; },
+  label(text, opts = {}) {
+    const el = document.createElement('div'); el.className = 'hl'; el.textContent = text; labelHost.append(el); if (opts.sub) el.dataset.sub = opts.sub;
+    const L = { el, pos: new THREE.Vector3(), visible: true, setPosition(v) { L.pos.copy(v); }, setText(s) { if (el.textContent !== s) el.textContent = s; }, setVisible(v) { L.visible = v !== false; return L; }, setSub(s) { el.dataset.sub = s || ''; return L; }, setTone(tn) { el.dataset.tone = tn || ''; el.style.borderColor = tn ? 'var(--' + ({ person: 'person', warn: 'warn', accent: 'accent', ok: 'ok', danger: 'danger', sim: 'sim' }[tn] || 'line-2') + ')' : ''; return L; }, setPriority() { return L; }, setSelected() { return L; }, remove() { el.remove(); const i = labels.indexOf(L); if (i >= 0) labels.splice(i, 1); } };
+    labels.push(L); return L;
+  },
+  glow(obj, k = 1) { return makeGlow ? makeGlow(obj, k) : obj; },
+  addUpdate(fn) { updates.push(fn); },
+};
+window.T = t;
+
+// ---------- actors ----------
+const instances = [], failed = [];
+let defs = [];
+if (Q.get('only')) {
+  for (const name of Q.get('only').split(',')) { try { defs.push((await import('./' + name + '.js')).default); } catch (e) { console.error('actor file ' + name, e); failed.push(name); } }
+} else { try { defs = (await import('./index.js')).ACTORS; } catch (e) { console.error('actors/index.js', e); failed.push('index'); } }
+for (const def of defs) {
+  try { const inst = def.create(t); instances.push({ def, inst, ms: 0 }); } catch (e) { console.error('actor ' + def?.id + ' failed to create', e); failed.push(def?.id); }
+}
+const layerIds = ['hazards', 'coverage', 'heat', 'route', 'trail', 'scan', 'truth', 'sensing'];
+const layerState = Object.fromEntries(layerIds.map((id) => [id, id !== 'truth']));
+function setLayer(id, on) { layerState[id] = on; for (const a of instances) if ((a.def.layers || []).includes(id)) { try { a.inst.setLayer?.(id, on); } catch (e) { console.error(e); } } }
+for (const id of (Q.get('off') || '').split(',').filter(Boolean)) layerState[id] = false;
+for (const id of (Q.get('on') || '').split(',').filter(Boolean)) layerState[id] = true;
+for (const id of layerIds) setLayer(id, layerState[id]);
+bus.on('select', (sel) => { for (const a of instances) { try { a.inst.onSelect?.(sel); } catch (e) { console.error(e); } } });
+
+// ---------- cameras (harness only) ----------
+let camMode = Q.get('cam') || 'orbit';
+const tmp = new THREE.Vector3();
+function setCam(mode) {
+  camMode = mode; const S = sim.state, r = S.units['HOUND-01'], d = S.units['DRONE-01'], tm = S.units['TEAM-1'];
+  const look = (target, off) => { controls.target.copy(target); camera.position.copy(target).add(off); };
+  if (mode === 'orbit') look(v3([62, 40]), new THREE.Vector3(-8, 46, 62));
+  else if (mode === 'top') look(v3([64, 44]), new THREE.Vector3(0, 70, 0.01));
+  else if (mode === 'b') look(v3([64, 44]), new THREE.Vector3(-4, 30, 34));
+  else if (mode === 'ne') look(v3([76, 50]), new THREE.Vector3(-6, 13, 15));
+  else if (mode === 'rover') look(v3(r.pos, 0.25), new THREE.Vector3(-1.5, 1.05, 1.7));
+  else if (mode === 'follow') look(v3(r.pos, 0.3), new THREE.Vector3(-4, 5, 7));
+  else if (mode === 'drone') look(v3(d.pos, d.alt), new THREE.Vector3(-7, 4, 10));
+  else if (mode === 'team') look(v3(tm.pos, 1), new THREE.Vector3(-3, 3, 6));
+  controls.update();
+}
+function follow() {
+  const S = sim.state, id = { rover: 'HOUND-01', follow: 'HOUND-01', drone: 'DRONE-01', team: 'TEAM-1' }[camMode]; if (!id) return;
+  const u = S.units[id], target = v3(u.pos, id === 'DRONE-01' ? u.alt : id === 'TEAM-1' ? 1 : 0.3);
+  tmp.copy(target).sub(controls.target); controls.target.add(tmp); camera.position.add(tmp);
+}
+
+// ---------- picking ----------
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(); let downAt = null;
+renderer.domElement.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 4) return;
+  const r = renderer.domElement.getBoundingClientRect(); ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hits = ray.intersectObjects(pickables.map((p) => p.obj).filter((o) => o.visible), true);
+  let sel = null;
+  for (const h of hits) { let o = h.object; while (o && !o.userData.sel) o = o.parent; if (o) { sel = o.userData.sel; break; } }
+  ctx.select(sel);
+});
+
+// ---------- post ----------
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.42, 0.55, 0.92); composer.addPass(bloom); composer.addPass(new OutputPass());
+function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h); composer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+addEventListener('resize', resize); resize();
+
+// ---------- debug bar ----------
+const { h } = kit, bar = document.getElementById('bar');
+const btn = (text, fn) => h('button.btn', { onclick: fn }, text);
+const seekIn = h('input', { type: 'range', min: 0, max: 660, step: 1, value: 0, style: { width: '220px' }, 'aria-label': 'Seek', onchange: (e) => sim.seek(+e.target.value) });
+bar.append(btn('Play / pause', () => sim.toggle()), btn('Reset', () => sim.reset()), h('label', null, 'Speed', h('select', { onchange: (e) => sim.setSpeed(+e.target.value) }, ...[1, 4, 8, 16, 32].map((s) => h('option', { value: s, selected: s === 8 }, s + '×')))), h('label', null, 'Seek', seekIn), h('span.sep'),
+  ...['orbit', 'top', 'b', 'ne', 'rover', 'follow', 'drone', 'team'].map((m) => btn(m, () => setCam(m))), h('span.sep'),
+  ...layerIds.map((id) => h('label', null, h('input', { type: 'checkbox', checked: layerState[id], onchange: (e) => setLayer(id, e.target.checked) }), id)),
+  h('label', null, h('input', { type: 'checkbox', checked: Q.get('xray') !== '0', onchange: (e) => setXray(e.target.checked) }), 'x-ray walls'), h('span.sep'),
+  btn('New hazard', () => sim.command('newHazard')), btn('Link loss', () => sim.command(sim.state.faults.linkLoss ? 'clearFault' : 'injectFault', { id: 'linkLoss' })), btn('All stop', () => sim.command(sim.state.hold ? 'resume' : 'allStop')),
+  btn('Colour-blind palette', () => ctx.setPref('palette', ctx.prefs.palette === 'cb' ? 'default' : 'cb')));
+setXray(Q.get('xray') !== '0');
+
+// ---------- start ----------
+if (Q.has('speed')) sim.setSpeed(+Q.get('speed'));
+if (Q.has('t')) sim.seek(+Q.get('t'));
+if (!Q.has('paused')) sim.play();
+setCam(camMode);
+if (Q.get('sel')) { const [type, id] = Q.get('sel').split(':'); ctx.select({ type, id }); }
+
+const clock = new THREE.Clock(); let time = 0, frames = 0, acc = 0, fps = 0, actorMs = 0, worst = '';
+const pv = new THREE.Vector3();
+function frame() {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.1, clock.getDelta()); time += dt;
+  const S = sim.state;
+  const t0 = performance.now();
+  for (const a of instances) { const s = performance.now(); try { a.inst.update(S, dt, time); } catch (e) { if (!a.err) { a.err = true; console.error('actor ' + a.def.id + ' update', e); } } a.ms += (performance.now() - s - a.ms) * 0.05; }
+  for (const fn of updates) fn(dt, time);
+  actorMs += (performance.now() - t0 - actorMs) * 0.05;
+  follow(); controls.update();
+  composer.render();
+  for (const L of labels) { pv.copy(L.pos).project(camera); const on = L.visible && pv.z < 1 && Math.abs(pv.x) < 1.05 && Math.abs(pv.y) < 1.05; L.el.style.display = on ? '' : 'none'; if (on) L.el.style.transform = 'translate(-50%, -100%) translate(' + ((pv.x + 1) / 2 * innerWidth).toFixed(1) + 'px,' + ((1 - pv.y) / 2 * innerHeight - 14).toFixed(1) + 'px)'; }
+  frames++; acc += dt;
+  if (acc > 0.5) { fps = frames / acc; frames = 0; acc = 0; worst = instances.slice().sort((a, b) => b.ms - a.ms).slice(0, 3).map((a) => a.def.id + ' ' + a.ms.toFixed(2)).join('  ');
+    hud.textContent = kit.fmt.clock(S.t) + '  ' + S.phase + '  ' + S.speed + '×  ' + fps.toFixed(0) + ' fps\nactors ' + actorMs.toFixed(2) + ' ms   (' + worst + ')\ncalls ' + renderer.info.render.calls + '  tris ' + renderer.info.render.triangles + (failed.length ? '\nFAILED: ' + failed.join(', ') : '') + (ctx.selection ? '\nselected ' + ctx.selection.type + ' ' + ctx.selection.id : '');
+    if (document.activeElement !== seekIn) seekIn.value = S.t; }
+}
+frame();
+window.H = { t, instances, setCam, setLayer, setXray, controls, camera, stats: () => ({ fps: +fps.toFixed(1), actorMs: +actorMs.toFixed(3), per: Object.fromEntries(instances.map((a) => [a.def.id, +a.ms.toFixed(3)])), calls: renderer.info.render.calls, tris: renderer.info.render.triangles, failed }),
+  dispose() { for (const a of instances) a.inst.dispose?.(); instances.length = 0; return { geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, sceneChildren: scene.children.length }; } };
+</script>
+</body>
+</html>

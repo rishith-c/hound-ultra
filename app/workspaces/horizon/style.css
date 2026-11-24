@@ -1,0 +1,93 @@
+/* Horizon. Tokens only; no new colours. Class prefix: .horizon- */
+.horizon { background: var(--bg-0); }
+.horizon [hidden] { display: none !important; }
+
+/* ---------- overview ---------- */
+.horizon-ov { position: absolute; inset: 0; display: grid; grid-template-columns: 348px minmax(0, 1fr); }
+.horizon-ov-left { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; gap: var(--s-5); padding: 28px 24px 22px 28px; border-right: 1px solid var(--line); background: var(--bg-1); min-height: 0; overflow: auto; }
+.horizon-ov-head h1 { font: var(--type-display); font-size: var(--fs-56); line-height: 0.95; }
+.horizon-ov-head .row { align-items: flex-end; gap: 12px; } .horizon-ov-head .tag { margin-bottom: 8px; }
+.horizon-ov-head .lede { margin-top: 14px; color: var(--text); font-size: 15px; line-height: 1.45; }
+.horizon-ov-how { margin-top: 10px; color: var(--text-3); font-size: var(--fs-12); line-height: 1.5; }
+.horizon-ov-chart { grid-column: 2; grid-row: 1; position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+.horizon-ov-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.horizon-ov-nodes { position: absolute; inset: 0; }
+.horizon-node { position: absolute; display: flex; align-items: center; gap: 10px; height: 44px; margin: -22px 0 0 -22px; padding: 0 8px 0 0; border: 0; background: transparent; color: var(--text-2); cursor: pointer; text-align: left; border-radius: 22px 4px 4px 22px; white-space: nowrap; }
+.horizon-node-disc { width: 44px; height: 44px; border-radius: 50%; flex: none; }
+.horizon-node-label { display: flex; flex-direction: column; gap: 1px; line-height: 1.15; }
+.horizon-node-label .num { font-size: 10.5px; color: var(--text-3); }
+.horizon-node-label b { max-width: 136px; white-space: normal; text-wrap: balance; font: 500 var(--fs-13)/1.2 var(--font); color: var(--text-2); text-shadow: 0 0 6px var(--bg-0), 0 0 2px var(--bg-0); transition: color var(--t-fast) var(--ease); }
+.horizon-node:hover b, .horizon-node.is-featured b { color: var(--text); }
+.horizon-node.is-featured .num { color: var(--accent); }
+.horizon-node:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.horizon-node.flip { flex-direction: row-reverse; transform: translateX(calc(-100% + 44px)); padding: 0 0 0 8px; border-radius: 4px 22px 22px 4px; text-align: right; } .horizon-node.flip .horizon-node-label { align-items: flex-end; }
+
+.horizon-placard { margin-top: 6px; display: flex; flex-direction: column; gap: 12px; padding-top: var(--s-5); border-top: 1px solid var(--line-2); min-height: 318px; }
+.horizon-placard-num { font: 400 var(--fs-40)/1 var(--font-display); color: var(--accent); font-variant-numeric: lining-nums; }
+.horizon-placard-num span { font-size: var(--fs-16); color: var(--text-3); }
+.horizon-placard h2 { font: var(--type-title); }
+.horizon-placard-hook { color: var(--text-2); line-height: 1.5; min-height: 78px; }
+.horizon-placard-kv dd { font-size: var(--fs-12); } .horizon-placard .btn { align-self: flex-start; margin-top: 2px; }
+
+.horizon-ov-foot { margin-top: auto; padding-top: var(--s-4); border-top: 1px solid var(--line); display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; font-size: var(--fs-12); color: var(--text-3); line-height: 1.35; }
+.horizon-ov-foot kbd { justify-self: start; }
+
+/* ---------- exhibit view ---------- */
+.horizon-ex { position: absolute; inset: 0; display: flex; flex-direction: column; min-height: 0; }
+.horizon-ex-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 372px; }
+.horizon-stage-host { position: relative; min-width: 0; min-height: 0; }
+.horizon-side-host { position: relative; min-height: 0; border-left: 1px solid var(--line); background: var(--bg-1); }
+.horizon-stage { position: absolute; inset: 0; display: grid; gap: 1px; background: var(--line); grid-template-columns: 1fr; grid-template-rows: 1fr; animation: horizon-in var(--t-med) var(--ease); }
+@keyframes horizon-in { from { opacity: 0; transform: translateY(6px); } }
+.horizon-fig { margin: 0; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--bg-0); padding: 12px 14px 10px; gap: 8px; }
+.horizon-fig-head { display: flex; align-items: center; gap: 8px; min-height: 20px; flex: none; }
+.horizon-fig-head .chart-title { flex: 1; min-width: 0; text-wrap: balance; }
+.horizon-fig-body { position: relative; flex: 1; min-height: 0; min-width: 0; }
+.horizon-fig-body canvas { position: absolute; left: 0; top: 0; display: block; touch-action: none; }
+.horizon-fig-foot { display: flex; align-items: flex-start; gap: 14px; flex: none; }
+.horizon-fig-note { flex: 1; min-width: 0; margin: 0; line-height: 1.4; text-wrap: pretty; } .horizon-fig-note:empty { display: none; }
+.horizon-fig-legend { flex: none; max-width: 60%; font-size: var(--fs-11); } .horizon-fig-legend:empty { display: none; }
+.horizon-fig-legend i { background: var(--c); }
+
+.horizon-side { position: absolute; inset: 0; overflow: auto; padding: 20px 20px 24px; display: flex; flex-direction: column; gap: 18px; scrollbar-width: thin; animation: horizon-in var(--t-med) var(--ease); }
+.horizon-side-top { display: flex; flex-direction: column; gap: 10px; }
+.horizon-side-num { font: 400 var(--fs-20)/1 var(--font-display); color: var(--accent); font-variant-numeric: lining-nums; }
+.horizon-side h2 { font: var(--type-title); font-size: var(--fs-32); margin-top: -4px; text-wrap: balance; }
+.horizon-say { color: var(--text); line-height: 1.5; text-wrap: pretty; } .horizon-say + .horizon-say { color: var(--text-2); margin-top: -4px; }
+.horizon-group { display: flex; flex-direction: column; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+.horizon-group h4 { margin: 0; font: var(--type-panel); color: var(--text); }
+.horizon-group p { color: var(--text-2); line-height: 1.5; text-wrap: pretty; } .horizon-group p + h4 { margin-top: 4px; }
+.horizon-group:empty, .horizon-readout:empty { display: none; }
+.horizon-sources p { font-size: var(--fs-12); } .horizon-sources b { color: var(--text); font-weight: 600; }
+.horizon-sources a { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; } .horizon-sources a svg { width: 12px; height: 12px; }
+.horizon-ctl { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.horizon-ctl-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font: var(--type-label); color: var(--text-2); }
+.horizon-ctl-top output { font: var(--type-data); color: var(--text); }
+.horizon-ctl .seg { align-self: flex-start; flex-wrap: wrap; } .horizon-ctl .seg button { min-height: 26px; }
+.horizon-toggle { color: var(--text-2); font-size: var(--fs-13); }
+.horizon-readout { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+.horizon-readout > h4, .horizon-readout > p, .horizon-readout > .note, .horizon-readout > .wide { grid-column: 1 / -1; }
+.horizon-stat { gap: 3px; } .horizon-stat > div { display: flex; align-items: baseline; }
+.horizon-stat b { font: 500 var(--fs-20)/1 var(--mono); letter-spacing: -0.03em; } .horizon-stat b + small { font: 500 var(--fs-12)/1 var(--font); color: var(--text-3); margin-left: 4px; }
+.horizon-stat[data-tone="ok"] b { color: var(--ok); } .horizon-stat[data-tone="warn"] b { color: var(--warn); } .horizon-stat[data-tone="danger"] b { color: var(--danger); } .horizon-stat[data-tone="person"] b { color: var(--person); }
+
+.horizon-ready { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.horizon-ready-track { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; height: 4px; }
+.horizon-ready-track i { background: var(--bg-5); } .horizon-ready-track i:first-child { border-radius: 2px 0 0 2px; } .horizon-ready-track i:nth-child(3) { border-radius: 0 2px 2px 0; }
+.horizon-ready-track b { position: absolute; top: -5px; width: 2px; height: 14px; margin-left: -1px; background: var(--accent); box-shadow: 0 0 0 2px var(--bg-1); }
+.horizon-ready-labels { display: grid; grid-template-columns: repeat(3, 1fr); font-size: var(--fs-11); color: var(--text-3); } .horizon-ready-labels .is-on { color: var(--text); font-weight: 600; }
+.horizon-ready-labels span:nth-child(2) { text-align: center; } .horizon-ready-labels span:nth-child(3) { text-align: right; }
+
+.horizon-strip { flex: none; display: flex; align-items: flex-end; gap: 18px; padding: 6px 12px 8px; border-top: 1px solid var(--line); background: var(--bg-1); min-height: 58px; }
+.horizon-strip > .btn { align-self: flex-end; }
+.horizon-strip-band { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.horizon-strip-title { font-size: var(--fs-11); color: var(--text-3); padding-left: 8px; border-left: 1px solid var(--line-3); line-height: 1.2; }
+.horizon-strip-items { display: flex; gap: 2px; }
+.horizon-strip-items button { display: inline-flex; align-items: baseline; gap: 6px; height: 28px; padding: 0 8px; border: 0; border-radius: var(--r-2); background: transparent; color: var(--text-3); font: 500 var(--fs-12)/28px var(--font); cursor: pointer; white-space: nowrap; transition: background-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
+.horizon-strip-items button .num { font-size: 10.5px; }
+.horizon-strip-items button:hover { color: var(--text); background: var(--bg-3); }
+.horizon-strip-items button[aria-current="true"] { color: var(--text); background: var(--bg-4); box-shadow: inset 0 -2px 0 var(--accent); } .horizon-strip-items button[aria-current="true"] .num { color: var(--accent); }
+.horizon-strip-items button:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+@media (max-width: 1500px) { .horizon-strip { gap: 10px; } .horizon-strip-items button { padding: 0 6px; gap: 4px; } .horizon-ex-main { grid-template-columns: minmax(0, 1fr) 348px; } .horizon-ov { grid-template-columns: 316px minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .horizon-stage, .horizon-side { animation: none; } }
+:root[data-motion="reduce"] .horizon-stage, :root[data-motion="reduce"] .horizon-side { animation: none; }

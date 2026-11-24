@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in · HOUND Command</title>
+<meta name="description" content="Demo sign-in for HOUND Command. A name only, kept in this browser. No password, no account.">
+<meta name="theme-color" content="#07090c">
+<link rel="icon" href="assets/img/icon.svg" type="image/svg+xml">
+<link rel="preload" as="image" href="assets/img/landing/hero.webp">
+<link rel="preload" as="font" type="font/woff2" href="assets/brand/fonts/instrument-serif-latin-400-normal.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="assets/brand/fonts/instrument-sans-latin-wdth-normal.woff2" crossorigin>
+<link rel="stylesheet" href="app/ui/tokens.css">
+<link rel="stylesheet" href="landing/landing.css">
+</head>
+<body class="login-body">
+<main class="login">
+  <div class="login-art" aria-hidden="true">
+    <img src="assets/img/landing/hero.webp" width="1672" height="941" alt="">
+    <p>Illustration, not a photograph of the flood.</p>
+  </div>
+  <section class="login-panel" aria-labelledby="login-title">
+    <a class="nav-brand" href="./" aria-label="HOUND Command, back to the front page"><i aria-hidden="true"></i><b>HOUND</b><span>Command</span></a>
+    <div class="login-form-wrap">
+      <div class="sec-no"><span class="num" id="login-clock">--:--</span><span id="login-date">Operator station</span><span class="rl rl-sim">Demo sign-in</span></div>
+      <h1 id="login-title">Who is running this search?</h1>
+      <p class="login-lede">Your name goes on the mission log and on the hand-over report. Nothing else is asked for.</p>
+      <form id="login-form" novalidate>
+        <label for="login-name">Operator name</label>
+        <div class="login-field">
+          <input id="login-name" name="operator" type="text" autocomplete="name" maxlength="40" spellcheck="false" placeholder="For example, A. Tamang" aria-describedby="login-msg login-note">
+          <button class="lbtn lbtn-solid lbtn-lg" type="submit">Enter the console<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4l4 4-4 4"/></svg></button>
+        </div>
+        <p class="login-msg" id="login-msg" role="alert"></p>
+      </form>
+      <p class="login-skip"><a href="app/" id="login-skip">Skip, and continue as Demo operator</a><button type="button" class="login-forget" id="login-forget" hidden>Forget the name on this browser</button></p>
+      <dl class="login-note" id="login-note">
+        <div><dt>No password</dt><dd>This is a demonstration. There is no account and nothing is checked.</dd></div>
+        <div><dt>Stays here</dt><dd>The name is kept only in this browser, under the key <span class="num">hound_operator</span>. It is not sent anywhere.</dd></div>
+        <div><dt>The exercise</dt><dd>A simulated search of a school block in Timure, Nepal. The people, damage and readings are invented.</dd></div>
+      </dl>
+    </div>
+    <p class="login-foot"><a href="./">About the project</a><a href="app/#/status">What is real</a></p>
+  </section>
+</main>
+<script>
+(() => {
+  const KEY = 'hound_operator';
+  const $ = (id) => document.getElementById(id);
+  const input = $('login-name'), msg = $('login-msg'), forget = $('login-forget'), skip = $('login-skip');
+  const read = () => { try { return localStorage.getItem(KEY) || ''; } catch { return ''; } };
+  const existing = read();
+  if (existing) { input.value = existing; forget.hidden = false; skip.textContent = 'Continue as ' + existing; }
+  input.focus(); input.select();
+  input.addEventListener('input', () => { msg.textContent = ''; input.removeAttribute('aria-invalid'); });
+  $('login-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = input.value.replace(/\s+/g, ' ').trim();
+    if (!name) { msg.textContent = 'Type a name, or use Skip below.'; input.setAttribute('aria-invalid', 'true'); input.focus(); return; }
+    try { localStorage.setItem(KEY, name); }
+    catch { msg.textContent = 'This browser will not store the name (private mode?). Opening the console as Demo operator.'; }
+    location.href = 'app/';
+  });
+  forget.addEventListener('click', () => {
+    try { localStorage.removeItem(KEY); } catch { /* nothing stored */ }
+    input.value = ''; forget.hidden = true; skip.textContent = 'Skip, and continue as Demo operator'; msg.textContent = 'Forgotten. This browser no longer holds a name.'; input.focus();
+  });
+  const tick = () => { const d = new Date(); $('login-clock').textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); $('login-date').textContent = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + ', local time'; };
+  tick(); setInterval(tick, 15000);
+})();
+</script>
+</body>
+</html>

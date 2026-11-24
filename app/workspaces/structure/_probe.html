@@ -1,0 +1,31 @@
+<!doctype html><meta charset=utf-8><body><script type=module>
+import * as P from './physics.js';
+const out={};
+try{
+ await P.loadRapier();
+ for (const sc of ['vshape','leanto','pancake','cantilever']) {
+  const o = out[sc] = {};
+  const pile = P.buildPile({seed:7, scenario:sc});
+  o.n = pile.pieces.length; o.mass = Math.round(pile.massTotal); o.ties = pile.ties.length;
+  P.trigger(pile);
+  let t0=performance.now(), steps=0, ke=[];
+  let q=0; while (pile.t < 16) { P.stepPile(pile, null); steps++; if (steps%30===0) ke.push(Math.round(P.kinetic(pile)/1000)); if (pile.t>1.5 && steps%6===0) { const ms=P.maxSpeed(pile); if(!pile.calmed && ms<0.6) P.calm(pile); q = ms<0.03?q+1:0; if(q>=5) break; } } P.sleepAll(pile);
+  o.settleT = +pile.t.toFixed(2); o.msStep = +((performance.now()-t0)/steps).toFixed(3); o.ke = ke.join(','); o.tiesBroken = pile.tiesBroken||0; o.crushed = pile.crushed||0; o.active = P.activeCount(pile.world);
+  // plank tilts
+  const poses = P.readPoses(pile); const tilt=[];
+  for (const p of pile.pieces) if (p.kind==='plank') { const o7=p.idx*7; const qx=poses[o7+3], qz=poses[o7+5]; const upy = 1-2*(qx*qx+qz*qz); tilt.push(p.id+':'+Math.round(Math.acos(Math.max(-1,Math.min(1,upy)))*57.3)+'@'+poses[o7+1].toFixed(1)); }
+  o.tilt = tilt.join(' ');
+  const con = P.measureContacts(pile); o.ground = Math.round(con.ground); o.weight = Math.round(con.weight); o.edges = con.edges.length; o.ratio = +(con.ground/con.weight).toFixed(3);
+  const snap = P.snapshot(pile); o.snapKB = Math.round(snap.bytes.length/1024);
+  const cand = pile.pieces.filter(p=>p.kind==='plank').slice(0,3); { const g=P.controlTrial(pile,snap,{}); let r; while(!(r=g.next()).done); o.control={n:r.value.nMoved,max:+r.value.maxDisp.toFixed(4)}; }
+  o.lifts = [];
+  for (const c of cand) { t0=performance.now(); const g = P.liftTrial(pile, snap, c.idx, {}); let r; while(!(r=g.next()).done); r=r.value; o.lifts.push({id:c.id, ms:Math.round(performance.now()-t0), nMoved:r.nMoved, maxDisp:+r.maxDisp.toFixed(3), E:Math.round(r.energy), steps:r.steps, settled:r.settled}); }
+  o.shakes = [];
+  for (const pga of [0.1,0.3]) { t0=performance.now(); const g = P.shakeTrial(pile, snap, {pga, seed:3}); let r; while(!(r=g.next()).done); r=r.value; o.shakes.push({pga, ms:Math.round(performance.now()-t0), nMoved:r.nMoved, maxDisp:+r.maxDisp.toFixed(3)}); }
+  // null trial: restore and just settle: should move nothing
+  { const w = P.restoreWorld(snap); const b = P.readPoses(pile,w); for(let i=0;i<120;i++) w.step(); const a=P.readPoses(pile,w); let mx=0; for(const p of pile.pieces) mx=Math.max(mx,P.poseShift(b,a,p.idx*7,p.radius)); o.nullDrift=+mx.toFixed(4); w.free(); }
+  pile.world.free();
+ }
+}catch(e){out.err=String(e.stack||e);}
+window.OUT=out;
+</script>

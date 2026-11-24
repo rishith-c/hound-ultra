@@ -33,6 +33,12 @@ export const MANIFEST = [
   { id: 'copilot', title: 'Copilot', group: 'System', icon: 'copilot', reality: 'live-ai', blurb: 'Ask in plain words. An on-device language model turns it into actions.' },
   { id: 'status', title: 'System check', group: 'System', icon: 'status', reality: 'live-algo', blurb: 'Self-tests, fault drills and the list of what is real.' },
 ];
+// Demo mode: the short, cinematic path through the product. Everything else is one click away in Advanced.
+export const CHAPTERS = [
+  { id: 'area', label: 'The valley' }, { id: 'mission', label: 'The search' }, { id: 'sense', label: 'Through the wall' },
+  { id: 'radio', label: 'Radio vision' }, { id: 'aerial', label: 'From above' }, { id: 'scan', label: 'Inside the rubble' },
+  { id: 'swarm', label: 'The swarm' }, { id: 'structure', label: 'The collapse' }, { id: 'horizon', label: 'The horizon' }, { id: 'report', label: 'The hand-over' },
+];
 // Optional app-wide add-ons. Each exports init(ctx). Missing files are skipped silently.
 const GLOBALS = ['palette', 'copilot-dock', 'narration', 'a11y', 'sound'];
 
@@ -41,7 +47,13 @@ const bus = createBus();
 const prefs = loadPrefs();
 applyPrefs();
 
-function loadPrefs() { try { return { contrast: 'normal', palette: 'default', motion: 'auto', rail: 'open', ...JSON.parse(localStorage.getItem('hound.prefs') || '{}') }; } catch { return { contrast: 'normal', palette: 'default', motion: 'auto', rail: 'open' }; } }
+function loadPrefs() {
+  const base = { contrast: 'normal', palette: 'default', motion: 'auto', rail: 'open', mode: 'demo' };
+  try { Object.assign(base, JSON.parse(localStorage.getItem('hound.prefs') || '{}')); } catch { /* private mode: defaults */ }
+  const asked = new URLSearchParams(location.search).get('mode'); // ?mode=advanced or ?mode=demo
+  if (asked === 'advanced' || asked === 'demo') base.mode = asked;
+  return base;
+}
 function savePrefs() { try { localStorage.setItem('hound.prefs', JSON.stringify(prefs)); } catch { /* private mode: keep going without saving */ } }
 function applyPrefs() {
   const r = document.documentElement;
@@ -49,6 +61,7 @@ function applyPrefs() {
   r.dataset.palette = prefs.palette === 'cb' ? 'cb' : 'default';
   if (prefs.motion === 'reduce') r.dataset.motion = 'reduce'; else delete r.dataset.motion;
   r.dataset.rail = prefs.rail;
+  r.dataset.mode = prefs.mode === 'advanced' ? 'advanced' : 'demo';
 }
 
 // ---------- toasts and dialogs ----------
@@ -71,13 +84,21 @@ function confirmDialog({ title, body, confirmLabel = 'Confirm', cancelLabel = 'C
 
 // ---------- boot ----------
 const ctx = { bus, world, kit, prefs, manifest: MANIFEST, PHASE_INFO, FAULTS, COMMANDS, selection: null,
-  setPref(k, v) { prefs[k] = v; savePrefs(); applyPrefs(); bus.emit('prefs', prefs); },
+  chapters: CHAPTERS,
+  get mode() { return prefs.mode === 'advanced' ? 'advanced' : 'demo'; },   // 'demo' shows only the hero; 'advanced' shows everything
+  setPref(k, v) { prefs[k] = v; savePrefs(); applyPrefs(); bus.emit('prefs', prefs); if (k === 'mode') { refreshMode(); bus.emit('mode', { mode: ctx.mode }); } },
+  setMode(m) { if (m !== ctx.mode) ctx.setPref('mode', m); },
   select(sel) { ctx.selection = sel; bus.emit('select', sel); },
   shell: { toast, confirm: confirmDialog, open: (id, params) => openWorkspace(id, params), current: () => current },
 };
 window.HOUND = ctx; // for debugging and for the automated checks
 
 const mounted = new Map(); let current = null;
+
+function refreshMode() {
+  for (const b of document.querySelectorAll('[data-set-mode]')) b.setAttribute('aria-pressed', String(b.dataset.setMode === ctx.mode));
+  requestAnimationFrame(() => window.dispatchEvent(new Event('resize'))); // the main area changes size
+}
 
 function buildChrome() {
   const groups = [...new Set(MANIFEST.map((m) => m.group))];
@@ -98,9 +119,27 @@ function buildChrome() {
     h('span.tag.tag-sim', { title: 'The building, people and most sensor readings are simulated. Items marked Live run for real.' }, 'Simulation'),
     h('div.tb-group.tb-unit', { id: 'tb-unit', title: 'HOUND-01 radio link and battery (simulated)' }),
     h('button.btn.tb-search', { 'aria-label': 'Search or run a command', onclick: () => bus.emit('palette:open') }, icon('search'), h('span', null, 'Search or command'), h('kbd', null, '⌘K')),
+    h('div.seg.tb-mode', { role: 'group', 'aria-label': 'How much to show' },
+      h('button', { 'data-set-mode': 'demo', title: 'Only the essentials, full screen', onclick: () => ctx.setMode('demo') }, 'Demo'),
+      h('button', { 'data-set-mode': 'advanced', title: 'Every workspace, control and number', onclick: () => ctx.setMode('advanced') }, 'Advanced')),
     h('button.btn.btn-danger', { id: 'tb-stop', onclick: () => { const S = ctx.sim.state; ctx.sim.command(S.hold ? 'resume' : 'allStop'); } }, icon('stop'), h('span', { id: 'tb-stop-label' }, 'All stop')),
   );
+  $('dock').append(
+    h('div.dock-note', null, h('span', null, 'Training exercise. The people, damage and readings are simulated.'), h('a', { href: '#/status' }, 'What is real?')),
+    h('div.dock-chapters', { role: 'group', 'aria-label': 'Chapters' }, ...CHAPTERS.map((c, i) => {
+      const m = MANIFEST.find((x) => x.id === c.id);
+      return h('a.dock-item', { href: '#/' + c.id, id: 'dock-' + c.id, title: m.blurb }, h('span.num', null, String(i + 1).padStart(2, '0')), h('b', null, c.label));
+    })),
+    h('div.dock-step', null,
+      h('button.btn.btn-icon.btn-ghost', { 'aria-label': 'Previous chapter', onclick: () => stepChapter(-1) }, icon('chevron-left')),
+      h('button.btn', { id: 'dock-next', onclick: () => stepChapter(1) }, h('span', null, 'Next'), icon('chevron'))));
+  refreshMode();
   $('statusbar').append(h('span', { id: 'sb-event' }, ''), h('div.grow'), h('span.dim', null, 'Training exercise. The people, damage and readings are simulated.'), h('a', { href: '#/status' }, 'What is real?'), h('a', { href: 'ui/reference.html', target: '_blank', rel: 'noopener' }, 'Design reference'));
+}
+
+function stepChapter(d) {
+  const i = CHAPTERS.findIndex((c) => c.id === current);
+  openWorkspace(CHAPTERS[(Math.max(i, 0) + (i < 0 ? 0 : d) + CHAPTERS.length) % CHAPTERS.length].id);
 }
 
 function refreshChrome() {
@@ -128,6 +167,7 @@ async function openWorkspace(id, params = {}) {
   if (current && mounted.has(current)) { const prev = mounted.get(current); prev.root.hidden = true; try { prev.api?.onHide?.(); } catch (e) { console.error(e); } }
   current = m.id;
   document.querySelectorAll('.rail-item').forEach((a) => a.setAttribute('aria-current', a.id === 'rail-' + m.id ? 'page' : 'false'));
+  document.querySelectorAll('.dock-item').forEach((a) => a.setAttribute('aria-current', a.id === 'dock-' + m.id ? 'page' : 'false'));
   document.title = `${m.title} · HOUND`;
   if (location.hash !== '#/' + m.id) history.replaceState(null, '', '#/' + m.id);
   let rec = mounted.get(m.id);
@@ -138,7 +178,9 @@ async function openWorkspace(id, params = {}) {
     try {
       const mod = await import(`./workspaces/${m.id}/index.js`);
       root.replaceChildren();
-      rec.api = (await mod.default.mount(root, { ...ctx, params, manifestEntry: m })) || {};
+      const own = { ...ctx, params, manifestEntry: m };
+      for (const k of ['selection', 'mode']) Object.defineProperty(own, k, { get: () => ctx[k], set: (v) => { if (k === 'selection') ctx.selection = v; }, configurable: true, enumerable: true });
+      rec.api = (await mod.default.mount(root, own)) || {};
     } catch (e) {
       console.error(`[shell] workspace "${m.id}" failed`, e);
       const missing = /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(String(e));
@@ -162,13 +204,14 @@ async function boot() {
   try { const name = localStorage.getItem('hound_operator'); if (name) ctx.sim.command('setOperator', { name }); } catch { /* no storage */ }
   loading.remove();
   bus.on('tick', refreshChrome); bus.on('reset', refreshChrome); bus.on('seek', refreshChrome);
-  bus.on('event', (ev) => { if (ev.level === 'alert') toast(ev.text, { level: 'alert', ms: 6000 }); });
+  bus.on('event', (ev) => { if (ev.level === 'alert' && current !== 'mission') toast(ev.text, { level: 'alert', ms: 6000 }); });
   window.addEventListener('hashchange', () => openWorkspace(location.hash.replace(/^#\/?/, '').split('?')[0]));
   window.addEventListener('keydown', (e) => {
     const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName) || document.activeElement?.isContentEditable;
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); bus.emit('palette:open'); }
     else if (e.key === ' ' && !typing && document.activeElement?.tagName !== 'BUTTON') { e.preventDefault(); ctx.sim.toggle(); }
     else if (e.key === 'Escape') bus.emit('escape');
+    else if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey && ctx.mode === 'demo' && (e.key === '[' || e.key === ']')) stepChapter(e.key === ']' ? 1 : -1);
   });
   for (const g of GLOBALS) import(`./global/${g}.js`).then((mod) => mod.init?.(ctx)).catch(() => {});
   refreshChrome();
