@@ -135,8 +135,11 @@ def music(ed, total, out):
         at = int(round(m["at"] * 1000))
         n = m.get("n", 1)
         chain = f"[{k}:a]aresample=48000,aformat=channel_layouts=stereo"
+        chain += ",afade=t=in:d=0.006,areverse,afade=t=in:d=0.006,areverse"          # no click where the recording repeats
         if n > 1:
             chain += f",aloop=loop={n - 1}:size=2147483647"
+        if m.get("lp"):
+            chain += f",lowpass=f={m['lp']}"
         if m.get("dur"):
             chain += f",atrim=0:{m['dur']}"
         if m.get("fi"):

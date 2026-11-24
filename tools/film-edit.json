@@ -1,7 +1,7 @@
 {
  "block": 11.7076,
- "lufs": -18,
- "voice_db": 2.5,
+ "lufs": -16.4,
+ "voice_db": 4.0,
  "music": [
   {
    "file": "Longing Piano.wav",
@@ -79,19 +79,47 @@
    "file": "Rise Up Strings and Brass.wav",
    "at": 129.217,
    "n": 3,
-   "db": -5,
+   "db": -3.5,
    "end": 164.773,
    "fi": 5,
-   "fo": 5
+   "fo": 4
   },
   {
    "file": "Rise Up Strings and Brass.wav",
-   "at": 188.477,
+   "at": 164.773,
+   "n": 3,
+   "db": -3,
+   "end": 200.329,
+   "fi": 4,
+   "fo": 10,
+   "lp": 750
+  },
+  {
+   "file": "Rise Up Strings and Brass.wav",
+   "at": 176.625,
    "n": 5,
-   "db": -4,
-   "end": 247.737,
-   "fi": 9,
-   "fo": 0
+   "db": -3.5,
+   "end": 235.885,
+   "fi": 17,
+   "fo": 1.5
+  },
+  {
+   "file": "Rise Up Strings and Brass.wav",
+   "at": 200.329,
+   "n": 3,
+   "db": -11,
+   "end": 235.885,
+   "fi": 8,
+   "fo": 1.5
+  },
+  {
+   "file": "Rise Up Piano.wav",
+   "at": 200.329,
+   "n": 3,
+   "db": -13,
+   "end": 235.885,
+   "fi": 3,
+   "fo": 0.3
   }
  ],
  "segments": [
@@ -645,21 +673,21 @@
    ]
   },
   {
-   "clip": "n_sense",
+   "clip": "n_deepscan",
    "a": 0.3,
    "d": 2.6,
    "band": true,
    "zoom": [
     1.04,
     1.16,
-    0.5,
-    0.42
+    0.45,
+    0.4
    ],
    "cap": [
     [
      0,
      2.6,
-     "Inside the network, as it decides."
+     "Cosmic rays, to look deep into a pile."
     ]
    ]
   },
