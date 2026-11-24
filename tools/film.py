@@ -10,6 +10,8 @@ A shot: {"name", "url", "settle": s, "before": "js", "seconds": s, "do": [[t, "j
 import argparse, base64, json, os, shutil, subprocess, sys, tempfile, time, urllib.request
 import shoot
 
+FFMPEG = "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1"
+
 CLOCK = r"""(() => {
   const now0 = performance.now.bind(performance), raf0 = window.requestAnimationFrame.bind(window), st0 = window.setTimeout.bind(window), D = Date;
   const date0 = D.now() - now0(); let vt = null, id = 1, rafs = new Map(), timers = new Map(), seen = new Map();
@@ -72,7 +74,7 @@ def record(a, shot, base):
                 print("  before:", r["__error__"][:300])
         page.pump(shot.get("after", 0.2))
         todo = sorted(shot.get("do", []), key=lambda x: x[0])
-        enc = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", str(a.fps), "-c:v", "mjpeg", "-i", "-", "-c:v", "libx264", "-preset", "medium", "-crf", "12",
+        enc = subprocess.Popen([FFMPEG, "-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", str(a.fps), "-c:v", "mjpeg", "-i", "-", "-c:v", "libx264", "-preset", "medium", "-crf", "12",
                                 "-pix_fmt", "yuv420p", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709", out], stdin=subprocess.PIPE)
         page.eval("__film.freeze()")
         for k in range(n):

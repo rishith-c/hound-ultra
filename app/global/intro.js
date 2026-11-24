@@ -4,7 +4,7 @@ const LINES = ['People get trapped under rubble.', 'Wi-Fi passes through walls. 
 export function init(ctx) {
   const q = new URLSearchParams(location.search);
   let seen = false; try { seen = sessionStorage.getItem('hound.intro') === '1'; } catch { /* no storage */ }
-  if (ctx.mode !== 'demo' || q.get('intro') === '0' || q.has('paused') || (seen && q.get('intro') !== '1') || (location.hash && q.get('intro') !== '1')) return;
+  if (ctx.mode !== 'demo' || q.get('intro') === '0' || q.has('paused') || (seen && q.get('intro') !== '1') || (ctx.deepLink && q.get('intro') !== '1')) return;
   try { sessionStorage.setItem('hound.intro', '1'); } catch { /* no storage */ }
   const { h } = ctx.kit;
   const begin = h('button.btn.btn-primary.btn-lg', { onclick: () => close() }, 'Begin');

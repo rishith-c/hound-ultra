@@ -274,6 +274,7 @@ async function boot() {
     else if (e.key === 'Escape') bus.emit('escape');
     else if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey && ctx.mode === 'demo' && (e.key === '[' || e.key === ']')) stepChapter(e.key === ']' ? 1 : -1);
   });
+  ctx.deepLink = location.hash;   // read by the opening title before the first chapter writes its own address
   for (const g of GLOBALS) import(`./global/${g}.js`).then((mod) => mod.init?.(ctx)).catch(() => {});
   refreshChrome();
   await openWorkspace(location.hash.replace(/^#\/?/, '').split('?')[0] || (ctx.mode === 'demo' ? CHAPTERS[0].id : 'mission'));
