@@ -22,9 +22,10 @@ def font(name):
 
 
 def css():
-    return ("@font-face{font-family:Serif;src:url(%s)}@font-face{font-family:Sans;font-weight:400 700;src:url(%s)}"
+    return ("@font-face{font-family:HSerif;src:url(%s)}@font-face{font-family:HSans;font-weight:400 700;src:url(%s)}"
             "html,body{margin:0;background:transparent}body{width:1920px;height:1080px;position:relative;overflow:hidden;-webkit-font-smoothing:antialiased}"
-            ".cap{position:absolute;left:0;right:0;bottom:0;height:75px;display:grid;place-items:center;font:500 29px/1 Sans;letter-spacing:.002em;color:#f2f5f8;text-shadow:0 1px 8px rgba(0,0,0,.65)}"
+            ".cap{position:absolute;left:0;right:0;bottom:0;height:80px;display:grid;place-items:center;font:500 29px/1 HSans;letter-spacing:.002em;color:#f2f5f8;text-shadow:0 1px 8px rgba(0,0,0,.65)}"
+            ".tag{position:absolute;right:44px;top:34px;padding:9px 14px 10px;background:rgba(8,11,15,.66);border:1px solid rgba(165,139,255,.5);border-radius:4px;font:500 20px/1 HSans;color:#e6e1ff}"
             % (font("instrument-serif-latin-400-normal.woff2"), font("instrument-sans-latin-wdth-normal.woff2")))
 
 
@@ -52,7 +53,7 @@ def cut(job):
     cmd = [FF, "-y", "-loglevel", "error", "-ss", f"{seg['a']:.3f}", "-t", f"{seg['d']:.3f}", "-i", os.path.join(FILM, seg["clip"] + ".mp4")]
     g = f"[0:v]setpts=(PTS-STARTPTS)/{sp},fps=60,scale=1920:1080:flags=lanczos,setsar=1"
     if seg.get("band"):
-        g += ",drawbox=x=0:y=1005:w=1920:h=75:color=0x0a0d11:t=fill"
+        g += ",drawbox=x=0:y=1000:w=1920:h=80:color=0x0a0d11:t=fill"
     if seg.get("fi"):
         g += f",fade=t=in:st=0:d={seg['fi']}:color=0x06080a"
     if seg.get("fo"):
@@ -119,6 +120,11 @@ def main():
                 n += 1
                 items.append((png, f'<div class="cap">{text}</div>'))
                 caps.append((os.path.join(tmp, png), t0, t1, 0.22 if t1 - t0 < s["d"] / s.get("s", 1) - 0.01 else 0))
+        if s.get("tag"):
+            png = f"c{n:03d}.png"
+            n += 1
+            items.append((png, f'<div class="tag">{s["tag"]}</div>'))
+            caps.append((os.path.join(tmp, png), 0, s["d"] / s.get("s", 1), 0))
         if s.get("card"):
             png = f"c{n:03d}.png"
             n += 1

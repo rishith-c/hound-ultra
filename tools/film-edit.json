@@ -14,43 +14,36 @@
   {
    "clip": "open",
    "a": 8.6,
-   "d": 8.6,
-   "s": 1,
+   "d": 7.4,
    "cap": [
     [
-     1.4,
-     4.8,
+     0.5,
+     3.9,
      "After a flood or an earthquake, every building asks the same question."
     ],
     [
-     5.1,
-     8.4,
+     4.1,
+     7.2,
      "Is anyone in there, and where?"
     ]
-   ],
-   "fi": 0,
-   "fo": 0
+   ]
   },
   {
    "clip": "open",
-   "a": 22.0,
-   "d": 6.0,
-   "s": 1,
+   "a": 22.2,
+   "d": 5.0,
    "cap": [
     [
-     0.2,
-     5.6,
+     0.3,
+     4.8,
      "A camera cannot see through a wall. So people are sent in blind."
     ]
-   ],
-   "fi": 0,
-   "fo": 0.3
+   ]
   },
   {
    "clip": "radio",
    "a": 2.4,
    "d": 12.2,
-   "s": 1,
    "cap": [
     [
      0.4,
@@ -62,14 +55,12 @@
      11.8,
      "A person on the other side bends it, and the bent wave comes back."
     ]
-   ],
-   "fi": 0.3,
-   "fo": 0.3
+   ]
   },
   {
    "clip": "forge",
    "a": 0,
-   "d": 21.6,
+   "d": 20.5,
    "s": 1.35,
    "cap": [
     [
@@ -84,7 +75,7 @@
     ],
     [
      10.5,
-     15.7,
+     14.9,
      "The key was to train it on messy signals, with the chip’s own faults."
     ]
    ],
@@ -94,559 +85,575 @@
   {
    "clip": "sense",
    "a": 0.9,
-   "d": 9.3,
-   "s": 1,
+   "d": 8.4,
    "cap": [
     [
-     0.3,
-     4.4,
-     "23,372 parameters, every gradient derived by hand, running live in the browser."
+     0.4,
+     3.9,
+     "Example one. A person moves behind a wall."
     ],
     [
-     4.6,
-     9.1,
-     "It finds a moving person behind the wall 86.9 % of the time, in simulation."
+     4.1,
+     8.2,
+     "On people it never saw, it finds 86.9 % of those who move. All in simulation."
     ]
-   ],
-   "fi": 0.3,
-   "fo": 0
+   ]
   },
   {
    "clip": "sense",
-   "a": 11.0,
-   "d": 6.2,
-   "s": 1.5,
+   "a": 12.3,
+   "d": 4.4,
    "cap": [
     [
      0.2,
-     3.9,
-     "On people it never saw. An empty room is called empty 88.9 % of the time."
+     4.2,
+     "Example two. An empty room: it stays quiet, 88.9 % of the time."
     ]
-   ],
-   "fi": 0,
-   "fo": 0.3
+   ]
+  },
+  {
+   "clip": "sense",
+   "a": 39.9,
+   "d": 3.8,
+   "cap": [
+    [
+     0.15,
+     3.65,
+     "Run the first one again. The same answer."
+    ]
+   ]
+  },
+  {
+   "clip": "sense",
+   "a": 22.6,
+   "d": 2.6,
+   "cap": [
+    [
+     0.1,
+     2.5,
+     "A fan moves the air. It is not fooled."
+    ]
+   ]
+  },
+  {
+   "clip": "sense",
+   "a": 30.6,
+   "d": 4.1,
+   "cap": [
+    [
+     0.15,
+     3.95,
+     "The hard one: someone standing still. Radar and heat back it up."
+    ]
+   ]
   },
   {
    "clip": "rover",
    "a": 0.3,
-   "d": 7.7,
-   "s": 1,
+   "d": 6.8,
    "cap": [
     [
      0.4,
-     7.0,
+     6.4,
      "It rides on a rover we built, from parts a school team can buy."
     ]
-   ],
-   "fi": 0.3,
-   "fo": 0
+   ]
   },
   {
    "clip": "rover",
-   "a": 11.0,
-   "d": 6.4,
-   "s": 1,
+   "a": 14.4,
+   "d": 4.6,
    "cap": [
     [
-     0.9,
-     5.9,
+     0.3,
+     4.4,
      "On the left, our model. On the right, the photograph."
     ]
-   ],
-   "fi": 0,
-   "fo": 0.3
+   ]
+  },
+  {
+   "clip": "real",
+   "a": 0.2,
+   "d": 7.0,
+   "band": true,
+   "cap": [
+    [
+     0.3,
+     3.3,
+     "And here is the real one, driving."
+    ],
+    [
+     3.5,
+     6.8,
+     "If it loses contact, it stops by itself in 0.4 seconds."
+    ]
+   ]
   },
   {
    "clip": "mission",
-   "a": 0.2,
-   "d": 6.5,
-   "s": 1,
+   "a": 1.0,
+   "d": 4.9,
    "cap": [
     [
-     0.4,
-     6.0,
+     0.3,
+     4.7,
      "A whole search, start to finish. First, a drone maps the ground."
     ]
-   ],
-   "fi": 0.3,
-   "fo": 0
+   ]
   },
   {
-   "clip": "mission",
-   "a": 8.5,
-   "d": 5.0,
-   "s": 1,
+   "clip": "hero_track",
+   "a": 3.4,
+   "d": 3.4,
+   "tag": "Simulated",
+   "band": true,
    "cap": [
     [
-     0.2,
-     4.7,
+     0.15,
+     3.3,
      "The rover goes in first, while people stay outside."
     ]
-   ],
-   "fi": 0,
-   "fo": 0
+   ]
+  },
+  {
+   "clip": "hero_fpv",
+   "a": 5.0,
+   "d": 4.0,
+   "tag": "Simulated",
+   "band": true,
+   "cap": [
+    [
+     0.1,
+     3.85,
+     "It plans its own way, past mud and loose walls."
+    ]
+   ]
   },
   {
    "clip": "mission",
    "a": 17.5,
-   "d": 6.0,
-   "s": 1,
+   "d": 5.7,
    "cap": [
     [
      0.2,
-     5.6,
+     5.5,
      "It stops, goes quiet, and listens through the walls for ten seconds."
     ]
-   ],
-   "fi": 0,
-   "fo": 0
+   ]
   },
   {
    "clip": "mission",
    "a": 24.0,
    "d": 3.6,
-   "s": 1,
    "cap": [
     [
-     0.2,
-     3.4,
+     0.1,
+     3.5,
      "A hot pipe. Recognised, and ruled out."
     ]
-   ],
-   "fi": 0,
-   "fo": 0
+   ]
   },
   {
    "clip": "mission",
    "a": 64.0,
    "d": 4.5,
-   "s": 1,
    "cap": [
     [
      0.2,
-     4.2,
+     4.3,
      "Then the network hears someone."
     ]
-   ],
-   "fi": 0,
-   "fo": 0
+   ]
   },
   {
    "clip": "mission",
    "a": 68.5,
-   "d": 10.0,
-   "s": 1,
+   "d": 6.8,
    "cap": [
     [
      0.4,
-     9.4,
+     6.5,
      "Wi-Fi and radar agree. Twelve percent becomes ninety-four."
     ]
-   ],
-   "fi": 0,
-   "fo": 0
+   ]
+  },
+  {
+   "clip": "mission",
+   "a": 92.6,
+   "d": 3.4,
+   "cap": [
+    [
+     0.15,
+     3.25,
+     "A second person, lying still. Radar and heat find them."
+    ]
+   ]
   },
   {
    "clip": "mission",
    "a": 97.0,
-   "d": 6.2,
-   "s": 1,
+   "d": 6.0,
    "cap": [
     [
      0.2,
      5.8,
      "It plans the safe way in, around every hazard."
     ]
-   ],
-   "fi": 0,
-   "fo": 0
+   ]
   },
   {
    "clip": "mission",
    "a": 104.0,
-   "d": 5.6,
-   "s": 1,
+   "d": 5.4,
    "cap": [
     [
      0.2,
      5.2,
      "A person approves it. The team walks it."
     ]
-   ],
-   "fi": 0,
-   "fo": 0
+   ]
   },
   {
    "clip": "mission",
-   "a": 113.0,
-   "d": 4.0,
-   "s": 1,
+   "a": 115.6,
+   "d": 3.9,
    "cap": [
     [
      0.2,
      3.7,
      "Everyone it found is reached."
     ]
-   ],
-   "fi": 0,
-   "fo": 0.3
+   ]
   },
   {
    "clip": "fusion",
    "a": 3.4,
-   "d": 12.8,
-   "s": 1.1,
+   "d": 10.4,
    "cap": [
     [
-     0.4,
-     5.0,
+     0.3,
+     4.6,
      "One reading is never enough. Every sensor moves the odds, in the open."
     ],
     [
-     5.3,
-     11.2,
+     4.9,
+     10.2,
      "200 simulated missions: all 600 people found or flagged, no decoy called a person."
     ]
-   ],
-   "fi": 0.3,
-   "fo": 0.3
+   ]
   },
   {
    "clip": "report",
    "a": 2.0,
-   "d": 9.0,
-   "s": 1.15,
+   "d": 6.2,
    "cap": [
     [
-     0.4,
-     7.3,
+     0.3,
+     6.0,
      "The plan draws itself, and the next team gets it on paper."
     ]
-   ],
-   "fi": 0.3,
-   "fo": 0.3
+   ]
   },
   {
    "clip": "wall",
    "a": 0.5,
-   "d": 14.0,
-   "s": 1.4,
+   "d": 8.2,
    "cap": [
     [
-     0.5,
-     9.5,
+     0.3,
+     3.7,
+     "A whole mission, run twice: the same log, word for word."
+    ],
+    [
+     4.0,
+     8.0,
      "Over two thousand checks run on your own computer, in front of you."
     ]
-   ],
-   "fi": 0.3,
-   "fo": 0
+   ]
   },
   {
-   "clip": "broken",
-   "a": 1.0,
-   "d": 5.2,
-   "s": 1,
+   "clip": "broken1",
+   "a": 1.2,
+   "d": 4.6,
    "cap": [
     [
      0.2,
-     4.9,
+     4.4,
      "Then we break it on purpose. Cut the radio: it stops."
     ]
-   ],
-   "fi": 0,
-   "fo": 0
+   ]
   },
   {
    "clip": "broken",
    "a": 17.0,
-   "d": 4.6,
-   "s": 1,
+   "d": 4.5,
    "cap": [
     [
      0.2,
      4.3,
      "Blind its Wi-Fi: it refuses the reading, and listens again."
     ]
-   ],
-   "fi": 0,
-   "fo": 0.25
+   ]
   },
   {
    "clip": "a_mission",
    "a": 0.4,
-   "d": 0.66,
-   "s": 1,
+   "d": 0.62,
+   "band": true,
    "cap": [
     [
      0,
-     0.66,
+     0.62,
      "Behind the story, a full instrument: 24 workspaces, every number, every control."
     ]
-   ],
-   "fi": 0,
-   "fo": 0,
-   "band": true
+   ]
   },
   {
    "clip": "a_sense",
    "a": 0.4,
-   "d": 0.66,
-   "s": 1,
+   "d": 0.62,
+   "band": true,
    "cap": [
     [
      0,
-     0.66,
+     0.62,
      "Behind the story, a full instrument: 24 workspaces, every number, every control."
     ]
-   ],
-   "fi": 0,
-   "fo": 0,
-   "band": true
+   ]
   },
   {
    "clip": "a_radio",
    "a": 0.4,
-   "d": 0.66,
-   "s": 1,
+   "d": 0.62,
+   "band": true,
    "cap": [
     [
      0,
-     0.66,
+     0.62,
      "Behind the story, a full instrument: 24 workspaces, every number, every control."
     ]
-   ],
-   "fi": 0,
-   "fo": 0,
-   "band": true
+   ]
   },
   {
    "clip": "a_fusion",
    "a": 0.4,
-   "d": 0.66,
-   "s": 1,
+   "d": 0.62,
+   "band": true,
    "cap": [
     [
      0,
-     0.66,
+     0.62,
      "Behind the story, a full instrument: 24 workspaces, every number, every control."
     ]
-   ],
-   "fi": 0,
-   "fo": 0,
-   "band": true
+   ]
   },
   {
    "clip": "a_deepscan",
    "a": 0.4,
-   "d": 0.66,
-   "s": 1,
+   "d": 0.62,
+   "band": true,
    "cap": [
     [
      0,
-     0.66,
+     0.62,
      "Behind the story, a full instrument: 24 workspaces, every number, every control."
     ]
-   ],
-   "fi": 0,
-   "fo": 0,
-   "band": true
+   ]
   },
   {
    "clip": "a_globe",
    "a": 0.4,
-   "d": 0.66,
-   "s": 1,
+   "d": 0.62,
+   "band": true,
    "cap": [
     [
      0,
-     0.66,
+     0.62,
      "Behind the story, a full instrument: 24 workspaces, every number, every control."
     ]
-   ],
-   "fi": 0,
-   "fo": 0,
-   "band": true
+   ]
   },
   {
    "clip": "a_signals",
    "a": 0.4,
-   "d": 0.66,
-   "s": 1,
+   "d": 0.62,
+   "band": true,
    "cap": [
     [
      0,
-     0.66,
+     0.62,
      "Behind the story, a full instrument: 24 workspaces, every number, every control."
     ]
-   ],
-   "fi": 0,
-   "fo": 0,
-   "band": true
+   ]
   },
   {
    "clip": "a_strategy",
    "a": 0.4,
-   "d": 0.66,
-   "s": 1,
+   "d": 0.62,
+   "band": true,
    "cap": [
     [
      0,
-     0.66,
+     0.62,
      "Behind the story, a full instrument: 24 workspaces, every number, every control."
     ]
-   ],
-   "fi": 0,
-   "fo": 0,
-   "band": true
+   ]
   },
   {
    "clip": "a_timelines",
    "a": 0.4,
-   "d": 0.66,
-   "s": 1,
+   "d": 0.62,
+   "band": true,
    "cap": [
     [
      0,
-     0.66,
+     0.62,
      "Behind the story, a full instrument: 24 workspaces, every number, every control."
     ]
-   ],
-   "fi": 0,
-   "fo": 0,
-   "band": true
+   ]
   },
   {
    "clip": "a_area",
    "a": 0.4,
-   "d": 0.66,
-   "s": 1,
+   "d": 0.62,
+   "band": true,
    "cap": [
     [
      0,
-     0.66,
+     0.62,
      "Behind the story, a full instrument: 24 workspaces, every number, every control."
     ]
-   ],
-   "fi": 0,
-   "fo": 0,
-   "band": true
+   ]
   },
   {
    "clip": "a_triage",
    "a": 0.4,
-   "d": 0.66,
-   "s": 1,
+   "d": 0.62,
+   "band": true,
    "cap": [
     [
      0,
-     0.66,
+     0.62,
      "Behind the story, a full instrument: 24 workspaces, every number, every control."
     ]
-   ],
-   "fi": 0,
-   "fo": 0,
-   "band": true
+   ]
   },
   {
-   "clip": "scan",
-   "a": 14.0,
-   "d": 5.0,
-   "s": 1,
-   "cap": [
-    [
-     0.3,
-     4.8,
-     "What comes next: scans that find the spaces where someone could survive."
-    ]
-   ],
-   "fi": 0.25,
-   "fo": 0
-  },
-  {
-   "clip": "aerial",
-   "a": 3.0,
-   "d": 4.0,
-   "s": 1,
-   "cap": [
-    [
-     0.2,
-     3.8,
-     "Drone eyes that read every frame twice."
-    ]
-   ],
-   "fi": 0,
-   "fo": 0
-  },
-  {
-   "clip": "swarm",
-   "a": 20.0,
-   "d": 4.4,
-   "s": 1,
-   "cap": [
-    [
-     0.2,
-     4.2,
-     "Eight machines, one search."
-    ]
-   ],
-   "fi": 0,
-   "fo": 0
-  },
-  {
-   "clip": "structure",
-   "a": 10.5,
-   "d": 5.5,
-   "s": 1,
-   "cap": [
-    [
-     0.2,
-     5.2,
-     "A collapse you can test before anyone lifts a beam."
-    ]
-   ],
-   "fi": 0,
-   "fo": 0
-  },
-  {
-   "clip": "horizon",
-   "a": 0.4,
-   "d": 3.2,
-   "s": 1,
+   "clip": "drone",
+   "a": 1.4,
+   "d": 3.4,
    "cap": [
     [
      0.2,
      3.2,
+     "What comes next: a drone with four senses."
+    ]
+   ]
+  },
+  {
+   "clip": "drone",
+   "a": 8.6,
+   "d": 3.0,
+   "cap": [
+    [
+     0.1,
+     2.9,
+     "Heat finds a warm body."
+    ]
+   ]
+  },
+  {
+   "clip": "drone",
+   "a": 14.6,
+   "d": 2.6,
+   "cap": [
+    [
+     0.1,
+     2.5,
+     "Laser measures the rubble, point by point."
+    ]
+   ]
+  },
+  {
+   "clip": "drone",
+   "a": 20.6,
+   "d": 3.6,
+   "cap": [
+    [
+     0.1,
+     3.5,
+     "And our network listens through it, from above."
+    ]
+   ]
+  },
+  {
+   "clip": "scan",
+   "a": 14.0,
+   "d": 4.6,
+   "cap": [
+    [
+     0.2,
+     4.4,
+     "Scans that find the spaces where someone could survive."
+    ]
+   ]
+  },
+  {
+   "clip": "swarm",
+   "a": 20.0,
+   "d": 4.2,
+   "cap": [
+    [
+     0.2,
+     4.0,
+     "Eight machines, one search."
+    ]
+   ]
+  },
+  {
+   "clip": "structure",
+   "a": 10.5,
+   "d": 5.2,
+   "cap": [
+    [
+     0.2,
+     5.0,
+     "A collapse you can test before anyone lifts a beam."
+    ]
+   ]
+  },
+  {
+   "clip": "horizon",
+   "a": 0.4,
+   "d": 2.8,
+   "cap": [
+    [
+     0.1,
+     2.7,
      "Satellites that see the ground move."
     ]
-   ],
-   "fi": 0,
-   "fo": 0
+   ]
   },
   {
    "clip": "horizon",
    "a": 18.8,
-   "d": 3.2,
-   "s": 1,
+   "d": 2.8,
    "cap": [
     [
-     0.2,
-     3.0,
+     0.1,
+     2.7,
      "And a radar that never transmits."
     ]
-   ],
-   "fi": 0,
-   "fo": 0.35
+   ]
   },
   {
-   "clip": "area",
-   "a": 17.0,
-   "d": 7.6,
-   "s": 1,
-   "cap": [],
+   "clip": "end",
+   "a": 13.6,
+   "d": 8.6,
+   "card": "<div style=\"position:absolute;inset:0;background:linear-gradient(90deg,rgba(5,7,9,.88) 0%,rgba(5,7,9,.74) 55%,rgba(5,7,9,.22) 100%)\"></div><div style=\"position:absolute;left:112px;top:352px;color:#f2f5f8\"><div style=\"font:400 128px/1 HSerif;letter-spacing:-.015em\">HOUND</div><div style=\"font:400 60px/1.12 HSerif;margin-top:26px;color:#ff7a54;letter-spacing:-.01em\">Finding people trapped under rubble, with Wi-Fi.</div><div style=\"font:500 30px/1.5 HSans;margin-top:44px;color:#f2f5f8\">hound-command.vercel.app</div><div style=\"font:400 25px/1.5 HSans;margin-top:22px;color:#aab4bf\">Rover and neural network: built by us. Every search shown: simulated.<br>Console built 21 to 28 November 2026.</div></div>",
+   "card_at": 0.7,
    "fi": 0.4,
-   "fo": 1.0,
-   "card": "<div style=\"position:absolute;inset:0;background:linear-gradient(90deg,rgba(5,7,9,.90) 0%,rgba(5,7,9,.72) 55%,rgba(5,7,9,.34) 100%)\"></div><div style=\"position:absolute;left:112px;top:352px;color:#f2f5f8\"><div style=\"font:400 128px/1 Serif;letter-spacing:-.015em\">HOUND</div><div style=\"font:400 60px/1.12 Serif;margin-top:26px;color:#ff7a54;letter-spacing:-.01em\">Finding people trapped under rubble, with Wi-Fi.</div><div style=\"font:500 30px/1.5 Sans;margin-top:44px;color:#f2f5f8\">hound-command.vercel.app</div><div style=\"font:400 25px/1.5 Sans;margin-top:22px;color:#aab4bf\">Rover and neural network: built by us. Every search shown: simulated.<br>Console built 21 to 28 November 2026.</div></div>",
-   "card_at": 0.5
+   "fo": 1.0
   }
  ],
  "music": [
@@ -680,54 +687,54 @@
   {
    "file": "Longing Piano.wav",
    "at": 70.246,
-   "n": 3,
+   "n": 4,
    "db": 0,
-   "end": 105.368,
+   "end": 117.076,
    "fi": 0,
    "fo": 0
   },
   {
    "file": "Longing Strings 02.wav",
-   "at": 81.953,
+   "at": 93.661,
    "n": 2,
    "db": -8,
-   "end": 105.368,
+   "end": 117.076,
    "fi": 6,
    "fo": 0
   },
   {
    "file": "Longing Strings 01.wav",
-   "at": 93.661,
+   "at": 105.369,
    "n": 1,
    "db": -6,
-   "end": 105.368,
+   "end": 117.076,
    "fi": 6,
    "fo": 0
   },
   {
    "file": "Rise Up Piano.wav",
-   "at": 105.368,
+   "at": 117.076,
    "n": 9,
    "db": -6,
-   "end": 212.036,
+   "end": 223.744,
    "fi": 0,
    "fo": 0
   },
   {
    "file": "Rise Up Strings and Brass.wav",
-   "at": 105.368,
+   "at": 117.076,
    "n": 2,
    "db": -6,
-   "end": 129.072,
+   "end": 140.78,
    "fi": 3,
    "fo": 6
   },
   {
    "file": "Rise Up Strings and Brass.wav",
-   "at": 152.776,
+   "at": 164.484,
    "n": 5,
    "db": -5,
-   "end": 212.036,
+   "end": 223.744,
    "fi": 10,
    "fo": 0
   }

@@ -57,10 +57,16 @@
   "name": "sense",
   "url": "/app/?mode=demo&intro=0&paused#/sense",
   "settle": 4,
-  "seconds": 22,
+  "seconds": 45.4,
   "hide": "#dock{opacity:0!important}",
   "before": "(()=>{const b=[...document.querySelectorAll('button')].find(x=>x.offsetParent&&x.textContent.trim()===\"Moving\");if(b)b.click();return !!b})()",
-  "after": 0.05
+  "after": 0.05,
+  "do": [
+   [
+    35.9,
+    "HOUND.shell.open('sense',{sample:15});1"
+   ]
+  ]
  },
  {
   "name": "rover",
@@ -109,11 +115,21 @@
   "hide": "#dock{opacity:0!important}"
  },
  {
+  "name": "drone",
+  "url": "/app/?mode=demo&intro=0&paused#/aerial",
+  "settle": 6,
+  "seconds": 26,
+  "hide": "#dock{opacity:0!important}",
+  "before": "HOUND_AERIAL.startFly(true); 1",
+  "after": 0.05
+ },
+ {
   "name": "aerial",
   "url": "/app/?mode=demo&intro=0&paused#/aerial",
-  "settle": 4,
+  "settle": 6,
   "seconds": 28,
-  "hide": "#dock{opacity:0!important}"
+  "hide": "#dock{opacity:0!important}",
+  "before": "HOUND_AERIAL.endFly(0); 1"
  },
  {
   "name": "scan",
@@ -298,5 +314,33 @@
    1080,
    1
   ]
+ },
+ {
+  "name": "end",
+  "url": "/app/?mode=demo&intro=0&paused#/area",
+  "settle": 4,
+  "seconds": 27,
+  "hide": "#dock,.top,#top,header{opacity:0!important}.area-demo-title,.area-demo-figs,.area-demo-mark,.area-demo-shade{opacity:0!important}"
+ },
+ {
+  "name": "hero_track",
+  "url": "/app/twin/test.html?bare&mode=demo&t=100&cam=cinematic&speed=3&off=labels,hazards,coverage",
+  "settle": 9,
+  "seconds": 14
+ },
+ {
+  "name": "hero_fpv",
+  "url": "/app/twin/test.html?bare&mode=demo&t=163&cam=fpv&speed=4&off=labels,hazards,coverage",
+  "settle": 9,
+  "seconds": 14
+ },
+ {
+  "name": "broken1",
+  "url": "/app/?mode=demo&intro=0&paused#/status",
+  "settle": 4,
+  "before": "(()=>{const b=[...document.querySelectorAll('button')].find(x=>x.offsetParent&&x.textContent.trim()===\"Broken on purpose\");if(b)b.click();return !!b})()",
+  "after": 7,
+  "seconds": 9,
+  "hide": "#dock{opacity:0!important}"
  }
 ]

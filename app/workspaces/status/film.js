@@ -8,7 +8,7 @@ const R1 = 'HOUND-01';
 export const MODE_WORDS = { idle: 'Standing by', drive: 'Driving', listen: 'Listening', hold: 'All stop', fault: 'Holding position', swap: 'Battery swap' };
 // seek: where the film starts; lead: seconds before it breaks; speed: simulated seconds per real second; hold or until: how long it is watched
 export const FILM = [
-  { id: 'linkLoss', short: 'Link lost', title: 'The radio link dies', says: 'It must stop where it stands, and keep what it knows.', seek: 124, speed: 3, lead: 2.4, hold: 7, clear: true, after: 4.5, cam: 'follow' },
+  { id: 'linkLoss', short: 'Link lost', title: 'The radio link dies', says: 'It must stop where it stands, and keep what it knows.', seek: 124, speed: 3, lead: 2.4, hold: 7, clear: true, after: 4.5, cam: 'cinematic' },
   { id: 'csiDropout', short: 'Wi-Fi blinded', title: 'Wi-Fi goes blind', says: 'It must refuse the bad windows and listen again.', seek: 243, speed: 4, lead: 1.2, until: (n) => n('CSI_UNAVAILABLE'), max: 16, clear: true, after: 4, cam: 'follow' },
   { id: 'lowBattery', short: 'Battery low', title: 'The battery runs out', says: 'It must go home while it still can, then come back.', seek: 246, speed: 12, lead: 1, until: (n) => n('BATTERY_SWAPPED'), max: 26, after: 6, cam: 'cinematic' },
   { id: 'slide', short: 'Second slide', title: 'Debris falls on its route', says: 'It must find another way at once, or say there is none.', seek: 118, speed: 3, lead: 2.2, hold: 9, after: 0, cam: 'follow' },
