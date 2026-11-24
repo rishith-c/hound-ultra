@@ -53,7 +53,7 @@ export function createField(renderer, world, { rect, dx = 0.016, sponge = 1.1 })
   const out = new THREE.WebGLRenderTarget(nx, ny, { count: 2, type: THREE.HalfFloatType, format: THREE.RGBAFormat, minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: true, depthBuffer: false, stencilBuffer: false });
   for (const t of out.textures) { t.anisotropy = 4; t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; }
   const step = raw(`
-    uniform sampler2D tS, tM; uniform vec2 uTx, uMan; uniform vec3 uBody; uniform float uDrive, uOn; layout(location = 0) out vec4 o;
+    uniform sampler2D tS, tM; uniform vec2 uTx; uniform vec3 uBody; uniform float uDrive, uOn; layout(location = 0) out vec4 o;
     void main(){ ivec2 p = ivec2(gl_FragCoord.xy); vec4 c = texelFetch(tS, p, 0);
       vec2 E = c.xz, P = c.yw;
       vec2 lap = texelFetch(tS, p + ivec2(1, 0), 0).xz + texelFetch(tS, p - ivec2(1, 0), 0).xz + texelFetch(tS, p + ivec2(0, 1), 0).xz + texelFetch(tS, p - ivec2(0, 1), 0).xz - 4.0 * E;
@@ -63,7 +63,7 @@ export function createField(renderer, world, { rect, dx = 0.016, sponge = 1.1 })
       vec2 k = vec2(mix(m.r, ${(C2 / BODY_EPS).toFixed(6)}, b), m.r), s = vec2(mix(m.g, ${((BODY_SIGMA * dt) / (2 * EPS0 * BODY_EPS)).toFixed(6)} + 0.05, b), m.g);
       vec2 N = (2.0 * E - (1.0 - s) * P + k * lap) / (1.0 + s);
       vec2 t = q - uTx; N += uDrive * exp(-dot(t, t) * 0.35);
-      o = vec4(N.x, E.x, N.y, E.y); }`, { tS: { value: null }, tM: { value: tM }, uTx: { value: new THREE.Vector2() }, uMan: { value: new THREE.Vector2() }, uBody: { value: new THREE.Vector3() }, uDrive: { value: 0 }, uOn: { value: 0 } });
+      o = vec4(N.x, E.x, N.y, E.y); }`, { tS: { value: null }, tM: { value: tM }, uTx: { value: new THREE.Vector2() }, uBody: { value: new THREE.Vector3() }, uDrive: { value: 0 }, uOn: { value: 0 } });
   // analytic signal from E and the previous step, carrier removed, with and without the body
   const demod = raw(`
     uniform sampler2D tS; uniform vec2 uRot; layout(location = 0) out vec4 o0; layout(location = 1) out vec4 o1;

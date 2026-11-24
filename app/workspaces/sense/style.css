@@ -49,7 +49,7 @@
 .sense-cm td.good { color: var(--ok); background: var(--ok-soft); } .sense-cm td.bad { color: var(--danger); background: var(--danger-soft); }
 .sense-conf { display: flex; flex-direction: column; gap: 6px; } .sense-conf-line { font-size: var(--fs-12); color: var(--text-2); } .sense-conf-line b { color: var(--text); }
 .sense-foot { margin-top: auto; padding-top: var(--s-2); border-top: 1px solid var(--line); font-size: var(--fs-11); }
-@media (max-height: 940px) { .sense-mark { display: none; } .sense-left .panel-body > .sense-figsub:first-child { display: none; } .sense-ans { gap: 6px; } }
+@media (max-height: 940px) { .sense-bench .panel-head { min-height: 30px; padding: 4px 12px; } .sense-right .panel-body { padding: 7px 12px; } .sense-mark { display: none; } .sense-left .panel-body > .sense-figsub:first-child { display: none; } .sense-ans { gap: 6px; } }
 
 /* centre top: the window */
 .sense-spec-wrap { position: relative; width: 100%; height: 100%; }
@@ -86,6 +86,7 @@
 .sense-scrub::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: var(--line-2); }
 .sense-scrub::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 16px; margin-top: -7px; border-radius: 3px; background: var(--accent); border: 2px solid var(--bg-2); }
 .sense-ana-text { padding: 2px 12px 8px 56px; flex: none; min-height: 52px; display: flex; flex-direction: column; gap: 2px; }
+@media (max-width: 1500px) { .sense-ana-caption { min-height: 2.7em; } }
 .sense-ana-caption { font-size: var(--fs-13); color: var(--text); line-height: 1.35; } .sense-ana-route { font-size: var(--fs-12); color: var(--text-2); line-height: 1.35; } .sense-ana-route b { color: var(--heat-5); font-weight: 600; }
 
 /* right: answer, why, try */

@@ -341,20 +341,20 @@ export function create(stage, side, ctx, lab) {
       const lx = Math.min(...fx, ...tx) + 12;
       lab.label(c, f.name, lx, y0 - 8, { color: live || hot ? tok('--text') : done ? tok('--text-2') : tok('--text-3'), font: f.ndp ? TXB() : TXT(), bg: true });
       // what happens when it lands
-      for (const m of f.measure || []) { const x = xOf(m[0]), y = y1 - 5; c.fillStyle = done ? tok('--text') : tok('--bg-1'); c.strokeStyle = done ? tok('--text') : tok('--text-3'); c.beginPath(); c.moveTo(x + 10, y); c.lineTo(x + 14.5, y - 4.5); c.lineTo(x + 19, y); c.lineTo(x + 14.5, y + 4.5); c.closePath(); c.fill(); c.stroke(); lab.label(c, 'measures CSI', x + 24, y, { color: done ? tok('--text') : tok('--text-3'), bg: true }); }
+      for (const m of f.measure || []) { const x = xOf(m[0]), y = y1 - 5; c.fillStyle = done ? tok('--text') : tok('--bg-1'); c.strokeStyle = done ? tok('--text') : tok('--text-3'); c.beginPath(); c.moveTo(x + 10, y); c.lineTo(x + 14.5, y - 4.5); c.lineTo(x + 19, y); c.lineTo(x + 14.5, y + 4.5); c.closePath(); c.fill(); c.stroke(); lab.label(c, x + 100 > w ? 'CSI' : 'measures CSI', x + 24, y, { color: done ? tok('--text') : tok('--text-3'), bg: true }); }
       if (f.report) { const x = xOf(f.report), y = y1 - 5, left2 = x < w / 2; c.fillStyle = done ? tok('--ok') : tok('--bg-1'); c.strokeStyle = done ? tok('--ok') : tok('--text-3'); c.fillRect(x + (left2 ? -18 : 10), y - 4, 8, 8); c.strokeRect(x + (left2 ? -18 : 10) + 0.5, y - 3.5, 7, 7);
         const which = S.reporting === 'immediate' ? 'this exchange' : 'the previous exchange';
         lab.label(c, (done ? 'has results of ' : 'results of ') + which, x + (left2 ? 12 : 24), y + (left2 ? 13 : 0), { color: done ? tok('--ok') : tok('--text-3'), bg: true }); }
     });
     // playhead
     if (T < n + 0.02) { const py = Math.round(ty) + 0.5; c.strokeStyle = rgba('--text', 0.75); c.lineWidth = 1; c.beginPath(); c.moveTo(left - 2, py); c.lineTo(w - 8, py); c.stroke(); c.fillStyle = tok('--text'); c.beginPath(); c.moveTo(left - 2, py); c.lineTo(left - 9, py - 4); c.lineTo(left - 9, py + 4); c.closePath(); c.fill(); }
-    lab.label(c, 'time runs down, not to scale', left - 16, hh - 9, { align: 'right', color: tok('--text-3') });
+    lab.label(c, 'time runs down, not to scale', 10, hh - 9, { color: tok('--text-3') });
     lab.label(c, 'exchange ' + exch, w - 10, hh - 9, { align: 'right', font: NUM(), color: tok('--text-2') });
   }
 
   function drawCsi(c, w, hh) {
     const sw = Math.min(170, w * 0.34), mg = { l: 36, r: sw + 26, t: 22, b: 34 };
-    const P = lab.plot(c, { x: mg.l, y: mg.t, w: w - mg.l - mg.r, h: hh - mg.t - mg.b, xd: [-26, 26], yd: [0, 2.4], xt: [-26, -13, 0, 13, 26], yt: [0, 1, 2], xf: (v) => String(v).replace('-', '−'), xl: 'subcarrier, 312.5 kHz apart', yl: 'amplitude, direct path = 1', ylx: 26 });
+    const P = lab.plot(c, { x: mg.l, y: mg.t, w: w - mg.l - mg.r, h: hh - mg.t - mg.b, xd: [-26, 26], yd: [0, 2.4], xt: [-26, -13, 0, 13, 26], yt: [0, 1, 2], xf: (v) => String(v).replace('-', '−'), xl: 'subcarrier', yl: 'amplitude, direct path = 1', ylx: 26 });
     const now = performance.now(), cols = [tok('--accent'), tok('--text')];
     lines.forEach((ln, q) => {
       if (!ln.cur) return; const rv = clamp((now - ln.t0) / 600, 0, 1), nn = ln.cur.length, upto = Math.max(1, Math.round(rv * nn));

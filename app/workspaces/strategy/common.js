@@ -35,6 +35,16 @@ export function exhibitBrief(kit, { n, title, sentences, sources = [], tags = []
       h('dt', null, 'Not known yet'), h('dd', null, unknown)));
 }
 
+// The Demo layer of an exhibit: title, one sentence, reality tags, one caption, at most one action. Lower left.
+//   demoOverlay(kit, { title, sentence, tags, action: { label, icon, run } }) -> { el, caption(text) }
+export function demoOverlay(kit, { title, sentence, tags = [], action = null }) {
+  const { h, realityTag, icon } = kit, cap = h('p.strategy-demo-cap', { 'aria-live': 'polite' }); let last = '';
+  const el = h('div.strategy-demo', null,
+    h('div.strategy-demo-text.demo-only', null, h('div.row.tight', null, ...tags.map((t) => realityTag(t))), h('h1', null, title), h('p.strategy-demo-what', null, sentence)),
+    h('div.strategy-demo-foot', null, cap, action ? h('button.btn.demo-only', { type: 'button', onclick: action.run }, icon(action.icon || 'reset', 14), action.label) : null));
+  return { el, caption(t) { if (t !== last) { last = t; cap.textContent = t; } } };
+}
+
 // ---------- tokens ----------
 let tokCache = new Map();
 export function tok(name) { let v = tokCache.get(name); if (v == null) { v = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); tokCache.set(name, v); } return v; }
@@ -79,6 +89,7 @@ export function createChart(canvas, kit) {
     if (!c2 || !W) return;
     const c = c2; c.clearRect(0, 0, W, H);
     if (!spec) return;
+    pad.t = spec.y.label ? 26 : 10;
     const { x, y } = spec, pl = spec.padL ?? pad.l, pr = spec.padR ?? pad.r, pw = W - pl - pr, ph = H - pad.t - pad.b;
     const sx = (v) => pl + ((v - x.min) / (x.max - x.min || 1)) * pw, sy = (v) => pad.t + ph - ((v - y.min) / (y.max - y.min || 1)) * ph;
     c.font = '400 10.5px ' + tok('--mono'); c.lineWidth = 1;

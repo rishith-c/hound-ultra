@@ -99,8 +99,10 @@ export async function startProof({ onScene }) {
   function setAuto(on) { auto = on; autoBtn.setAttribute('aria-pressed', String(on)); autoBtn.textContent = on ? 'Stop stepping through' : 'Step through all 30'; schedule(); }
   function schedule() { clearTimeout(timer); if (auto && visible && !reduced) timer = setTimeout(() => { pick(order[++step % order.length]); }, 4200); }
 
+  const ridge = startRidge();
   async function pick(i) {
     const id = ++run; current = i;
+    ridge(nn.samples[i].x, catOf(nn.samples[i].cat).label);
     cells.forEach((b, k) => b && b.setAttribute('aria-pressed', String(k === i)));
     const s = nn.samples[i], cat = catOf(s.cat);
     const out = nn.inferSample(i, { trace: true });
@@ -136,14 +138,54 @@ export async function startProof({ onScene }) {
     truthline.textContent = text; truthline.className = 'pf-truthline' + (ok ? '' : ' miss'); truthline.hidden = false;
     schedule();
   }
-  inView(host, (on) => { visible = on; if (on && current < 0) pick(order[0]); else schedule(); }, { threshold: 0.25 });
+  inView(host, (on) => { visible = on; if (on && current < 0) pick(order[0]); else schedule(); }, { threshold: 0.05 });
+}
+
+// ---------- the window being read, drawn as 52 ridges behind the section title ----------
+function startRidge() {
+  const cv = $('#net-ridge'), cap = $('#net-ridge-cap'), c = cv.getContext('2d');
+  let rows = null, prev = null, t0 = 0, raf = 0, W = 0, H = 0;
+  // light smoothing over time so a ridge reads as a line; the numbers are the window's own
+  const smooth = (x) => x.map((r) => r.map((_, j) => { let s = 0, n = 0; for (let k = -2; k <= 2; k++) { const v = r[j + k]; if (v !== undefined) { const w = 3 - Math.abs(k); s += v * w; n += w; } } return s / n; }));
+  function size() { const r = cv.getBoundingClientRect(), d = Math.min(1.5, devicePixelRatio || 1); W = r.width; H = r.height; cv.width = Math.round(W * d); cv.height = Math.round(H * d); c.setTransform(d, 0, 0, d, 0, 0); if (rows) draw(1); }
+  function draw(u) {
+    c.clearRect(0, 0, W, H);
+    const n = rows.length, m = rows[0].length, top = 120, gap = (H - top - 60) / n, head = u * 1.08 * m;
+    for (let i = 0; i < n; i++) {
+      const y = top + i * gap, z = i / (n - 1), inset = (1 - z) * W * 0.16, span = W - inset * 1.2, A = 8 + z * 10;
+      c.beginPath();
+      for (let j = 0; j < m; j++) {
+        const v = j <= head ? rows[i][j] : prev ? prev[i][j] : 0, win = Math.sin(Math.PI * j / (m - 1));
+        const px = inset + (j / (m - 1)) * span, py = y - Math.max(-0.6, Math.min(2.6, v)) * A * (0.35 + 0.65 * win);
+        j ? c.lineTo(px, py) : c.moveTo(px, py);
+      }
+      c.strokeStyle = `rgba(${Math.round(150 + 100 * z)},${Math.round(190 - 30 * z)},${Math.round(235 - 110 * z)},${0.10 + 0.42 * z})`; c.lineWidth = 1;
+      c.lineTo(inset + span, y + 24); c.lineTo(inset, y + 24); c.closePath(); c.fillStyle = '#06080a'; c.fill(); c.stroke();
+    }
+  }
+  new ResizeObserver(size).observe(cv);
+  return (x, label) => {
+    prev = rows; rows = smooth(x); cap.textContent = 'The window being read below, as 52 ridges over ten seconds: ' + label.toLowerCase() + '. Simulated.';
+    if (!W) size();
+    if (reduced) return draw(1);
+    t0 = performance.now(); cancelAnimationFrame(raf);
+    const f = (now) => { const u = Math.min(1, (now - t0) / 1500); draw(u); if (u < 1) raf = requestAnimationFrame(f); };
+    raf = requestAnimationFrame(f);
+  };
 }
 
 // ---------- the small instrument in the hero ----------
 function startHeroChip(nn, all, onScene) {
   const canvas = $('#hp-canvas'), what = $('#hp-what'), msEl = $('#hp-ms'), says = $('#hp-says'), pEl = $('#hp-p'), bar = $('#hp-bar'), truth = $('#hp-truth');
   $('#hp-thr').style.left = (nn.threshold * 100).toFixed(1) + '%';
-  const order = Array.from({ length: all.length }, (_, k) => (13 + k * 11) % all.length);
+  // Every one of the 30 windows plays once. Right answers first, then wrong ones in their true proportion (one in three).
+  const right0 = [], wrong0 = [];
+  for (const c of ['Person moving', 'Empty room', 'Empty room + fan', 'Person standing still', 'Person lying still']) (nn.byCat[c] || []).forEach((i, n) => (all[i].says === all[i].truthPerson ? right0 : wrong0).push([n, i]));
+  const mixed = (a) => a.sort((x, y) => x[0] - y[0]).map((x) => x[1]);
+  const R0 = mixed(right0), W0 = mixed(wrong0), order = R0.splice(0, 1);
+  while (R0.length || W0.length) order.push(...R0.splice(0, 2), ...W0.splice(0, 1));
+  const PLAIN = { moving: 'A person is walking there and it said no one.', still: 'A person is there, only breathing. That moves the signal less than the sensor\u2019s own noise.', fan: 'The room is empty. A moving fan looked like a person.', empty: 'The room is empty. Noise looked like a person.' };
+  const why = (key) => (/moving/i.test(key) ? PLAIN.moving : /still/i.test(key) ? PLAIN.still : /fan/i.test(key) ? PLAIN.fan : PLAIN.empty);
   let k = 0, visible = true, timer = 0, run = 0;
   async function show() {
     const id = ++run, i = order[k++ % order.length], s = nn.samples[i], cat = catOf(s.cat);
@@ -159,10 +201,10 @@ function startHeroChip(nn, all, onScene) {
     pEl.textContent = 'p = ' + out.person.toFixed(2); msEl.textContent = out.ms < 0.1 ? '< 0.1 ms' : out.ms.toFixed(1) + ' ms';
     bar.style.width = (out.person * 100).toFixed(1) + '%'; bar.style.background = out.says ? 'var(--person)' : '';
     const right = out.says === out.truthPerson;
-    truth.textContent = `Truth: ${cat.label.toLowerCase()}. ${right ? 'Right.' : 'Wrong.'}`; truth.style.color = right ? 'var(--ok)' : 'var(--warn)';
-    if (!reduced) timer = setTimeout(() => { if (visible) show(); }, 3400);
+    truth.textContent = right ? `Right. Really in there: ${cat.label.toLowerCase()}.` : 'Wrong. ' + why(s.cat); truth.style.color = right ? 'var(--ok)' : 'var(--warn)';
+    if (!reduced) timer = setTimeout(() => { if (visible) show(); }, right ? 3400 : 6400);
   }
-  onScene('hero', (p) => { const v = p < 0.6; if (v && !visible) { visible = true; clearTimeout(timer); show(); } else if (!v) { visible = false; clearTimeout(timer); } });
+  onScene('film', (p, u, spanVh) => { const v = u * spanVh < 0.6; if (v && !visible) { visible = true; clearTimeout(timer); show(); } else if (!v) { visible = false; clearTimeout(timer); } });
   show();
 }
 

@@ -29,19 +29,24 @@ export async function startCommand() {
 
   // ---------- the 3-D twin, if the console has one ----------
   let twin = null, showPlan = false;
-  const q = new URLSearchParams(location.search).get('twin');
-  if (q === '1' || (CONFIG.twin && q !== '0')) {
-    try {
-      const mod = await import('../app/twin/index.js');
-      twin = await mod.createTwin(twinHost, ctx, { interactive: false, quality: 'high', camera: 'cinematic', caption: false, autostart: false });
-      if (!twin || twin.ok === false) { try { twin?.dispose?.(); } catch { /* nothing to release */ } throw new Error('the twin reported that it could not start'); }
-      stage.classList.add('has-twin');
-      const mk = (label, plan_) => el('button', { type: 'button', 'aria-pressed': String(showPlan === plan_), onclick: () => { showPlan = plan_; stage.classList.toggle('show-plan', plan_); [...seg.children].forEach((b, i) => b.setAttribute('aria-pressed', String((i === 1) === plan_))); sizePlan(); syncTwin(); } }, label);
-      const seg = el('div.lseg', { role: 'group', 'aria-label': 'Picture' }, mk('3-D twin', false), mk('Plan view', true));
-      ui.view.replaceChildren(seg); ui.view.hidden = false;
-    } catch (e) { console.warn('[landing] the 3-D twin did not start; showing the plan view.', e); twin = null; twinHost.replaceChildren(); }
-  }
   let twinOn = false;
+  const q = new URLSearchParams(location.search).get('twin');
+  // Loaded beside the running mission, so the plan view plays while the 3-D site is being built.
+  async function loadTwin() {
+    if (q === '1' || (CONFIG.twin && q !== '0')) {
+      try {
+        const mod = await import('../app/twin/index.js');
+        twin = await mod.createTwin(twinHost, ctx, { interactive: false, quality: 'high', camera: 'cinematic', caption: false, autostart: false });
+        if (!twin || twin.ok === false) { try { twin?.dispose?.(); } catch { /* nothing to release */ } throw new Error('the twin reported that it could not start'); }
+        twin.setLayer?.('labels', false);
+        stage.classList.add('has-twin');
+        const mk = (label, plan_) => el('button', { type: 'button', 'aria-pressed': String(showPlan === plan_), onclick: () => { showPlan = plan_; stage.classList.toggle('show-plan', plan_); [...seg.children].forEach((b, i) => b.setAttribute('aria-pressed', String((i === 1) === plan_))); sizePlan(); syncTwin(); } }, label);
+        const seg = el('div.lseg', { role: 'group', 'aria-label': 'Picture' }, mk('3-D twin', false), mk('Plan view', true));
+        ui.view.replaceChildren(seg); ui.view.hidden = false;
+      } catch (e) { console.warn('[landing] the 3-D twin did not start; showing the plan view.', e); twin = null; twinHost.replaceChildren(); }
+    }
+    syncTwin(); sizePlan();
+  }
   function syncTwin() { if (!twin) return; const want = visible && !showPlan; if (want === twinOn) return; twinOn = want; try { want ? twin.start() : twin.stop(); } catch (e) { console.warn(e); } }
 
   // ---------- plan view ----------
@@ -268,5 +273,6 @@ export async function startCommand() {
   }, { threshold: [0, 0.3, 0.6] }).observe(stage);
   if (reduced) ui.hint.textContent = 'Reduced motion is on, so the mission waits for you. Press Play.';
   sizePlan(); panels(true);
+  loadTwin();
   document.fonts?.ready.then(() => draw());
 }

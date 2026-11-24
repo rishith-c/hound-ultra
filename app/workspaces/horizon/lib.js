@@ -117,9 +117,9 @@ export function plot(g, box, { xd, yd, xlog = false, ylog = false, xlabel, ylabe
   g.strokeStyle = T.line2; g.beginPath(); g.moveTo(x, y + hh + 0.5); g.lineTo(x + w, y + hh + 0.5); if (frame) { g.moveTo(x + 0.5, y); g.lineTo(x + 0.5, y + hh); } g.stroke();
   g.beginPath(); for (const v of xt) { const px = Math.round(X(v)) + 0.5; g.moveTo(px, y + hh); g.lineTo(px, y + hh + 4); } g.stroke();
   for (const v of xt) text(g, xfmt(v), X(v), y + hh + 15, { color: 'text3', size: 10.5, align: 'center', mono: true, weight: 400 });
-  for (const v of yt) text(g, yfmt(v), x - 6, Y(v), { color: 'text3', size: 10.5, align: 'right', base: 'middle', mono: true, weight: 400 });
+  const yl = y - 9 < 9 ? 9 : y - 9; for (const v of yt) if (!ylabel || Y(v) - yl > 10) text(g, yfmt(v), x - 6, Y(v), { color: 'text3', size: 10.5, align: 'right', base: 'middle', mono: true, weight: 400 });
   if (xlabel) text(g, xlabel, x + w, y + hh + 28, { color: 'text3', size: 11, align: 'right' });
-  if (ylabel) text(g, ylabel, x - 40 < 2 ? 2 : x - 40, y - 2 < 9 ? 9 : y - 2, { color: 'text3', size: 11 });
+  if (ylabel) text(g, ylabel, x - 40 < 2 ? 2 : x - 40, yl, { color: 'text3', size: 11 });
   g.restore();
   return { X, Y, ix, iy, box, x0: x, x1: x + w, y0: y, y1: y + hh };
 }
@@ -208,7 +208,7 @@ export const row = (...kids) => h('div.row.wrap', null, ...kids);
 // const L = loop((dt, t) => { ... }); L.start(); L.stop();   dt is capped at 50 ms. Under reduced motion the step runs once and stops.
 export function loop(step) {
   let id = 0, last = 0, on = false;
-  const tick = (now) => { if (!on) return; const dt = Math.min(0.05, (now - last) / 1000); last = now; step(dt, now / 1000); if (on) id = requestAnimationFrame(tick); };
+  const tick = (now) => { if (!on) return; const dt = clamp((now - last) / 1000, 0, 0.05); last = now; step(dt, now / 1000); if (on) id = requestAnimationFrame(tick); };
   return { start() { if (on) return; last = performance.now(); if (reduced()) { step(0, last / 1000); return; } on = true; id = requestAnimationFrame(tick); }, stop() { on = false; cancelAnimationFrame(id); }, get running() { return on; } };
 }
 // Coalesce bursts of slider input into one recompute per frame.

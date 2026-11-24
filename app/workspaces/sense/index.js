@@ -54,7 +54,7 @@ export default {
     ctx.bus.on('prefs', clearTokens);
 
     // Demo: one film-like hero. Advanced: the three views. Only the one on screen runs; the other is built when first needed.
-    let hero = null, heroLoad = null;
+    let hero = null, heroLoad = null; root.senseHero = () => hero;
     async function openHero(p) {
       if (!heroLoad) heroLoad = import('./hero.js').then((m) => m.create(stage, ctx)).then((a) => (hero = a)).catch((e) => { console.error('[sense] the demo view failed', e); heroLoad = null; stage.replaceChildren(h('div.empty', null, icon('alert', 28), h('h3', null, 'The demo could not start'), h('p.muted', null, String(e.message || e)), h('button.btn', { onclick: () => { stage.replaceChildren(); enter(); } }, 'Try again'))); });
       else if (p && Object.keys(p).length) hero?.onParams(p);

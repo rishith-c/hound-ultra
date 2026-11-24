@@ -394,7 +394,7 @@ export default {
       g.strokeStyle = T.text; g.lineWidth = 1; g.beginPath(); tr.forEach((v, q) => { const px = sx0 + 1 + (v / mx) * (stripW - 4), py = B.y + ((q + 0.5) / tr.length) * B.h; if (q) g.lineTo(px, py); else g.moveTo(px, py); }); g.stroke();
       L.text(g, 'one scan point', sx0, B.y - 6, { color: 'text2', size: 11 });
       L.text(g, '0', sx0 + 1, B.y + B.h + 15, { color: 'text3', size: 10.5, mono: true, weight: 400 }); L.text(g, String(mx), sx0 + stripW - 2, B.y + B.h + 15, { color: 'text3', size: 10.5, mono: true, weight: 400, align: 'right' });
-      L.text(g, 'photons per ' + grp * DT * 1000 + ' ps', sx0 + stripW - 2, B.y + B.h + 28, { color: 'text3', size: 11, align: 'right' });
+      L.text(g, 'photons', sx0 + stripW - 2, B.y + B.h + 28, { color: 'text3', size: 11, align: 'right' });
       const cx = Pl.X(ys[ti]); g.strokeStyle = L.rgba('accent2', 0.9); g.lineWidth = 1; g.beginPath(); g.moveTo(cx, B.y - 5); g.lineTo(cx - 4, B.y - 11); g.lineTo(cx + 4, B.y - 11); g.closePath(); g.stroke(); g.setLineDash([2, 4]); g.beginPath(); g.moveTo(Math.round(cx) + 0.5, B.y); g.lineTo(Math.round(cx) + 0.5, B.y + B.h); g.stroke(); g.setLineDash([]);
       if (pulse && pulse.tau > T_VIEW[0]) { const py = Math.round(Pl.Y(Math.min(pulse.tau, T_VIEW[1]))) + 0.5; g.strokeStyle = T.accent2; g.beginPath(); g.moveTo(B.x, py); g.lineTo(sx0 + stripW, py); g.stroke(); L.text(g, pulse.tau.toFixed(1) + ' ns', B.x + 5, py - 5, { color: 'accent2', size: 10.5, mono: true, halo: true }); }
       rv = { ...rv, B, Pl };
@@ -409,7 +409,7 @@ export default {
       const Pb = L.plot(g, Bb, { xd, yd: [0, 1], xlog: true, xticks: xt, yticks: [0, 0.5, 1], xlabel: 'time resolution of the detector, ps', ylabel: 'match with truth' });
       const js = [], la = []; for (let j = 17; j <= 940; j *= 1.12) { js.push(j); la.push(resLat(j, z, P.len) * 100); }
       L.trace(g, Pa, js, la, { color: 'text2', dash: [4, 3], width: 1.25 });
-      const li = js.findIndex((j) => j > 330); L.text(g, 'predicted blur across', Pa.X(js[li]) - 4, Pa.Y(la[li]) - 8, { color: 'text2', size: 10.5, align: 'right', halo: true });
+      const li = js.findIndex((j) => j > 330); L.text(g, 'predicted blur across', Pa.X(js[li]) - 14, Pa.Y(la[li]) + 18, { color: 'text2', size: 10.5, align: 'left', halo: true });
       L.rule(g, Pa, { y: 10, color: 'warn', label: 'off the body beyond 10 cm' });
       for (const [Pp, arr, sc] of [[Pa, SW.err, 100], [Pb, SW.ncc, 1]]) { const xs = [], ms = []; g.strokeStyle = L.rgba('accent', 0.45); g.lineWidth = 1; g.beginPath();
         arr.forEach((a, j) => { if (!a.length) return; const lo = Math.max(Math.min(...a) * sc, Pp === Pa ? 0.3 : 0), hi = Math.min(Math.max(...a) * sc, Pp === Pa ? 300 : 1), px = Math.round(Pp.X(SWEEP_J[j])) + 0.5; g.moveTo(px, Pp.Y(lo)); g.lineTo(px, Pp.Y(hi)); xs.push(SWEEP_J[j]); ms.push(clamp(med(a) * sc, Pp === Pa ? 0.3 : 0, Pp === Pa ? 300 : 1)); });

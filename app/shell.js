@@ -35,12 +35,13 @@ export const MANIFEST = [
 ];
 // Demo mode: the short, cinematic path through the product. Everything else is one click away in Advanced.
 export const CHAPTERS = [
-  { id: 'area', label: 'The valley' }, { id: 'mission', label: 'The search' }, { id: 'sense', label: 'Through the wall' },
-  { id: 'radio', label: 'Radio vision' }, { id: 'aerial', label: 'From above' }, { id: 'scan', label: 'Inside the rubble' },
-  { id: 'swarm', label: 'The swarm' }, { id: 'structure', label: 'The collapse' }, { id: 'horizon', label: 'The horizon' }, { id: 'report', label: 'The hand-over' },
+  { id: 'area', label: 'The problem', part: 'How HOUND finds people' }, { id: 'radio', label: 'The idea' }, { id: 'sense', label: 'The network' },
+  { id: 'mission', label: 'The search' }, { id: 'fusion', label: 'The proof' }, { id: 'report', label: 'The rescue' },
+  { id: 'aerial', label: 'Drone eyes', part: 'What comes next' }, { id: 'scan', label: 'Inside the rubble' }, { id: 'swarm', label: 'Many rovers' },
+  { id: 'structure', label: 'The collapse' }, { id: 'horizon', label: 'The horizon' },
 ];
 // Optional app-wide add-ons. Each exports init(ctx). Missing files are skipped silently.
-const GLOBALS = ['palette', 'copilot-dock', 'narration', 'a11y', 'sound'];
+const GLOBALS = ['intro', 'palette', 'copilot-dock', 'narration', 'a11y', 'sound'];
 
 const $ = (id) => document.getElementById(id);
 const bus = createBus();
@@ -111,6 +112,7 @@ function buildChrome() {
   const reset = h('button.btn.btn-icon', { 'aria-label': 'Restart the mission from the beginning', title: 'Restart the mission', onclick: () => ctx.sim.reset() }, icon('reset'));
   $('topbar').append(
     h('a.brand', { href: '../', 'aria-label': 'HOUND home' }, h('i'), 'HOUND'),
+    h('p.tb-promise.demo-only', null, 'Finds people trapped in collapsed buildings, with a Wi-Fi neural network'),
     h('div.tb-mission', null, h('b', { id: 'tb-phase' }, 'Loading'),
       h('div.tb-track', { id: 'tb-track', role: 'img', 'aria-label': 'Mission progress' }, ...Object.keys(PHASE_INFO).map((p) => h('i', { 'data-phase': p, title: PHASE_INFO[p].label }))),
       h('span.dim', { id: 'tb-hint' }, '')),
@@ -125,14 +127,11 @@ function buildChrome() {
     h('button.btn.btn-danger', { id: 'tb-stop', onclick: () => { const S = ctx.sim.state; ctx.sim.command(S.hold ? 'resume' : 'allStop'); } }, icon('stop'), h('span', { id: 'tb-stop-label' }, 'All stop')),
   );
   $('dock').append(
-    h('div.dock-note', null, h('span', null, 'Training exercise. The people, damage and readings are simulated.'), h('a', { href: '#/status' }, 'What is real?')),
-    h('div.dock-chapters', { role: 'group', 'aria-label': 'Chapters' }, ...CHAPTERS.map((c, i) => {
-      const m = MANIFEST.find((x) => x.id === c.id);
-      return h('a.dock-item', { href: '#/' + c.id, id: 'dock-' + c.id, title: m.blurb }, h('span.num', null, String(i + 1).padStart(2, '0')), h('b', null, c.label));
-    })),
+    h('div.dock-note', { title: 'Training exercise. The people, damage and readings are simulated.' }, h('span', null, 'Training exercise, simulated'), h('a', { href: '#/status' }, 'What is real?')),
+    h('div.dock-chapters', { role: 'group', 'aria-label': 'Chapters' }, ...CHAPTERS.map((c) => h('a.dock-item' + (c.part ? '.first' : ''), { href: '#/' + c.id, id: 'dock-' + c.id, title: MANIFEST.find((x) => x.id === c.id).blurb }, h('span.dock-part', null, c.part || ''), h('b', null, c.label)))),
     h('div.dock-step', null,
       h('button.btn.btn-icon.btn-ghost', { 'aria-label': 'Previous chapter', onclick: () => stepChapter(-1) }, icon('chevron-left')),
-      h('button.btn', { id: 'dock-next', onclick: () => stepChapter(1) }, h('span', null, 'Next'), icon('chevron'))));
+      h('button.btn.btn-primary', { id: 'dock-next', onclick: () => stepChapter(1) }, h('span', { id: 'dock-next-label' }, 'Next'), icon('chevron'))));
   refreshMode();
   $('statusbar').append(h('span', { id: 'sb-event' }, ''), h('div.grow'), h('span.dim', null, 'Training exercise. The people, damage and readings are simulated.'), h('a', { href: '#/status' }, 'What is real?'), h('a', { href: 'ui/reference.html', target: '_blank', rel: 'noopener' }, 'Design reference'));
 }
@@ -177,6 +176,9 @@ async function openWorkspace(id, params = {}) {
   const token = ++opening, first = !current;
   document.querySelectorAll('.rail-item').forEach((a) => a.setAttribute('aria-current', a.id === 'rail-' + m.id ? 'page' : 'false'));
   document.querySelectorAll('.dock-item').forEach((a) => a.setAttribute('aria-current', a.id === 'dock-' + m.id ? 'page' : 'false'));
+  document.documentElement.dataset.ws = m.id;
+  const ci = CHAPTERS.findIndex((c) => c.id === m.id), nx = CHAPTERS[(ci + 1) % CHAPTERS.length];
+  $('dock-next-label').textContent = ci < 0 ? 'Back to the story' : ci === CHAPTERS.length - 1 ? 'Start again' : nx.label;
   document.title = `${m.title} · HOUND`;
   if (location.hash !== '#/' + m.id) history.replaceState(null, '', '#/' + m.id);
   const label = $('veil-label'); label.textContent = CHAPTERS.find((c) => c.id === m.id)?.label || m.title;
@@ -238,7 +240,7 @@ async function boot() {
   });
   for (const g of GLOBALS) import(`./global/${g}.js`).then((mod) => mod.init?.(ctx)).catch(() => {});
   refreshChrome();
-  await openWorkspace(location.hash.replace(/^#\/?/, '').split('?')[0] || 'mission');
+  await openWorkspace(location.hash.replace(/^#\/?/, '').split('?')[0] || (ctx.mode === 'demo' ? CHAPTERS[0].id : 'mission'));
   if (!new URLSearchParams(location.search).has('paused')) ctx.sim.play();
 }
 boot();

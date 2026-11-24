@@ -13,7 +13,7 @@ import { createCameras, MODES } from './cameras.js';
 import { createLabels } from './labels.js';
 import { createPost, makeGlow } from './post.js';
 
-const PARTS = ['building', 'rubble', 'interior', 'massing', 'site'];      // each: export function build(env) -> { group?, update?, setLayer?, dispose? }
+const PARTS = ['building', 'rubble', 'interior', 'massing', 'site', 'debris'];      // each: export function build(env) -> { group?, update?, setLayer?, dispose? }
 const LAYERS = [
   { id: 'walls-xray', label: 'See through walls', on: false, core: true }, { id: 'roof', label: 'Roof of block B', on: true, core: true },
   { id: 'labels', label: 'Labels', on: true, core: true }, { id: 'grid', label: 'Survey grid, 10 m', on: false, core: true },
@@ -40,7 +40,7 @@ export async function createEngine(host, ctx, opts = {}) {
   // ---- renderer ----
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, depth: false, stencil: false, powerPreference: 'high-performance' });   // throws without WebGL: index.js shows the message
   renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.12;
-  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.autoClear = false; renderer.info.autoReset = false;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.autoClear = false; renderer.shadowMap.autoUpdate = false; renderer.info.autoReset = false;
   const maxPR = quality === 'high' ? 1.5 : 1.1; let pr = Math.min(maxPR, window.devicePixelRatio || 1); renderer.setPixelRatio(1);
   const scene = new THREE.Scene(); scene.name = 'twin';
   const camera = new THREE.PerspectiveCamera(38, 1.6, 0.5, 5200);
@@ -52,7 +52,8 @@ export async function createEngine(host, ctx, opts = {}) {
   // (unless the walls are see-through). Labels for people stay: seeing them through walls is the point.
   const camXY = [0, 0], labXY = [0, 0], WALL_H = world.BUILDING.wallHeight;
   const occluded = (p) => { if (layerState['walls-xray'] || camera.position.y > WALL_H + 0.4 || p.y > WALL_H + 0.4) return false; camXY[0] = camera.position.x; camXY[1] = -camera.position.z; labXY[0] = p.x; labXY[1] = -p.z; return world.wallsCrossed(camXY, labXY).length > 0; };
-  const labels = createLabels(overlay, camera, { select: (sel) => ctx.select && ctx.select(sel), occluded });
+  const demo = () => (ctx.mode || document.documentElement.dataset.mode) === 'demo', safe = { left: 0, top: 0, right: 0, bottom: 0 };
+  const labels = createLabels(overlay, camera, { select: (sel) => ctx.select && ctx.select(sel), occluded, safe, demo });
   const hoverB = labels.bracket('hover'), selB = labels.bracket('sel');
   const t = { reduced: reducedNow() };
   const cams = createCameras({ camera, dom: canvas, ctx, world, reduced: () => t.reduced, interactive, mode: cam0 });
@@ -75,10 +76,10 @@ export async function createEngine(host, ctx, opts = {}) {
   const [D, photos] = await Promise.all([loadTerrain(), loadPhotos(quality, Math.min(8, renderer.capabilities.getMaxAnisotropy()))]);
   env.photos = photos; env.mats = createMaterials(tex, photos);
   onProgress(0.15, 'Raising the valley'); await nextFrame();
-  const environment = buildEnvironment(env, D); env.environment = environment; t.heightAt = environment.heightAt;
+  const environment = buildEnvironment(env, D); env.environment = environment; t.heightAt = environment.heightAt; cams.setGround(environment.heightAt);
   const parts = [];
   for (let i = 0; i < PARTS.length; i++) {
-    onProgress(0.25 + 0.6 * (i / PARTS.length), ['Raising block B', 'Piling the rubble', 'Furnishing the classrooms', 'Building the neighbours', 'Setting up staging'][i]); await nextFrame();
+    onProgress(0.25 + 0.6 * (i / PARTS.length), ['Raising block B', 'Piling the rubble', 'Furnishing the classrooms', 'Building the neighbours', 'Setting up staging', 'Laying the silt'][i]); await nextFrame();
     try { const mod = await import('./' + PARTS[i] + '.js'); const p = mod.build(env); if (p) { p.id = PARTS[i]; parts.push(p); if (p.group && !p.group.parent) scene.add(p.group); } }
     catch (e) { console.warn('[twin] world part "' + PARTS[i] + '" was left out:', e); }
   }
@@ -101,15 +102,19 @@ export async function createEngine(host, ctx, opts = {}) {
   };
 
   // ---- layers ----
-  let roofManual = false;
+  let roofManual = false, phase = '';
   function applyLayer(id, on) {
     if (id === 'labels') labels.setEnabled(on);
     else if (id === 'grid') environment.setGrid(on);
     for (const p of parts) { try { p.setLayer && p.setLayer(id, on); } catch (e) { console.warn('[twin] part ' + p.id, e); } }
     for (const a of actors) if (!a.def.layers || a.def.layers.includes(id)) callActor(a, 'setLayer', id, on);
   }
-  function setLayer(id, on) { if (!(id in layerState)) return false; on = !!on; if (id === 'roof') roofManual = true; if (layerState[id] === on) return true; layerState[id] = on; applyLayer(id, on); ctx.bus && ctx.bus.emit('twin:layer', { id, on }); return true; }
-  for (const l of LAYERS) applyLayer(l.id, layerState[l.id]);
+  // Demo shows the picture, not the instruments: search cells and the grid stay out of it, and hazards wait until the route needs them.
+  const chosen = new Set(), quiet = (id) => demo() && !chosen.has(id) && (id === 'coverage' || id === 'grid' || (id === 'hazards' && !['plan', 'rescue', 'complete'].includes(ctx.sim && ctx.sim.state && ctx.sim.state.phase))), eff = {};
+  function sync(force) { for (const l of LAYERS) { const on = layerState[l.id] && !quiet(l.id); if (force || eff[l.id] !== on) { eff[l.id] = on; applyLayer(l.id, on); } } }
+  const tell = () => { ctx.bus && ctx.bus.emit('twin:layers', { layers: api.layers() }); };
+  function setLayer(id, on) { if (!(id in layerState)) return false; on = !!on; if (id === 'roof') roofManual = true; if (id === 'grid') chosen.add(id); layerState[id] = on; sync(); tell(); return true; }
+  sync(true);
 
   // ---- selection and picking ----
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(); ray.params.Points.threshold = 0.25; ray.params.Line.threshold = 0.2;
@@ -147,6 +152,7 @@ export async function createEngine(host, ctx, opts = {}) {
   const offs = [];
   if (ctx.bus) {
     offs.push(ctx.bus.on('select', (sel) => { markSelection(sel); for (const a of actors) callActor(a, 'onSelect', sel); for (const p of parts) { try { p.onSelect && p.onSelect(sel); } catch (e) { /* a part's highlight is optional */ } } }));
+    offs.push(ctx.bus.on('twin:camera', (p) => { if (p && p.mode) api.setCamera(p.mode); }), ctx.bus.on('twin:layer', (p) => { if (p && p.id) api.setLayer(p.id, p.on); }), ctx.bus.on('mode', () => { sync(); tell(); }));
     offs.push(ctx.bus.on('prefs', () => { t.reduced = reducedNow(); }));
     offs.push(ctx.bus.on('reset', () => { roofManual = false; }));
   }
@@ -170,8 +176,9 @@ export async function createEngine(host, ctx, opts = {}) {
     if (!once) { ms += (raw * 1000 - ms) * 0.05; if (ms > 24 && frames > 120) { if (++slow > 150 && pr > 1) { pr = Math.max(1, pr - 0.25); slow = 0; stats.pr = pr; } } else slow = Math.max(0, slow - 2); }
     resize();
     const S = ctx.sim ? ctx.sim.state : null, animate = !t.reduced;
-    if (S && !roofManual) { const want = S.phase === 'standby' || S.phase === 'aerial'; if (layerState.roof !== want) { layerState.roof = want; applyLayer('roof', want); ctx.bus && ctx.bus.emit('twin:layer', { id: 'roof', on: want, auto: true }); } }
-    cams.update(dt, S, W / H);
+    if (S && !roofManual) { const want = S.phase === 'standby' || S.phase === 'aerial'; if (layerState.roof !== want) { layerState.roof = want; sync(); tell(); } }
+    if (S && S.phase !== phase) { phase = S.phase; sync(); }
+    cams.update(dt, S, W, H);
     environment.update(dt, time, camera, cams.pose, animate);
     for (const p of parts) { if (p.update && !p.dead) { try { p.update(dt, time, S, cams); } catch (e) { p.dead = true; console.warn('[twin] part "' + p.id + '" stopped updating:', e); } } }
     if (S) for (const a of actors) callActor(a, 'update', S, dt, time);
@@ -181,7 +188,8 @@ export async function createEngine(host, ctx, opts = {}) {
       if (!same(hit && hit.sel, hoverSel)) { hoverSel = hit ? hit.sel : null; hoverB.set(hit ? hit.object : null, hit ? nameOf(hit.sel) : ''); canvas.classList.toggle('over', !!hit); }
     }
     labels.update(dt, W, H); hoverB.update(); selB.update();
-    post.setFog(environment.fog); post.setFocus(camera.position.distanceTo(cams.pose.target), cams.mode === 'cinematic' && !cams.userActive ? cams.dof : 0, dt);
+    post.setFog(environment.fog); post.setFocus(camera.position.distanceTo(cams.pose.target), cams.dof, dt);
+    renderer.shadowMap.needsUpdate = once || frames % 2 === 0;
     renderer.info.reset(); post.render(time);
     stats.ms = ms; stats.fps = 1000 / ms; stats.calls = renderer.info.render.calls; stats.triangles = renderer.info.render.triangles;
   }
@@ -191,9 +199,11 @@ export async function createEngine(host, ctx, opts = {}) {
   const api = {
     t, env, cams, labels, post, environment, parts, actors, stats, MODES,
     three: { scene, camera, renderer },
-    setCamera(m, o) { const ok = cams.setMode(m, o); if (ok && ctx.bus) ctx.bus.emit('twin:camera', m); return ok; },
+    setCamera(m, o) { const ok = cams.setMode(m, o); if (ok && ctx.bus) ctx.bus.emit('twin:camera:changed', { mode: m }); return ok; },
+    setLight(m, o) { return environment.setLight(m, o); }, get light() { return environment.mode; },
+    setSafeArea(a) { cams.setSafeArea(a); Object.assign(safe, cams.safe); },
     focus(sel) { return cams.focus(sel, ctx.sim && ctx.sim.state); },
-    setLayer, layers: () => LAYERS.map((l) => ({ id: l.id, label: l.label, on: !!layerState[l.id] })),
+    setLayer, layers: () => LAYERS.map((l) => ({ id: l.id, label: l.label, on: !!eff[l.id] })),
     start() { if (running || disposed) return; running = true; last = 0; raf = requestAnimationFrame(frame); },
     stop() { running = false; cancelAnimationFrame(raf); },
     get running() { return running; },
@@ -210,6 +220,7 @@ export async function createEngine(host, ctx, opts = {}) {
   };
   resize(); frame(performance.now(), true);          // compile shaders and draw one frame before anyone sees the canvas
   onProgress(1, 'Ready');
+  if (ctx.bus) ctx.bus.emit('twin:ready', { layers: api.layers() });
   if (autostart) api.start();
   return api;
 }

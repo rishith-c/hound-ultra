@@ -152,3 +152,30 @@
 :root[data-motion="reduce"] .ac-ray-main, .ws[hidden] .ac-ray-main { animation: none; }
 @media (prefers-reduced-motion: reduce) { .ac-ray-main, .aerial-frame .aerial-thumb { animation: none !important; } }
 @media (max-width: 1500px) { .aerial-main { grid-template-columns: 156px minmax(0, 1fr) 360px; } .aerial-lede { font-size: var(--fs-12); } .aerial-strip { grid-template-columns: minmax(0, 1.55fr) minmax(0, 0.8fr) minmax(0, 1.05fr); } }
+
+/* ---- Demo: the film ---- */
+.aerial-adv { display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; }
+.aerial-demo { position: absolute; inset: 0; overflow: hidden; background: var(--bg-0); }
+.ah-stage, .ah-gl, .ah-ov, .ah-scrim, .ah-fade { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ah-ov { cursor: crosshair; touch-action: none; outline-offset: -3px; } .ah-ov.is-down { cursor: grabbing; }
+.ah-fade { background: var(--bg-0); opacity: 0; pointer-events: none; transition: opacity 400ms var(--ease-in-out); } .ah-fade.is-on { opacity: 1; }
+.ah-scrim { pointer-events: none; background: radial-gradient(64% 74% at 0% 100%, rgba(6,8,10,0.94) 0, rgba(6,8,10,0.80) 38%, rgba(6,8,10,0) 100%), radial-gradient(46% 46% at 100% 100%, rgba(6,8,10,0.88) 0, rgba(6,8,10,0.55) 50%, rgba(6,8,10,0) 100%), linear-gradient(0deg, rgba(6,8,10,0.62) 0, rgba(6,8,10,0) 16%), linear-gradient(180deg, rgba(6,8,10,0.45) 0, rgba(6,8,10,0) 12%); }
+.ah-copy { position: absolute; left: 40px; bottom: 36px; width: 470px; display: flex; flex-direction: column; gap: 12px; pointer-events: none; }
+.ah-copy > * { pointer-events: auto; }
+.ah-tags { display: flex; gap: 6px; flex-wrap: wrap; } .ah-tags .tag { background: rgba(6, 8, 10, 0.72); }
+.ah-title { margin: 0; font: var(--type-display); color: var(--text); letter-spacing: -0.01em; }
+.ah-line { margin: 0; font-size: var(--fs-16); line-height: 1.45; color: var(--text-2); max-width: 44ch; }
+.ah-act { display: flex; align-items: center; gap: 16px; min-height: 36px; margin-top: 6px; }
+.ah-btn { min-height: 36px; padding: 0 16px; flex: none; } .ah-btn[hidden] { display: none; }
+.ah-cap { margin: 0; font-size: var(--fs-13); line-height: 1.35; color: var(--text); padding-left: 14px; border-left: 2px solid var(--person); }
+.ah-cap.is-in { animation: ah-in 420ms var(--ease) both; } @keyframes ah-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+.ah-right { position: absolute; right: 40px; bottom: 36px; display: flex; flex-direction: column; align-items: flex-end; gap: 22px; }
+.ah-figs { display: flex; gap: 34px; } .ah-fig { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-shadow: 0 1px 10px rgba(6, 8, 10, 0.9); }
+.ah-fig b { font: 400 32px/1 var(--mono); font-variant-numeric: tabular-nums; color: var(--text); letter-spacing: -0.03em; } .ah-fig span { font-size: var(--fs-12); color: var(--text-2); white-space: nowrap; }
+.ah-steps { display: flex; gap: 18px; }
+.ah-step { display: flex; flex-direction: column; gap: 7px; width: 108px; padding: 4px 0; border: 0; background: none; color: var(--text-3); font: 500 var(--fs-13)/1.2 var(--font); text-align: left; cursor: pointer; transition: color var(--t-fast) var(--ease); }
+.ah-step:hover, .ah-step[aria-pressed="true"] { color: var(--text); } .ah-step i { display: block; height: 2px; background: rgba(236, 238, 241, 0.22); overflow: hidden; } .ah-step b { display: block; height: 100%; background: var(--text); transform: scaleX(0); transform-origin: 0 50%; }
+.aerial-demo.is-failed .ah-right { display: none; }
+.aerial-rec { display: flex; align-items: baseline; gap: 8px; margin: 0; font-size: var(--fs-12); line-height: 1.45; color: var(--text-2); } .aerial-rec .tag { flex: none; }
+/* the hidden attribute must win over the pill's own display */
+.aerial-hud[hidden] { display: none; }

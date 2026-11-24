@@ -2,7 +2,7 @@
 // Forward model: first arrivals bent through the true pile (eikonal), then scattering coda and site noise.
 // Inverse: GCC-PHAT between every pair of sensors, then the point whose delays agree best (SRP-PHAT), then a
 // covariance ellipse from the timing residuals.
-import { WORLD, MAT, PROPS, eikonal, sampleGrid } from './model.js';
+import { WORLD, eikonal, sampleGrid } from './model.js';
 import * as L from './lib.js';
 import * as W from './waves.js';
 
@@ -14,16 +14,17 @@ const LEVEL = { quiet: 0.02, work: 0.05, engine: 0.4 }; // noise against a tap h
 
 export default function create(env) {
   const { h } = env, ui = env.ui;
-  const P = { n: 6, noise: 'work', taps: 5, speed: 'plan', t: 1, playing: false, pair: 0 };
+  const P = { n: 8, noise: 'work', taps: 12, speed: 'plan', t: 1, playing: false, pair: 0 };
   let pile, slow, T, tap, geo = [], sig = [], gcc = [], pairs = [], field = new Float32Array(CNX * CNZ), cv = null, M = {}, drag = null, vcal = 900, tab = [];
 
   function layout() { const a = pile.extent[0] + 1.6, b = pile.extent[1] - 1.6; geo = Array.from({ length: P.n }, (_, i) => ({ x: a + (b - a) * i / (P.n - 1) })); geo.forEach((g) => { g.z = pile.surfAt(g.x) - 0.05; }); }
   function setPile(p) { pile = p; slow = W.slowness(p); tap = W.tapPoint(p); layout(); rebuild(); P.t = 1; P.playing = false; }
   function rebuild() { // travel times, hammer calibration
     T = W.travel(slow, tap.x, tap.z);
-    let sxx = 0, sxy = 0; // one hammer blow beside each sensor, heard by all the others: a straight-line speed fit
+    if (P.speed === 'one') { let sxx = 0, sxy = 0; // one hammer blow beside each sensor, heard by all the others: a straight-line speed fit
     for (const g of geo) { const t = W.travel(slow, g.x, g.z - 0.1); for (const q of geo) if (q !== g) { const d = Math.hypot(q.x - g.x, q.z - g.z); sxx += d * d; sxy += d * t[pile.cellAt(q.x, q.z - 0.1)]; } }
-    vcal = sxx / sxy; tables(); measure();
+    vcal = sxx / sxy; }
+    tables(); measure();
   }
   function measure() {
     const r = L.rng(pile.seed * 613 + 7), lev = LEVEL[P.noise] / Math.sqrt(P.taps);
@@ -38,9 +39,9 @@ export default function create(env) {
   // Predicted travel time from every point to every sensor. 'One speed' is distance over the hammer-blow average;
   // 'plan' bends the wave through the two things a rescuer knows: street level and the floor slab on the drawings.
   function tables() {
-    const { nx, nz, res, x0, z0 } = WORLD, gs = pile.slabs[0].poly;
+    const { nx, nz, res, x0, z0 } = WORLD;
     if (P.speed === 'one') { tab = geo.map((g) => { const t = new Float32Array(nx * nz); for (let q = 0; q < t.length; q++) { const i = q % nx; t[q] = Math.hypot(x0 + (i + 0.5) * res - g.x, z0 + ((q - i) / nx + 0.5) * res - g.z) / vcal; } return t; }); return; }
-    const f = new Float32Array(nx * nz); for (let q = 0; q < f.length; q++) { const i = q % nx, x = x0 + (i + 0.5) * res, z = z0 + ((q - i) / nx + 0.5) * res; f[q] = 1 / (pile.inPoly(gs, x, z) ? PROPS[MAT.SLAB].vp : z < 0 ? PROPS[MAT.SOIL].vp : z < pile.surf[i] ? PROPS[MAT.RUBBLE].vp : PROPS[MAT.SKY].vp); }
+    const f = W.planField(pile);
     tab = geo.map((g) => eikonal(f, g.x, g.z - 0.1));
   }
   function solve() {
@@ -63,7 +64,13 @@ export default function create(env) {
     }
     // refine with the measured delays themselves, trusting each pair less the further it disagrees
     const cost = (x, z) => { const tt = tab.map((t) => sampleGrid(t, x, z)); let s = 0; for (const p of pairs) { const e = p[2] - tt[p[0]] + tt[p[1]]; s += Math.log(1 + (e / SIG) ** 2); } return s; };
-    let x = at.x, z = at.z, c0 = cost(x, z); for (let st = 0.4; st > 0.02; st *= 0.6) for (let n = 0; n < 12; n++) { let moved = false; for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) { const nx2 = x + a * st, nz2 = z + b * st; if (nz2 > pile.surfAt(nx2) - 0.1 || nz2 < -0.3) continue; const cc = cost(nx2, nz2); if (cc < c0 - 1e-9) { c0 = cc; x = nx2; z = nz2; moved = true; } } if (!moved) break; }
+    let x = at.x, z = at.z, c0 = Infinity; const peaks = [], taken = best.slice();
+    for (let n = 0; n < 8; n++) { let bq = -1, bv = 0; for (let q = 0; q < taken.length; q++) if (taken[q] > bv) { bv = taken[q]; bq = q; } if (bq < 0) break; const bi = bq % CNX, bk = (bq - bi) / CNX; peaks.push([(bi + 0.5) * CR, WORLD.z0 + (bk + 0.5) * CR]); for (let k = 0; k < CNZ; k++) for (let i = 0; i < CNX; i++) if (Math.hypot(i - bi, k - bk) * CR < 1.4) taken[k * CNX + i] = 0; }
+    for (const [px, pz] of peaks) { // several starts: a tap along one slab has look-alikes
+      let ux = px, uz = pz, cu = cost(ux, uz);
+      for (let st = 0.4; st > 0.02; st *= 0.6) for (let n = 0; n < 12; n++) { let moved = false; for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) { const nx2 = ux + a * st, nz2 = uz + b * st; if (nz2 > pile.surfAt(nx2) - 0.1 || nz2 < -0.3) continue; const cc = cost(nx2, nz2); if (cc < cu - 1e-9) { cu = cc; ux = nx2; uz = nz2; moved = true; } } if (!moved) break; }
+      if (cu < c0) { c0 = cu; x = ux; z = uz; }
+    }
     const tt = tab.map((t) => sampleGrid(t, x, z)), ex = 0.15, jac = tab.map((t) => [(sampleGrid(t, x + ex, z) - sampleGrid(t, x - ex, z)) / (2 * ex), (sampleGrid(t, x, z + ex) - sampleGrid(t, x, z - ex)) / (2 * ex)]);
     let a11 = 1e-9, a12 = 0, a22 = 1e-9, sw = 0, se = 0; const rs = pairs.map((p) => { const e = p[2] - tt[p[0]] + tt[p[1]], w = 1 / (1 + (e / SIG) ** 2), jx = jac[p[0]][0] - jac[p[1]][0], jz = jac[p[0]][1] - jac[p[1]][1]; a11 += w * jx * jx; a12 += w * jx * jz; a22 += w * jz * jz; sw += w; se += w * e * e; return { e, w }; });
     const s2 = se / Math.max(1, sw) * (geo.length / 2), det = Math.max(1e-30, a11 * a22 - a12 * a12), H = [a22 / det, -a12 / det, a11 / det], v = vcal;
@@ -77,7 +84,7 @@ export default function create(env) {
     const n = ui.seg({ label: 'Sensors on the surface', value: P.n, options: [4, 6, 8].map((v) => ({ v, l: String(v) })), onchange: (v) => { P.n = v; P.pair = 0; layout(); rebuild(); env.refresh(); } });
     const noise = ui.seg({ label: 'Site noise', value: P.noise, options: [{ v: 'quiet', l: 'All quiet' }, { v: 'work', l: 'Hand work' }, { v: 'engine', l: 'Engines on' }], hint: 'This is why rescue teams call for silence before they listen.', onchange: (v) => { P.noise = v; measure(); env.refresh(); } });
     const taps = ui.slider({ label: 'Knocks added together', min: 1, max: 30, value: P.taps, fmt: (v) => String(v), oninput: (v) => { P.taps = v; measure(); env.refresh(); } });
-    const sp = ui.seg({ label: 'What the solver assumes about speed', value: P.speed, options: [{ v: 'one', l: 'One average speed' }, { v: 'plan', l: 'Known floor slab' }], hint: 'A tap races through concrete four times faster than through rubble. With the building’s drawings, the solver can allow for the floor slab.', onchange: (v) => { P.speed = v; tables(); solve(); env.refresh(); } });
+    const sp = ui.seg({ label: 'What the solver assumes about speed', value: P.speed, options: [{ v: 'one', l: 'One average speed' }, { v: 'plan', l: 'Known floor slab' }], hint: 'A tap races through concrete four times faster than through rubble. With the building’s drawings, the solver can allow for the floor slab.', onchange: (v) => { P.speed = v; rebuild(); env.refresh(); } });
     return h('div.ds-controls', null, h('div.ds-row', null, go), n, noise, taps, sp, h('p.ds-hint', null, 'Drag a sensor along the surface, or drag the tap to another place.'));
   }
   const TMAX = 0.036;
@@ -123,7 +130,7 @@ export default function create(env) {
   return {
     title: 'Seismic tap location', hardware: 'Rescue teams already carry listening sets. Solving for a position in the rubble is the concept part.',
     lede: 'A knock on a slab travels through the rubble and reaches each sensor a few thousandths of a second apart. Lining the recordings up two at a time gives the delays, and only one place in the pile fits all of them.',
-    honest: 'someone has to be awake and knocking, the site has to go quiet, and the solver has to know how fast the pile carries sound. Switch to one average speed to see how much that costs. The search stays above the floor slab, so a tap from the cellar would be misplaced. Surface waves, sensor coupling and people walking on the pile are not modelled.',
+    honest: 'someone has to be awake and knocking, the site has to go quiet, and the solver has to know how fast the pile carries sound. Switch to one average speed to see how much that costs. With six sensors and five knocks, three of the six piles we tried were misplaced by more than 4 m. The search stays above the floor slab, so a tap from the cellar would be misplaced. Surface waves, sensor coupling and people walking on the pile are not modelled.',
     assumed: 'Assumed: wave speed 900 m/s in loose rubble, 3,800 in slab, 500 in soil; a 600 Hz knock; scattering coda of about 30 ms; noise levels. First arrivals bend through the true pile.',
     sources: [
       { who: 'Delsar Life Detector, Firehouse product page.', what: 'A fielded set: sensors that turn the collapsed structure “into a large sensitive microphone”; used by FEMA and UKSAR teams.', url: 'https://www.firehouse.com/rescue/technical-rescue/structural-collapse/product/10181928/con-space-communications-delsar-life-detector' },

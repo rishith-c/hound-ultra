@@ -8,7 +8,7 @@ const TONES = { person: 'person', confirmed: 'person', warn: 'warn', possible: '
 const SLOTS = [[18, -26], [-18, -26], [18, 22], [-18, 22], [34, -52], [-34, -52], [40, -4], [-40, -4], [0, -44], [48, 46], [-48, 46]];
 const SVG = 'http://www.w3.org/2000/svg';
 
-export function createLabels(overlay, camera, { select, occluded } = {}) {
+export function createLabels(overlay, camera, { select, occluded, safe = { left: 0, top: 0, right: 0, bottom: 0 }, demo = () => false } = {}) {
   const svg = document.createElementNS(SVG, 'svg'); svg.setAttribute('class', 'twin-leaders'); svg.setAttribute('aria-hidden', 'true');
   const layer = document.createElement('div'); layer.className = 'twin-overlay';
   overlay.append(svg, layer);
@@ -61,15 +61,16 @@ export function createLabels(overlay, camera, { select, occluded } = {}) {
     }
     order.sort((a, b) => b.priority - a.priority || a.d - b.d);
     for (const L of order) if (!L.plain) placed.push(L.sx - 9, L.sy - 9, L.sx + 9, L.sy + 9);       // keep every subject's point clear
-    const k = 1 - Math.exp(-14 * dt);
+    const k = 1 - Math.exp(-14 * dt), few = demo(), sl = safe.left + 6, st = safe.top + 6, sr = W - safe.right - 6, sb = H - safe.bottom - 6; let shown = 0;
     for (const L of order) {
       let found = -1, tx = 0, ty = 0;
+      if (few && (L.plain || shown >= 5)) { hide(L); L.slot = -1; continue; }
       if (L.plain) { const x0 = L.sx - L.w / 2 - 3, y0 = L.sy - L.h / 2 - 2; if (L.always || !hits(x0, y0, x0 + L.w + 6, y0 + L.h + 4)) { found = 0; tx = -L.w / 2; ty = -L.h / 2; } }
       else {
         for (let n = -1; n < SLOTS.length && found < 0; n++) {
           const s = n < 0 ? L.slot : n; if (s < 0 || (n >= 0 && s === L.slot)) continue;
           const [dx, dy] = SLOTS[s], bx = dx > 0 ? dx : dx < 0 ? dx - L.w : -L.w / 2, by = dy < 0 ? dy - L.h : dy, x0 = L.sx + bx, y0 = L.sy + by;
-          if (x0 < 6 || y0 < 6 || x0 + L.w > W - 6 || y0 + L.h > H - 6) continue;
+          if (x0 < sl || y0 < st || x0 + L.w > sr || y0 + L.h > sb) continue;
           if (hits(x0 - 4, y0 - 3, x0 + L.w + 4, y0 + L.h + 3)) continue;
           found = s; tx = bx; ty = by;
         }
@@ -77,7 +78,8 @@ export function createLabels(overlay, camera, { select, occluded } = {}) {
       }
       if (found < 0) { hide(L); L.slot = -1; continue; }
       if (!L.shown || L.slot < 0) { L.ox = tx; L.oy = ty; } else { L.ox += (tx - L.ox) * k; L.oy += (ty - L.oy) * k; }
-      L.slot = found;
+      L.slot = found; shown++;
+      const fd = L.through ? 1 : Math.round((1 - 0.6 * Math.min(1, Math.max(0, (L.d - 70) / 160))) * 20) / 20; if (fd !== L.fade) { L.fade = fd; L.el.style.setProperty('--fade', fd); if (L.leader) { L.leader.style.opacity = fd; L.dot.style.opacity = fd; } }
       const x = L.sx + L.ox, y = L.sy + L.oy;
       placed.push(L.sx + tx, L.sy + ty, L.sx + tx + L.w, L.sy + ty + L.h);
       L.el.style.transform = 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0)';

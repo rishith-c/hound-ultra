@@ -13,11 +13,11 @@ export const COLS = [
   { id: 'open', label: 'Open', tip: 'Leads still "possible" at the end that nobody checked', get: (r) => r.metrics.open, good: -1 },
   { id: 'time', label: 'Time', tip: 'Simulated mission time, minutes:seconds', get: (r) => r.metrics.endT, fmt: (v, r) => (r.metrics.done ? clock(v) : 'stalled'), delta: (d) => span(d), good: 0, min: 1 },
   { id: 'route', label: 'Route', tip: 'Length of the rescue route that was walked, metres', get: (r) => r.metrics.routeLen, fmt: (v) => v.toFixed(0) + ' m', delta: (d) => Math.abs(d).toFixed(0), good: 0, min: 1 },
-  { id: 'hazard', label: 'In hazard', tip: 'Metres of that route inside a marked hazard area', get: (r) => r.metrics.hazardM, fmt: (v) => v.toFixed(0) + ' m', delta: (d) => Math.abs(d).toFixed(0), good: -1, min: 1 },
+  { id: 'hazard', label: 'Hazard', tip: 'Metres of that route inside a marked hazard area', get: (r) => r.metrics.hazardM, fmt: (v) => v.toFixed(0) + ' m', delta: (d) => Math.abs(d).toFixed(0), good: -1, min: 1 },
 ];
 export const TRUTH_COLS = [
-  { id: 'missed', label: 'Not reached', tip: 'Ground truth: people really there whom the team never reached', get: (r) => r.truth.missed, good: -1, truth: true },
-  { id: 'false', label: 'False leads', tip: 'Ground truth: leads that were not a person and still cost a second look or a team visit', get: (r) => r.truth.falseChased, good: -1, truth: true },
+  { id: 'missed', label: 'Missed', tip: 'Ground truth: people really there whom the team never reached', get: (r) => r.truth.missed, good: -1, truth: true },
+  { id: 'false', label: 'False', tip: 'Ground truth: leads that were not a person and still cost a second look or a team visit', get: (r) => r.truth.falseChased, good: -1, truth: true },
 ];
 
 export function createTree(host, { kit, onCursor, onCompare, onDelete, onKey }) {
@@ -103,7 +103,7 @@ export function createTree(host, { kit, onCursor, onCompare, onDelete, onKey }) 
       const b = r.b, fx = X(b.forkT || 0), leftSide = !b.parent || fx < laneW * 0.46;
       const state = b.status === 'done' ? null : b.status === 'error' ? h('span.c-danger', null, 'failed: ' + b.error) : b.status === 'invalid' ? h('span.c-warn', null, 'no longer applies') : h('span.dim', null, b.status === 'running' ? 'running ' + Math.round((b.progress || 0) * 100) + ' %' : 'queued');
       const ver = b.verify === 'ok' ? h('span.tl-ver', { title: 'Replay verified: run twice, identical fingerprint ' + b.run.hash }, icon('check', 11)) : b.verify === 'fail' ? h('span.tl-ver.bad', { title: 'The two runs differ. This should never happen: please report it.' }, icon('alert', 11)) : null;
-      const lab = h('button.tl-label', { type: 'button', style: leftSide ? { left: (b.parent ? fx + 14 : PAD) + 'px', maxWidth: Math.max(120, laneW - (b.parent ? fx + 14 : PAD) - 8) + 'px' } : { right: laneW - fx + 8 + 'px', maxWidth: Math.max(120, fx - 16) + 'px', textAlign: 'right' }, title: b.detail || b.label, onclick: () => onCursor(b.id, Math.max(cursor.t, 0)) },
+      const lab = h('button.tl-label', { type: 'button', style: leftSide ? { left: (b.parent ? fx + 14 : PAD) + 'px', maxWidth: Math.max(120, laneW - (b.parent ? fx + 14 : PAD) - 8) + 'px' } : { right: 'calc(var(--tl-cells) + ' + (laneW - fx + 8) + 'px)', maxWidth: Math.max(120, fx - 16) + 'px', textAlign: 'right' }, title: b.detail || b.label, onclick: () => onCursor(b.id, Math.max(cursor.t, 0)) },
         h('b.tl-name', null, b.name), h('span.tl-what', null, b.label), b.parent ? h('span.tl-at.num', null, clock(b.forkT)) : null, ver, state);
       const cells = h('div.tl-cells', null, ...cols.map((c) => {
         if (!b.run) return h('span.dim', null, '·');

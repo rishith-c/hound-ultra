@@ -2,7 +2,7 @@
 .scan { background: var(--bg-0); }
 .scan-head { display: flex; align-items: center; gap: var(--s-3); padding: 10px var(--s-4); border-bottom: 1px solid var(--line); background: var(--bg-1); min-width: 0; }
 .scan-title { min-width: 0; }
-.scan-title h2 { font-size: var(--fs-16); }
+.scan-title h1 { font: var(--type-title); white-space: nowrap; }
 .scan-title p { font-size: var(--fs-12); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .scan-tags { display: flex; gap: 6px; flex: none; }
 .scan-head .seg { flex: none; }
@@ -47,7 +47,7 @@
 .scan-swatches { display: flex; gap: 12px; flex-wrap: wrap; color: var(--text-2); }
 .scan-swatches span { display: inline-flex; align-items: center; gap: 6px; }
 .scan-swatches i, .scan-sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
-.scan-tools { left: 12px; top: 108px; display: flex; flex-direction: column; gap: 2px; padding: 4px; }
+.scan-tools { left: 12px; top: 116px; display: flex; flex-direction: column; gap: 2px; padding: 4px; }
 .scan-tools hr { width: 20px; border: 0; border-top: 1px solid var(--line-2); margin: 3px auto; }
 .scan-tools .btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
 .scan-glyph { display: grid; }
@@ -84,21 +84,21 @@
 .scan-tag { position: absolute; left: 0; top: 0; white-space: nowrap; font-size: var(--fs-11); will-change: transform; }
 .scan-tag-dim { translate: -50% -50%; color: var(--text-3); font-family: var(--mono); }
 .scan-tag-n { color: var(--text-2); font-family: var(--font); font-weight: 600; }
-.scan-tag-drone { translate: 16px -50%; color: #cfe9ff; font-family: var(--mono); text-shadow: 0 1px 4px #000; }
-.scan-tag-void { translate: -50% calc(-100% - 20px); pointer-events: auto; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px 0 3px; border-radius: 11px; border: 1px solid rgba(255, 178, 36, 0.5); background: rgba(22, 18, 8, 0.82); color: var(--text); font-family: var(--mono); }
-.scan-tag-void::after { content: ""; position: absolute; left: 50%; top: 100%; width: 1px; height: 20px; background: rgba(255, 178, 36, 0.6); }
-.scan-tag-void b { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; background: var(--warn); color: #1c1200; font: 700 10px var(--font); }
+.scan-tag-drone { translate: 16px -50%; color: var(--focus); font-family: var(--mono); text-shadow: 0 1px 4px var(--bg-0); }
+.scan-tag-void { translate: -50% calc(-100% - 20px); pointer-events: auto; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px 0 3px; border-radius: var(--r-1); border: 1px solid var(--warn-line); background: var(--glass); color: var(--text); font-family: var(--mono); }
+.scan-tag-void::after { content: ""; position: absolute; left: 50%; top: 100%; width: 1px; height: 20px; background: var(--warn-line); }
+.scan-tag-void b { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; background: var(--warn); color: var(--bg-0); font: 700 10px var(--font); }
 .scan-tag-void.on { border-color: var(--warn); box-shadow: 0 0 0 3px var(--warn-soft); }
 .scan-tag-lead { translate: -50% calc(-100% - 2px); padding: 2px 7px; border-radius: 4px; background: rgba(10, 12, 16, 0.84); border: 1px solid var(--warn); color: var(--warn); }
 .scan-tag-lead.person { border-color: var(--person); color: var(--person); }
 .scan-tag-lead b { color: var(--text); }
-.scan-tag-handle { translate: 12px -50%; pointer-events: auto; cursor: grab; display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px 0 8px; border-radius: 13px; border: 1px solid rgba(207, 233, 255, 0.55); background: rgba(12, 18, 26, 0.86); color: #e3f2ff; font: 500 var(--fs-12) var(--mono); touch-action: none; }
+.scan-tag-handle { translate: 12px -50%; pointer-events: auto; cursor: grab; display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px 0 8px; border-radius: var(--r-1); border: 1px solid var(--line-3); background: rgba(12, 18, 26, 0.86); color: var(--text); font: 500 var(--fs-12) var(--mono); touch-action: none; }
 .scan-tag-handle i { width: 8px; height: 12px; border-left: 2px solid currentColor; border-right: 2px solid currentColor; opacity: 0.7; }
-.scan-tag-handle.on, .scan-tag-handle:active { cursor: grabbing; background: rgba(207, 233, 255, 0.2); }
-.scan-tag-handle::before { content: ""; position: absolute; left: -13px; top: 50%; width: 9px; height: 9px; margin-top: -5px; border-radius: 50%; background: #cfe9ff; box-shadow: 0 0 0 3px rgba(207, 233, 255, 0.25); }
-.scan-tag-dot { translate: -50% -50%; width: 11px; height: 11px; border-radius: 50%; border: 2px solid #cfe9ff; background: rgba(7, 9, 12, 0.6); }
+.scan-tag-handle.on, .scan-tag-handle:active { cursor: grabbing; background: var(--line-3); }
+.scan-tag-handle::before { content: ""; position: absolute; left: -13px; top: 50%; width: 9px; height: 9px; margin-top: -5px; border-radius: 50%; background: var(--focus); box-shadow: 0 0 0 3px var(--line-3); }
+.scan-tag-dot { translate: -50% -50%; width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--focus); background: rgba(7, 9, 12, 0.6); }
 .scan-tag-dot.hover { border-color: var(--accent); width: 9px; height: 9px; }
-.scan-tag-measure { translate: -50% calc(-100% - 10px); display: inline-flex; align-items: baseline; gap: 8px; padding: 4px 9px; border-radius: 6px; background: rgba(10, 14, 20, 0.88); border: 1px solid rgba(207, 233, 255, 0.4); font-family: var(--mono); color: var(--text-2); }
+.scan-tag-measure { translate: -50% calc(-100% - 10px); display: inline-flex; align-items: baseline; gap: 8px; padding: 4px 9px; border-radius: 6px; background: rgba(10, 14, 20, 0.88); border: 1px solid var(--line-3); font-family: var(--mono); color: var(--text-2); }
 .scan-tag-measure b { font-size: var(--fs-13); color: var(--text); }
 
 /* loading, drop target, plan editor */
@@ -121,8 +121,8 @@
 .scan-pass:hover { border-color: var(--line-2); background: var(--bg-4); }
 .scan-pass span { color: var(--text-2); font-size: var(--fs-12); }
 .scan-pass em { grid-column: 1 / -1; font-style: normal; color: var(--text-3); font-size: var(--fs-12); }
-.scan-pass i { position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: #cfe9ff; }
-.scan-pass.on { border-color: rgba(207, 233, 255, 0.5); }
+.scan-pass i { position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--focus); }
+.scan-pass.on { border-color: var(--line-3); }
 .scan-times { display: flex; flex-wrap: wrap; gap: 6px; }
 .scan-times span { padding: 2px 7px; border-radius: 4px; background: var(--bg-3); color: var(--text-3); font-size: var(--fs-12); }
 .scan-times b { color: var(--text); font-weight: 500; }
@@ -146,7 +146,7 @@
 .scan-void { display: grid; grid-template-columns: 28px 1fr; gap: 4px 10px; padding: 9px 10px; border: 1px solid var(--line); border-radius: var(--r-2); background: var(--bg-3); color: var(--text); text-align: left; cursor: pointer; transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
 .scan-void:hover { background: var(--bg-4); border-color: var(--line-2); }
 .scan-void[aria-pressed="true"] { border-color: var(--warn); background: var(--warn-soft); }
-.scan-voidbadge { grid-row: 1 / 3; align-self: start; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--warn); color: #1c1200; font: 700 var(--fs-13) var(--font); font-style: normal; }
+.scan-voidbadge { grid-row: 1 / 3; align-self: start; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--warn); color: var(--bg-0); font: 700 var(--fs-13) var(--font); font-style: normal; }
 .scan-voidmain { display: flex; flex-direction: column; min-width: 0; }
 .scan-voidmain b { font-variant-numeric: tabular-nums; font-weight: 600; }
 .scan-voidmain b span { font-weight: 400; color: var(--text-2); font-size: var(--fs-12); }
@@ -167,8 +167,8 @@
 .scan-key span { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .scan-key i, .scan-diff > i { width: 11px; height: 11px; border-radius: 2px; flex: none; border: 1px solid rgba(255, 255, 255, 0.14); }
 .scan-key b { margin-left: auto; color: var(--text); font-weight: 500; }
-.scan-key i.hatch, .scan-diff > i.hatch { background: repeating-linear-gradient(45deg, #96a0b0 0 1.5px, #12151b 1.5px 4px); }
-.scan-key i.hatch2 { background: repeating-linear-gradient(45deg, #464f5e 0 2px, #14181e 2px 4px); }
+.scan-key i.hatch, .scan-diff > i.hatch { background: repeating-linear-gradient(45deg, var(--text-2) 0 1.5px, var(--bg-1) 1.5px 4px); }
+.scan-key i.hatch2 { background: repeating-linear-gradient(45deg, var(--line-3) 0 2px, var(--bg-1) 2px 4px); }
 .scan-diffs { display: flex; flex-direction: column; gap: 4px; }
 .scan-diff { display: grid; grid-template-columns: 11px 1fr auto; gap: 1px 9px; align-items: center; padding: 7px 9px; border: 1px solid transparent; border-radius: var(--r-2); background: var(--bg-3); color: var(--text); text-align: left; cursor: pointer; }
 .scan-diff:hover { background: var(--bg-4); }
@@ -177,3 +177,35 @@
 .scan-diff span { color: var(--text-2); font-size: var(--fs-12); }
 .scan-diff em { grid-column: 2 / -1; font-style: normal; color: var(--text-3); font-size: var(--fs-12); line-height: 1.35; }
 @media (max-width: 1500px) { .scan-body { grid-template-columns: minmax(0, 1fr) 372px; } .scan-title p { max-width: 430px; } }
+
+/* ---------- Demo: the film. One full-bleed view, a title block in the lower left, three live figures lower right. */
+:root[data-mode="demo"] .scan-body { grid-template-columns: minmax(0, 1fr); }
+:root[data-mode="demo"] .scan-veil { background: transparent; place-items: center; }
+:root[data-mode="demo"] .scan-veilbox { background: transparent; border: 0; box-shadow: none; }
+.scan-film { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.scan-film::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 46%; background: linear-gradient(to top, color-mix(in srgb, var(--bg-0) 88%, transparent), transparent); }
+.scan-film-text { position: absolute; left: 40px; bottom: 34px; width: min(520px, 42vw); display: flex; flex-direction: column; gap: 10px; }
+.scan-film-text h1 { font: var(--type-display); font-size: 46px; }
+.scan-film-text p { font-size: var(--fs-16); line-height: 1.4; color: var(--text-2); min-height: 2.8em; max-width: 46ch; }
+.scan-film-text p.in { animation: scan-in var(--t-slow) var(--ease); }
+@keyframes scan-in { from { opacity: 0; transform: translateY(6px); } }
+.scan-film-text .btn { pointer-events: auto; }
+.scan-film-text .row { gap: 10px; }
+.scan-film-right { position: absolute; right: 40px; bottom: 34px; display: flex; flex-direction: column; align-items: flex-end; gap: 22px; }
+.scan-film-figs { display: flex; gap: 34px; text-align: right; }
+.scan-film-figs b { display: block; font-size: 26px; font-weight: 500; letter-spacing: -0.03em; color: var(--text); }
+.scan-film-figs span { font-size: var(--fs-12); color: var(--text-2); }
+.scan-film-dots { display: flex; gap: 8px; pointer-events: auto; }
+.scan-film-dots button { width: 84px; padding: 6px 0 0; border: 0; background: none; color: var(--text-3); font-size: var(--fs-12); text-align: left; cursor: pointer; transition: color var(--t-fast) var(--ease); }
+.scan-film-dots button:hover, .scan-film-dots button[aria-current] { color: var(--text); }
+.scan-film-dots i { display: block; height: 2px; background: var(--line-3); margin-bottom: 6px; overflow: hidden; }
+.scan-film-dots u { display: block; height: 100%; background: var(--text); transform: scaleX(0); transform-origin: left; }
+.scan-tag-film { translate: 0 calc(-100% - 92px); display: grid; grid-template-columns: auto auto; column-gap: 10px; align-items: baseline; padding: 6px 12px 7px; background: var(--glass); border-left: 2px solid var(--warn); opacity: 0.55; transition: opacity var(--t-slow) var(--ease); text-shadow: 0 1px 6px var(--bg-0), 0 0 14px var(--bg-0); }
+.scan-tag-film::after { content: ""; position: absolute; left: -1px; top: 100%; width: 1px; height: 92px; background: linear-gradient(var(--warn), var(--warn-line)); }
+.scan-tag-film.on { opacity: 1; }
+.scan-tag-film b { font: var(--type-heading); color: var(--text); }
+.scan-tag-film span { font: 500 var(--fs-14) var(--mono); color: var(--warn); }
+.scan-tag-film em { grid-column: 1 / -1; font-style: normal; font-size: var(--fs-12); color: var(--text-2); }
+.scan-check { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
+.scan-checkrow { display: flex; justify-content: space-between; font-size: var(--fs-12); color: var(--text-2); } .scan-checkrow b { color: var(--text); font-weight: 500; }
+.scan-film.loading .scan-film-right, .scan-film.loading .scan-film-text .btn { visibility: hidden; }

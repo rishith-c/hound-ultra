@@ -6,6 +6,7 @@ import { CLASSES, OCC, compass } from './analyze.js';
 import { writePLY, planToJSON, planFromJSON } from './io.js';
 import { createPlanEditor, EXAMPLE_PLAN } from './plan.js';
 import { PLAN_MARGIN } from './scene.js';
+import { createHero, ACTS } from './hero.js';
 import { planPath } from '../../core/planner.js';
 import { pointInPoly } from '../../core/geometry.js';
 
@@ -23,7 +24,7 @@ function createClient() {
   const runDirect = async (op, payload, progress) => { direct = direct || (await import('./compute.js')); return direct.handle(op, payload, progress); };
   try {
     worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
-    worker.onmessage = (e) => { const m = e.data; if (m.ready) return; const p = pending.get(m.id); if (!p) return; if (m.progress != null) p.progress(m.progress, m.text); else { pending.delete(m.id); if (m.error) p.reject(new Error(m.error)); else p.resolve(m.result); } };
+    worker.onmessage = (e) => { const m = e.data; if (m.ready) return; const p = pending.get(m.id); if (!p) return; if (m.progress != null) p.progress(m.progress, m.text, m.partial); else { pending.delete(m.id); if (m.error) p.reject(new Error(m.error)); else p.resolve(m.result); } };
     worker.onerror = (e) => { e.preventDefault?.(); worker = null; for (const [id, p] of pending) { pending.delete(id); if (p.transfer) p.reject(new Error('The background worker stopped. Drop the file again.')); else runDirect(p.op, p.payload, p.progress).then(p.resolve, p.reject); } };
   } catch { worker = null; }
   return {
@@ -43,7 +44,7 @@ export default {
     const reduced = () => ctx.kit.reducedMotion();
     const N = (v) => Math.round(v).toLocaleString('en-US');
     const client = createClient();
-    const S = { source: 'site', step: 'capture', data: null, mode: 'height', prevMode: 'height', replay: { t: null, playing: false, speed: 24 }, played: false, auto: true, sel: -1, vp: { minH: 0.5, minL: 1.2, whole: false }, compare: null, mapView: 'diff', overlay: true, route: null, leads: [], file: null, up: 'auto', busy: false, error: null, planScanned: false, shown: false, diffSel: null };
+    const S = { source: 'site', step: 'capture', data: null, mode: 'natural', prevMode: 'natural', replay: { t: null, playing: false, speed: 24 }, played: false, auto: true, sel: -1, vp: { minH: 0.5, minL: 1.2, whole: false }, compare: null, mapView: 'diff', overlay: true, route: null, leads: [], file: null, up: 'auto', busy: false, error: null, planScanned: false, shown: false, diffSel: null };
 
     // ------------------------------------------------------------------ skeleton
     const tagSource = h('span');
@@ -51,14 +52,14 @@ export default {
     const SOURCES = [['site', 'Exercise site'], ['file', 'Your file'], ['plan', 'Floor plan']];
     const btnShot = h('button.btn.btn-sm', { title: 'Save a picture of this view', onclick: screenshot }, icon('download'), 'Screenshot');
     const btnPly = h('button.btn.btn-sm.btn-ghost', { title: 'Download the cloud as a binary .ply with intensity and class per point', onclick: exportPly }, 'Export .ply');
-    const head = h('header.scan-head', null,
-      h('div.scan-title', null, h('h2', null, '3-D scan'), h('p.muted', null, 'A scan of the site becomes a map the mission can use, and a search for the spaces where someone could survive inside a collapse.')),
+    const head = h('header.scan-head.adv-only', null,
+      h('div.scan-title', null, h('h1', null, '3-D scan'), h('p.muted', null, 'Turns a scan into a map the mission can use, and finds spaces someone could survive in.')),
       h('div.scan-tags', null, realityTag('live-algo'), tagSource), h('div.grow'), srcSeg, btnShot, btnPly);
-    const steps = h('nav.scan-steps', { 'aria-label': 'From scan to map' });
-    const stage = h('div.scan-stage'), dock = h('aside.scan-dock', { 'aria-label': 'Step details' });
+    const steps = h('nav.scan-steps.adv-only', { 'aria-label': 'From scan to map' });
+    const stage = h('div.scan-stage'), dock = h('aside.scan-dock.adv-only', { 'aria-label': 'Step details' });
     root.classList.add('scan'); root.append(head, steps, h('div.scan-body', null, stage, dock));
 
-    const colors = { glow: '#cfe9ff', accent: cssVar('--accent'), warn: cssVar('--warn'), person: cssVar('--person'), ok: cssVar('--ok'), text3: cssVar('--text-3'), bg0: cssVar('--bg-0'), bg1: '#111821' };
+    const colors = { glow: '#d6e8fb', accent: cssVar('--accent'), warn: cssVar('--warn'), person: cssVar('--person'), ok: cssVar('--ok'), text3: cssVar('--text-3'), bg0: cssVar('--bg-0'), bg1: cssVar('--bg-2') };
     const view = createView(stage, { colors, reduced: reduced() });
     const classColors = () => ['#6a7684', '#8fb8e8', cssVar('--warn'), cssVar('--ok')];
     view.setClassColors(classColors());
@@ -78,6 +79,51 @@ export default {
     const planHost = h('div.scan-planhost', { hidden: true });
     const measureTip = h('div.scan-hud.scan-tip.glass', { hidden: true });
     stage.append(hudTL, statLine, tools, sectionBar, scale, compassEl, transport, measureTip, planHost, veil, dropVeil);
+    for (const el of [hudTL, statLine, tools, sectionBar, scale, compassEl, transport, measureTip, planHost]) el.classList.add('adv-only');
+
+    // ------------------------------------------------------------------ Demo: one film, full bleed, over the same view
+    const film = { hero: null, title: h('h1'), say: h('p'), act: h('button.btn.btn-primary', { onclick: () => filmAction() }), dots: h('div.scan-film-dots', { role: 'group', 'aria-label': 'Chapters of the film' }), fig: [0, 1, 2].map(() => h('b.num')), last: '' };
+    film.title.append('Room to ', h('em', null, 'survive'));
+    const filmBox = h('section.scan-film.demo-only', { 'aria-label': 'Void finder film' },
+      h('div.scan-film-text', null, film.title, film.say, h('div.row', null, film.act, realityTag('live-algo'), h('span.tag.tag-sim', { title: 'The scan is simulated. The search that runs on it is real and ran just now, on this device.' }, 'Simulated scan'))),
+      h('div.scan-film-right', null, h('div.scan-film-figs', null, [['points', 0], ['voids found', 1], ['m³ of space', 2]].map(([t, i]) => h('div', null, film.fig[i], h('span', null, t)))), film.dots));
+    stage.append(filmBox);
+    const PASS_SAY = { aerial: 'A drone sweeps the site. Every beam that returns becomes a point.', orbit: 'It circles the collapse and looks in from the side.', close: 'Closer, for the cables, bars and bent roof sheets.', interior: 'Then inside, through every open door.', survey: 'A drone sweeps the building.', all: 'Every point measured, none drawn by hand.' };
+    function filmSay() {
+      const s = film.hero.S, d = S.data, v = s.cur && s.cur.v;
+      if (s.act === 'scan') return PASS_SAY[s.cpt] || PASS_SAY.aerial;
+      if (s.act === 'open') return 'The roof lifts away. Now the search runs: free space, flooded inward from open air.';
+      if (!v) return 'No space in this scan is big enough for a person.';
+      if (s.act === 'voids') return v.kind.split(':')[0] + '. ' + v.clear.toFixed(1) + ' m of headroom. ' + (v.places ? 'Floor for ' + v.places + (v.places === 1 ? ' person' : ' people') + ' lying down, assuming 2.0 by 0.6 m each.' : 'Too short to lie flat, long enough to crouch.');
+      return 'Inside ' + v.id + '. ' + (v.seen == null ? 'A place to check, not a person found.' : 'Beams reached ' + Math.round(v.seen * 100) + ' % of it. A place to check, not a person found.');
+    }
+    function filmHtml(v) { return '<b>' + v.id + '</b><span>' + v.volume.toFixed(0) + ' m³</span><em>' + (v.places ? 'fits ' + v.places + ' lying down' : 'room to crouch') + '</em>'; }
+    function filmAction() { const H = film.hero; if (!H) return; H.go(H.S.act === 'inside' || !H.big ? 'scan' : 'inside'); tickFilm(true); }
+    function drawDots() { film.dots.replaceChildren(...ACTS.map(([id, label], i) => h('button', { 'aria-current': null, 'data-act': id, onclick: () => { film.hero?.go(id); tickFilm(true); } }, h('i', null, h('u')), h('span', null, label)))); }
+    let filmFig = 0;
+    function tickFilm(force) {
+      const H = film.hero; if (!H) return; const s = H.S, now = performance.now();
+      if (force || now - filmFig > 90) { filmFig = now; const tx = [N(s.points), String(s.found), N(s.volume)]; film.fig.forEach((el, i) => { if (el.textContent !== tx[i]) el.textContent = tx[i]; });
+        const order = ACTS.map((a) => a[0]); order.forEach((id, i) => { const a = H.starts[id], b = i < 3 ? H.starts[order[i + 1]] : H.total, u = film.dots.children[i].querySelector('u'); u.style.transform = 'scaleX(' + Math.min(1, Math.max(0, (s.t - a) / (b - a))).toFixed(3) + ')'; }); }
+      const key = s.act + s.cpt; if (key === film.last && !force) return; film.last = key;
+      film.say.textContent = filmSay(); film.say.classList.remove('in'); void film.say.offsetWidth; film.say.classList.add('in');
+      film.act.replaceChildren(s.act === 'inside' ? 'Play again' : H.big ? 'Go inside ' + H.big.v.id : 'Play again'); film.act.prepend(icon(s.act === 'inside' ? 'reset' : 'target'));
+      [...film.dots.children].forEach((x) => { if (x.dataset.act === s.act) x.setAttribute('aria-current', 'step'); else x.removeAttribute('aria-current'); });
+    }
+    const demo = () => ctx.mode === 'demo';
+    function startFilm() {
+      if (!demo() || !S.data) return; stopFilm(); S.replay.playing = false; S.replay.t = null; view.setTool('orbit'); tip();
+      if (view.section.on) { view.setSection({ on: false }); }
+      for (const g of ['frame', 'leads', 'routes', 'zones', 'occ', 'section', 'measure', 'access']) view.setLayer(g, false);
+      view.setLayer('flight', true);
+      filmBox.classList.remove('loading'); film.hero = createHero(view, S.data, { reduced: reduced(), html: filmHtml }); film.hero.begin(); film.last = ''; tickFilm(true); for (let i = 0; i < 4; i++) view.setClassVisible(i, true);
+    }
+    function stopFilm() { if (!film.hero) return; film.hero.end(); film.hero = null; }
+    function onMode() {
+      if (demo()) startFilm();
+      else { stopFilm(); if (!S.data) return; for (const g of ['frame', 'section', 'measure', 'access']) view.setLayer(g, true); view.setMode(S.mode); view.setLit(lit); classOn.forEach((on, i) => view.setClassVisible(i, on)); view.selectVoid(S.sel); S.auto = false; setStep(S.step, true); if (S.step === 'capture') view.home(); }
+    }
+    drawDots();
 
     const seg = (host, opts, get, set) => { host.replaceChildren(...opts.map(([v, label, title, dis]) => h('button', { 'aria-pressed': String(get() === v), title, disabled: !!dis, onclick: () => { set(v); [...host.children].forEach((b, i) => b.setAttribute('aria-pressed', String(opts[i][0] === get()))); } }, label))); };
     const slider = (label, min, max, step, value, show, oninput, title) => { const out = h('span.num', null, show(value)); const inp = h('input.scan-range', { type: 'range', min, max, step, value, 'aria-label': label, title, oninput: () => { out.textContent = show(+inp.value); oninput(+inp.value); } }); const el = h('label.scan-slider', null, h('span', null, label), inp, out); el.input = inp; el.out = out; el.set = (v) => { inp.value = v; out.textContent = show(+v); }; return el; };
@@ -89,11 +135,12 @@ export default {
       steps.replaceChildren(...STEPS.map((s) => h('button.scan-step', { 'aria-pressed': String(S.step === s.id), disabled: !d && s.id !== 'capture', title: s.say, onclick: () => setStep(s.id, true) }, h('i.num', null, String(s.n)), h('span', null, h('b', null, s.title), h('em.num', null, m[s.id] || s.say)))));
     }
     function setStep(id, byUser) {
+      if (film.hero) { S.step = id; return; }
       if (byUser) S.auto = false;
       const was = S.step; S.step = id;
       if (id !== 'capture' && S.replay.t != null) stopReplay();
       if (id === 'classify' && S.mode !== 'class') { S.prevMode = S.mode; setMode('class'); }
-      else if (was === 'classify' && id !== 'classify' && S.mode === 'class') setMode(S.prevMode === 'class' ? 'height' : S.prevMode);
+      else if (was === 'classify' && id !== 'classify' && S.mode === 'class') setMode(S.prevMode === 'class' ? 'natural' : S.prevMode);
       applyLayers(); drawSteps(); drawDock(); drawTransport();
       if (!S.data || !byUser && !S.auto) return;
       if (id === 'voids') { if (S.sel < 0 && S.data.voids.list.length) selectVoid(0, true); else if (S.sel >= 0) view.focusVoid(S.sel); }
@@ -103,6 +150,7 @@ export default {
     function applyLayers() {
       const planEdit = S.source === 'plan' && !S.planScanned;
       const v = S.step === 'voids';
+      if (film.hero) { planHost.hidden = !planEdit; return; }
       view.setVoidsVisible(v); view.setLayer('zones', v); view.setLayer('routes', v || S.step === 'map'); view.setLayer('leads', S.step === 'voids' || S.step === 'map');
       view.setLayer('occ', S.step === 'map' && S.overlay); view.setLayer('flight', S.step === 'capture');
       planHost.hidden = !planEdit;
@@ -111,16 +159,17 @@ export default {
     }
 
     // ------------------------------------------------------------------ colour modes and the legend
-    function setMode(m) { S.mode = m; view.setMode(m); drawModeSeg(); drawLegend(); }
+    function setMode(m) { S.mode = m; view.setMode(film.hero ? 'natural' : m); drawModeSeg(); drawLegend(); }
     function drawModeSeg() {
-      const d = S.data, opts = [['height', 'Height', 'Height above the fitted ground'], ['intensity', 'Intensity', 'Strength of each return'], ['class', 'Class', 'What the classifier decided'], ['time', 'Time', d && !d.time ? 'This scan has no time stamps' : 'When each point was captured', d && !d.time]];
+      const d = S.data, opts = [['natural', 'Natural', 'Return strength, tinted by height, with light and shadow worked out from the points'], ['height', 'Height', 'Height above the fitted ground'], ['intensity', 'Intensity', 'Strength of each return'], ['class', 'Class', 'What the classifier decided'], ['time', 'Time', d && !d.time ? 'This scan has no time stamps' : 'When each point was captured', d && !d.time]];
       if (d && d.rgb) opts.push(['rgb', 'Photo colour', 'The colours stored in the file']);
       seg(modeSeg, opts, () => S.mode, (v) => { if (S.step === 'classify' && v !== 'class') S.prevMode = v; setMode(v); });
     }
     const grad = (stops) => 'linear-gradient(90deg,' + stops.map((s) => s[1] + ' ' + (s[0] * 100).toFixed(0) + '%').join(',') + ')';
     function drawLegend() {
       const d = S.data; if (!d) { legend.replaceChildren(); return; }
-      if (S.mode === 'height') { const hm = view.heightMax; legend.replaceChildren(h('div.scan-ramp', { style: { background: grad(HEIGHT_RAMP) } }), h('div.scan-ramp-ax.num', null, h('span', null, '0'), h('span', null, (hm / 2).toFixed(1)), h('span', null, hm.toFixed(1) + ' m +')), h('span.dim', null, 'Height above ground')); }
+      if (S.mode === 'natural') legend.replaceChildren(h('span.dim', null, 'Return strength, tinted by height. Sun and shadow are worked out from the points.'));
+      else if (S.mode === 'height') { const hm = view.heightMax; legend.replaceChildren(h('div.scan-ramp', { style: { background: grad(HEIGHT_RAMP) } }), h('div.scan-ramp-ax.num', null, h('span', null, '0'), h('span', null, (hm / 2).toFixed(1)), h('span', null, hm.toFixed(1) + ' m +')), h('span.dim', null, 'Height above ground')); }
       else if (S.mode === 'intensity') legend.replaceChildren(h('div.scan-ramp', { style: { background: 'linear-gradient(90deg,#0d1117,#e0effe)' } }), h('div.scan-ramp-ax', null, h('span', null, 'weak'), h('span', null, 'strong')), h('span.dim', null, d.kind === 'file' && !d.hasIntensity ? 'Return strength (not in this file)' : 'Return strength: dark tarmac, bright plaster'));
       else if (S.mode === 'class') { const cc = classColors(); legend.replaceChildren(h('div.scan-swatches', null, CLASSES.map((c, i) => h('span', null, h('i', { style: { background: cc[i] } }), c)))); }
       else if (S.mode === 'time') legend.replaceChildren(h('div.scan-ramp', { style: { background: grad(TIME_RAMP) } }), h('div.scan-ramp-ax.num', null, h('span', null, '0:00'), h('span', null, fmt.clock(d.duration || 0))), h('span.dim', null, 'Capture time: first beam to last'));
@@ -201,6 +250,7 @@ export default {
     function pauseReplay() { S.replay.playing = false; syncPlay(); }
     function stopReplay() { S.replay.t = null; S.replay.playing = false; view.setReplay(null); syncPlay(); tickTransport(); }
     view.on('frame', (dt) => {
+      if (film.hero) { film.hero.update(dt); tickFilm(); return; }
       const r = S.replay; if (!r.playing || !S.data) return;
       r.t += dt * r.speed;
       if (r.t >= S.data.duration) { stopReplay(); if (S.auto && S.source === 'site') { S.auto = false; setStep('voids'); if (S.data.voids.list.length) selectVoid(0, true); } return; }
@@ -223,13 +273,14 @@ export default {
     function readLeads(force) {
       const list = S.source !== 'site' ? [] : ctx.sim.state.detections.filter((d) => (d.status === 'possible' || d.status === 'confirmed') && !d.dismissed && d.pos).map((d) => ({ id: d.id, pos: d.pos, sigma: d.posSigma, confirmed: d.status === 'confirmed', p: d.p, label: '<b>' + d.id + '</b> ' + (d.status === 'confirmed' ? 'person' : 'possible') + ' · ' + (d.p * 100).toFixed(0) + ' %' }));
       const sig = list.map((l) => l.id + l.confirmed + l.p.toFixed(2) + l.pos.join()).join('|') + S.source;
-      if (sig === leadSig && !force) return; leadSig = sig; S.leads = list; view.setLeads(list); applyLayers();
+      if (sig === leadSig && !force) return; leadSig = sig; S.leads = list; view.setLeads(list); if (film.hero) view.setLayer('leads', false); applyLayers();
       if (S.step === 'voids') drawDock(); if (S.step === 'map') drawMap();
     }
     const nearestLead = (v) => { let best = null; for (const l of S.leads) { const dx = Math.max(v.box[0] - l.pos[0], 0, l.pos[0] - v.box[2]), dy = Math.max(v.box[1] - l.pos[1], 0, l.pos[1] - v.box[3]), d = Math.hypot(dx, dy); if (!best || d < best.d) best = { d, lead: l }; } return best; };
 
     // ------------------------------------------------------------------ voids
     function selectVoid(i, flyThere) {
+      if (film.hero) return;
       S.sel = i; S.route = null; view.selectVoid(i); view.setRoutes([]);
       if (flyThere && i >= 0) view.focusVoid(i);
       if (S.step === 'voids') drawDock(); if (S.step === 'map') drawMap();
@@ -340,16 +391,17 @@ export default {
         d.rays ? ['Beams fired', N(d.rays) + ' (' + ((d.n / d.rays) * 100).toFixed(0) + ' % returned)', 'Beams that hit nothing in range, left the site or were too weak give no point'] : null,
         d.prims ? ['Shapes in the model', N(d.prims), 'Walls, slabs, furniture, debris, trunks and tree crowns the beams are tested against'] : null,
         d.kind === 'file' && d.total > d.n ? ['In the file', N(d.total)] : null,
-      ]), h('div.scan-times', { title: 'Measured on this device just now' }, [['Simulate', T.scan != null ? T.build + T.scan : null], ['Read', T.read], ['Ground', T.ground], ['Classify', T.classify], ['Voids', T.voids], ['Map', T.map]].filter((x) => x[1] != null).map(([k, v]) => h('span', null, k + ' ', h('b.num', null, v < 1000 ? v.toFixed(0) + ' ms' : (v / 1000).toFixed(1) + ' s')))),
+      ]), h('div.scan-times', { title: 'Measured on this device just now' }, [['Simulate', T.scan != null ? T.build + T.scan : null], ['Read', T.read], ['Ground', T.ground], ['Classify', T.classify], ['Voids', T.voids], ['Light', T.light], ['Map', T.map]].filter((x) => x[1] != null).map(([k, v]) => h('span', null, k + ' ', h('b.num', null, v < 1000 ? v.toFixed(0) + ' ms' : (v / 1000).toFixed(1) + ' s')))),
       h('p.dim.scan-small', null, client.threaded ? 'Computed in a background worker on this device.' : 'Computed on this device.'));
     }
     function display() {
       return panel('Display', null,
         slider('Point size', 0.6, 3.2, 0.05, view.pointSize, (v) => v.toFixed(2) + ' × spacing', (v) => view.setPointSize(v), 'Each point is drawn this many times wider than the local gap between points, so sparse and dense areas both close up. Points shrink with distance.'),
+        slider('Sun and shadow', 0, 1, 0.05, lit, (v) => (v * 100).toFixed(0) + ' %', (v) => { lit = v; view.setLit(v); }, 'Light, shadow and openness to the sky, worked out from the points themselves. At zero you see the raw colours.'),
         slider('Depth shading', 0, 2.5, 0.05, shading, (v) => v.toFixed(2), (v) => { shading = v; view.setShading(v); }, 'Eye-dome lighting: darkens a point by how far it sits behind its neighbours on screen'),
         slider('Height scale', 2, 14, 0.5, view.heightMax, (v) => '0 to ' + v.toFixed(1) + ' m', (v) => { view.setHeightRange(v); drawLegend(); }, 'Top of the height colour scale'));
     }
-    let shading = 1;
+    let shading = 1, lit = 1;
     function dockCapture() {
       const d = S.data;
       if (S.source === 'file') return dockFile();
@@ -378,9 +430,17 @@ export default {
         out.push(panel((c.accuracy * 100).toFixed(1) + ' % of points match the simulator’s own labels', { tag: h('span.tag.tag-sim', null, 'Simulated check') },
           h('p.muted', null, 'Because this scan is simulated, the true material of every point is known. It is used here only to mark the algorithm’s work. Each row adds up to 100 %.'), table,
           h('p.scan-small', null, 'Biggest mistake: ' + ((worst.n / rowTot[worst.r]) * 100).toFixed(1) + ' % of ' + TRUTH_ROWS[worst.r].toLowerCase() + ' points are called ' + CLASSES[worst.k].toLowerCase() + '. Furniture and vehicles have no class of their own, so they are left out of the score.'),
-          h('div.note.warn', null, icon('alert'), h('span', null, 'One simulated scan with clean geometry. A real scan has moving people, glass, dust and registration error, and would score lower.'))));
+          checkBox(),
+          h('div.note.warn', null, icon('alert'), h('span', null, 'The rules and limits were adjusted by hand while looking at this very site, so the score above flatters them. One simulated site with clean geometry: a real scan has moving people, glass, dust and registration error, and would score lower.'))));
       } else out.push(panel('No answer key for this scan', null, h('p.muted', null, 'A file you load has no known labels, so the classes cannot be scored here. Hide and show classes to check them by eye.')));
       return out;
+    }
+    const CHECK = { busy: false, res: [], err: null };
+    function checkBox() { // an honest second opinion: the same rules on a site they were not adjusted on
+      const box = h('div.scan-check'), draw = () => box.replaceChildren(...[
+        h('div.row', null, h('button.btn.btn-sm', { disabled: CHECK.busy, title: 'Re-rolls debris, furniture, trees and sensor noise, scans again and scores the unchanged rules. The buildings stay where they are.', onclick: async () => { CHECK.busy = true; CHECK.err = null; draw(); try { CHECK.res.push(await client.run('check', { shuffle: CHECK.res.length + 1 })); } catch (e) { CHECK.err = e.message; } CHECK.busy = false; draw(); } }, icon('reset'), CHECK.busy ? 'Scanning a reshuffled site…' : 'Score on a reshuffled site'), CHECK.busy ? h('span.spinner.sm') : null),
+        ...CHECK.res.map((r) => h('div.scan-checkrow', null, h('span', null, 'Reshuffle ' + r.shuffle + ', never used for tuning'), h('b.num', null, (r.accuracy * 100).toFixed(1) + ' %'))), CHECK.res.length ? h('p.dim.scan-small', null, 'Void search on the same reshuffled sites: ' + CHECK.res.map((r) => { const V = r.voids.reduce((s, q) => s + q.volume, 0), E = r.voids.reduce((s, q) => s + q.volume * q.empty, 0); return r.voids.length + ' voids, ' + (V ? (E / V * 100).toFixed(0) : 0) + ' % of their volume really empty'; }).join('; ') + '.') : null, CHECK.err ? h('span.c-danger', { role: 'alert' }, CHECK.err) : null].filter(Boolean));
+      draw(); return box;
     }
     const classOn = [true, true, true, true];
     function dockVoids(keep) {
@@ -408,7 +468,7 @@ export default {
       if (v) {
         const nl = nearestLead(v), R = S.route;
         out.push(panel(v.id + ': ' + v.kind.split(':')[0].toLowerCase(), null,
-          kv([['Volume', v.volume.toFixed(1) + ' m³'], ['Headroom', v.clear.toFixed(2) + ' m', 'Over nine tenths of its floor'], ['Floor with that headroom', v.area.toFixed(1) + ' m² (' + v.length.toFixed(1) + ' × ' + v.width.toFixed(1) + ' m)'], ['Cover slopes at', v.slope.toFixed(0) + '°'], ['Closed in', (v.enclosure * 100).toFixed(0) + ' % of its surface', 'Share of the pocket’s surface that touches scanned material or ground. The rest is open.'], ['Scanner saw into', v.seen == null ? 'not known (no scanner path in the file)' : (v.seen * 100).toFixed(0) + ' % of it', 'Share of the pocket that a beam actually passed through'], ['Centre', fmt.pos(S.source === 'plan' ? [v.centre[0] - PLAN_MARGIN, v.centre[1] - PLAN_MARGIN] : v.centre) + ' m']]),
+          kv([['Volume', v.volume.toFixed(1) + ' m³'], ['Headroom', v.clear.toFixed(2) + ' m', 'Over nine tenths of its floor'], ['Floor with that headroom', v.area.toFixed(1) + ' m² (' + v.length.toFixed(1) + ' × ' + v.width.toFixed(1) + ' m)'], ['Lying places', v.places ? String(v.places) + ' (assumed 2.0 × 0.6 m)' : 'none', 'How many 2.0 × 0.6 m rectangles pack onto the floor that has the headroom. The size of a person lying down is assumed.'], ['Cover slopes at', v.slope.toFixed(0) + '°'], ['Closed in', (v.enclosure * 100).toFixed(0) + ' % of its surface', 'Share of the pocket’s surface that touches scanned material or ground. The rest is open.'], ['Scanner saw into', v.seen == null ? 'not known (no scanner path in the file)' : (v.seen * 100).toFixed(0) + ' % of it', 'Share of the pocket that a beam actually passed through'], v.empty != null ? ['Really empty in the model', (v.empty * 100).toFixed(0) + ' % of it', 'Simulated check: the share of this space that is empty in the model the scan was made from. The search never sees this.'] : null, ['Centre', fmt.pos(S.source === 'plan' ? [v.centre[0] - PLAN_MARGIN, v.centre[1] - PLAN_MARGIN] : v.centre) + ' m']]),
           S.source === 'site' && nl ? h('button.btn.btn-sm', { title: 'Select this lead everywhere in the console', onclick: () => { ctx.select({ type: 'detection', id: nl.lead.id }); ctx.shell.toast(nl.lead.id + ' selected. Open Mission or Fusion to see its evidence.'); } }, icon('person'), 'Select lead ' + nl.lead.id + ' (' + nl.d.toFixed(1) + ' m away)') : null,
           S.source === 'site' ? h('button.btn' + (R ? '' : '.btn-primary'), { onclick: () => planTo(v) }, icon('route'), R ? 'Plan again' : 'Plan a way to ' + v.id) : null,
           R ? h('div.scan-route', null,
@@ -416,6 +476,7 @@ export default {
             h('div', null, h('i.dash'), h('span', null, 'On the planner’s own map'), h('b.num', null, R.planner.ok ? R.planner.length.toFixed(1) + ' m' : 'no way'), h('em', null, R.planner.ok ? (R.planner.reached ? 'reaches the opening' : 'stops ' + R.planner.gap.toFixed(1) + ' m short of the opening') : R.planner.reason)),
             h('p.dim.scan-small', null, 'From staging. The mission’s own route planner (A*), run on both maps in ' + R.ms.toFixed(0) + ' ms. Hazard costs are the mission’s; walls and obstacles come from the scan.')) : null));
       }
+      if (S.source === 'site') out.push(h('div.note.quiet', null, icon('info'), h('span', null, 'The search limits were adjusted by hand while looking at this site, which was also built by hand. The list shows the method working, not how often it would be right elsewhere.')));
       out.push(h('div.note.warn', null, icon('alert'), h('span', null, 'A void is a place worth checking, not a finding. A scan cannot see into a sealed pocket, cannot tell an empty space from one it never saw into, and cannot tell whether anyone is there.')));
       return out;
     }
@@ -518,33 +579,38 @@ export default {
 
     // ------------------------------------------------------------------ loading
     let job = 0;
-    function showVeil(f, text) { veil.hidden = false; veil.replaceChildren(h('div.scan-veilbox.glass', { role: 'status' }, h('div.spinner'), h('div', null, h('b', null, text || 'Working…'), h('div.bar', null, h('i', { style: { width: (f * 100).toFixed(0) + '%' } }))))); }
+    function showVeil(f, text) {
+      if (demo()) { veil.hidden = true; filmBox.classList.add('loading'); film.say.textContent = (text || 'Starting') + '…'; return; } veil.hidden = false; veil.replaceChildren(h('div.scan-veilbox.glass', { role: 'status' }, h('div.spinner'), h('div', null, h('b', null, text || 'Working…'), h('div.bar', null, h('i', { style: { width: (f * 100).toFixed(0) + '%' } }))))); }
     function fail(msg) {
+      if (demo()) film.say.textContent = '';
       S.error = msg; S.busy = false; veil.hidden = true;
       if (S.source === 'file') { S.data = null; view.setCloud(null); refreshAll(); return; }
       veil.hidden = false; veil.replaceChildren(h('div.scan-veilbox.glass.col', { role: 'alert' }, h('div.row', null, icon('alert', 22), h('b', null, 'The scan could not be prepared')), h('p.muted', null, msg), h('button.btn.btn-primary', { onclick: () => setSource(S.source) }, 'Try again')));
     }
     async function load(op, payload = {}, transfer = []) {
+      if (op === 'site') view.setPreview(demo());
       const id = ++job; S.busy = true; S.error = null; stopReplay(); showVeil(0.01, op === 'file' ? 'Reading ' + payload.name : 'Starting');
       try {
-        const d = await client.run(op, payload, (f, t) => { if (id === job) showVeil(f, t); }, transfer);
+        const d = await client.run(op, payload, (f, t, part) => { if (id !== job) return; showVeil(f, t); if (part) view.addPreview(part); }, transfer);
         if (id !== job) return false;
         veil.hidden = true; S.busy = false; setData(d); return true;
       } catch (e) { if (id === job) fail(e.message || String(e)); return false; }
     }
     function setData(d) {
-      S.data = d; S.sel = -1; S.route = null; S.diffSel = null; S.vp = { minH: 0.5, minL: 1.2, whole: false };
+      stopFilm(); S.data = d; S.sel = -1; S.route = null; S.diffSel = null; S.vp = { minH: 0.5, minL: 1.2, whole: false };
       classOn.fill(true); for (let i = 0; i < 4; i++) view.setClassVisible(i, true);
       view.setCloud(d); view.setShading(shading); view.setVoids(d.voids.list); view.setZones(d.voids.zones); view.setSection({ on: false, axis: 'z', value: d.bounds.min[2] + 2.6, slab: 0 });
       S.compare = d.kind === 'site' ? compareWithPlanner(d.occ) : null; if (!S.compare) S.mapView = 'scan'; else S.mapView = 'diff';
       if ((S.mode === 'time' && !d.time) || (S.mode === 'rgb' && !d.rgb)) S.mode = 'height';
       if (d.rgb && d.kind === 'file' && S.step !== 'classify') S.mode = 'rgb';
-      view.setMode(S.mode); leadSig = ''; readLeads(true); refreshMapLayers(); refreshAll();
+      view.setMode(S.mode); view.setLit(lit); leadSig = ''; readLeads(true); refreshMapLayers(); refreshAll();
       if (d.kind === 'file') ctx.shell.toast(d.name + ': ' + N(d.n) + ' points loaded, ' + d.voids.list.length + ' voids found.', { level: 'ok' });
       maybeAutoplay();
     }
     function maybeAutoplay() {
-      if (!S.shown || !S.data || S.played || S.source !== 'site') return;
+      if (!S.shown || !S.data) return;
+      if (demo()) { if (!film.hero) startFilm(); return; }
+      if (S.played || S.source !== 'site') return;
       S.played = true;
       if (reduced() || !S.auto) return;
       if (S.step === 'capture') startReplay(0);
@@ -556,7 +622,7 @@ export default {
     }
     function setSource(src) {
       job++; veil.hidden = true; S.source = src; S.data = null; S.compare = null; S.sel = -1; S.route = null; S.error = null; S.planScanned = false; S.auto = S.auto && src === 'site';
-      stopReplay(); view.setCloud(null); view.setTool('orbit'); if (S.step !== 'capture') S.step = 'capture'; if (S.mode === 'class') S.mode = 'height'; view.setMode(S.mode);
+      stopFilm(); stopReplay(); view.setCloud(null); view.setTool('orbit'); if (S.step !== 'capture') S.step = 'capture'; if (S.mode === 'class') S.mode = 'height'; view.setMode(S.mode);
       leadSig = ''; S.leads = []; refreshAll();
       if (src === 'site') load('site');
       else if (src === 'file' && S.file) openFile(S.file, S.up);
@@ -597,13 +663,14 @@ export default {
     // ------------------------------------------------------------------ the rest of the console
     const offs = [
       ctx.bus.on('detection', () => readLeads()), ctx.bus.on('reset', () => readLeads(true)), ctx.bus.on('seek', () => readLeads(true)),
-      ctx.bus.on('tick', () => { if (S.shown) readLeads(); }),
+      ctx.bus.on('tick', () => { if (S.shown && !film.hero) readLeads(); }),
+      ctx.bus.on('mode', () => onMode()),
       ctx.bus.on('route', () => { if (S.shown && S.compare && S.data) { S.compare = compareWithPlanner(S.data.occ); if (S.step === 'map') { refreshMapLayers(); drawDock(); } drawSteps(); } }),
       ctx.bus.on('prefs', () => { view.setClassColors(classColors()); drawLegend(); if (S.data) { refreshMapLayers(); drawDock(); } editor.redraw(); }),
       ctx.bus.on('escape', () => { if (!S.shown) return; if (view.tool === 'measure') { view.setTool('orbit'); view.clearMeasure(); drawTools(); tip(); } }),
-      ctx.bus.on('select', (sel) => { if (!S.shown || !sel || S.source !== 'site' || !S.data) return; const st = ctx.sim.state; let p = null; if (sel.type === 'detection') p = st.detections.find((x) => x.id === sel.id)?.pos; else if (sel.type === 'survivor') p = st.survivors[sel.id]?.pos; else if (sel.type === 'room') { const r = world.roomById(sel.id); if (r) p = [(r.rect[0] + r.rect[2]) / 2, (r.rect[1] + r.rect[3]) / 2]; } if (p) view.flyTo({ target: [p[0], p[1], 1], dist: 30, az: 205, el: 40 }); }),
+      ctx.bus.on('select', (sel) => { if (!S.shown || !sel || S.source !== 'site' || !S.data) return; const st = ctx.sim.state; let p = null; if (sel.type === 'detection') p = st.detections.find((x) => x.id === sel.id)?.pos; else if (sel.type === 'survivor') p = st.survivors[sel.id]?.pos; else if (sel.type === 'room') { const r = world.roomById(sel.id); if (r) p = [(r.rect[0] + r.rect[2]) / 2, (r.rect[1] + r.rect[3]) / 2]; } if (p && !film.hero) view.flyTo({ target: [p[0], p[1], 1], dist: 30, az: 205, el: 40 }); }),
     ];
-    root.__scan = { S, view, openFile, setStep, setSource, selectVoid, startReplay, stopReplay, editor, planTo, toggleSection }; // handle for the automated checks
+    root.__scan = { S, view, film, client, openFile, setStep, setSource, selectVoid, startReplay, stopReplay, editor, planTo, toggleSection }; // handle for the automated checks
     refreshAll();
     setSource('site');
 

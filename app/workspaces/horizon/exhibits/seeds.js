@@ -349,7 +349,7 @@ export default {
       fMap.setTitle(P.view === 'truth' ? 'The simulated truth: a smouldering hot spot, and ground cooled by standing flood water'
         : !heard ? 'No seed answers the reader, so there is no map: move the reader or the aim point'
         : P.view === 'error' ? 'Where the rebuilt map is wrong: ' + L.fix(A.rms, 1) + ' °C RMS over the site, ' + L.fix(A.rmsS, 1) + ' °C where seeds reach'
-        : heard + ' of ' + D.seeds.length + ' seeds answer the reader, and their readings rebuild the temperature map to within ' + L.fix(A.rms, 1) + ' °C');
+        : heard + ' of ' + D.seeds.length + ' seeds answer. Their map is off by ' + L.fix(A.rms, 1) + ' °C over the site; guessing one flat temperature is off by ' + L.fix(flat, 1) + ' °C');
       fMap.setNote((BLD.length ? 'The invented exercise site, 120 by 90 m, north up. ' : 'Plain ground, 120 by 90 m. ') + 'Of the ' + n + ' seeds down: ' + roof + ' on roofs, ' + lost + ' off the site, ' + dead + ' face down, shaded or lost in rubble, ' + (ok - heard) + ' working but out of the reader’s reach. Dim ground has no seed within ' + ASSUME.foot + ' m. Kriging length scale chosen by the readings: ' + A.ell + ' m.');
       fFoot.setTitle(n < 4 ? 'The seeds are still in the air' : 'The seeds drifted ' + L.fix(ma, 0) + ' m on a ' + L.fix(P.wind, 1) + ' m/s wind; wind × height ÷ fall speed forecast ' + L.fix(F.drift, 0) + ' m');
       fFoot.setNote('Each mark is one seed. The cloud’s centre landed ' + L.fix(off, 1) + ' m from the forecast centre: gusts move the whole cloud, and roofs catch seeds early. Fall time ' + L.fix(F.T, 0) + ' s from ' + P.height + ' m.');

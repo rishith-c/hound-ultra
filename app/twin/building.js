@@ -116,34 +116,59 @@ export function build(env) {
   G.concrete.push(box(3.4, 0.05, 1.5, 64, 0, -29.1));
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.6), new THREE.MeshStandardMaterial({ map: tex.sign('BLOCK B'), roughness: 0.7 })); sign.position.set(64, 2.98, -27.83); group.add(sign);
 
+  // a tin awning beside the entrance that has let go of one post
+  { const pg = new THREE.PlaneGeometry(5.2, 2.0, 26, 8).rotateX(-Math.PI / 2), p = pg.attributes.position; for (let i = 0; i < p.count; i++) { const u = p.getX(i) / 5.2 + 0.5, v = p.getZ(i) / 2 + 0.5; p.setY(i, 2.75 - v * 0.35 - u * u * v * 1.5 - Math.sin(u * 9) * 0.03 * v); } pg.computeVertexNormals(); const aw = mesh(pg, mats.cgi, { name: 'awning' }); aw.position.set(70.2, 0, -28.75); group.add(aw); G.steel.push(cyl(0.04, 0.04, 2.4, 67.8, 0, -27.8, 8), xform(new THREE.CylinderGeometry(0.04, 0.04, 2.3, 8), 72.6, 0.42, -27.5, 0.4, 0, 1.25)); }
+  { const c = document.createElement('canvas'); c.width = 512; c.height = 300; const g2 = c.getContext('2d'); g2.fillStyle = '#3d3327'; g2.fillRect(0, 0, 512, 300); g2.fillStyle = '#6d5a44'; g2.fillRect(14, 14, 484, 272); const RP = rng('notices'); for (let i = 0; i < 15; i++) { const px = 24 + RP() * 400, py = 22 + RP() * 190, w2 = 40 + RP() * 46, h2 = 54 + RP() * 40; g2.save(); g2.translate(px, py); g2.rotate(RP.gauss() * 0.08); g2.fillStyle = ['#d8d2c2', '#c9c3b0', '#b9c0b8', '#d5c7a2'][i % 4]; g2.fillRect(0, 0, w2, h2); g2.fillStyle = 'rgba(40,40,44,.55)'; for (let l = 0; l < 7; l++) g2.fillRect(5, 7 + l * 7, w2 * (0.4 + RP() * 0.45), 2); g2.restore(); } const gr = g2.createLinearGradient(0, 120, 0, 300); gr.addColorStop(0, 'rgba(60,45,30,0)'); gr.addColorStop(1, 'rgba(60,45,30,.9)'); g2.fillStyle = gr; g2.fillRect(0, 0, 512, 300); const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace; const nb = mesh(new THREE.BoxGeometry(2.1, 1.25, 0.06), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.9 }), { name: 'notice-board' }); nb.position.set(60.4, 1.55, -29.8); group.add(nb); }
   // ---- assemble the solid walls. Own material copies, so they can fade for the x-ray without touching the rest of the site. ----
   const solid = new THREE.Group(); solid.name = 'walls'; group.add(solid);
-  const own = {};
+  const own = {}, RV = { uC: { value: new THREE.Vector2(64, -44) }, uR: { value: 0 }, uS: { value: 1.3 }, uRimK: { value: 1 } };
+  // Walls inside a circle turn to glass; the roof dissolves along a moving edge. Both edges carry a thin line of light.
+  const NOISE = 'float bh(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); } float bn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(bh(i), bh(i + vec2(1, 0)), f.x), mix(bh(i + vec2(0, 1)), bh(i + vec2(1, 1)), f.x), f.y); }';
+  function reveal(m, kind) {
+    const prev = m.onBeforeCompile, pk = m.customProgramCacheKey;
+    m.onBeforeCompile = (sh, r) => { prev && prev.call(m, sh, r); Object.assign(sh.uniforms, RV);
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vRW;').replace('#include <begin_vertex>', '#include <begin_vertex>\n vRW = (modelMatrix * vec4(position, 1.0)).xyz;');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vRW; uniform vec2 uC; uniform float uR, uS, uRimK; ' + NOISE)
+        .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n' + (kind === 'roof'
+          ? 'float rvD = uS - ((vRW.x - 44.0) / 40.0 * 0.8 + (-vRW.z - 30.0) / 28.0 * 0.2) - (bn(vRW.xz * 0.9) - 0.5) * 0.10 - (bn(vRW.xz * 5.0) - 0.5) * 0.025; if (rvD < 0.0) discard; rvD *= 40.0;'
+          : 'float rvD = length(vRW.xz - uC) - uR + (bn(vec2(vRW.x + vRW.z, vRW.y) * 2.2) - 0.5) * 0.5 - vRW.y * 0.12; if (uR > 0.01 && rvD < 0.0) discard; if (uR < 0.01) rvD = 9.0;'))
+        .replace('#include <opaque_fragment>', 'outgoingLight += vec3(0.55, 0.8, 1.0) * (exp(-rvD * 16.0) * 2.2 + exp(-rvD * 3.0) * 0.18) * uRimK;\n#include <opaque_fragment>'); };
+    m.customProgramCacheKey = () => 'rv-' + kind + (pk ? pk.call(m) : ''); m.side = THREE.DoubleSide; return m;
+  }
+  const depthRoof = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side: THREE.DoubleSide });
+  depthRoof.onBeforeCompile = (sh) => { Object.assign(sh.uniforms, RV); sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vRW;').replace('#include <begin_vertex>', '#include <begin_vertex>\n vRW = (modelMatrix * vec4(position, 1.0)).xyz;'); sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vRW; uniform float uS;').replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n if (uS < (vRW.x - 44.0) / 40.0 * 0.8 + (-vRW.z - 30.0) / 28.0 * 0.2) discard;'); };
   for (const [k, src, uv] of [['plaster', mats.plaster, [1 / 8, 1 / 4]], ['inner', mats.inner, [1 / 8, 1 / 4]], ['cut', mats.cut, null], ['concrete', mats.concrete, [0.3, 0.3]], ['paint', mats.paint, null], ['wood', mats.wood, 'keep'], ['glass', mats.glass, null], ['steel', mats.steel, null]]) {
     if (!G[k].length) continue;
     const list = uv && uv !== 'keep' ? G[k].map((g) => worldUV(g, uv[0], uv[1])) : G[k];
-    own[k] = src.clone(); const m = mesh(merge(list, { keepUV: !!uv, keepColor: k === 'paint' }), own[k], { name: 'walls-' + k, cast: k !== 'cut' && k !== 'glass' }); solid.add(m);
+    own[k] = reveal(src.clone(), 'wall'); const m = mesh(merge(list, { keepUV: !!uv, keepColor: k === 'paint' }), own[k], { name: 'walls-' + k, cast: k !== 'cut' && k !== 'glass' }); solid.add(m);
   }
 
   // ---- x-ray: the same walls as a translucent, edge-lit blueprint ----
   const xgeo = merge(X, { keepUV: false, keepColor: false });
+  const XV = 'varying vec3 vN; varying vec3 vV; varying vec3 vW; void main() { vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; vec4 mv = viewMatrix * w; vV = -mv.xyz; vN = normalMatrix * normal; gl_Position = projectionMatrix * mv; }';
   const xmat = new THREE.ShaderMaterial({
-    uniforms: { uK: { value: 0 }, uGlow: { value: 1 } }, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false,
-    vertexShader: 'varying vec3 vN; varying vec3 vV; varying vec3 vW; void main() { vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; vec4 mv = viewMatrix * w; vV = -mv.xyz; vN = normalMatrix * normal; gl_Position = projectionMatrix * mv; }',
-    fragmentShader: `uniform float uK; varying vec3 vN; varying vec3 vV; varying vec3 vW;
-      void main() { float f = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 2.2);
-        float top = smoothstep(2.7, 3.2, vW.y), base = 1.0 - smoothstep(0.0, 0.35, vW.y);
-        float rule = 1.0 - smoothstep(0.0, 0.02, abs(fract(vW.y / 0.8 + 0.5) - 0.5) * 0.8);
-        float a = (0.05 + 0.2 * f + 0.2 * top + 0.12 * base + 0.05 * rule) * uK;
-        gl_FragColor = vec4(vec3(0.32, 0.62, 1.0) * (0.75 + 0.9 * top + 0.4 * f), a); }`,
+    uniforms: { ...RV, uTime: { value: 0 }, uSun: { value: new THREE.Color(1, 0.7, 0.45) }, uSky: { value: new THREE.Color(0.3, 0.42, 0.6) }, uSunDir: { value: new THREE.Vector3(1, 0.4, 0) } }, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false, vertexShader: XV.replace('vN = normalMatrix * normal;', 'vN = normalMatrix * normal; vWN = normal;').replace('varying vec3 vN;', 'varying vec3 vN; varying vec3 vWN;'),
+    // glass, not a ghost: it thickens at grazing angles, picks up the sky, and carries a highlight from the sun
+    fragmentShader: `uniform vec2 uC; uniform float uR, uTime; uniform vec3 uSun, uSky, uSunDir; varying vec3 vN; varying vec3 vWN; varying vec3 vV; varying vec3 vW; `+NOISE+`
+      void main() { float edge = uR - length(vW.xz - uC) + vW.y * 0.12; if (edge < -0.25) discard; float in_ = smoothstep(-0.2, 0.5, edge);
+        vec3 V = normalize(vW - cameraPosition), N = normalize(vWN); float f = pow(1.0 - abs(dot(N, V)), 3.0); vec3 R = reflect(V, N);
+        float sp = pow(max(dot(R, uSunDir), 0.0), 60.0); float sky = smoothstep(-0.2, 0.6, R.y + (bn(vW.xy * 0.4 + vW.z * 0.4) - 0.5) * 0.4);
+        float top = smoothstep(3.16, 3.2, vW.y), smear = 0.75 + 0.5 * bn(vec2((vW.x + vW.z) * 0.9, vW.y * 2.5));
+        vec3 c = mix(vec3(0.012, 0.022, 0.034), uSky * 0.9, f * 0.8 + sky * 0.12) * smear + uSun * sp * 2.0 + vec3(0.5, 0.75, 1.0) * top * 0.4;
+        float wave = exp(-pow((fract(uTime * 0.22) * (uR + 2.0) - length(vW.xz - uC)) * 2.2, 2.0)) * step(uR, 40.0); c += vec3(0.25, 0.5, 0.8) * wave * 0.35;
+        float a = (0.10 + 0.5 * f + 0.3 * top + sp * 0.6 + wave * 0.12) * in_; gl_FragColor = vec4(c, clamp(a, 0.0, 0.85)); }`,
   });
   const xray = new THREE.Mesh(xgeo, xmat); xray.visible = false; xray.renderOrder = 6; xray.name = 'walls-xray';
-  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(xgeo, 30), new THREE.LineBasicMaterial({ color: new THREE.Color(0.42, 0.74, 1.0).multiplyScalar(1.5), transparent: true, opacity: 0, depthWrite: false, fog: false })); edges.visible = false; edges.renderOrder = 7;
+  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(xgeo, 30), new THREE.ShaderMaterial({ uniforms: RV, transparent: true, depthWrite: false, vertexShader: 'varying vec3 vW; void main() { vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }', fragmentShader: 'uniform vec2 uC; uniform float uR; varying vec3 vW; void main() { float e = smoothstep(-0.2, 0.5, uR - length(vW.xz - uC) + vW.y * 0.12); if (e < 0.01) discard; gl_FragColor = vec4(vec3(0.5, 0.7, 0.92) * 0.8, e * (0.16 + 0.34 * smoothstep(3.0, 3.2, vW.y))); }' })); edges.visible = false; edges.renderOrder = 7;
   group.add(xray, edges);
 
   // ---- floors: one per room, clickable ----
   const floorMat = mats.floor.clone(), hallMat = mats.floor.clone(); hallMat.color.set(0xc9c4ba);
-  for (const m of [floorMat, hallMat]) { m.polygonOffset = true; m.polygonOffsetFactor = 1; m.polygonOffsetUnits = 1; }
+  for (const m of [floorMat, hallMat]) {
+    m.polygonOffset = true; m.polygonOffsetFactor = 1; m.polygonOffsetUnits = 1;
+    m.onBeforeCompile = (sh) => { sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vRW;').replace('#include <begin_vertex>', '#include <begin_vertex>\n vRW = (modelMatrix * vec4(position, 1.0)).xyz;'); sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vRW; ' + NOISE).replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n float fw = smoothstep(0.46, 0.6, bn(vRW.xz * 0.42) * 0.65 + bn(vRW.xz * 1.6) * 0.35); roughnessFactor = mix(roughnessFactor, 0.06, fw); diffuseColor.rgb *= mix(1.0, 0.5, fw);').replace('#include <opaque_fragment>', '#include <opaque_fragment>\n gl_FragColor.a = 1.0 - fw;'); };
+    m.customProgramCacheKey = () => 'bld-floor';
+  }
   const floors = new Map(), roomLabels = [];
   for (const r of world.ROOMS) {
     const [x0, y0, x1, y1] = r.rect, g = worldUV(new THREE.PlaneGeometry(x1 - x0, y1 - y0).rotateX(-Math.PI / 2).translate((x0 + x1) / 2, 0.014, -(y0 + y1) / 2), 0.25);
@@ -175,20 +200,15 @@ export function build(env) {
   }
   RG.concrete.push(worldUV(xform(new THREE.BoxGeometry(3.4, 0.2, 2.5).translate(1.7, -0.1, 0), 80.6, H + 0.2, -54.9, -0.75, 0, -0.82), 0.25));  // a hinged piece of slab hanging into the rubble
   const roofMats = [];
-  for (const [k, src] of [['concrete', mats.concreteDark], ['plaster', mats.plaster], ['paint', mats.paint], ['steel', mats.steel], ['rebar', mats.rebar], ['cgi', mats.cgi]]) { if (!RG[k].length) continue; const m = src.clone(); roofMats.push(m); const rm = mesh(merge(RG[k], { keepUV: k !== 'paint' && k !== 'steel' && k !== 'rebar', keepColor: k === 'paint' }), m, { name: 'roof-' + k }); roof.add(rm); }
+  for (const [k, src] of [['concrete', mats.concreteDark], ['plaster', mats.plaster], ['paint', mats.paint], ['steel', mats.steel], ['rebar', mats.rebar], ['cgi', mats.cgi]]) { if (!RG[k].length) continue; const m = reveal(src.clone(), 'roof'); roofMats.push(m); const rm = mesh(merge(RG[k], { keepUV: k !== 'paint' && k !== 'steel' && k !== 'rebar', keepColor: k === 'paint' }), m, { name: 'roof-' + k }); rm.customDepthMaterial = depthRoof; roof.add(rm); }
 
   // ---- layers and animation ----
-  let wantX = false, wantRoof = true, xk = 0, rk = 0, first = true;
-  const solidMats = Object.values(own);
+  let wantX = false, wantRoof = true, rk = 0, first = true, cMoving = false; const RALL = 60, cGoal = new THREE.Vector2(64, -44);
+  const solidMats = Object.values(own), spring = { r: 0, v: 0 };
   function apply() {
-    const x = xk > 0.001;
-    for (const m of solidMats) { if (m.transparent !== x) { m.transparent = x; m.needsUpdate = true; } m.opacity = 1 - xk; m.depthWrite = xk < 0.6; }
-    solid.visible = xk < 0.995; for (const q of solid.children) q.castShadow = xk < 0.25 && q.name !== 'walls-cut' && q.name !== 'walls-glass';
-    xray.visible = edges.visible = x; xmat.uniforms.uK.value = xk; edges.material.opacity = xk * 0.8;
-    const e = rk * rk * (3 - 2 * rk), lift = rk > 0.001;
-    roof.position.y = e * 7.5; roof.visible = rk < 0.995; roof.updateMatrixWorld(true);
-    for (const m of roofMats) { if (m.transparent !== lift) { m.transparent = lift; m.needsUpdate = true; } m.opacity = 1 - smooth(0.1, 0.95, rk); m.depthWrite = rk < 0.5; }
-    for (const q of roof.children) q.castShadow = !lift;
+    const x = spring.r > 0.02; RV.uR.value = x ? spring.r : 0; xray.visible = edges.visible = x; solid.visible = spring.r < RALL - 1;
+    const cast = spring.r < 25; for (const q of solid.children) q.castShadow = cast && q.name !== 'walls-cut' && q.name !== 'walls-glass';
+    const e = rk * rk * (3 - 2 * rk); RV.uS.value = 1.3 - e * 1.6; roof.visible = rk < 0.995;
     for (const l of roomLabels) l.setVisible(rk > 0.5);
   }
   apply();
@@ -199,11 +219,18 @@ export function build(env) {
       const r = sel && sel.type === 'room' && world.roomById(sel.id); ring.visible = !!r; if (!r) return;
       const [x0, y0, x1, y1] = r.rect, i = 0.12, a = ring.geometry.attributes.position; a.setXYZ(0, x0 + i, 0.06, -(y0 + i)); a.setXYZ(1, x1 - i, 0.06, -(y0 + i)); a.setXYZ(2, x1 - i, 0.06, -(y1 - i)); a.setXYZ(3, x0 + i, 0.06, -(y1 - i)); a.needsUpdate = true;
     },
-    update(dt) {
-      const tx = wantX ? 1 : 0, tr = wantRoof && !wantX ? 0 : 1; if (xk === tx && rk === tr && !first) return;
-      if (t.reduced || first) { xk = tx; rk = tr; first = false; } else { xk = clamp(xk + Math.sign(tx - xk) * dt / 0.45, 0, 1); rk = clamp(rk + Math.sign(tr - rk) * dt / 0.9, 0, 1); if (Math.abs(xk - tx) < 0.01) xk = tx; if (Math.abs(rk - tr) < 0.01) rk = tr; }
+    update(dt, time, S, cams) {
+      // the whole building, or just the few metres the rover is listening through
+      const gl = cams && cams.glass; let goal = 0;
+      if (wantX) { goal = RALL; if (spring.r < 0.05 && gl) RV.uC.value.set(gl.x, gl.z); } else if (gl && gl.r > 0) { goal = gl.r; cGoal.set(gl.x, gl.z); if (spring.r < 0.3) RV.uC.value.copy(cGoal); else RV.uC.value.lerp(cGoal, 1 - Math.exp(-2.2 * dt)); }
+      const tr = wantRoof && !wantX ? 0 : 1; xmat.uniforms.uTime.value = t.reduced ? 0 : time;
+      if (t.light) { xmat.uniforms.uSunDir.value.copy(t.light.sunDir); xmat.uniforms.uSun.value.copy(t.light.sunColor); xmat.uniforms.uSky.value.copy(t.light.hemi.color).multiplyScalar(0.8); }
+      if (t.reduced || first) { spring.r = goal; spring.v = 0; rk = tr; first = false; apply(); return; }
+      if (Math.abs(spring.r - goal) < 0.004 && Math.abs(spring.v) < 0.01 && rk === tr) { if (spring.r !== goal) { spring.r = goal; apply(); } return; }
+      const w = goal > spring.r ? 2.6 : 3.4, k = Math.exp(-w * dt), d = spring.r - goal, q = (spring.v + w * d) * dt; spring.v = (spring.v - w * q) * k; spring.r = goal + (d + q) * k;
+      rk = clamp(rk + Math.sign(tr - rk) * dt / 2.4, 0, 1); if (Math.abs(rk - tr) < 0.005) rk = tr;
       apply();
     },
-    dispose() { for (const m of [...solidMats, ...roofMats, floorMat, hallMat, xmat, edges.material, ring.material, sign.material]) m.dispose(); },
+    dispose() { for (const m of [...solidMats, ...roofMats, depthRoof, floorMat, hallMat, xmat, edges.material, ring.material, sign.material]) m.dispose(); },
   };
 }

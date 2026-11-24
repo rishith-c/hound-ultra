@@ -10,7 +10,7 @@ import { SITE, BUILDING, ROOMS, DOORS, WALLS, OBSTACLES, HAZARDS, SEED } from '.
 // Materials: reflectance drives the intensity channel; 'cls' is the simulator's own label, used only to CHECK the
 // classifier afterwards (0 ground, 1 structure, 2 rubble, 3 vegetation, 4 contents such as furniture and vehicles).
 export const MAT = { soil: 0, mud: 1, asphalt: 2, pad: 3, floor: 4, rubble: 5, concrete: 6, drywall: 7, roof: 8, wood: 9, metal: 10, trunk: 11, leaf: 12, vehicle: 13, sheet: 14, cable: 15, rebar: 16 };
-const REFL = [0.34, 0.22, 0.11, 0.9, 0.44, 0.38, 0.56, 0.76, 0.6, 0.5, 0.72, 0.26, 0.46, 0.64, 0.86, 0.42, 0.5];
+const REFL = [0.34, 0.22, 0.11, 0.9, 0.44, 0.38, 0.56, 0.76, 0.6, 0.5, 0.72, 0.26, 0.46, 0.64, 0.78, 0.42, 0.5];
 const CLS_OF_MAT = [0, 0, 0, 0, 0, 2, 1, 1, 1, 4, 4, 3, 3, 4, 2, 4, 2];
 
 function hash2(i, j, s) { let h = Math.imul(i, 374761393) ^ Math.imul(j, 668265263) ^ s; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
@@ -170,6 +170,22 @@ function cast(S, ox, oy, oz, dx, dy, dz, maxR) {
 
 // ---------------------------------------------------------------- the cloud being captured
 function makeCloud(cap) { return { n: 0, cap, pos: new Float32Array(cap * 3), inten: new Uint8Array(cap), truth: new Uint8Array(cap), time: new Float32Array(cap) }; }
+// Surface detail the laser would pick up as brightness: stains, seams, tiles, paint, road markings. Invented, like the site.
+function surface(m, x, y, z) {
+  switch (m) {
+    case MAT.soil: { const a = vnoise(x / 4.2, y / 4.2, 31), b = vnoise(x * 1.1, y * 1.1, 32), track = Math.abs(Math.abs(y - 14.6 - 2.2 * Math.sin(x * 0.09)) - 0.85) < 0.22 && x < 64 ? 0.62 : 1; return (1 + 0.42 * a + 0.24 * b) * track; }
+    case MAT.mud: return 0.8 + 0.7 * Math.max(0, vnoise(x / 2.4, y / 2.4, 33)) - (vnoise(x / 1.6, y / 1.6, 34) > 0.25 ? 0.45 : 0);
+    case MAT.asphalt: return (Math.abs(y - 4.5) < 0.09 && (x % 4.5) < 2.4) || Math.abs(y - 2.35) < 0.07 || Math.abs(y - 6.65) < 0.07 ? 6 : 1 + 0.4 * vnoise(x / 1.8, y / 1.8, 35);
+    case MAT.floor: { const tx = x - 0.6 * Math.floor(x / 0.6), ty = y - 0.6 * Math.floor(y / 0.6); return (tx < 0.05 || ty < 0.05 ? 0.6 : 1) * (0.92 + 0.18 * hash2(Math.floor(x / 0.6), Math.floor(y / 0.6), 5)) * (1 + 0.4 * Math.min(0, vnoise(x / 1.5, y / 1.5, 36))); }
+    case MAT.roof: { const s = x - 1.5 * Math.floor(x / 1.5), seam = s < 0.1 || Math.abs(y - 3 * Math.round(y / 3)) < 0.05 ? 0.55 : 1; return seam * (0.86 + 0.34 * vnoise(x / 3.3, y / 2.1, 37) + 0.16 * vnoise(x * 1.3, y * 1.3, 38)); }
+    case MAT.concrete: { const f = z - 1.2 * Math.floor(z / 1.2); return (f < 0.05 ? 0.72 : 1) * (0.94 + 0.3 * vnoise((x + y) * 0.9, z * 0.35, 39) - (z < 0.5 ? 0.22 : 0)); }
+    case MAT.drywall: return (z < 1.05 ? 0.66 : z < 1.12 ? 0.4 : 1) * (0.96 + 0.1 * vnoise((x + y) * 2, z * 2, 40));
+    case MAT.rubble: return 0.62 + 0.7 * hash2(Math.floor(x / 0.7), Math.floor(y / 0.7), 41 + Math.floor(z / 0.5)) + 0.2 * vnoise(x * 3, y * 3, 42);
+    case MAT.sheet: return (0.75 + 0.35 * Math.sin((x * 0.8 + y * 0.6) * 24)) * (vnoise(x * 0.9, y * 0.9, 43) > 0.15 ? 0.55 : 1);
+    case MAT.wood: return 0.8 + 0.4 * vnoise(x * 5, y * 1.5, 44);
+    default: return 1;
+  }
+}
 function shoot(S, C, ox, oy, oz, dx, dy, dz, time, sigma, maxR, rRef) {
   if (!cast(S, ox, oy, oz, dx, dy, dz, maxR)) return;
   const refl = REFL[HM];
@@ -179,7 +195,7 @@ function shoot(S, C, ox, oy, oz, dx, dy, dz, time, sigma, maxR, rRef) {
   if (x < 0 || y < 0 || x > S.w || y > S.h || C.n >= C.cap) return;
   const k = C.n++;
   C.pos[k * 3] = x; C.pos[k * 3 + 1] = y; C.pos[k * 3 + 2] = z;
-  let I = refl * (0.52 + 0.48 * HC) * Math.min(1.25, Math.max(0.7, Math.pow(rRef / HT, 0.3))) + gauss() * 0.035;
+  let I = refl * surface(HM, x, y, z) * (0.52 + 0.48 * HC) * Math.min(1.25, Math.max(0.7, Math.pow(rRef / HT, 0.3))) + gauss() * 0.035;
   C.inten[k] = I < 0.02 ? 5 : I > 1 ? 255 : (I * 255) | 0;
   C.truth[k] = CLS_OF_MAT[HM]; C.time[k] = time;
 }
@@ -233,13 +249,13 @@ function sheet(S, x, y, z, yaw, pitch, bend, len, wid, n = 7) {
   let p = [x, y, z], a = pitch; const st = len / n, c = Math.cos(yaw), s = Math.sin(yaw);
   for (let i = 0; i < n; i++) { const q = [p[0] + c * Math.cos(a) * st, p[1] + s * Math.cos(a) * st, p[2] - Math.sin(a) * st]; addBox(S, (p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2, st / 2 + 0.01, wid / 2, 0.02, MAT.sheet, yaw, a); p = q; a += bend / n; }
 }
-function wreckage(S) {
-  const R = mulberry32(SEED ^ 0x71c3), P = Math.PI;
+function wreckage(S, shuffle) {
+  const R = mulberry32(SEED ^ 0x71c3 ^ Math.imul(shuffle, 0x85ebca6b)), P = Math.PI;
   for (let x = 76.2; x < 87; x += 0.75 + R() * 0.5) bar(S, R, x, 47.75, 3.18 + R() * 0.1, P / 2 + (R() - 0.5) * 0.5, 0.8 + R() * 1.3);      // broken edge of the standing roof
   for (let y = 48.6; y < 61; y += 0.9 + R() * 0.6) bar(S, R, 75.15, y, 3.18 + R() * 0.1, (R() - 0.5) * 0.5, 0.7 + R() * 1.0);
   for (let i = 0; i < 16; i++) { const a = R() * 6.283, d = 1 + R() * 3.4, x = 82.6 + Math.cos(a) * d, y = 55.4 + Math.sin(a) * d; bar(S, R, x, y, (groundAt(S, x, y) || 0) + 0.25, R() * 6.283, 0.9 + R() * 1.2); }
   for (let i = 0; i < 12; i++) { const x = 92 + R() * 4.2, y = 39 + R() * 6.5; bar(S, R, x, y, (groundAt(S, x, y) || 0) + 0.3, R() * 6.283, 0.8 + R() * 1.1); }
-  for (const [x, y, z, yaw, p, b, l, w] of [[83.4, 47.5, 3.36, 1.5, -0.12, 1.5, 3.6, 2.2], [86.0, 47.4, 3.34, 1.75, -0.05, 1.25, 2.9, 1.8], [79.6, 60.4, 1.2, -0.7, 0.1, -0.8, 3.2, 1.9], [85.6, 51.6, 2.3, 2.4, 0.5, -0.9, 3.3, 2.0], [86.6, 58.4, 1.5, -2.5, 0.2, 0.8, 3.0, 1.7], [74.8, 58.6, 3.36, 0.2, -0.1, 1.3, 2.6, 2.0], [95.8, 45.6, 3.2, 2.9, 0.5, 0.5, 3.4, 2.2], [91.0, 41.0, 1.4, 2.5, 0.5, -0.5, 2.6, 1.8], [101.0, 66.4, 1.0, 0.8, 0.3, -0.9, 2.8, 1.7], [96.2, 73.0, 0.9, 2.2, 0.35, -0.8, 3.0, 1.8]]) sheet(S, x, y, z, yaw, p, b, l, w);
+  for (const [x, y, z, yaw, p, b, l, w] of [[83.4, 46.2, 3.40, 1.5, -0.5, 1.1, 2.6, 2.2], [86.0, 46.4, 3.40, 1.75, -0.35, 0.9, 2.2, 1.8], [79.6, 60.4, 1.2, -0.7, 0.1, -0.8, 3.2, 1.9], [85.6, 51.6, 2.3, 2.4, 0.5, -0.9, 3.3, 2.0], [86.6, 58.4, 1.5, -2.5, 0.2, 0.8, 3.0, 1.7], [73.4, 58.6, 3.40, 0.2, -0.4, 0.9, 2.4, 2.0], [95.8, 45.6, 3.2, 2.9, 0.5, 0.5, 3.4, 2.2], [91.0, 41.0, 1.4, 2.5, 0.5, -0.5, 2.6, 1.8], [101.0, 66.4, 1.0, 0.8, 0.3, -0.9, 2.8, 1.7], [96.2, 73.0, 0.9, 2.2, 0.35, -0.8, 3.0, 1.8]]) sheet(S, x, y, z, yaw, p, b, l, w);
   const poles = [9, 36, 58, 86, 111];
   for (let i = 0; i + 1 < poles.length; i++) for (const dy of [-0.5, 0.5]) cable(S, [poles[i], 7.7 + dy, 7.2], [poles[i + 1], 7.7 + dy, 7.2], 0.9, 16);
   for (const x of poles) addBox(S, x, 7.7, 7.2, 0.05, 0.7, 0.05, MAT.wood);
@@ -251,8 +267,8 @@ function wreckage(S) {
   for (let i = 0; i < 22; i++) { const x = 76.5 + R() * 12, y = 47.8 + R() * 14, g = groundAt(S, x, y); if (g !== g || (y < 54 && x < 82)) continue; const a = R() * 6.283, L = 0.5 + R() * 1.1; rod(S, [x, y, g + 0.12], [x + Math.cos(a) * L, y + Math.sin(a) * L, g + 0.15 + R() * 0.6], 0.07, MAT.trunk); } // splintered timber
 }
 
-export function buildSite() {
-  const S = makeScene(SITE.w, SITE.h), R = mulberry32(SEED ^ 0x5ca9);
+export function buildSite(shuffle = 0) { // shuffle: re-roll everything scattered (debris, furniture, trees, wreckage), keep the buildings
+  const S = makeScene(SITE.w, SITE.h), R = mulberry32(SEED ^ 0x5ca9 ^ Math.imul(shuffle, 0x9e3779b1));
   const B = BUILDING.rect, WH = BUILDING.wallHeight;
   const mudPoly = HAZARDS.find((h) => h.kind === 'mud')?.poly;
   // rubble heaps from the world, plus the collapsed corner of building C
@@ -403,9 +419,24 @@ export function buildSite() {
     if (R() < 0.5) bush(S, R, x + 2 + R() * 1.5, y + (R() - 0.5) * 3);
   }
   for (const [x, y] of [[40.5, 33], [41.2, 36.5], [87.5, 33.5], [86.6, 38], [12, 34.5], [70, 25.2], [56.5, 25.6]]) bush(S, R, x, y);
-  wreckage(S);
+  wreckage(S, shuffle);
   finalize(S);
   return S;
+}
+
+// Share of these sample points that is really empty in the model the scan was made from. Used only to mark the void finder's work.
+export function emptyShare(S, pts) {
+  let free = 0, n = pts.length / 3;
+  for (let q = 0; q < pts.length; q += 3) {
+    const x = pts[q], y = pts[q + 1], z = pts[q + 2]; if (z < groundAt(S, x, y)) continue;
+    let hit = false; const cell = S.cells[Math.floor(y / S.cs) * S.gw + Math.floor(x / S.cs)] || [];
+    for (let i = 0; i < cell.length && !hit; i++) { const p = S.prims[cell[i]]; if (p.k === 2) continue;
+      if (p.k === 1) { hit = (x - p.cx) ** 2 + (y - p.cy) ** 2 < p.r * p.r && z > p.z0 && z < p.z1; continue; }
+      let a = x - p.cx, b = y - p.cy, c = z - p.cz; if (p.r) { const r = p.r, u = a, v = b, w = c; a = r[0] * u + r[1] * v + r[2] * w; b = r[3] * u + r[4] * v + r[5] * w; c = r[6] * u + r[7] * v + r[8] * w; }
+      hit = Math.abs(a) < p.hx && Math.abs(b) < p.hy && Math.abs(c) < p.hz; }
+    if (!hit) free++;
+  }
+  return n ? free / n : 0;
 }
 
 // ---------------------------------------------------------------- trajectories
@@ -424,7 +455,7 @@ export function poseAt(segs, t, out = [0, 0, 0]) {
 
 const DEG = Math.PI / 180;
 // A downward fan swept across the flight line (the mirror goes back and forth, so points fall in a zig-zag).
-function flyLine(S, C, T, a, b, v, pass, { spacing, perLine, halfFov, sigma }) {
+function flyLine(S, C, T, a, b, v, pass, { spacing, perLine, halfFov, sigma, tilt = 0 }) {
   const t0 = T.t, len = Math.hypot(b[0] - a[0], b[1] - a[1]), dur = len / v, nL = Math.floor(len / spacing);
   const ux = (b[0] - a[0]) / len, uy = (b[1] - a[1]) / len, px = -uy, py = ux; // p: across-track
   const o = [0, 0, 0];
@@ -434,15 +465,15 @@ function flyLine(S, C, T, a, b, v, pass, { spacing, perLine, halfFov, sigma }) {
     const kk = L & 1 ? perLine - 1 - k : k;
     const ang = (-halfFov + (2 * halfFov * (kk + rnd())) / perLine) * DEG + 0.011 * Math.sin(time * 1.7) + 0.006 * Math.sin(time * 5.3);
     const fw = (rnd() - 0.5) * 0.004 + 0.008 * Math.sin(time * 1.1), s = Math.sin(ang), c = Math.cos(ang);
-    let dx = px * s + ux * fw, dy = py * s + uy * fw, dz = -c; const n = Math.hypot(dx, dy, dz);
+    let dx = px * s + ux * fw, dy = py * s + uy * fw, dz = -c; dx += ux * tilt; dy += uy * tilt; const n = Math.hypot(dx, dy, dz);
     shoot(S, C, o[0], o[1], o[2], dx / n, dy / n, dz / n, time, sigma, 80, a[2]);
   }
   T.to(b, v, true, pass);
 }
 
-export function scanSite(S, progress = () => {}) {
-  rs = 0x1234abcd ^ SEED; rayN = 0; S.stamp.fill(-1);
-  const C = makeCloud(1250000), T = Traj(), passes = [];
+export function scanSite(S, progress = () => {}, shuffle = 0) {
+  rs = 0x1234abcd ^ SEED ^ Math.imul(shuffle, 0x2c1b3c6d); rayN = 0; S.stamp.fill(-1);
+  const C = makeCloud(1600000), T = Traj(), passes = [];
   const pad = SITE.dronePad;
   // pass 1: the aerial survey, on the same five lines the mission's drone flies, 30 m up
   T.jump([pad[0], pad[1], 0.3]); T.to([pad[0], pad[1], 30], 10);
@@ -452,10 +483,10 @@ export function scanSite(S, progress = () => {}) {
     const a = [1, y, 30], b = [SITE.w - 1, y, 30], from = i % 2 ? b : a, to = i % 2 ? a : b;
     T.to(from, 8);
     if (i === 0) p0.t0 = T.t;
-    flyLine(S, C, T, from, to, 8, 0, { spacing: 0.21, perLine: 112, halfFov: 36, sigma: 0.02 });
-    progress(0.1 + 0.5 * (i + 1) / rows.length, 'Aerial survey, line ' + (i + 1) + ' of ' + rows.length);
+    flyLine(S, C, T, from, to, 8, 0, { spacing: 0.155, perLine: 168, halfFov: 36, sigma: 0.02, tilt: 0.42 });
+    progress(0.1 + 0.5 * (i + 1) / rows.length, 'Aerial survey, line ' + (i + 1) + ' of ' + rows.length, C);
   });
-  passes.push({ id: 'aerial', name: 'Aerial survey', detail: '30 m above the site, five lines, 72° fan', t0: p0.t0, t1: T.t, i0: 0, i1: C.n });
+  passes.push({ id: 'aerial', name: 'Aerial survey', detail: '30 m above the site, five lines, 72° fan pitched 23° forward', t0: p0.t0, t1: T.t, i0: 0, i1: C.n });
   // pass 2: a low orbit around the collapsed corner, looking in from the side
   const oc = [82, 55], oR = 17, oAlt = 11, nArc = 96, arc = (2 * Math.PI * oR) / nArc;
   const op = (a) => [oc[0] + oR * Math.cos(a), oc[1] + oR * Math.sin(a), oAlt];
@@ -468,10 +499,10 @@ export function scanSite(S, progress = () => {}) {
       const kk = L & 1 ? 83 - k : k, phi = (22 + (56 * (kk + rnd())) / 84) * DEG, az = a + Math.PI + (rnd() - 0.5) * 0.006;
       shoot(S, C, ox, oy, oAlt, Math.cos(az) * Math.cos(phi), Math.sin(az) * Math.cos(phi), -Math.sin(phi), ts + f * dt, 0.015, 60, 22);
     }
-    T.to(op(a1), 3, true, 1);
+    T.to(op(a1), 3, true, 1); if (s % 32 === 31) progress(0.6 + 0.12 * (s / nArc), 'Collapse orbit', C);
   }
   passes.push({ id: 'orbit', name: 'Collapse orbit', detail: '11 m up, circling the fallen corner and looking in', t0, t1: T.t, i0, i1: C.n });
-  progress(0.72, 'Collapse orbit');
+  progress(0.72, 'Close orbit', C);
   // pass 2b: a tighter, lower orbit, for the fine structure of the heap
   { const r2 = 9.4, alt = 6.2, n2 = 72, arc2 = (2 * Math.PI * r2) / n2, oq = (a) => [oc[0] + r2 * Math.cos(a), oc[1] + r2 * Math.sin(a), alt];
     T.to(oq(0.9), 3); i0 = C.n; t0 = T.t;
@@ -493,15 +524,15 @@ export function scanSite(S, progress = () => {}) {
     const a = T.p, b = [w[0], w[1], zI], len = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.round(len / 0.045)), ts = T.t, dt = len / 1.0;
     for (let q = 0; q < n; q++, pose++) {
       const f = q / n, ox = a[0] + (b[0] - a[0]) * f, oy = a[1] + (b[1] - a[1]) * f, oz = zI + 0.03 * Math.sin(pose * 0.21);
-      for (let k = 0; k < 60; k++) {
-        const az = pose * 2.39996 + k * 0.10472 + rnd() * 0.02, el = (-40 + (94 * (((k * 7 + pose * 3) & 31) + rnd())) / 32) * DEG, ce = Math.cos(el);
+      for (let k = 0; k < 84; k++) {
+        const az = pose * 2.39996 + k * 0.0748 + rnd() * 0.02, el = (-40 + (94 * (((k * 7 + pose * 3) & 31) + rnd())) / 32) * DEG, ce = Math.cos(el);
         shoot(S, C, ox, oy, oz, Math.cos(az) * ce, Math.sin(az) * ce, Math.sin(el), ts + f * dt, 0.008, 30, 5);
       }
     }
     T.to(b, 1.0, true, 3);
   }
   passes.push({ id: 'interior', name: 'Interior flight', detail: '1.25 m above the floor, corridor and every open room', t0, t1: T.t, i0, i1: C.n });
-  progress(1, 'Scan captured');
+  progress(1, 'Scan captured', C);
   return finish(C, T, passes, S);
 }
 function finish(C, T, passes, S) {

@@ -37,11 +37,16 @@ const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'e
 
 export async function startTour({ assignReveals }) {
   const list = document.querySelector('#tour-list'), frame = document.querySelector('#tour-frame');
-  const WORKSPACES = (await readManifest()) || FALLBACK;
-  const count = document.querySelector('#tour-count'), word = WORDS[WORKSPACES.length] || String(WORKSPACES.length);
-  if (count) count.textContent = word[0].toUpperCase() + word.slice(1);
+  let WORKSPACES = (await readManifest()) || FALLBACK;
   let caps = {};
   try { const r = await fetch('landing/captures.json'); if (r.ok) caps = await r.json(); } catch { /* no captures: the tour still lists every workspace */ }
+  // A workspace that could not be captured did not open, so the tour does not promise it.
+  if (Object.keys(caps).length) WORKSPACES = WORKSPACES.filter((w) => caps[w.id]);
+  const count = document.querySelector('#tour-count'), word = WORDS[WORKSPACES.length] || String(WORKSPACES.length);
+  if (count) count.textContent = word[0].toUpperCase() + word.slice(1);
+  const inBuilt = document.querySelector('#built-count'); if (inBuilt) inBuilt.textContent = 'The ' + word;
+  const bs = document.querySelector('#built-shot img'), best = caps.mission || caps.sense || Object.values(caps)[0];
+  if (bs && best) { bs.src = best.file; bs.alt = 'A capture of HOUND Command'; bs.nextSibling.lastChild.textContent = 'HOUND Command, a capture of the running console'; }
 
   const shot = el('div.tf-shot'), cap = el('div.tf-cap');
   frame.append(shot, cap);

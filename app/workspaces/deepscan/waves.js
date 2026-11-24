@@ -9,6 +9,12 @@ export function slowness(pile) {
   return out;
 }
 export const travel = (slow, x, z) => eikonal(slow, x, z);
+// What a rescuer could know: the outer surface, street level, and the ground floor slab from the building's drawings.
+export function planField(pile) {
+  const { nx, nz, res, x0, z0 } = WORLD, gs = pile.slabs[0].poly, f = new Float32Array(nx * nz);
+  for (let q = 0; q < f.length; q++) { const i = q % nx, x = x0 + (i + 0.5) * res, z = z0 + ((q - i) / nx + 0.5) * res; f[q] = 1 / (pile.inPoly(gs, x, z) ? PROPS[MAT.SLAB].vp : z < 0 ? PROPS[MAT.SOIL].vp : z < pile.surf[i] ? PROPS[MAT.RUBBLE].vp : PROPS[MAT.SKY].vp); }
+  return f;
+}
 // Where the survivor taps: the floor slab beside their hand.
 export const tapPoint = (pile) => ({ x: pile.person.span[0] + 0.55, z: -0.08 });
 // A knock: a short decaying burst near fc hertz, starting at t = 0.

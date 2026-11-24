@@ -91,3 +91,23 @@
 @media (max-width: 1500px) { .horizon-strip { gap: 10px; } .horizon-strip-items button { padding: 0 6px; gap: 4px; } .horizon-ex-main { grid-template-columns: minmax(0, 1fr) 348px; } .horizon-ov { grid-template-columns: 316px minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .horizon-stage, .horizon-side { animation: none; } }
 :root[data-motion="reduce"] .horizon-stage, :root[data-motion="reduce"] .horizon-side { animation: none; }
+
+/* ---------- Demo: the descent ---------- */
+.horizon-dive { position: absolute; inset: 0; overflow: hidden; background: var(--bg-0); outline: none; }
+.horizon-dive-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.horizon-dive-shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(78deg, color-mix(in srgb, var(--bg-0) 78%, transparent) 0%, color-mix(in srgb, var(--bg-0) 34%, transparent) 26%, transparent 46%); }
+.horizon-dive-text { position: absolute; left: 40px; bottom: 40px; width: 430px; display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+.horizon-dive-text h1 { font: var(--type-display); color: var(--text); text-wrap: balance; }
+.horizon-dive-text p { font-size: 15px; line-height: 1.45; color: var(--text); opacity: 0.86; text-wrap: pretty; }
+.horizon-dive-text.is-in > * { animation: horizon-rise 620ms cubic-bezier(0.22, 0.7, 0.2, 1) both; } .horizon-dive-text.is-in > :nth-child(2) { animation-delay: 70ms; } .horizon-dive-text.is-in > :nth-child(3) { animation-delay: 140ms; } .horizon-dive-text.is-in > :nth-child(n+4) { animation-delay: 200ms; }
+@keyframes horizon-rise { from { opacity: 0; transform: translateY(10px); } }
+.horizon-dive-scope { display: flex; flex-direction: column; gap: 6px; width: 320px; } .horizon-dive-scope canvas { width: 320px; height: 75px; } .horizon-dive-scope span { font-size: var(--fs-12); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.horizon-dive-rail { position: absolute; right: 28px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: flex-end; gap: 18px; }
+.horizon-dive-alt { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; } .horizon-dive-alt b { font: 400 var(--fs-28)/1 var(--font-display); color: var(--text); } .horizon-dive-alt span { font-size: var(--fs-12); color: var(--text-2); }
+.horizon-dive-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; position: relative; } .horizon-dive-steps::before { content: ""; position: absolute; right: 5px; top: 15px; bottom: 15px; width: 1px; background: rgba(255, 255, 255, 0.22); }
+.horizon-dive-steps button { display: flex; flex-direction: row-reverse; align-items: center; gap: 12px; width: 100%; height: 30px; padding: 0; border: 0; background: none; cursor: pointer; color: var(--text); font: 500 var(--fs-12)/1 var(--font); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75); }
+.horizon-dive-steps button span { opacity: 0.62; transition: opacity 200ms var(--ease); } .horizon-dive-steps button:hover span, .horizon-dive-steps button[aria-current="true"] span { opacity: 1; }
+.horizon-dive-steps button i { width: 11px; height: 2px; background: rgba(255, 255, 255, 0.5); transition: width 260ms var(--ease), background-color 260ms var(--ease); } .horizon-dive-steps button[aria-current="true"] i { width: 22px; background: var(--accent); }
+.horizon-dive-steps button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .horizon-dive-text.is-in > * { animation: none; } }
+:root[data-motion="reduce"] .horizon-dive-text.is-in > * { animation: none; }

@@ -1,15 +1,16 @@
 // People: detections drawn as they are KNOWN, not as they are.
-//   possible   an amber uncertainty volume the size of posSigma, a dashed ring, a question mark
-//   confirmed  a warm figure seen through walls, a ring and an arc whose length is the fused probability
+//   possible   a faint volume of noise that has not decided on a shape, drifting inside a hairline ellipse the size of posSigma
+//   confirmed  the noise has resolved into a warm figure, seen through walls; a hairline arc as long as the fused probability
 //   rejected   a small grey cross
-// Display conventions (posture is not sensed): a person the sensors call "moving" is drawn standing, a "still"
-// person is drawn lying, with a fixed yaw taken from the detection id. Everything here is simulated.
+// How far the figure has resolved is a function of the detection's probability and nothing else.
+// Display conventions (posture is not sensed): a person the sensors call "moving" is drawn standing, anyone else
+// is drawn lying, with a fixed yaw taken from the detection id. Everything here is simulated.
 // The 'truth' layer (off by default) is the only place ground truth is drawn.
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { TRUTH } from '../../core/world.js';
-import { palette, Y, clamp, lerp, damp, stateWatcher, canvasTexture, decalMaterial, disposeTree, mulberry32, FONT } from './common.js';
+import { palette, Y, clamp, lerp, damp, smoothstep, stateWatcher, decalMaterial, disposeTree, mulberry32 } from './common.js';
 
-const FIG_R = 1.05;                 // ring radius around a confirmed person, m
+const FIG_R = 1.0;                 // ring radius around a confirmed person, m
 const TAU = Math.PI * 2;
 
 const RING_VERT = /* glsl */ `
@@ -18,85 +19,97 @@ varying vec2 vP;
 void main() { vP = vec2(position.x, -position.z) * uHalf; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
 const RING_FRAG = /* glsl */ `
 uniform vec3 uWarn, uPerson, uOk;
-uniform float uR, uP, uDashes, uConf, uReach, uAlpha, uSel, uPulse, uGain;
+uniform float uR, uP, uConf, uReach, uAlpha, uSel, uPulse, uStretch;
 varying vec2 vP;
-float band(float d, float w) { return 1.0 - smoothstep(w * 0.5, w * 1.5, abs(d)); }
+float band(float d, float w) { return 1.0 - smoothstep(w * 0.4, w * 1.3, abs(d)); }
 void main() {
-  float r = length(vP), aa = fwidth(r), w = max(0.011, aa * 1.1);
-  float ang = fract(atan(vP.x, vP.y) / 6.2831853 + 1.0);                    // 0 at north, clockwise
-  vec3 col = mix(mix(uWarn, uPerson, uConf), uOk, uReach);
-  float dashes = mix(step(0.5, fract(ang * uDashes)), 1.0, uConf);         // dashed while it is only possible
-  float track = band(r - uR, w) * dashes * mix(0.5, 0.3, uConf);
+  float c = cos(0.6), s = sin(0.6); vec2 q = vec2(c * vP.x + s * vP.y, (-s * vP.x + c * vP.y) * mix(1.22, 1.0, uConf));   // an ellipse while it is uncertain
+  float r = length(q), aa = fwidth(r), w = max(0.005, aa * 0.8);
+  float ang = fract(atan(vP.x, vP.y) / 6.2831853 + 1.0);
+  vec3 col = mix(mix(uWarn, uPerson, 0.35 + 0.65 * uConf), uOk, uReach * 0.8);
+  float line = band(r - uR, w) * mix(0.5, 0.22, uConf);
+  float iso = (band(r - uR * 0.68, w * 0.8) * 0.22 + band(r - uR * 0.4, w * 0.8) * 0.16) * (1.0 - uConf);
+  float fill = exp(-r * r / (uR * uR) * 2.2) * mix(0.07, 0.16, uConf);
   float aaA = fwidth(ang) * 1.2 + 1e-4;
-  float inArc = (1.0 - smoothstep(uP - aaA, uP, ang)) * step(0.0005, uP);
-  float arc = band(r - uR, w * 2.4) * inArc;
-  float pool = (1.0 - smoothstep(0.0, uR, r)) * 0.10 * uConf;              // a little warmth on the floor
-  float sel = band(r - uR - max(0.09, aa * 4.0), w * 0.8) * uSel * 0.75;
-  float pk = 1.0 - uPulse;
-  float pulse = band(r - uR - pk * 1.4, w * 1.6) * uPulse * uPulse * step(0.001, uPulse);
-  float a = max(track, arc) + pool + sel + pulse;
-  gl_FragColor = vec4(col * (1.0 + (uGain - 1.0) * max(arc, pulse)) * (1.0 + 0.35 * uSel), a * uAlpha);
-  #include <colorspace_fragment>
+  float arc = band(r - uR, w * 1.5) * (1.0 - smoothstep(uP - aaA, uP, ang)) * step(0.0005, uP) * uConf * 0.75;
+  float sel = band(r - uR - max(0.06, aa * 4.0), w) * uSel * 0.7;
+  float pk = 1.0 - uPulse, pe = 1.0 - pow(1.0 - pk, 3.0);
+  float pulse = (band(r - uR - pe * 1.5, w * 2.2) * 0.9 + exp(-(r - uR - pe * 1.5) * (r - uR - pe * 1.5) * 25.0) * 0.2) * uPulse * uPulse * step(0.001, uPulse);
+  float a = max(max(line, arc), iso) + fill + sel + pulse;
+  gl_FragColor = vec4(col * (0.85 + 0.35 * uSel + 0.5 * pulse), clamp(a, 0.0, 1.0) * uAlpha);
 }`;
 
-const DOME_VERT = /* glsl */ `
-varying vec3 vN; varying vec3 vV; varying vec3 vW; varying float vH;
-void main() {
-  vec4 wp = modelMatrix * vec4(position, 1.0);
-  vW = wp.xyz; vH = position.y;
-  vN = normalize(mat3(transpose(inverse(modelMatrix))) * normal);
-  vV = cameraPosition - wp.xyz;
-  gl_Position = projectionMatrix * viewMatrix * wp;
-}`;
-const DOME_FRAG = /* glsl */ `
-uniform vec3 uColor; uniform float uAlpha, uTime, uSeed;
-varying vec3 vN; varying vec3 vV; varying vec3 vW; varying float vH;
+// A ray-marched body of warm air. One signed distance field (a person made of soft capsules) and one shapeless
+// ellipsoid; uK morphs between them while the noise that tears the surface dies away.
+const VOL_VERT = /* glsl */ `
+varying vec3 vL; varying vec3 vCam;
+void main() { vL = position; vCam = (inverse(modelMatrix) * vec4(cameraPosition, 1.0)).xyz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+const VOL_FRAG = /* glsl */ `
+uniform vec3 uWarn, uPerson, uHot; uniform float uK, uAlpha, uTime, uSeed, uBreath, uCalm, uFlash, uLie;
+uniform vec3 uBox;
+varying vec3 vL; varying vec3 vCam;
 float hash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
-float noise(vec3 x) {
-  vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
-  return mix(mix(mix(hash(i), hash(i + vec3(1, 0, 0)), f.x), mix(hash(i + vec3(0, 1, 0)), hash(i + vec3(1, 1, 0)), f.x), f.y),
-             mix(mix(hash(i + vec3(0, 0, 1)), hash(i + vec3(1, 0, 1)), f.x), mix(hash(i + vec3(0, 1, 1)), hash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+float noise(vec3 x) { vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(hash(i), hash(i + vec3(1, 0, 0)), f.x), mix(hash(i + vec3(0, 1, 0)), hash(i + vec3(1, 1, 0)), f.x), f.y), mix(mix(hash(i + vec3(0, 0, 1)), hash(i + vec3(1, 0, 1)), f.x), mix(hash(i + vec3(0, 1, 1)), hash(i + vec3(1, 1, 1)), f.x), f.y), f.z); }
+float cap(vec3 p, vec3 a, vec3 b, float r0, float r1) { vec3 pa = p - a, ba = b - a; float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0); return length(pa - ba * h) - mix(r0, r1, h); }
+float smin(float a, float b, float k) { float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0); return mix(b, a, h) - k * h * (1.0 - h); }
+// feet on y = 0, facing +z, 1.72 m tall. Lying people draw one knee up and one arm across the body.
+float body(vec3 p) {
+  float br = uBreath;
+  vec3 q = p;
+  float d = length((q - vec3(0.0, 1.585, 0.02)) / vec3(0.88, 1.12, 1.0)) - 0.098;
+  d = smin(d, cap(q, vec3(0.0, 1.4, 0.0), vec3(0.0, 1.52, 0.01), 0.056, 0.05), 0.03);
+  float tr = cap(vec3(q.x * 0.66, q.y, q.z), vec3(0.0, 1.31, 0.0), vec3(0.0, 1.13, 0.005), 0.118 + br, 0.1 + br);
+  tr = smin(tr, cap(vec3(q.x * 0.74, q.y, q.z), vec3(0.0, 1.06, 0.0), vec3(0.0, 0.93, 0.0), 0.098, 0.112), 0.07);
+  d = smin(d, tr, 0.05);
+  d = smin(d, cap(q, vec3(-0.155, 1.375, 0.0), vec3(0.155, 1.375, 0.0), 0.066, 0.066), 0.06);
+  vec3 eL = mix(vec3(0.25, 1.11, -0.02), vec3(0.27, 1.13, 0.06), uLie), hL = mix(vec3(0.27, 0.86, 0.05), vec3(0.08, 1.08, 0.17), uLie);
+  vec3 eR = mix(vec3(-0.25, 1.11, -0.02), vec3(-0.33, 1.14, -0.02), uLie), hR = mix(vec3(-0.27, 0.86, 0.05), vec3(-0.42, 0.93, 0.02), uLie);
+  d = smin(d, cap(q, vec3(0.19, 1.365, 0.0), eL, 0.056, 0.044), 0.045); d = smin(d, cap(q, eL, hL, 0.043, 0.034), 0.03); d = smin(d, length(q - hL - normalize(hL - eL) * 0.07) - 0.044, 0.04);
+  d = smin(d, cap(q, vec3(-0.19, 1.365, 0.0), eR, 0.056, 0.044), 0.045); d = smin(d, cap(q, eR, hR, 0.043, 0.034), 0.03); d = smin(d, length(q - hR - normalize(hR - eR) * 0.07) - 0.044, 0.04);
+  vec3 kL = mix(vec3(0.1, 0.5, 0.015), vec3(0.13, 0.56, 0.27), uLie), fL = mix(vec3(0.1, 0.09, 0.0), vec3(0.12, 0.26, 0.02), uLie);
+  vec3 kR = mix(vec3(-0.1, 0.5, 0.015), vec3(-0.14, 0.49, 0.03), uLie), fR = mix(vec3(-0.1, 0.09, 0.0), vec3(-0.19, 0.08, 0.0), uLie);
+  d = smin(d, cap(q, vec3(0.092, 0.9, 0.0), kL, 0.09, 0.062), 0.06); d = smin(d, cap(q, kL, fL, 0.06, 0.043), 0.03); d = smin(d, cap(q, fL + vec3(0.0, -0.03, 0.0), fL + vec3(0.01, -0.05, 0.13), 0.042, 0.03), 0.03);
+  d = smin(d, cap(q, vec3(-0.092, 0.9, 0.0), kR, 0.09, 0.062), 0.06); d = smin(d, cap(q, kR, fR, 0.06, 0.043), 0.03); d = smin(d, cap(q, fR + vec3(0.0, -0.03, 0.0), fR + vec3(-0.01, -0.05, 0.13), 0.042, 0.03), 0.03);
+  return d;
 }
 void main() {
-  float ndv = abs(dot(normalize(vN), normalize(vV)));
-  float fres = pow(1.0 - ndv, 2.4);
-  vec3 q = vW * 1.15 + vec3(uSeed, uTime * 0.11, uTime * 0.05);
-  float n = noise(q) * 0.65 + noise(q * 2.3 + 7.0) * 0.35;                  // slow drift: the estimate is not a hard edge
-  float a = (0.035 + 0.5 * fres) * (0.55 + 0.9 * n) * mix(1.0, 0.55, vH);
-  a *= smoothstep(0.0, 0.06, vH);
-  gl_FragColor = vec4(uColor, a * uAlpha);
-  #include <colorspace_fragment>
-}`;
-
-// Three nested shells of one body: a pale hot core, an orange-red rim, a soft outer glow.
-// Core and rim are blended with MAX, so the overlapping parts of the body read as one volume in any draw order.
-const HEAT_VERT = /* glsl */ `
-attribute vec2 aBody;                 // x: how warm this part reads (trunk 1, hands and feet cooler), y: chest weight
-uniform float uInflate, uBreath;
-varying vec3 vN; varying vec3 vV; varying float vHeat;
-void main() {
-  vec3 p = position + normal * (uInflate + aBody.y * uBreath);
-  vec4 wp = modelMatrix * vec4(p, 1.0);
-  vN = normalize(mat3(modelMatrix) * normal);
-  vV = cameraPosition - wp.xyz; vHeat = aBody.x;
-  gl_Position = projectionMatrix * viewMatrix * wp;
-}`;
-const HEAT_FRAG = /* glsl */ `
-uniform vec3 uPerson, uHot; uniform float uShell, uAlpha, uGain;
-varying vec3 vN; varying vec3 vV; varying float vHeat;
-void main() {
-  float ndv = max(dot(normalize(vN), normalize(vV)), 0.0);
-  vec3 c; float a;
-  if (uShell < 0.5) {            // core
-    float hot = pow(ndv, 2.2) * vHeat * 0.8;
-    c = mix(uPerson, uHot, hot) * (0.3 + 0.62 * ndv) * uGain; a = 1.0;
-  } else if (uShell < 1.5) {     // rim
-    c = uPerson * (0.25 + 0.6 * pow(1.0 - ndv, 1.6)) * uGain; a = 1.0;
-  } else {                       // glow
-    c = uPerson * pow(ndv, 2.0) * 0.11; a = 0.0;
+  vec3 ro = vCam, rd = normalize(vL - vCam), inv = 1.0 / rd, c = vec3(0.0, 0.86, 0.08);
+  vec3 t0 = (c - uBox - ro) * inv, t1 = (c + uBox - ro) * inv, mn = min(t0, t1), mx = max(t0, t1);
+  float a = max(max(mn.x, mn.y), max(mn.z, 0.0)), b = min(mx.x, min(mx.y, mx.z)); if (b <= a) discard;
+  float st = (b - a) / float(STEPS), j = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
+  float un = 1.0 - uK, morph = smoothstep(0.0, 0.85, uK), lockK = smoothstep(0.55, 1.0, uK); vec3 sum = vec3(0.0); float tr = 1.0;
+  vec3 drift = vec3(uSeed + sin(uTime * 0.21) * 0.9, cos(uTime * 0.17) * 0.5, sin(uTime * 0.13) * 0.8); bool got = false;
+  for (int i = 0; i < STEPS; i++) {
+    vec3 p = ro + rd * (a + st * (float(i) + j));
+    float e = (length((p - vec3(0.0, 0.86, 0.03)) / vec3(0.42, 0.86, 0.24)) - 1.0) * 0.24, d = uK < 0.03 ? e : mix(e, body(p), morph);
+    if (d < 0.28) {
+      float n = un > 0.01 ? noise(p * 5.5 + drift) * 0.6 + noise(p * 13.0 - drift * 1.7) * 0.4 : 0.5;
+      d += un * (n - 0.42) * 0.62;
+      float tick = un > 0.02 ? step(0.5 * un, hash(floor(p * 34.0) + floor(uTime * 9.0) * 0.37 + uSeed)) : 1.0;       // the estimate flickers until it is sure
+      // the skin, once there is one: found between two steps, lit by its own warmth and the angle it is seen at
+      if (!got && lockK > 0.01 && d < 0.0) {
+        got = true; vec3 h = p - rd * st * 0.5; for (int s = 0; s < 4; s++) { h += rd * body(h) * 0.8; }
+        vec2 ee = vec2(0.006, -0.006);
+        vec3 N = normalize(ee.xyy * body(h + ee.xyy) + ee.yyx * body(h + ee.yyx) + ee.yxy * body(h + ee.yxy) + ee.xxx * body(h + ee.xxx));
+        float ndv = clamp(-dot(N, rd), 0.0, 1.0), rim = pow(1.0 - ndv, 2.5);
+        float trunk = smoothstep(0.42, 0.1, abs(h.x)) * smoothstep(0.75, 1.1, h.y) * smoothstep(1.75, 1.62, h.y), face = smoothstep(1.46, 1.56, h.y);
+        float cloth = 0.82 + 0.18 * noise(h * vec3(22.0, 9.0, 22.0)) ;
+        float T = (0.2 + 0.5 * max(trunk, face)) * pow(ndv, 1.3) * cloth + 0.1 * noise(h * 11.0 + vec3(0.0, uTime * 0.15, 0.0));
+        vec3 ember = vec3(uPerson.r * 0.42, uPerson.g * 0.22, uPerson.b * 0.16);
+        vec3 sk = mix(ember, uPerson, smoothstep(0.02, 0.36, T)); sk = mix(sk, uHot, smoothstep(0.3, 0.72, T) * 0.75 * (1.0 - 0.35 * uCalm));
+        sk += uPerson * rim * 0.55; sk += uPerson * 0.05 * step(0.92, fract(h.y * 46.0 - uTime * 0.5));
+        sum += tr * lockK * sk; tr *= 1.0 - 0.94 * lockK;
+      }
+      float heat = smoothstep(0.06, -0.06, d), halo = exp(-max(d, 0.0) * mix(9.0, 26.0, uK)) * mix(0.1, 0.05, uK);
+      float dens = (heat * mix(0.85, 5.0, uK) * (1.0 - lockK * 0.9) + halo) * mix(1.0, tick, un * 0.85);
+      vec3 col = mix(mix(vec3(0.62, 0.6, 0.58), uPerson, 0.3 + 0.25 * heat), uPerson, uK);
+      float k = 1.0 - exp(-dens * st * mix(1.6, 3.4, uK)); sum += tr * k * col * mix(0.55, 1.0, heat); tr *= 1.0 - k * 0.8;
+      if (tr < 0.04) break;
+    }
   }
-  gl_FragColor = vec4(c * uAlpha, a * uAlpha);
-  #include <colorspace_fragment>
+  float al = (1.0 - tr) * uAlpha; if (al < 0.003) discard;
+  gl_FragColor = vec4(sum * uAlpha * mix(0.9, 1.0, uK) * (1.0 + 0.7 * uFlash), al);
 }`;
 
 const FLAT_VERT = /* glsl */ `void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
@@ -141,23 +154,17 @@ export default {
   layers: ['heat', 'truth'],
   create(t) {
     const { THREE } = t, pal = palette(t);
-    const low = t.quality === 'low', reduced = !!t.reduced;
+    const low = t.quality === 'low';
     const root = new THREE.Group(); root.name = 'people'; t.scene.add(root);
     const hot = new THREE.Color(pal.heat[pal.heat.length - 1]);
 
     // shared geometry
     const quad = new THREE.PlaneGeometry(2, 2).rotateX(-Math.PI / 2);
-    const domeGeo = new THREE.SphereGeometry(1, low ? 40 : 64, low ? 10 : 24, 0, TAU, 0, Math.PI / 2);
-    const bodyGeo = bodyGeometry(THREE, low ? 8 : 18);
+    const BOX = new THREE.Vector3(0.64, 1.1, 0.56), volGeo = new THREE.BoxGeometry(BOX.x * 2, BOX.y * 2, BOX.z * 2).translate(0, 0.86, 0.08);
     const bar = new THREE.PlaneGeometry(0.52, 0.045).rotateX(-Math.PI / 2);
     const crossGeo = mergeGeometries([bar.clone().rotateY(Math.PI / 4), bar.clone().rotateY(-Math.PI / 4)]); bar.dispose();
     const pickGeo = new THREE.CylinderGeometry(1, 1, 1, 12).translate(0, 0.5, 0);
     const pickMat = new THREE.MeshBasicMaterial({ visible: false });
-    const glyph = canvasTexture(THREE, 128, 128);
-    glyph.redraw((c, w, h) => {
-      c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = '500 92px ' + FONT;
-      c.shadowColor = 'rgba(255,255,255,0.55)'; c.shadowBlur = 14; c.fillStyle = 'rgba(255,255,255,0.96)'; c.fillText('?', w / 2, h / 2 + 5);
-    });
     const none = () => {};
 
     const visuals = new Map();
@@ -167,37 +174,25 @@ export default {
     function build(id) {
       const group = new THREE.Group(); group.name = 'detection-' + id; root.add(group);
       const ringMat = decalMaterial(THREE, { depthTest: false, vertexShader: RING_VERT, fragmentShader: RING_FRAG,
-        uniforms: { uWarn: { value: pal.warn }, uPerson: { value: pal.person }, uOk: { value: pal.ok }, uHalf: { value: 1 }, uR: { value: 1 }, uP: { value: 0 }, uDashes: { value: 24 }, uConf: { value: 0 }, uReach: { value: 0 }, uAlpha: { value: 0 }, uSel: { value: 0 }, uPulse: { value: 0 }, uGain: { value: 1.7 } } });
-      const ring = new THREE.Mesh(quad, ringMat); ring.position.y = t.groundY + Y.ring; ring.renderOrder = 8; ring.raycast = none; group.add(ring); t.glow(ring);
-
-      const domeMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, depthTest: false, toneMapped: false, side: THREE.DoubleSide, vertexShader: DOME_VERT, fragmentShader: DOME_FRAG,
-        uniforms: { uColor: { value: pal.warn }, uAlpha: { value: 0 }, uTime: { value: 0 }, uSeed: { value: (hashStr(id) % 97) * 0.37 } } });
-      const dome = new THREE.Mesh(domeGeo, domeMat); dome.position.y = t.groundY + 0.02; dome.renderOrder = 11; dome.raycast = none; group.add(dome);
-
-      const qMat = new THREE.SpriteMaterial({ map: glyph.texture, transparent: true, depthWrite: false, depthTest: false, toneMapped: false, opacity: 0 }); qMat.color = pal.warn;
-      const q = new THREE.Sprite(qMat); q.renderOrder = 21; q.raycast = none; group.add(q);
-
+        uniforms: { uWarn: { value: pal.warn }, uPerson: { value: pal.person }, uOk: { value: pal.ok }, uHalf: { value: 1 }, uR: { value: 1 }, uP: { value: 0 }, uConf: { value: 0 }, uReach: { value: 0 }, uAlpha: { value: 0 }, uSel: { value: 0 }, uPulse: { value: 0 } } });
+      const ring = new THREE.Mesh(quad, ringMat); ring.position.y = t.groundY + Y.ring; ring.renderOrder = 8; ring.raycast = none; group.add(ring);
       const fig = new THREE.Group(), pose = new THREE.Group(); fig.add(pose); group.add(fig);
-      const shells = [];
-      for (let i = 0; i < 3; i++) {
-        const mat = new THREE.ShaderMaterial({ transparent: true, premultipliedAlpha: true, depthWrite: false, depthTest: false, toneMapped: false, ...(i < 2 ? { blending: THREE.CustomBlending, blendEquation: THREE.MaxEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor } : {}), vertexShader: HEAT_VERT, fragmentShader: HEAT_FRAG,
-          uniforms: { uPerson: { value: pal.person }, uHot: { value: hot }, uShell: { value: i }, uInflate: { value: [0, 0.022, 0.085][i] }, uBreath: { value: 0 }, uAlpha: { value: 0 }, uGain: { value: 1.5 } } });
-        const m = new THREE.Mesh(bodyGeo, mat); m.renderOrder = 24 + i; m.raycast = none; m.frustumCulled = false; pose.add(m); shells.push(mat);
-        if (i < 2) t.glow(m);
-      }
+      const volMat = new THREE.ShaderMaterial({ defines: { STEPS: low ? 18 : 34 }, transparent: true, premultipliedAlpha: true, blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor, depthWrite: false, depthTest: false, side: THREE.BackSide, vertexShader: VOL_VERT, fragmentShader: VOL_FRAG,
+        uniforms: { uWarn: { value: pal.warn }, uPerson: { value: pal.person }, uHot: { value: hot }, uK: { value: 0 }, uAlpha: { value: 0 }, uTime: { value: 0 }, uSeed: { value: (hashStr(id) % 97) * 0.37 }, uBreath: { value: 0 }, uCalm: { value: 0 }, uFlash: { value: 0 }, uLie: { value: 1 }, uBox: { value: BOX } } });
+      const vol = new THREE.Mesh(volGeo, volMat); vol.renderOrder = 24; vol.raycast = none; pose.add(vol);
       const crossMat = decalMaterial(THREE, { vertexShader: FLAT_VERT, fragmentShader: FLAT_FRAG, uniforms: { uColor: { value: pal.dim }, uAlpha: { value: 0 } } });
       const cross = new THREE.Mesh(crossGeo, crossMat); cross.position.y = t.groundY + Y.marker; cross.renderOrder = 7; cross.raycast = none; group.add(cross);
       const pick = new THREE.Mesh(pickGeo, pickMat); group.add(pick);
       t.pickable(group, { type: 'detection', id });
       const label = t.label('', { tone: 'warn', priority: 5, sel: { type: 'detection', id } }); label.setVisible?.(false);
       const rng = mulberry32(hashStr('yaw' + id));
-      return { id, group, ring, ringMat, dome, domeMat, q, qMat, fig, pose, shells, cross, crossMat, pick, label, labelOn: false,
-        x: 0, y: 0, sigma: 1, kVol: 0, kFig: 0, kCross: 0, appear: 0, pulse: 0, reach: 0, lying: -1, status: '', text: '', sub: '', tone: '', yaw: rng() * TAU, bph: rng() * TAU, seen: 0, lp: new THREE.Vector3() };
+      return { id, group, ring, ringMat, fig, pose, vol, volMat, cross, crossMat, pick, label, labelOn: false,
+        x: 0, y: 0, sigma: 1, kFig: 0, kRes: 0, kCross: 0, kSh: 0, appear: 0, pulse: 0, reach: 0, lying: -1, status: '', text: '', sub: '', tone: '', yaw: rng() * TAU, bph: rng() * TAU, seen: 0, lp: new THREE.Vector3() };
     }
 
     function setPose(v, lying) {
       if (v.lying === lying) return; v.lying = lying;
-      if (lying) { v.pose.rotation.set(-Math.PI / 2, 0, 0); v.pose.position.set(0, 0.115, 0.85); v.fig.rotation.y = v.yaw; }
+      if (lying) { v.pose.rotation.set(-Math.PI / 2, 0, 0); v.pose.position.set(0, 0.125, 0.85); v.fig.rotation.y = v.yaw; }
       else { v.pose.rotation.set(0, 0, 0); v.pose.position.set(0, 0, 0); v.fig.rotation.y = v.yaw; }
     }
 
@@ -246,7 +241,7 @@ export default {
     function isSelected(d) { return (selType === 'detection' && selId === d.id) || (selType === 'survivor' && selId != null && selId === d.survivorId); }
 
     function update(state, dt, time) {
-      const fresh = watch(state); frame++;
+      const fresh = watch(state), reduced = t.reduced; frame++;
       const dets = state.detections;
       for (let i = 0; i < dets.length; i++) {
         const d = dets[i]; if (!d.pos) continue;
@@ -256,49 +251,39 @@ export default {
         v.seen = frame;
         const st = d.status, conf = st === 'confirmed', rej = st === 'rejected';
         const sv = d.survivorId ? state.survivors[d.survivorId] : null;
-        const snap = fresh || (born && rej);
-        const sigma = clamp(d.posSigma || 1, 0.3, 8);
-        if (born || fresh) { v.x = d.pos[0]; v.y = d.pos[1]; v.sigma = sigma; v.appear = fresh ? 1 : 0; v.pulse = 0; }
-        else { v.x = damp(v.x, d.pos[0], 7, dt); v.y = damp(v.y, d.pos[1], 7, dt); v.sigma = damp(v.sigma, sigma, 6, dt); v.appear = Math.min(1, v.appear + dt / 0.4); }
-        if (!fresh && !born && !reduced && v.status === 'possible' && conf) v.pulse = 1;   // possible -> confirmed
+        const sigma = clamp(d.posSigma || 1, 0.3, 8), tf = conf ? 1 : 0, tc = rej ? 1 : 0, tr = sv && sv.status === 'reached' ? 1 : 0;
+        const res = conf ? 1 : rej ? 0 : 0.06 + 0.6 * smoothstep(0.35, 0.9, d.p);      // how much of a body the probability allows
+        if (born || fresh) { v.x = d.pos[0]; v.y = d.pos[1]; v.sigma = sigma; v.appear = fresh || rej || reduced ? 1 : 0; v.pulse = 0; v.kFig = tf; v.kCross = tc; v.reach = tr; v.kRes = fresh || reduced ? res : 0; v.kSh = rej ? 0 : 1; }
+        else {
+          const f = reduced ? 1e3 : 1;
+          v.x = damp(v.x, d.pos[0], 3.2 * f, dt); v.y = damp(v.y, d.pos[1], 3.2 * f, dt); v.sigma = damp(v.sigma, sigma, 2.4 * f, dt); v.appear = toward(v.appear, 1, dt * f / 1.1);
+          v.kFig = toward(v.kFig, tf, dt * f / 1.3); v.kCross = toward(v.kCross, tc, dt * f / 0.9); v.kSh = toward(v.kSh, rej ? 0 : 1, dt * f / 0.9); v.reach = toward(v.reach, tr, dt * f / 1.2);
+          const was = v.kRes; v.kRes = damp(v.kRes, res, (conf ? 1.9 : 1.2) * f, dt); if (conf && v.kRes > 0.985) v.kRes = 1;
+          if (!reduced && conf && was < 0.93 && v.kRes >= 0.93) v.pulse = 1;         // the moment it locks: one quiet pulse
+        }
         v.status = st;
-        const tv = conf || rej ? 0 : 1, tf = conf ? 1 : 0, tc = rej ? 1 : 0, tr = sv && sv.status === 'reached' ? 1 : 0;
-        if (snap) { v.kVol = tv; v.kFig = tf; v.kCross = tc; v.reach = tr; if (snap && !fresh) v.appear = 1; }
-        else { v.kVol = toward(v.kVol, tv, dt / (rej ? 0.6 : 0.45)); v.kFig = toward(v.kFig, tf, dt / (rej ? 0.6 : 0.5)); v.kCross = toward(v.kCross, tc, dt / 0.6); v.reach = toward(v.reach, tr, dt / 0.8); }
-        if (v.pulse > 0) v.pulse = Math.max(0, v.pulse - dt / 0.7);
-        const ap = v.appear * v.appear * (3 - 2 * v.appear), sel = isSelected(d);
+        if (v.pulse > 0) v.pulse = Math.max(0, v.pulse - dt / 1.5);
+        const ap = v.appear * v.appear * (3 - 2 * v.appear), sel = isSelected(d), lying = !(sv && sv.motion === 'moving');
+        // While it is uncertain the volume wanders inside its own error ellipse.
+        const loose = reduced ? 0 : (1 - v.kRes) * Math.min(v.sigma, 2.5) * 0.42;
         v.group.visible = true; v.group.position.set(v.x, 0, -v.y);
+        v.fig.position.set(loose * (Math.sin(time * 0.31 + v.bph) * 0.7 + Math.sin(time * 0.83 + v.bph * 3) * 0.3), 0, loose * (Math.cos(time * 0.27 + v.bph * 2) * 0.7 + Math.sin(time * 0.71) * 0.3));
 
-        // ring and confidence arc
-        const R = lerp(v.sigma, FIG_R, v.kFig), u = v.ringMat.uniforms, halfQ = R + 1.7;
-        v.ring.scale.set(halfQ, 1, halfQ); u.uHalf.value = halfQ; u.uR.value = R * (0.8 + 0.2 * ap);
-        u.uP.value = d.p; u.uDashes.value = Math.max(8, Math.round(TAU * R / 0.36)); u.uConf.value = v.kFig; u.uReach.value = v.reach;
-        u.uAlpha.value = ap * (1 - v.kCross) * (sel ? 1 : 0.86); u.uSel.value = sel ? 1 : 0; u.uPulse.value = v.pulse;
+        // error ellipse, confidence arc
+        const R = lerp(v.sigma, lying ? FIG_R : 0.62, v.kFig * smoothstep(0.5, 1, v.kRes)), u = v.ringMat.uniforms, halfQ = R * 1.3 + 1.8;
+        v.ring.scale.set(halfQ, 1, halfQ); u.uHalf.value = halfQ; u.uR.value = R; u.uP.value = d.p * smoothstep(0.6, 1, v.kRes); u.uConf.value = v.kFig; u.uReach.value = v.reach;
+        u.uAlpha.value = ap * v.kSh * (sel ? 1 : 0.8); u.uSel.value = sel ? 1 : 0; u.uPulse.value = v.pulse;
         v.ring.visible = u.uAlpha.value > 0.004;
 
-        // uncertainty volume and question mark
-        const showVol = heatOn && v.kVol > 0.004;
-        v.dome.visible = showVol; v.q.visible = showVol;
-        const domeH = v.sigma < 1.2 ? v.sigma : 1.2 + (v.sigma - 1.2) * 0.25;
-        if (showVol) {
-          const sc = (conf ? 0.2 + 0.8 * v.kVol : 1) * (0.85 + 0.15 * ap);
-          v.dome.scale.set(v.sigma * sc, domeH * sc, v.sigma * sc);
-          v.domeMat.uniforms.uAlpha.value = v.kVol * ap / (1 + 0.32 * v.sigma); v.domeMat.uniforms.uTime.value = reduced ? 0 : time;
-          const qs = clamp(0.42 + 0.12 * v.sigma, 0.45, 0.95);
-          v.q.scale.set(qs, qs, 1); v.q.position.y = t.groundY + clamp(domeH * 0.55, 0.8, 1.35); v.qMat.opacity = v.kVol * ap * 0.92;
+        // the volume
+        const show = heatOn && v.kSh > 0.004; v.fig.visible = show;
+        if (show) {
+          setPose(v, lying);
+          const vu = v.volMat.uniforms, br = reduced ? 0 : Math.sin(time * 1.55 + v.bph);
+          vu.uK.value = v.kRes * v.kRes * (3 - 2 * v.kRes); vu.uAlpha.value = ap * v.kSh * lerp(0.62, 1, v.kRes); vu.uTime.value = reduced ? 1 : time % 600; vu.uBreath.value = br * 0.006 * v.kRes; vu.uCalm.value = v.reach; vu.uFlash.value = v.pulse * v.pulse; vu.uLie.value = lying ? 1 : 0;
+          if (!lying && !reduced) { const sw = (1 - v.reach) * Math.sin(time * 0.62 + v.bph); v.pose.rotation.z = sw * 0.022; v.pose.position.x = sw * 0.012; }
         }
-
-        // heat figure
-        const showFig = heatOn && v.kFig > 0.004;
-        v.fig.visible = showFig;
-        if (showFig) {
-          const lying = !(sv && sv.motion === 'moving'); setPose(v, lying);
-          const calm = v.reach, live = reduced ? 0 : 1;
-          const br = live * Math.sin(time * 1.55 + v.bph) * 0.0045 * (1 - 0.4 * calm);         // chest moves 1 to 2 %
-          const k = 0.9 + 0.1 * v.kFig; v.fig.scale.set(k, k, k);
-          if (!lying) { const sw = live * (1 - calm) * Math.sin(time * 0.62 + v.bph); v.pose.rotation.z = sw * 0.022; v.pose.position.x = sw * 0.012; }
-          for (let s = 0; s < 3; s++) { const us = v.shells[s].uniforms; us.uAlpha.value = v.kFig * (1 - 0.22 * calm * (s > 0 ? 1 : 0)); us.uBreath.value = 0.004 + br; }
-        }
+        const domeH = 1;
 
         // rejected: a small grey cross
         v.cross.visible = v.kCross > 0.004; v.crossMat.uniforms.uAlpha.value = v.kCross * 0.5;
@@ -335,7 +320,7 @@ export default {
       dispose() {
         for (const v of visuals.values()) v.label.remove();
         visuals.clear(); for (const l of truthLabels) l.remove(); truthLabels.length = 0;
-        disposeTree(root); quad.dispose(); domeGeo.dispose(); bodyGeo.dispose(); crossGeo.dispose(); pickGeo.dispose(); pickMat.dispose(); glyph.texture.dispose();
+        disposeTree(root); quad.dispose(); volGeo.dispose(); crossGeo.dispose(); pickGeo.dispose(); pickMat.dispose();
       },
     };
   },

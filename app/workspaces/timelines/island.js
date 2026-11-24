@@ -41,13 +41,14 @@ async function groundMaps(aniso) {
   await frame();
   const poly = (q, pts) => { q.beginPath(); pts.forEach((p, i) => (i ? q.lineTo(X(p[0]), Y(p[1])) : q.moveTo(X(p[0]), Y(p[1])))); q.closePath(); };
   // silt and mud
-  const gr = g.createLinearGradient(W, 0, 0, H); gr.addColorStop(0, '#4b4439'); gr.addColorStop(0.45, '#423e37'); gr.addColorStop(1, '#4c4b47'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
-  g.globalCompositeOperation = 'overlay'; g.globalAlpha = 0.85; g.drawImage(n1, 0, 0, W, H); g.globalAlpha = 0.45; g.drawImage(n2, 0, 0, W, H); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  const gr = g.createLinearGradient(W, 0, 0, H); gr.addColorStop(0, '#57503f'); gr.addColorStop(0.45, '#4b453b'); gr.addColorStop(1, '#525049'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  g.globalCompositeOperation = 'overlay'; g.globalAlpha = 0.6; g.drawImage(n1, 0, 0, W, H); g.globalAlpha = 0.55; g.drawImage(n2, 0, 0, W, H); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  { const fine = noiseCanvas(2048, 1536, [7, 3, 1], 21, 0.6); g.globalCompositeOperation = 'overlay'; g.globalAlpha = 0.42; g.drawImage(fine, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
   // flow lines the water left, north-east to south-west, bending round the building
   g.lineCap = 'round';
-  for (let i = 0; i < 520; i++) {
+  for (let i = 0; i < 900; i++) {
     let x = 60 + R() * 70, y = 45 + R() * 60; if (R() < 0.35) { x = 84 + R() * 36; y = R() * 60; }
-    const dark = R() < 0.6; g.strokeStyle = dark ? 'rgba(18,15,11,' + (0.05 + R() * 0.13) + ')' : 'rgba(150,138,116,' + (0.03 + R() * 0.08) + ')'; g.lineWidth = 0.8 + R() * 3.2; g.beginPath(); g.moveTo(X(x), Y(y));
+    const dark = R() < 0.6; g.strokeStyle = dark ? 'rgba(18,15,11,' + (0.07 + R() * 0.17) + ')' : 'rgba(150,138,116,' + (0.03 + R() * 0.08) + ')'; g.lineWidth = 0.8 + R() * 3.2; g.beginPath(); g.moveTo(X(x), Y(y));
     const L = 9 + R() * 20; for (let k = 0; k < 8; k++) { x -= L / 8 * (0.8 + R() * 0.3); y -= L / 8 * (0.55 + Math.sin(x * 0.16) * 0.35); g.lineTo(X(x), Y(y)); } g.stroke();
   }
   // yard road from the staging area to the entrance: worn asphalt with tyre marks
@@ -74,9 +75,9 @@ async function groundMaps(aniso) {
   rg.fillStyle = '#d8d8d8'; rg.fillRect(0, 0, 1024, 768); rg.globalCompositeOperation = 'overlay'; rg.globalAlpha = 0.5; rg.drawImage(n2, 0, 0); rg.globalAlpha = 1; rg.globalCompositeOperation = 'source-over';
   hg.drawImage(n1, 0, 0); hg.globalAlpha = 0.5; hg.drawImage(n2, 0, 0); hg.globalAlpha = 1; hg.fillStyle = 'rgba(128,128,128,.82)'; hg.fillRect(B[0] * s / 2, 768 - B[3] * s / 2, (B[2] - B[0]) * s / 2, (B[3] - B[1]) * s / 2);
   const puddle = (x, y, r) => { const n = 11, pts = []; for (let k = 0; k < n; k++) { const a = k / n * 6.283, rr = r * (0.6 + R() * 0.6); pts.push([x + Math.cos(a) * rr * 1.5, y + Math.sin(a) * rr * 0.8]); }
-    g.save(); g.filter = 'blur(3px)'; g.fillStyle = 'rgba(16,18,20,.62)'; poly(g, pts); g.fill(); g.restore();
+    g.save(); g.filter = 'blur(3px)'; g.fillStyle = 'rgba(26,27,28,.2)'; poly(g, pts); g.fill(); g.restore();
     for (const [q, c] of [[rg, '#1c1c1c'], [hg, '#707070']]) { q.save(); q.scale(0.5, 0.5); q.filter = 'blur(2px)'; q.fillStyle = c; poly(q, pts); q.fill(); q.restore(); } };
-  for (let i = 0; i < 74; i++) { const inMud = R() < 0.5; puddle(inMud ? 86 + R() * 32 : R() * 120, inMud ? 14 + R() * 60 : R() * 28, 0.5 + R() * 2.1); }
+  for (let i = 0; i < 120; i++) { const inMud = R() < 0.5; puddle(inMud ? 86 + R() * 32 : R() * 120, inMud ? 14 + R() * 60 : R() * 28, 0.25 + R() * R() * 1.7); }
   for (let i = 0; i < 12; i++) puddle(46 + R() * 32, 43 + R() * 2, 0.4 + R() * 0.7);
   // pebbles and broken masonry speckle
   for (let i = 0; i < 5200; i++) { const deb = R() < 0.55, x = deb ? 86 + R() * 26 : R() * 120, y = deb ? 58 + R() * 24 : R() * 90, r = 0.5 + R() * 1.7; if (x > 44 && x < 78 && y > 30 && y < 58) continue; const v = 60 + R() * 95; g.fillStyle = 'rgba(' + v + ',' + v * 0.95 + ',' + v * 0.87 + ',.75)'; g.fillRect(X(x), Y(y), r * 2, r * 1.4); g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(X(x), Y(y) + r * 1.4, r * 2, r * 0.8); hg.fillStyle = '#c8c8c8'; hg.fillRect(X(x) / 2, Y(y) / 2, r, r); }
@@ -196,7 +197,7 @@ function droneGeo() {
   return mergeGeometries(parts);
 }
 function teamGeo() {
-  const parts = [], { paint, put } = (() => { const k = kit(); k.parts.length = 0; return { paint: (g, c) => { k.paint(g, c, 0.25); }, put: k.put, k, parts: k.parts }; })(), K2 = kit();
+  const K2 = kit();
   for (const [x, z] of [[0, 0], [0.14, 0.1], [-0.13, 0.11]]) { K2.paint(K2.put(new THREE.CapsuleGeometry(0.036, 0.12, 3, 8), x, 0.14, z), '#39506b', 0.3); K2.paint(K2.put(new THREE.SphereGeometry(0.032, 10, 8), x, 0.27, z), '#e7eaec', 0); }
   return mergeGeometries(K2.parts);
 }

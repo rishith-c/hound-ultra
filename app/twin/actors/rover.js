@@ -39,7 +39,7 @@ function builder(THREE) {
 // One physically based material for the whole machine. Metalness, roughness and brushing come from the vertices;
 // road mud, dust, wear and droplets come from noise in the part's own space, so they stay put as it moves.
 function machineMaterial(THREE) {
-  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 1, roughness: 1, envMapIntensity: 1.35 });
+  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 1, roughness: 1, envMapIntensity: 2.1 });
   mat.onBeforeCompile = (sh) => {
     sh.vertexShader = 'attribute vec4 aPbr; varying vec4 vPbr; varying vec3 vObj; varying vec3 vObjN;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vPbr = aPbr; vObj = position; vObjN = normal;');
     sh.fragmentShader = `varying vec4 vPbr; varying vec3 vObj; varying vec3 vObjN;
@@ -50,13 +50,14 @@ function machineMaterial(THREE) {
       .replace('#include <color_fragment>', `#include <color_fragment>
         float rA = rn(vObj * 46.0), rB = rn(vObj * 170.0 + 9.0), rC = rn(vObj * 620.0);
         float rUp = smoothstep(0.35, 0.9, vObjN.y);
-        rDirt = smoothstep(0.62 - vPbr.w * 0.62, 0.98 - vPbr.w * 0.5, rA * 0.55 + rB * 0.3 + rC * 0.15) * clamp(vPbr.w * 1.5, 0.0, 1.0);
-        float rDust = rUp * 0.14 * smoothstep(0.4, 0.75, rA);
+        rDirt = smoothstep(0.78 - vPbr.w * 0.72, 1.12 - vPbr.w * 0.5, rA * 0.42 + rB * 0.33 + rC * 0.25) * clamp(vPbr.w * 1.3, 0.0, 0.85);
+        float rDust = rUp * 0.22 * smoothstep(0.4, 0.75, rA);
         diffuseColor.rgb *= 0.9 + 0.2 * rB;
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.105, 0.082, 0.06) * (0.7 + 0.7 * rC), max(rDirt, rDust));`)
       .replace('#include <roughnessmap_fragment>', `float roughnessFactor = vPbr.y;
         float rS = rn(vec3(vObj.x * 18.0, vObj.y * 1500.0, vObj.z * 1500.0)) * step(abs(vObjN.x), 0.5) + rn(vec3(vObj.x * 1500.0, vObj.y * 1500.0, vObj.z * 18.0)) * step(0.5, abs(vObjN.x));
-        roughnessFactor += (rS - 0.5) * 0.3 * vPbr.z + (rB - 0.5) * 0.12;
+        float rF = 1.0 - smoothstep(0.0004, 0.0016, max(length(dFdx(vObj)), length(dFdy(vObj))));
+        roughnessFactor += (rS - 0.5) * 0.22 * vPbr.z * rF + (rB - 0.5) * 0.12;
         roughnessFactor = clamp(mix(roughnessFactor, 0.9, max(rDirt, rUp * 0.2)), 0.05, 1.0);`)
       .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = vPbr.x * (1.0 - rDirt);');
   };
@@ -222,9 +223,9 @@ export default {
       if (dead) return;
       const hl = new DataView(buf).getUint32(0, true), meta = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, hl))), o = 4 + hl;
       const geo = (id, dirt) => {
-        const e = meta.parts[id], g = new THREE.BufferGeometry(), n = e.verts, pos = new Float32Array(buf, o + e.pos, n * 3), pb = new Uint8Array(buf, o + e.pbr, n * 4), cs = new Uint8Array(buf, o + e.col, n * 4), col = new Float32Array(n * 3), c = new THREE.Color();
-        for (let i = 0; i < n; i++) { c.setRGB(cs[i * 4] / 255, cs[i * 4 + 1] / 255, cs[i * 4 + 2] / 255, THREE.SRGBColorSpace); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; pb[i * 4 + 3] = 255 * clamp(dirt(pos[i * 3 + 1]), 0, 1); }
-        g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(new Int8Array(buf, o + e.nor, n * 4), 4, true)); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.setAttribute('aPbr', new THREE.BufferAttribute(pb, 4, true));
+        const e = meta.parts[id], g = new THREE.BufferGeometry(), n = e.verts, pos = new Float32Array(buf, o + e.pos, n * 3), pb = new Uint8Array(buf, o + e.pbr, n * 4), cs = new Uint8Array(buf, o + e.col, n * 4), col = new Float32Array(n * 3), nr = new Int8Array(buf, o + e.nor, n * 4), c = new THREE.Color();
+        for (let i = 0; i < n; i++) { c.setRGB(cs[i * 4] / 255, cs[i * 4 + 1] / 255, cs[i * 4 + 2] / 255, THREE.SRGBColorSpace); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; pb[i * 4 + 3] = 255 * clamp(dirt(pos[i * 3 + 1]), 0, 1); if (!nr[i * 4] && !nr[i * 4 + 1] && !nr[i * 4 + 2]) nr[i * 4 + 1] = 127; }
+        g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nr, 4, true)); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.setAttribute('aPbr', new THREE.BufferAttribute(pb, 4, true));
         g.setIndex(new THREE.BufferAttribute(e.wide ? new Uint32Array(buf, o + e.idx, e.count) : new Uint16Array(buf, o + e.idx, e.count), 1)); return g;
       };
       const add = (g, parent) => { const m = new THREE.Mesh(g, mat); m.castShadow = m.receiveShadow = true; parent.add(m); return m; };
@@ -258,7 +259,7 @@ export default {
       vertexShader: 'varying float vL; varying vec3 vN; varying vec3 vV; varying vec3 vP; void main(){ vL = uv.y; vP = position; vec4 mv = modelViewMatrix * vec4(position, 1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }',
       fragmentShader: `uniform float uK, uT; uniform vec3 uColor; varying float vL; varying vec3 vN; varying vec3 vV; varying vec3 vP;
         float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); } float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y); }
-        void main(){ float body = pow(abs(dot(normalize(vN), normalize(vV))), 2.2); float along = pow(vL, 2.4) * smoothstep(0.0, 0.07, 1.0 - vL);
+        void main(){ float body = pow(min(1.0, abs(dot(vN / max(length(vN), 1e-4), normalize(vV)))) + 1e-4, 2.2); float along = pow(clamp(vL, 1e-4, 1.0), 2.4) * smoothstep(0.0, 0.07, 1.0 - vL);
           float mist = 0.55 + 0.75 * n(vec2(vP.x * 3.2 - uT * 0.35, vP.y * 9.0 + vP.z * 5.0 + uT * 0.12)) * n(vec2(vP.x * 1.1 + uT * 0.1, vP.z * 3.0));
           gl_FragColor = vec4(uColor, body * along * mist * 0.085 * uK); }`,
     });

@@ -1,6 +1,6 @@
 // The heavy work, kept off the screen's thread when a Worker is available (see worker.js) and run directly when not.
 // One cloud is held at a time; 'voids' re-runs only the void search with new limits.
-import { buildSite, scanSite, buildPlan, scanPlan, poseAt } from './scene.js';
+import { buildSite, scanSite, buildPlan, scanPlan, poseAt, emptyShare } from './scene.js';
 import { bounds, groundModel, classify, findVoids, occupancy } from './analyze.js';
 import { parseCloud } from './io.js';
 import { bakeLight } from './light.js';
@@ -30,7 +30,9 @@ async function analyse(progress, extra) {
 }
 function runVoids(p) {
   const c = cur;
-  return findVoids(c.pos, c.n, c.cl.cls, c.cl.hag, c.g, c.B, { minH: p.minH ?? 0.5, minL: p.minL ?? 1.2, whole: !!p.whole, time: c.traj ? c.time : null, origin: c.traj ? (t, o) => poseAt(c.traj, t, o) : null });
+  const out = findVoids(c.pos, c.n, c.cl.cls, c.cl.hag, c.g, c.B, { minH: p.minH ?? 0.5, minL: p.minL ?? 1.2, whole: !!p.whole, time: c.traj ? c.time : null, origin: c.traj ? (t, o) => poseAt(c.traj, t, o) : null });
+  if (c.model) for (const v of out.list) v.empty = emptyShare(c.model, v.samp);
+  return out;
 }
 
 export async function handle(op, p = {}, progress = () => {}) {
@@ -38,8 +40,9 @@ export async function handle(op, p = {}, progress = () => {}) {
     progress(0.02, op === 'site' ? 'Building the site from the scenario' : 'Building your floor plan'); await tick();
     let t = now(); const S = op === 'site' ? buildSite() : buildPlan(p.plan); const tBuild = now() - t;
     progress(0.1, 'Flying the scanner'); await tick();
-    t = now(); const scan = op === 'site' ? scanSite(S, (f, m) => progress(0.1 + f * 0.5, m)) : scanPlan(S, (f, m) => progress(0.1 + f * 0.5, m)); const tScan = now() - t;
-    cur = { kind: op, pos: scan.pos, n: scan.n, inten: scan.inten, time: scan.time, truth: scan.truth, traj: scan.traj };
+    let sent = 0; const part = (f, m, C) => { progress(0.1 + f * 0.5, m, C && C.n > sent ? { pos: C.pos.slice(sent * 3, C.n * 3), inten: C.inten.slice(sent, C.n) } : null); if (C) sent = C.n; };
+    t = now(); const scan = op === 'site' ? scanSite(S, part) : scanPlan(S, part); const tScan = now() - t;
+    cur = { kind: op, pos: scan.pos, n: scan.n, inten: scan.inten, time: scan.time, truth: scan.truth, traj: scan.traj, model: S };
     const r = await analyse(progress, { duration: scan.duration, traj: scan.traj, passes: scan.passes, rays: scan.rays, prims: S.prims.length });
     r.timings.build = tBuild; r.timings.scan = tScan;
     return r;
@@ -66,5 +69,10 @@ export async function handle(op, p = {}, progress = () => {}) {
     return r;
   }
   if (op === 'voids') { if (!cur) throw new Error('No scan is loaded.'); const t = now(), v = runVoids(p); v.ms = now() - t; return v; }
+  if (op === 'check') { // the same classifier on a site it was never adjusted on; leaves the loaded scan alone
+    const S = buildSite(p.shuffle), s = scanSite(S, (f, m) => progress(f * 0.8, m), p.shuffle), B = bounds(s.pos, s.n), g = groundModel(s.pos, s.n, B), c = classify(s.pos, s.n, B, g, s.truth);
+    const v = findVoids(s.pos, s.n, c.cls, c.hag, g, B, { time: s.time, origin: (t, o) => poseAt(s.traj, t, o) });
+    return { n: s.n, accuracy: c.accuracy, confusion: c.confusion, voids: v.list.map((q) => ({ volume: q.volume, centre: q.centre, empty: emptyShare(S, q.samp), seen: q.seen })), shuffle: p.shuffle };
+  }
   throw new Error('Unknown job: ' + op);
 }

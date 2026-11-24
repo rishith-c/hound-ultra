@@ -1,5 +1,6 @@
 // Shared physically based materials for the twin's static world.
 import * as THREE from 'three';
+import { photoTri } from './photos.js';
 
 // Adds the close-up layer to a ground material: grit that tiles every 3 m over the painted site texture, and
 // puddles (wherever the roughness map is near zero) that go flat and mirror the sky.
@@ -24,7 +25,7 @@ export function groundify(mat, detail) {
   return mat;
 }
 
-export function createMaterials(tex) {
+export function createMaterials(tex, photos = null) {
   const S = (o) => new THREE.MeshStandardMaterial(o);
   const wo = tex.wall('outer'), wi = tex.wall('inner'), co = tex.concrete(), fl = tex.floor(), cg = tex.cgi(), wd = tex.wood(), fb = tex.fabric(), gd = tex.groundDetail();
   const ns = (v) => new THREE.Vector2(v, v);
@@ -52,6 +53,13 @@ export function createMaterials(tex) {
     rock: S({ map: co.map, normalMap: co.normalMap, normalScale: ns(1.3), roughness: 0.95, color: 0x8f8a80, flatShading: false, vertexColors: false }),
     screen: S({ color: 0x05080b, emissive: 0x7fb6ff, emissiveIntensity: 0.9, roughness: 0.3 }),
   };
+  if (photos) {                                                                  // photographed surfaces over the painted ones
+    for (const k of ['plaster', 'plasterA', 'plasterC', 'inner']) photoTri(m[k], photos.plaster, { scale: 2.7, k: 0.72, bump: 0.8, key: 'plaster' });
+    photoTri(m.concrete, photos.concrete, { scale: 3.1, k: 0.85, bump: 0.7, key: 'conc' });
+    // flat roofs hold shallow rainwater: low, noisy patches go smooth and mirror the sky
+    photoTri(m.concreteDark, photos.concrete, { scale: 4.3, k: 0.95, bump: 0.8, key: 'concw', extra: ' float rpN = sin(vPW.x * 0.31 + sin(vPW.z * 0.23) * 2.0) * sin(vPW.z * 0.37 + sin(vPW.x * 0.19) * 2.0) + (pC.g - 1.0) * 0.25; float rpW = smoothstep(0.3, 0.42, rpN) * step(0.9, pN.y); diffuseColor.rgb *= mix(1.0, 0.42, rpW);', rough: ' roughnessFactor = mix(roughnessFactor, 0.07, rpW);', wet: 'rpW' });
+    photoTri(m.mud, photos.wet, { scale: 2.4, k: 0.9, bump: 1.1, key: 'mud' }); photoTri(m.rock, photos.rubble, { scale: 1.8, k: 0.7, bump: 0.9, key: 'rock' });
+  }
   m.dispose = () => { for (const v of Object.values(m)) v?.dispose?.(); };
   return m;
 }

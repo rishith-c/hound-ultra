@@ -27,7 +27,7 @@ import { TEAM_CHECK_S, DECOY_SLIP } from './worlds.js';
 import { mulberry32 } from '../../core/geometry.js';
 
 export const RULES = { lead: 0.15, confirmed: 0.85, tau: 600, cFalse: 0.25, cMin: 0.04, budget: 900 };
-export const DEFAULTS = { kappa: 0.0065, sims: 280, depth: 4, width: 4, ucb: 0.5, rollSteps: 14, rollStop: 0.0013, margin: 1 };
+export const DEFAULTS = { kappa: 0.0065, sims: 280, depth: 4, width: 4, ucb: 0.5, rollSteps: 14, rollStop: 0.0013, margin: 2 };
 
 export function roomProbs(world, B, out) {
   const rooms = world.rooms; out = out || new Float32Array(rooms.length);

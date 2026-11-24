@@ -30,7 +30,7 @@ export default function create(env) {
     for (let k = 0; k < CNZ; k++) for (let i = 0; i < CNX; i++) { const x = x0 + (i + 0.5) * CR, z = z0 + (k + 0.5) * CR, q = k * CNX + i; if (z < pile.surfAt(x) - 0.1 && z > -2.7 && x > pile.extent[0] && x < pile.extent[1]) { active[q] = 1; cells.push(q); }
       let s = 0; for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) { const c = pile.cellAt(x + (a - 1.5) * 0.1, z + (b - 1.5) * 0.1), zz = z + (b - 1.5) * 0.1; s += pile.mat[c] === MAT.SKY ? 0 : (zz < 0 ? 1.8 : RHO_REF) - pile.rho[c]; } truthC[q] = s / 16; }
     K = new Float32Array(n * cells.length); W = new Float32Array(cells.length);
-    cells.forEach((q, j) => { const i = q % CNX, k = (q - i) / CNX, x = x0 + (i + 0.5) * CR, z = z0 + (k + 0.5) * CR; W[j] = Math.pow(Math.max(0.4, pile.surfAt(x) + 0.5 - z), 1.25);
+    cells.forEach((q, j) => { const i = q % CNX, k = (q - i) / CNX, x = x0 + (i + 0.5) * CR, z = z0 + (k + 0.5) * CR; W[j] = Math.pow(Math.max(0.4, pile.surfAt(x) + 0.5 - z), 0.9);
       for (let s = 0; s < n; s++) { let e = 0; for (const ox of [-0.1, 0.1]) for (const oz of [-0.1, 0.1]) e += gzRod(st[s].x, st[s].z, x + ox, z + oz, -40) - gzRod(st[s].x, st[s].z + 1, x + ox, z + oz, -40); K[s * cells.length + j] = e * 1e9; } });
     M.clutter = Math.sqrt(clutter.reduce((a, v) => a + v * v, 0) / n);
     measure();
@@ -128,6 +128,7 @@ export default function create(env) {
     honest: 'the instrument must stand still and upright for minutes at every station on a surface that is rubble, the outer shape and average density of the pile must be known to subtract them, and a heavy slab pulls the reading the other way. The unknown slabs are the largest error here, larger than the sensor.',
     assumed: 'Assumed: everything extends 2 m either side of the section; the pile surface is known and subtracted at 1.8 g/cm³; averaging time follows the published 466 E/√Hz; two minutes to move between stations. Sensor heights (0.5 m and 1.5 m) follow the Birmingham instrument.',
     sources: [{ who: 'Stray et al., Nature 602 (2022).', what: 'University of Birmingham: an atom-interferometer gravity gradiometer finds a 2 m tunnel under a road, 20 E in ten minutes.', url: 'https://doi.org/10.1038/s41586-021-04315-3' }],
+    _demo: () => ({ P, st, sig, data, fit, noise, parts, m, M, active, CR, CNX, CNZ, invert, measure, survey, surveyHours }),
     setPile(p) { pile = p; P.sweep = 1; P.sweeping = false; survey(); }, controls, drawStage, drawReadout, tick, verdicts,
     stageTitle: () => 'Missing mass, rebuilt from the gravity gradient', stageNote: () => st.length + ' stations · ' + L.fmtDur(surveyHours()) + ' on site',
     readoutTitle: () => ['A void is a dip in the gravity gradient, if the dip is deeper than the noise', 'Vertical gradient, eötvös, after removing a solid pile. Each point sits under its station.'],

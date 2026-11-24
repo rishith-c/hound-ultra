@@ -8,6 +8,7 @@ import * as T from './terrain.js';
 import { buildImpacts, CROSSING_CLEARANCE, ROAD_DEPTH } from './impacts.js';
 import { drawProfile, profileDist, drawStageCurve, drawHorizon } from './charts.js';
 import { contours } from 'd3';
+import { createDemo } from './demo.js';
 
 const cssUrl = new URL('./style.css', import.meta.url);
 if (!document.querySelector('link[data-area-css]')) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = cssUrl; l.dataset.areaCss = '1'; document.head.append(l); }
@@ -26,7 +27,7 @@ export default {
     root.classList.add('area');
 
     // ------------------------------------------------------------------ skeleton
-    const stage = h('div.area-stage'), mapHost = h('div.area-map'), schemHost = h('div.area-schem', { hidden: true });
+    const stage = h('div.area-stage.adv-only'), mapHost = h('div.area-map'), schemHost = h('div.area-schem', { hidden: true });
     stage.append(mapHost, schemHost);
     const loading = h('div.area-loading', { role: 'status' }, h('div.spinner'), h('p', null, 'Reading the elevation tiles for the valley…'));
     root.append(stage, loading);
@@ -188,12 +189,12 @@ export default {
         h('dt', null, 'Roads and paths'), h('dd.num', null, impacts.roadCount + ' mapped ways')),
       h('p.muted.area-small', null, 'Map data © OpenStreetMap contributors, extracted 23 November 2026. Elevation: Mapzen terrain tiles hosted by AWS (SRTM and other open sources). Imagery © Esri, Maxar, Earthstar Geographics.'));
 
-    const left = h('aside.area-left', { 'aria-label': 'Valley analysis' }, head, h('div.area-card.glass', null, tabBar, ...tabs.map(([t]) => el['pane-' + t])));
+    const left = h('aside.area-left.adv-only', { 'aria-label': 'Valley analysis' }, head, h('div.area-card.glass', null, tabBar, ...tabs.map(([t]) => el['pane-' + t])));
 
     // right: the exercise
     el.sectorGrid = h('div.area-sectors', { role: 'group', 'aria-label': 'Search sectors, west to east and north to south' },
       ...impacts.sectors.map((s) => (s.btn = h('button', { type: 'button', onclick: () => { S.sector = s.id; S.view?.flyTo(s.center, 16); renderSectors(); } }, h('span', null, s.id), h('b.num', null, '')))));
-    const right = h('aside.area-right.glass', { 'aria-label': 'The exercise' },
+    const right = h('aside.area-right.glass.adv-only', { 'aria-label': 'The exercise' },
       h('div.row', null, h('h3.grow', null, 'The exercise'), realityTag('sim')),
       h('p.muted.area-small', null, 'A training exercise placed in the real valley after the Bhote Koshi flood of 26 August 2026. The block, the people, the damage and every reading are invented.'),
       (el.phase = h('div.area-phase')),
@@ -208,7 +209,7 @@ export default {
     el.presets = h('div.seg', { role: 'group', 'aria-label': 'Camera' }, h('button', { onclick: () => S.view?.easeTo({ center: siteCenter, zoom: 13.3, pitch: 58, bearing: 12 }, 2200) }, 'Valley'), h('button', { onclick: () => S.view?.easeTo(M.home, 1800) }, 'Block'), h('button', { onclick: () => S.view?.easeTo({ center: siteCenter, zoom: 17.1, pitch: 0, bearing: 0 }, 1500) }, 'Overhead'));
     el.measureBtn = h('button.btn', { 'aria-pressed': 'false', onclick: () => setMeasuring(!S.measuring) }, icon('route'), 'Measure');
     el.replay = h('button.btn.btn-icon', { 'aria-label': 'Replay the fly-in down the valley', title: 'Replay the fly-in down the valley', onclick: () => flyIn() }, icon('play'));
-    const tools = h('div.area-tools.glass', { role: 'toolbar', 'aria-label': 'Map tools' }, el.styleSeg, el.presets, el.measureBtn, el.replay);
+    const tools = h('div.area-tools.glass.adv-only', { role: 'toolbar', 'aria-label': 'Map tools' }, el.styleSeg, el.presets, el.measureBtn, el.replay);
 
     // bottom: profile, readout, credit
     el.profCanvas = h('canvas.area-chart', { style: { height: '132px' }, role: 'img', 'aria-label': 'Elevation along the drawn line' });
@@ -221,9 +222,9 @@ export default {
     el.profCanvas.hidden = true;
     el.readout = h('div.area-readout.glass.num', { 'aria-live': 'off' }, 'Point at the map for position, elevation and slope');
     el.credit = h('div.area-credit');
-    el.caption = h('div.area-caption', { hidden: true });
-    el.banner = h('div.area-banner', { hidden: true });
-    const bottom = h('div.area-bottom', null, el.profile, h('div.area-strip', null, el.readout, el.credit));
+    el.caption = h('div.area-caption.adv-only', { hidden: true });
+    el.banner = h('div.area-banner.adv-only', { hidden: true });
+    const bottom = h('div.area-bottom.adv-only', null, el.profile, h('div.area-strip', null, el.readout, el.credit));
     loading.remove();
     root.append(left, right, tools, el.banner, el.caption, bottom);
 
@@ -472,7 +473,7 @@ export default {
 
     // ------------------------------------------------------------------ loop and bus
     let raf = 0, lastStats = 0, lastEx = 0, lastShore = 0;
-    const moving = () => S.shown && !reducedMotion() && S.layers.flood && (S.stage > 0 || S.surge);
+    const moving = () => S.shown && ctx.mode !== 'demo' && !reducedMotion() && S.layers.flood && (S.stage > 0 || S.surge);
     function syncAnimation() { const on = !!moving(); S.view?.animateFlood(on); if (on && !raf) raf = requestAnimationFrame(tick); }
     function tick(now) {
       raf = 0; if (!moving()) { S.view?.animateFlood(false); return; }
@@ -485,7 +486,7 @@ export default {
       if (S.surge && now - lastStats > 180) { lastStats = now; const ha = (painted.cells * model.cellArea) / 1e4; if (ha > S.surge.peak) S.surge.peak = ha; applyImpacts(painted); }
     }
     function onTick() {
-      if (!S.shown || !S.view) return;
+      if (!S.shown || !S.view || ctx.mode === 'demo') return;
       const st = ctx.sim.state, now = performance.now();
       S.view.setMarkers(markerList(st));
       if (now - lastEx > 250) { lastEx = now; S.view.setData('ex', exDynamic(st)); renderExercise(); if (renderSectors.phase !== st.phase) { renderSectors.phase = st.phase; renderSectors(); } }
@@ -500,16 +501,31 @@ export default {
 
     // ------------------------------------------------------------------ start
     renderSectors(); renderExercise(); setSun(S.minutes); setStage(0); fill(el.exRange);
-    await useView(forced ? 'schematic' : 'map');
-    if (forced && !S.fail) { el.banner.replaceChildren(icon('info'), h('span', null, h('b', null, 'Schematic view. '), navigator.onLine === false ? 'This computer is offline, so the valley is drawn from the saved elevation grid and OpenStreetMap extract.' : 'Drawn from the saved elevation grid and OpenStreetMap extract.')); el.banner.hidden = false; }
-    root.__area = { S, M, model, impacts, setStage, setSun, startSurge, flyIn, useView, setMeasuring, crossSection, fallBack };
+    // Demo is the film; the working map is only started when Advanced is first opened, so the two never run together.
+    const demo = createDemo(root, ctx, { dem, model, osm, frame, SITE, BUILDING, OBSTACLES, siteCenter, path: flightPath.path, joinAt: flightPath.joinAt, blockNeed,
+      sunAt: (min) => sunPosition(nptDate(today.dayUtcMs, min), siteCenter[1], siteCenter[0]) });
+    let advanced = null;
+    function openAdvanced() {
+      advanced ||= useView(forced ? 'schematic' : 'map').then(() => {
+        if (forced && !S.fail) { el.banner.replaceChildren(icon('info'), h('span', null, h('b', null, 'Schematic view. '), navigator.onLine === false ? 'This computer is offline, so the valley is drawn from the saved elevation grid and OpenStreetMap extract.' : 'Drawn from the saved elevation grid and OpenStreetMap extract.')); el.banner.hidden = false; }
+      });
+      return advanced;
+    }
+    async function enterMode() {
+      if (!S.shown) return;
+      if (ctx.mode === 'demo') { S.view?.stop(); S.view?.animateFlood(false); await demo.start(); if (!S.shown || ctx.mode !== 'demo') demo.stop(); return; }
+      demo.stop(); await openAdvanced(); if (!S.shown || ctx.mode === 'demo') return;
+      S.view?.resize(); S.view?.start(); applyPadding(); full(); requestAnimationFrame(redrawCharts); syncAnimation();
+      if (!S.flew) { S.flew = true; if (S.view?.kind === 'map' && !query.has('nofly')) flyIn(); }
+    }
+    offs.push(ctx.bus.on('mode', enterMode));
+    root.__area = { S, M, model, impacts, setStage, setSun, startSurge, flyIn, useView, setMeasuring, crossSection, fallBack , demo };
 
     return {
       onShow() {
-        S.shown = true; S.view?.resize(); S.view?.start(); applyPadding(); full(); requestAnimationFrame(redrawCharts); syncAnimation();
-        if (!S.flew) { S.flew = true; if (S.view?.kind === 'map' && !query.has('nofly')) flyIn(); }
+        S.shown = true; enterMode();
       },
-      onHide() { S.shown = false; cancelAnimationFrame(raf); raf = 0; S.view?.animateFlood(false); S.view?.stop(); root.classList.remove('flying'); el.caption.hidden = true; },
+      onHide() { S.shown = false; demo.stop(); cancelAnimationFrame(raf); raf = 0; S.view?.animateFlood(false); S.view?.stop(); root.classList.remove('flying'); el.caption.hidden = true; },
       onParams(p) { if (p?.stage != null) setStage(Math.max(0, Math.min(T.MAX_STAGE, +p.stage))); },
     };
   },

@@ -434,8 +434,8 @@ export function create(stage, side, ctx, lab) {
 
     // phase profile, aligned with the elements
     const pitch = (LAMBDA / 2) * sc, bw = Math.max(1, Math.floor(pitch - 1.5)), s0 = 20, s1 = T - 13;
-    lab.label(c, 'Phase each element adds', ox, 8, { color: tok('--text-2') });
-    lab.label(c, wt.on ? m.nVis + ' of ' + m.N + ' elements have a straight line to the focus through the gap' : 'Every element absorbs', ox + fw, 8, { align: 'right', color: tok('--text-3') });
+    lab.label(c, 'Phase each element adds', ox + 12, 8, { color: tok('--text-2') });
+    lab.label(c, wt.on ? m.nVis + ' of ' + m.N + ' elements have a straight line to the focus through the gap' : 'Every element absorbs', ox + fw - 12, 8, { align: 'right', color: tok('--text-3') });
     c.strokeStyle = tok('--line'); c.beginPath(); for (const q of [s0, (s0 + s1) / 2, s1]) { c.moveTo(X(wt.ex[0]) - pitch / 2, Math.round(q) + 0.5); c.lineTo(X(wt.ex[wt.N - 1]) + pitch / 2, Math.round(q) + 0.5); } c.stroke();
     const lx = X(wt.ex[0]) - pitch / 2 - 5;
     if (lx - ox > 26) { lab.label(c, '360°', lx, s0 + 1, { align: 'right', font: NUM(), color: tok('--text-3') }); lab.label(c, '0°', lx, s1, { align: 'right', font: NUM(), color: tok('--text-3') }); }

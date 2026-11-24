@@ -216,7 +216,7 @@ export default {
     stage.append(fPile.el, fPerc.el, fSrch.el);
     fPile.legend([{ label: 'seen by a heat sensor', color: 'accent', kind: 'box' }, { label: 'person, truth (simulated)', color: 'person', kind: 'dot' }, { label: 'where the swarm places them', color: 'accent', kind: 'hollow' }]);
 
-    const P = { n: 12, width: 2.5, comp: 0.45, steer: 0.6, range: 30, seed: 4, rx: 0.4, run: 0 };
+    const P = { n: 12, width: 2.5, comp: 0.2, steer: 0.6, range: 30, seed: 4, rx: 0.4, run: 0 };
     let pile = null, vis = null, G = null, S = null, pileCv = null, tokKey = '', dragging = false, hero = null, pulse = [];
     const ov = L.raster(W, H), trailCv = document.createElement('canvas'); trailCv.width = W * 2; trailCv.height = H * 2; const tg = trailCv.getContext('2d');
     let sweep = [], sweepAt = 0, mc = null, mcJob = null, chartsDirty = true, timer = 0;

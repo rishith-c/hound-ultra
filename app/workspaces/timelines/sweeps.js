@@ -14,7 +14,7 @@ const PARAMS = {
 
 export function mountSweeps(pane, app) {
   const { h, kit } = app, { icon } = kit;
-  let mode = 'decisions', dec = null, decGen = 0, par = { key: 'confirmed', K: 16, data: null, gen: 0, running: false, done: 0, total: 0, patched: null };
+  let mode = 'decisions', dec = null, decGen = 0, par = { key: 'confirmed', K: 8, data: null, gen: 0, running: false, done: 0, total: 0, patched: null };
   const body = h('div.tl-sw-body');
   const modeSeg = h('div.seg', { role: 'group', 'aria-label': 'Kind of sweep' },
     h('button', { type: 'button', 'aria-pressed': 'true', onclick: () => setMode('decisions') }, 'Every decision'),
@@ -108,7 +108,7 @@ export function mountSweeps(pane, app) {
     let s = '<svg class="chart tl-chart" viewBox="0 0 ' + w + ' ' + hgt + '" width="' + w + '" height="' + hgt + '" role="img" aria-label="' + esc(title) + '">';
     const ticks = yMax <= 4 ? Array.from({ length: Math.round(yMax) + 1 }, (_, i) => i) : [0, yMax / 2, yMax];
     for (const v of ticks) s += '<line class="gridline" x1="' + L + '" x2="' + (L + iw) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '"/><text x="' + (L - 6) + '" y="' + (Y(v) + 3.5).toFixed(1) + '" text-anchor="end">' + esc(yFmt ? yFmt(v) : v) + '</text>';
-    xs.forEach((v, i) => { if (n > 6 && i % 2 && i !== n - 1 && v !== mark) return; s += '<text x="' + X(i).toFixed(1) + '" y="' + (hgt - 14) + '" text-anchor="middle">' + esc(fmt(v)) + '</text>'; });
+    xs.forEach((v, i) => { if (n > 6 && v !== mark && ((i % 2 && i !== n - 1) || i === n - 2)) return; s += '<text x="' + X(i).toFixed(1) + '" y="' + (hgt - 14) + '" text-anchor="middle">' + esc(fmt(v)) + '</text>'; });
     s += '<text class="axis-title" x="' + (L + iw / 2) + '" y="' + (hgt - 1) + '" text-anchor="middle">' + esc(xLabel) + '</text>';
     const mi = xs.findIndex((v) => Math.abs(v - mark) < 1e-6);
     if (mi >= 0) s += '<line class="tl-inuse" x1="' + X(mi).toFixed(1) + '" x2="' + X(mi).toFixed(1) + '" y1="' + T + '" y2="' + (T + ih) + '"/><text class="tl-inuse-t" x="' + (X(mi) + 4).toFixed(1) + '" y="' + (T + 8) + '">in use</text>';
@@ -159,10 +159,10 @@ export function mountSweeps(pane, app) {
   }
 
   function paint() { if (pane.hidden) return; if (mode === 'decisions') paintDecisions(); else paintParams(); }
-  app.on('tab', (id) => { if (id === 'sweeps') { paint(); if (!dec && app.trunk.run) runDecisions(); } });
-  app.on('trunk', () => { dec = null; par.data = null; if (!pane.hidden) runDecisions(); });
+  app.on('tab', (id) => { if (id === 'sweeps') paint(); if ((id === 'sweeps' || id === 'regret') && !dec && app.trunk.run) runDecisions(); });
+  app.on('trunk', () => { dec = null; par.data = null; if (!pane.hidden || app.tab === 'regret') runDecisions(); });
   app.on('truth', paint); app.on('scores', paint);
   app.on('cursor', (e) => { if (e && e.changed && !pane.hidden && mode === 'decisions') paint(); });
   // run once in the background so "Regret" has candidates even if this tab is never opened
-  app.on('branches', () => { if (!dec && app.trunk.run && app.trunk.verify === 'ok' && app.cursor.id === 'trunk') runDecisions(); });
+  app.on('branches', () => { if (!dec && app.trunk.run && app.trunk.verify === 'ok' && app.cursor.id === 'trunk' && (!pane.hidden || app.tab === 'regret')) runDecisions(); });
 }

@@ -10,12 +10,13 @@
 import { createViewer } from './viewer.js';
 import { BENCH, CBENCH, DIFFS, pairSetup, nms, tileGrid, iouOf, colourName, eig3 } from './shared.js';
 import { conceptPanel } from './concepts.js';
+import { createHero } from './hero.js';
 
 const MAX_WORK = 1.6e6;          // pixels: larger images are analysed at this size (the detector still sees full resolution)
 const SITE_PPM = 12;
-const RX_DEFAULT = 8, CHG_DEFAULT = 0.6;
+const RX_DEFAULT = 8, CHG_DEFAULT = 0.6, DET_DEFAULT = 0.3, OVERLAP = 0.4;
 const REAL = [
-  { id: 'R-01', name: 'Beach, straight down', src: 'real-jandia-beach.jpg', credit: 'dronepicr, CC BY 2.0, via Wikimedia Commons', page: 'https://commons.wikimedia.org/wiki/File:Aerial_view_of_beach_volleyball_courts_on_Jandia_Beach_on_Fuerteventura,_Canary_Islands.jpg', tile: 512 },
+  { id: 'R-01', name: 'Beach, straight down', src: 'real-jandia-beach.jpg', credit: 'dronepicr, CC BY 2.0, via Wikimedia Commons', page: 'https://commons.wikimedia.org/wiki/File:Aerial_view_of_beach_volleyball_courts_on_Jandia_Beach_on_Fuerteventura,_Canary_Islands.jpg', tile: 448 },
   { id: 'R-02', name: 'Crowded bay', src: 'real-nissi-beach.jpg', credit: 'dronepicr, CC BY 2.0, via Wikimedia Commons', page: 'https://commons.wikimedia.org/wiki/File:Nissi_beach_aerial_Cyprus_(29852122168).jpg', tile: 448 },
 ];
 
@@ -41,7 +42,7 @@ export default {
     // ---------- state ----------
     const st = {
       tool: 'people', frameId: null, reveal: false, sel: null, hover: null, shown: false,
-      det: { status: 'idle', loaded: 0, total: 0, stage: '', minScore: 0.4, show: 'tiled' },
+      det: { status: 'idle', loaded: 0, total: 0, stage: '', minScore: DET_DEFAULT, show: 'tiled' },
       rx: { mode: 'global', thr: RX_DEFAULT, token: 0 },
       chg: { method: 'robust', thr: CHG_DEFAULT, swipe: 0.5, token: 0, current: null },
       run: null, bench: { rx: null, change: null, det: null, rxState: 'idle', detState: 'idle', row: 'rx-local' },
@@ -101,7 +102,8 @@ export default {
     const scorePanel = h('section.aerial-card.aerial-score', { 'aria-label': 'Measured on the synthetic test set' });
     const missionPanel = h('section.aerial-card.aerial-mission', { 'aria-label': 'Link to the mission' });
     const strip = h('div.aerial-strip', null, scorePanel, missionPanel, conceptPanel(kit));
-    root.append(head, h('div.aerial-main', null, film, stage, side), strip);
+    const advanced = h('div.aerial-adv.adv-only', null, head, h('div.aerial-main', null, film, stage, side), strip), demo = h('section.aerial-demo.demo-only', { 'aria-label': 'Drone imagery, the short film' });
+    root.append(advanced, demo);
 
     // ---------- viewer ----------
     const viewer = createViewer(viewHost, { h, reduced: kit.reducedMotion,
@@ -116,6 +118,17 @@ export default {
     const swipeX = () => { const f = cur(), v = viewer.view; return v.x + f.w * st.chg.swipe * v.s; };
     const swipeRange = h('input.aerial-swipe-range.sr-only', { type: 'range', min: 0, max: 100, value: 50, 'aria-label': 'Before and after divider position', oninput: (e) => { st.chg.swipe = e.target.value / 100; viewer.kick(); } });
     viewHost.append(swipeRange);
+
+    // ---------- recorded detector runs ----------
+    // data/aerial/recorded.json holds this same detector's own output on the frames, run once in this page and saved,
+    // so the first view never waits for a download. It is always labelled "Recorded run" and can be run live.
+    let recorded = null;
+    const recReady = (async () => { try { const r = await fetch(new URL('../../../data/aerial/recorded.json', import.meta.url)); if (r.ok) { recorded = await r.json(); const b = recorded.bench; if (b) st.bench.det = { ...b, recorded: recorded.when, perFigure: b.perFigure.map(([frame, id, difficulty, whole, tiled]) => ({ frame, id, difficulty, whole: !!whole, tiled: !!tiled })) }; } } catch { /* no recording: the live detector still works */ } })();
+    function recordedFor(f) {
+      const r = recorded?.frames[f.id]; if (!r || r.w !== f.w || r.h !== f.h) return null;
+      const bx = (a) => a.map((b) => ({ score: b[0], box: b.slice(1) }));
+      return { recorded: recorded.when, whole: { boxes: bx(r.whole), ms: r.wholeMs }, tiled: { boxes: bx(r.boxes), raw: r.raw, ms: r.ms, tile: r.tile, grid: tileGrid(r.w, r.h, r.tile, OVERLAP).map((t, i) => ({ ...t, n: r.n[i] })) }, others: r.others };
+    }
 
     // ---------- frames ----------
     function addFrame(f) { f.status = 'idle'; f.res = { people: null, rx: {}, change: null }; f.el = null; frames.set(f.id, f); order.push(f.id); return f; }
@@ -132,7 +145,7 @@ export default {
       try {
         const resp = await fetch(new URL('../../../data/aerial/frames.json', import.meta.url)); if (!resp.ok) return;
         const list = (await resp.json()).generated || [];
-        list.forEach((g, i) => { const f = addFrame({ id: 'G-0' + (i + 1), group: 'AI-generated scenes', kind: 'gen', name: g.name, asked: g.asked, tile: g.tile || 448, url: new URL('../../../' + g.src, import.meta.url).href, pairUrl: g.before ? new URL('../../../' + g.before, import.meta.url).href : null });
+        list.forEach((g, i) => { const f = addFrame({ id: 'G-0' + (i + 1), group: 'AI-generated scenes', kind: 'gen', name: g.name, asked: g.asked, tile: g.tile || 320, url: new URL('../../../' + g.src, import.meta.url).href, pairUrl: g.before ? new URL('../../../' + g.before, import.meta.url).href : null });
           if (g.before) f.pair = { earlier: 'B', label: ['Before (generated)', 'After (generated)'], gen: true }; });
         buildFilm();
       } catch { /* no generated frames: carry on without them */ }
@@ -160,6 +173,7 @@ export default {
       f.status = 'loading'; paintFilm(f);
       f.loading = (async () => {
         try {
+          await recReady;
           if (f.kind === 'synthetic' || f.kind === 'site') {
             if (!cv) throw new Error('The analysis worker did not start' + (cvErr ? ' (' + cvErr.message + ')' : '') + '.');
             const spec = f.kind === 'site' ? siteSpec() : f.spec; if (f.kind === 'site') f.sig = siteSig();
@@ -177,7 +191,7 @@ export default {
               const r2 = await fetch(f.pairUrl); if (r2.ok) { const b2 = await createImageBitmap(await r2.blob()), c2 = canvasFrom(b2, f.work.w, f.work.h); b2.close?.(); const id2 = c2.getContext('2d').getImageData(0, 0, f.work.w, f.work.h); await cv('put', { key: f.id + '|B', rgba: id2.data.buffer, w: f.work.w, h: f.work.h }, [id2.data.buffer]); } else f.pair = null;
             }
           }
-          f.res = { people: null, rx: {}, change: null }; f.status = 'ready'; f.error = null;
+          f.res = { people: recordedFor(f), rx: {}, change: null }; f.status = 'ready'; f.error = null;
         } catch (e) { f.status = 'error'; f.error = String(e.message || e); }
         paintFilm(f);
         if (st.frameId === f.id) onFrameReady();
@@ -437,7 +451,7 @@ export default {
           const r = await det('load', {}, [], (m) => { if (m.type === 'progress') { st.det.loaded = m.loaded; st.det.total = m.total; } else if (m.type === 'stage') st.det.stage = m.text; renderModelCard(); });
           Object.assign(st.det, { status: 'ready', backend: r.backend, note: r.note, bytes: r.bytes, loadMs: r.loadMs, warmMs: r.warmMs, fromNetwork: r.fromNetwork });
         } catch (e) { st.det.status = 'error'; st.det.error = String(e.message || e); try { worker?.terminate(); } catch { /* gone */ } det = null; }
-        renderSide(); if (st.det.status === 'ready' && st.tool === 'people') runTool({ auto: true });
+        renderSide(); renderScore();
       })();
       return st.det.promise;
     }
@@ -454,16 +468,17 @@ export default {
       const k = Math.min(1, 1280 / Math.max(w, hh));
       onStep?.('whole', 0, 0);
       const whole = await detectOn(canvas, 0, 0, w, hh, Math.round(w * k), Math.round(hh * k));
-      const grid = tileGrid(w, hh, tile, 0.2), all = [], others = { ...whole.others }; let ms = 0;
+      const grid = tileGrid(w, hh, tile, OVERLAP), all = whole.people.slice(), others = { ...whole.others }; let ms = 0, raw = 0;
       for (let i = 0; i < grid.length; i++) {
         if (onStep?.('tiles', i, grid) === false) return null;
         const t = grid[i], r = await detectOn(canvas, t.x, t.y, t.w, t.h);
-        ms += r.ms; t.n = r.people.length; all.push(...r.people); for (const [kk, n] of Object.entries(r.others)) others[kk] = Math.max(others[kk] || 0, n);
+        const full = r.people.filter(({ box: b }) => !((t.x > 0 && b[0] < t.x + 4) || (t.y > 0 && b[1] < t.y + 4) || (t.x + t.w < w && b[2] > t.x + t.w - 4) || (t.y + t.h < hh && b[3] > t.y + t.h - 4)));   // a box cut by an inner tile edge: the overlap shows that person whole in the next tile
+        ms += r.ms; raw += r.people.length; t.n = r.people.length; all.push(...full); for (const [kk, n] of Object.entries(r.others)) others[kk] = Math.max(others[kk] || 0, n);
       }
-      return { whole: { boxes: nms(whole.people), ms: whole.ms }, tiled: { boxes: nms(all), raw: all.length, ms, grid, tile }, others };
+      return { whole: { boxes: nms(whole.people), ms: whole.ms }, tiled: { boxes: nms(all), raw, ms, grid, tile }, others };
     }
     async function runPeople(f, { tile = f.res.people?.tiled.tile || f.tile || 448 } = {}) {
-      if (st.det.status !== 'ready') { loadDetector(); return; }
+      if (st.det.status !== 'ready') { await loadDetector(); if (st.det.status !== 'ready' || cur() !== f) return; }
       cancelRun();
       const run = st.run = { frame: f.id, phase: 'whole', done: 0, grid: null, t0: performance.now() }; viewer.setBusy(true); renderSide();
       try {
@@ -547,7 +562,7 @@ export default {
     function runTool({ auto = false, force = false } = {}) {
       const f = cur(); if (!f || f.status !== 'ready') return;
       if (f.kind === 'site' && !S().map.ready && !S().map.swaths.length) return;
-      if (st.tool === 'people') { if (st.det.status === 'idle') loadDetector(); else if (st.det.status === 'ready' && (!auto || (!f.res.people && !st.run && f.kind !== 'user' ? f.kind === 'real' || f.kind === 'site' || f.kind === 'synthetic' : false))) runPeople(f); }
+      if (st.tool === 'people') { if (auto) return; if (st.det.status === 'idle') loadDetector(); else if (st.det.status === 'ready' && !auto) runPeople(f); }
       else if (st.tool === 'rx') runRx(f, { force });
       else if (st.tool === 'change') runChange(f, { force });
     }
@@ -599,9 +614,10 @@ export default {
       const p = f.res.people, running = st.run?.frame === f.id, d = st.det, tile = p?.tiled.tile || f.tile || 448;
       el.model = h('div.aerial-model'); 
       const tileSeg = h('div.seg', { role: 'group', 'aria-label': 'Tile size' }, ...[640, 448, 320].map((t) => h('button', { 'aria-pressed': String(t === tile), title: 'Each tile is ' + t + ' px square and is enlarged to the network\'s 640 px input.', onclick: () => { f.tile = t; if (f.res.people) f.res.people.tiled.tile = t; runPeople(f, { tile: t }); } }, t + ' px')));
-      const runBtn = h('button.btn.btn-primary', { disabled: d.status !== 'ready' || running, onclick: () => runPeople(f) }, icon('search'), running ? 'Looking…' : p ? 'Run again' : 'Find people in this frame');
+      const runBtn = h('button.btn.btn-primary', { disabled: d.status === 'loading' || running, onclick: () => runPeople(f) }, icon('search'), running ? 'Looking…' : d.status === 'loading' ? 'Loading the detector…' : p?.recorded ? 'Run it live' : p ? 'Run again' : 'Find people in this frame');
       const kids = [h('p.aerial-how', null, 'A pretrained object detector reads the frame and boxes what it thinks is a person. It learned from everyday photographs, so it knows people seen from the side far better than from straight above.'), el.model,
         h('div.aerial-runrow', null, runBtn, h('div.aerial-field', null, h('span.dim', null, 'Tile'), tileSeg))];
+      if (p?.recorded) kids.push(h('p.aerial-rec', null, h('span.tag.tag-sim.plain', null, 'Recorded run'), h('span', null, 'The same network\'s own output on this frame, saved on ' + p.recorded + '. Run it live to replace it.')));
       if (f.res.peopleError && !p) kids.push(h('div.note.danger', null, icon('alert'), h('span', null, 'The run failed: ' + f.res.peopleError)));
       if (p) {
         el.cmp = h('div.aerial-cmp'); el.list = h('div.aerial-list'); el.count = h('span.num');
@@ -614,7 +630,7 @@ export default {
         if (others.length) kids.push(h('p.dim.aerial-small', null, 'Also recognised and ignored, because only the person class is kept: ' + others.map(([k, n]) => k).join(', ') + '.'));
         if (f.truth?.figures?.length) { const found = f.truth.figures.filter((t) => p.tiled.boxes.some((b) => b.score >= d.minScore && iouOf(b.box, t.bbox) > 0.1)).length; kids.push(h('div.note', null, icon('info'), h('span', null, 'This synthetic frame has ' + f.truth.figures.length + ' drawn figures. The detector boxed ' + found + ' of them. Drawn figures seen from above are not the photographs it was trained on; the real photos on the left show what it can do, and the colour test covers this case.'))); }
         kids.push(leadButton(f));
-      } else if (!running && d.status === 'ready') kids.push(h('div.aerial-emptyline', null, 'No run on this frame yet.'));
+      } else if (!running) kids.push(h('div.aerial-emptyline', null, 'No run on this frame yet.'));
       side.replaceChildren(panelHead('Find people', 'live-ai'), h('div.aerial-side-body', null, ...kids));
       renderModelCard(); if (p) refreshPeople();
     }
@@ -625,8 +641,8 @@ export default {
         h('span.aerial-cmp-name', null, h('b', null, title), h('span.dim', null, sub)), h('span.aerial-cmp-bar', null, h('i', { style: { width: (n / mx * 100) + '%' } })), h('b.num', null, String(n)), h('span.num.dim', null, time));
       el.cmp.replaceChildren(
         line('whole', 'Whole frame', '1 pass; a ' + f.w + ' px frame shrunk to 640 px', nW, sec(p.whole.ms / 1000)),
-        line('tiled', 'Tiled', p.tiled.grid.length + ' overlapping ' + p.tiled.tile + ' px tiles, merged', nT, sec(p.tiled.ms / 1000)),
-        h('p.dim.aerial-small', null, nT > nW ? 'Shrinking the whole frame leaves each person only a few pixels wide. Tiles keep the detail, at ' + (p.tiled.ms / Math.max(1, p.whole.ms)).toFixed(0) + ' times the computing time. ' + (p.tiled.raw - p.tiled.boxes.length) + ' duplicate boxes from overlapping tiles were merged (non-max suppression).' : 'On this frame tiling did not find more than one pass did. It costs ' + (p.tiled.ms / Math.max(1, p.whole.ms)).toFixed(0) + ' times the computing time; ' + sec(p.tiled.ms / 1000 / p.tiled.grid.length) + ' per tile.'));
+        line('tiled', 'Plus tiles', p.tiled.grid.length + ' overlapping ' + p.tiled.tile + ' px tiles, merged', nT, sec(p.tiled.ms / 1000)),
+        h('p.dim.aerial-small', null, nT > nW ? 'Shrinking the whole frame leaves each person only a few pixels wide. Tiles keep the detail, at ' + (p.tiled.ms / Math.max(1, p.whole.ms)).toFixed(0) + ' times the computing time. ' + 'Boxes cut by a tile edge are dropped and duplicates from the overlap are merged (non-max suppression): ' + p.tiled.raw + ' raw boxes became ' + p.tiled.boxes.length + '.' : 'On this frame tiling did not find more than one pass did. It costs ' + (p.tiled.ms / Math.max(1, p.whole.ms)).toFixed(0) + ' times the computing time; ' + sec(p.tiled.ms / 1000 / p.tiled.grid.length) + ' per tile.'));
       el.conf.textContent = Math.round(d.minScore * 100) + ' %';
       const list = shownPeople(f).slice().sort((a, b) => b.score - a.score); el.count.textContent = String(list.length);
       el.list.replaceChildren(...(list.length ? list.slice(0, 60).map((b) => row({ kind: 'people', ref: b, bbox: b.box }, st.sel?.ref === b, thumb(f.canvas, b.box, 40, 1.6),
@@ -799,7 +815,7 @@ export default {
         ...(hits ? [...DIFFS.map((d) => cellBar(hits[d.id], total[d.id])), cellBar(DIFFS.reduce((a, d) => a + hits[d.id], 0), all), h('td.num', null, falseC.toFixed(1)), h('td.num', null, time)] : [h('td.dim', { colspan: 7 }, pending)]));
       for (const mode of ['global', 'local']) rows.push(mkRow('rx-' + mode, 'Colour anomaly', mode === 'global' ? 'whole-frame model' : 'local window', rx ? rx.res[mode][ti].hit : null, rx ? rx.res[mode][ti].falseC / rx.frames : 0, rx ? sec(rx.ms[mode] / 1000) : '', b.rxState === 'error' ? 'Could not run: ' + b.rxError : 'Measuring… ' + (b.rxProgress || '')));
       const dt = b.det;
-      const detBtn = h('button.btn.btn-sm', { disabled: st.det.status !== 'ready' || b.detState === 'running', title: st.det.status !== 'ready' ? 'The detector has to be loaded first (open Find people).' : 'Runs the network on all 12 test frames: about a minute and a half.', onclick: runDetBench }, b.detState === 'running' ? 'Scoring ' + (b.detProgress || '') : dt ? 'Score again' : 'Score the detector (about 90 s)');
+      const detBtn = h('button.btn.btn-sm', { disabled: b.detState === 'running', title: 'Runs the network on all 12 test frames: a minute or two.', onclick: runDetBench }, b.detState === 'running' ? 'Scoring ' + (b.detProgress || '') : dt ? 'Score the detector live' : 'Score the detector (a few minutes)');
       for (const which of ['whole', 'tiled']) rows.push(mkRow('det-' + which, 'Neural detector', which === 'whole' ? 'whole frame' : 'tiled, 448 px', dt ? dt[which].hit : null, dt ? dt[which].falseC / dt.frames : 0, dt ? sec(dt[which].ms / dt.frames / 1000) : '', which === 'whole' ? h('span', null, 'Not scored in this session. ', detBtn) : b.detState === 'running' ? 'Running…' : 'Same button.'));
       const head = h('div.aerial-card-head', null, h('h3', null, 'Measured here: ' + all + ' drawn figures in ' + BENCH.seeds.length + ' synthetic frames'), realityTag('live-algo'), h('span.tag.tag-sim', { title: 'The frames are drawn by this page. These are not results on real people or real photographs.' }, 'Synthetic test set'),
         h('div.grow'), dt ? detBtn : null, h('button.btn.btn-sm.btn-ghost', { disabled: b.rxState === 'running', onclick: runBench }, icon('reset'), 'Measure again'));
@@ -827,16 +843,19 @@ export default {
       renderScore();
     }
     async function runDetBench() {
-      const b = st.bench; if (b.detState === 'running' || st.det.status !== 'ready') return;
+      const b = st.bench; if (b.detState === 'running') return;
+      if (st.det.status !== 'ready') { b.detState = 'running'; b.detProgress = 'after loading'; renderScore(); await loadDetector(); if (st.det.status !== 'ready') { b.detState = 'error'; renderScore(); return; } }
+      cancelRun();
       b.detState = 'running'; b.detProgress = ''; renderScore();
-      const minScore = 0.4, mk = () => ({ hit: { bright: 0, shadow: 0, covered: 0, muted: 0 }, falseC: 0, ms: 0 }), out = { whole: mk(), tiled: mk(), perFigure: [], frames: 0, minScore };
+      const minScore = DET_DEFAULT, mk = () => ({ hit: { bright: 0, shadow: 0, covered: 0, muted: 0 }, falseC: 0, ms: 0 }), out = { whole: mk(), tiled: mk(), perFigure: [], frames: 0, minScore };
       try {
         for (let k = 0; k < BENCH.seeds.length; k++) {
           const fr = await benchRpc()('benchFrame', { index: k }), c = canvasFrom(fr.bitmap, fr.w, fr.h); fr.bitmap.close?.();
           const r = await detectFrame(c, fr.w, fr.h, 448, (phase, i, grid) => { b.detProgress = 'frame ' + (k + 1) + ' of ' + BENCH.seeds.length; if (i % 4 === 0) renderScore(); });
+          const per = fr.figures.map((fig) => ({ frame: k, id: fig.id, difficulty: fig.difficulty })); out.perFigure.push(...per);
           for (const which of ['whole', 'tiled']) {
             const boxes = r[which].boxes.filter((x) => x.score >= minScore), used = new Set();
-            fr.figures.forEach((fig, fi) => { const j = boxes.findIndex((x) => iouOf(x.box, fig.bbox) > 0.1); if (j >= 0) { out[which].hit[fig.difficulty]++; used.add(j); } if (which === 'whole') out.perFigure.push({ frame: k, id: fig.id, difficulty: fig.difficulty }); out.perFigure[out.perFigure.length - fr.figures.length + fi + (which === 'whole' ? 0 : 0)][which] = j >= 0; });
+            fr.figures.forEach((fig, fi) => { const j = boxes.findIndex((x) => iouOf(x.box, fig.bbox) > 0.1); if (j >= 0) { out[which].hit[fig.difficulty]++; used.add(j); } per[fi][which] = j >= 0; });
             out[which].falseC += boxes.length - used.size; out[which].ms += r[which].ms;
           }
           out.frames++;
@@ -897,20 +916,76 @@ export default {
     root.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) dropHint.hidden = true; });
     root.addEventListener('drop', (e) => { e.preventDefault(); dragDepth = 0; dropHint.hidden = true; if (e.dataTransfer?.files?.length) addFiles(e.dataTransfer.files); });
 
+    // ---------- Demo mode: the film (hero.js) ----------
+    let hero = null, heroState = 'none', heroCv = null;
+    const ACTS = [
+      { name: 'Find', title: 'Every frame, read twice', line: 'A neural network looks for people. A colour test looks for what does not belong.', tags: () => [realityTag('live-ai'), h('span.tag.tag-sim.plain', { title: 'These frames were made by an image generator for this project. They are not photographs of a real place or event. The boxes and the heat are computed from them by the real methods.' }, 'Illustration frames'), h('span.tag.plain.ah-mode', null, hero?.strip.isLive ? 'Live run' : 'Recorded run')] },
+      { name: 'Place', title: 'A pixel becomes a place', line: 'Every lead gets a position on the plan that the rover can drive to.', tags: () => [realityTag('sim'), realityTag('live-algo')] },
+      { name: 'Compare', title: 'What moved since', line: 'Two flights, lined up and compared. What changed stays lit.', tags: () => [realityTag('live-algo'), h('span.tag.tag-sim.plain', { title: 'Both flights are drawn by this page, so every change is known and the result can be scored.' }, 'Synthetic frames')] },
+    ];
+    const dTags = h('div.ah-tags'), dTitle = h('h1.ah-title'), dLine = h('p.ah-line'), dCap = h('p.ah-cap', { role: 'status' }), dFig = h('div.ah-figs'), dBtn = h('button.btn.btn-primary.ah-btn');
+    const dSteps = ACTS.map((a, i) => h('button.ah-step', { 'aria-pressed': String(i === 0), onclick: () => hero?.go(i) }, h('span', null, a.name), h('i', null, h('b'))));
+    demo.append(h('div.ah-stage'), h('div.ah-scrim', { 'aria-hidden': 'true' }), h('div.ah-copy', null, dTags, dTitle, dLine, h('div.ah-act', null, dBtn, dCap)), h('div.ah-right', null, dFig, h('div.ah-steps', { role: 'group', 'aria-label': 'Part of the film' }, ...dSteps)));
+    function paintAct(i) {
+      const a = ACTS[i]; dTags.replaceChildren(...a.tags()); dTitle.textContent = a.title; dLine.textContent = a.line;
+      dSteps.forEach((b, k) => { b.setAttribute('aria-pressed', String(k === i)); if (k !== i) b.querySelector('b').style.transform = 'scaleX(0)'; });
+      dBtn.hidden = i === 2; dBtn.replaceChildren(...(i === 0 ? [icon('play'), 'Run it live'] : [icon('mission'), 'Send to the mission']));
+      dBtn.disabled = false;
+    }
+    dBtn.addEventListener('click', async () => {
+      if (!hero) return;
+      if (hero.act === 1) { const p = hero.leadPx(); if (!p) { shell.toast('The drone has not flagged anyone yet. Let the mission clock run.', { level: 'info' }); return; } const m = hero.mainLead().match, [x, y] = sitePx(p);
+        if (!ctx.sim.command('aerialLead', { pos: p, px: [Math.round(x), Math.round(y)], frame: 'SITE', method: 'colour', score: m ? +m.peak.toFixed(1) : null, colour: m ? m.name : null })) { shell.toast('That spot is already a lead in the mission.', { level: 'info' }); return; }
+        const lead = S().aerial.leads[S().aerial.leads.length - 1]; bus.emit('aerial:lead', { ...lead }); shell.toast('Sent to the mission log as ' + lead.id + (lead.matches ? '. It agrees with the drone\'s ' + lead.matches + '.' : '.'), { level: 'ok' }); return; }
+      dBtn.disabled = true; dBtn.replaceChildren(h('span.spinner'), 'Running');
+      try {
+        await hero.live(async (src, q) => { const c = await tileCanvas(src); return detectOn(c, q.x - q.k * 1104, q.y, q.w, q.w); }, async (say) => {
+          const tick = setInterval(() => say(st.det.total ? 'Loading the detector: ' + (st.det.loaded / 1e6).toFixed(1) + ' of ' + (st.det.total / 1e6).toFixed(1) + ' MB' : 'Loading the detector…'), 120);
+          try { await loadDetector(); } finally { clearInterval(tick); }
+          if (st.det.status !== 'ready') throw new Error(st.det.error || 'The detector did not load.');
+        });
+      } catch (e) { shell.toast('The live run stopped: ' + (e.message || e) + ' The recorded run is still shown.', { level: 'alert' }); }
+      paintAct(hero.act);
+    });
+    const tileCs = new Map();
+    async function tileCanvas(src) { if (!tileCs.has(src)) tileCs.set(src, canvasFrom(src, src.width, src.height)); return tileCs.get(src); }
+    async function startHero() {
+      if (heroState !== 'none') { hero?.start(); return; }
+      heroState = 'loading'; paintAct(0); dCap.textContent = 'Loading the frames';
+      await Promise.all([recReady, genReady]);
+      try {
+        const onState = (m) => { if (m.kind === 'act') paintAct(m.act); else if (m.kind === 'caption') { if (dCap.textContent !== m.text) { dCap.textContent = m.text; dCap.classList.remove('is-in'); void dCap.offsetWidth; dCap.classList.add('is-in'); } const same = dFig.children.length === m.figures.length; if (same) m.figures.forEach(([v, l], i) => { const b = dFig.children[i]; if (b.firstChild.textContent !== v) b.firstChild.textContent = v; if (b.lastChild.textContent !== l) b.lastChild.textContent = l; }); else dFig.replaceChildren(...m.figures.map(([v, l]) => h('div.ah-fig', null, h('b.num', null, v), h('span', null, l)))); } };
+        onState.progress = (i, k) => { dSteps[i].querySelector('b').style.transform = 'scaleX(' + k.toFixed(3) + ')'; };
+        hero = await createHero(demo.querySelector('.ah-stage'), { h, css, world, reduced: kit.reducedMotion(), recorded, minScore: DET_DEFAULT, rxThr: RX_DEFAULT, chgThr: CHG_DEFAULT, siteSpec, outdoorLeads, onState,
+          missed: { x: 690, y: 655, r: 34 }, warn: (m) => shell.toast(m, { level: 'alert' }),
+          rpc: () => (heroCv ??= rpc(new Worker(new URL('./cv.worker.js', import.meta.url), { type: 'module' }))),
+          loadBitmap: async (id) => { const f = frames.get(id); if (!f) throw new Error('frame ' + id + ' is missing'); const r = await fetch(f.url); if (!r.ok) throw new Error(id + ' could not be fetched (' + r.status + ')'); return createImageBitmap(await r.blob()); } });
+        heroState = 'ready'; if (st.shown && ctx.mode === 'demo') hero.start();
+      } catch (e) { heroState = 'failed'; demo.classList.add('is-failed'); dCap.textContent = 'The film needs WebGL and a network connection (' + (e.message || e) + '). The tools work in Advanced.'; }
+    }
+    let thumbs = false;
+    function applyMode() {
+      if (!st.shown) return;
+      if (ctx.mode === 'demo') { viewer.stop(); cancelRun(); startHero(); return; }
+      hero?.stop(); viewer.start(); onTick(); renderMission(true); renderSide(); renderScore();
+      if (!started) { started = true; setTimeout(runBench, 1200); }
+      if (!thumbs) { thumbs = true; (async () => { await genReady; for (const id of [...order]) { const f = frames.get(id); if (f.status === 'idle') await loadFrame(f); } })(); }   // thumbnails, one at a time
+    }
+    offs.push(bus.on('mode', applyMode), bus.on('prefs', () => hero?.recolour()));
+
     // ---------- start ----------
     buildFilm(); renderScore(); renderMission(true);
     toolSeg.querySelector('#aerial-tab-' + st.tool).setAttribute('aria-selected', 'true');
     const startId = ctx.params?.frame && frames.has(ctx.params.frame) ? ctx.params.frame : 'R-01';
     if (ctx.params?.tool && TOOLS.some((t) => t.id === ctx.params.tool)) { st.tool = ctx.params.tool; toolSeg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', String(b.id === 'aerial-tab-' + st.tool))); }
     selectFrame(startId);
-    (async () => { await genReady; for (const id of [...order]) { const f = frames.get(id); if (f.status === 'idle') await loadFrame(f); } })();   // thumbnails, one at a time
     let started = false;
     const api = {
-      onShow() { st.shown = true; viewer.start(); onTick(); renderMission(true); if (!started) { started = true; loadDetector(); setTimeout(runBench, 1200); } },
-      onHide() { st.shown = false; viewer.stop(); },
+      onShow() { st.shown = true; applyMode(); },
+      onHide() { st.shown = false; viewer.stop(); hero?.stop(); cancelRun(); },
       onParams(p) { if (p?.tool && TOOLS.some((t) => t.id === p.tool)) setTool(p.tool); if (p?.frame && frames.has(p.frame)) selectFrame(p.frame); if (p?.detection) { const d = S().detections.find((x) => x.id === p.detection); if (d?.pos) showLead(d); } },
       // for the automated checks
-      debug: { st, frames, runBench, runDetBench, viewer, detectFrame, selectFrame, setTool, runTool, select, get cur() { return cur(); } },
+      debug: { st, frames, loadFrame, loadDetector, runBench, runDetBench, viewer, detectFrame, selectFrame, setTool, runTool, select, get cur() { return cur(); }, get hero() { return hero; } },
     };
     window.HOUND_AERIAL = api.debug;
     return api;

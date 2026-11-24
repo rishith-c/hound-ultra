@@ -3,19 +3,19 @@
 import * as lab from './lab.js';
 
 const EXHIBITS = [
-  { id: 'twin', file: './twin.js', short: 'Radio digital twin' },
-  { id: 'person', file: './person.js', short: 'A person in the channel' },
-  { id: 'fresnel', file: './fresnel.js', short: 'Fresnel dither' },
-  { id: 'sar', file: './sar.js', short: 'Synthetic aperture' },
-  { id: 'sparse', file: './sparse.js', short: 'Too few measurements' },
-  { id: 'ris', file: './ris.js', short: 'Steering through gaps' },
-  { id: 'bf', file: './bf.js', short: 'Every router is a sensor' },
+  { id: 'twin', file: './twin.js', short: 'Radio digital twin', line: ['Radio digital twin',''] },
+  { id: 'person', file: './person.js', short: 'A person in the channel', line: ['A breath moves the wave by millimetres','HOUND hears through the partition; its trained network reads ten seconds of 51 subcarriers.'] },
+  { id: 'fresnel', file: './fresnel.js', short: 'Fresnel dither', line: ['Three centimetres decide everything','Breathing shows in the bright bands and vanishes in the dark ones, so the rover nudges and listens again.'] },
+  { id: 'sar', file: './sar.js', short: 'Synthetic aperture', line: ['A driving rover is one long antenna','Every position adds another ring of possibility. Where the rings agree, something is there.'] },
+  { id: 'sparse', file: './sparse.js', short: 'Too few measurements', line: ['Keep one sample in five','The same 256 samples, twice: smeared back on the left, solved for the emptiest room on the right.'] },
+  { id: 'ris', file: './ris.js', short: 'Steering through gaps', line: ['Bend the signal through the gap','A panel dropped by the drone delays each reflection until they meet at the rover.'] },
+  { id: 'bf', file: './bf.js', short: 'Every router is a sensor', line: ['Every router is already a radar','IEEE 802.11bf lets Wi-Fi devices ask each other to measure the room.'] },
 ];
 
 export default {
   async mount(root, ctx) {
     const { h, icon, realityTag } = ctx.kit;
-    for (const f of ['./style.css', './mine.css']) {
+    for (const f of ['./style.css', './mine.css', './demo.css']) {
       const href = new URL(f, import.meta.url).href;
       if (document.querySelector('link[href="' + href + '"]')) continue;
       await new Promise((res) => { const l = h('link', { rel: 'stylesheet', href }); l.onload = l.onerror = res; document.head.append(l); setTimeout(res, 1500); });
@@ -24,7 +24,7 @@ export default {
     const recs = new Map();
     let current = null, visible = false;
 
-    const strip = h('div.radio-strip', { role: 'tablist', 'aria-label': 'Exhibits' }, EXHIBITS.map((e, i) =>
+    const strip = h('div.radio-strip.adv-only', { role: 'tablist', 'aria-label': 'Exhibits' }, EXHIBITS.map((e, i) =>
       h('button.radio-tab', { type: 'button', role: 'tab', id: 'radio-tab-' + e.id, 'aria-selected': 'false', tabindex: '-1', 'data-id': e.id, onclick: () => show(e.id) },
         h('span.radio-tab-n', null, String(i + 1).padStart(2, '0')), h('span.radio-tab-t', null, e.short))));
     strip.addEventListener('keydown', (ev) => {
@@ -35,7 +35,7 @@ export default {
     });
     const body = h('div.radio-body');
     root.append(
-      h('header.ws-head.radio-head', null,
+      h('header.ws-head.radio-head.adv-only', null,
         h('div', null, h('h1', null, 'Radio twin'),
           h('p', null, 'Seven working exhibits on what radio can see inside a building. Each one runs its real maths in this page, on simulated measurements, and shows its error against the simulated truth.')),
         h('div.radio-head-tags', null, realityTag('live-algo'), h('span.tag.tag-sim', { title: 'HOUND has two ESP32 radios and three small radars. Ray-traced planning, imaging radar on a track, reflecting surfaces and 802.11bf are not built.' }, 'Hardware: concept unless stated'))),
@@ -58,18 +58,18 @@ export default {
     async function show(id, params) {
       const i = Math.max(0, EXHIBITS.findIndex((e) => e.id === id)), e = EXHIBITS[i];
       if (current && current !== e.id) { const prev = recs.get(current); if (prev) { prev.el.hidden = true; try { prev.api?.onHide?.(); } catch (err) { console.error(err); } } }
-      current = e.id;
+      current = e.id; if (e.id === 'twin' && demo()) { ensureHero(); const r0 = recs.get('twin'); if (r0) { r0.el.hidden = true; r0.api?.onHide?.(); } sync(); return; } sync();
       strip.querySelectorAll('.radio-tab').forEach((b) => { const on = b.dataset.id === e.id; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; });
       let rec = recs.get(e.id);
       if (!rec) {
-        const stage = h('div.radio-stage'), side = h('div.radio-side-controls'), aside = h('aside.radio-side', { 'aria-label': 'About this exhibit' });
-        const el = h('div.radio-exhibit', { role: 'tabpanel', 'aria-labelledby': 'radio-tab-' + e.id, 'data-exhibit': e.id }, stage, aside);
+        const stage = h('div.radio-stage'), side = h('div.radio-side-controls'), aside = h('aside.radio-side.adv-only', { 'aria-label': 'About this exhibit' });
+        const tagRow = h('div.radio-hero-tags'), el = h('div.radio-exhibit', { role: 'tabpanel', 'aria-labelledby': 'radio-tab-' + e.id, 'data-exhibit': e.id }, stage, aside, h('div.radio-demo-text.demo-only', null, h('h2', null, e.line[0]), h('p', null, e.line[1]), tagRow));
         stage.append(h('div.empty', null, h('div.spinner'), h('p', null, 'Setting up ' + e.short.toLowerCase() + '…')));
         body.append(el); rec = { el, api: null }; recs.set(e.id, rec);
         try {
           const mod = await import(e.file);
           stage.replaceChildren();
-          aside.append(placard(e, i, mod.meta), side);
+          aside.append(placard(e, i, mod.meta), side); tagRow.append(...(mod.meta.labels || []).map((l) => (typeof l === 'string' ? realityTag(l) : h('span.tag.' + (l.cls || 'tag-sim'), { title: l.title }, l.text))));
           rec.api = (await mod.create(stage, side, ctx, lab, { open: show, params: params || {} })) || {};
         } catch (err) {
           console.error('[radio] exhibit "' + e.id + '" failed', err);
@@ -81,11 +81,31 @@ export default {
       } else { rec.el.hidden = false; if (params) rec.api?.onParams?.(params); }
       if (current === e.id) { if (visible) { try { rec.api?.onShow?.(); } catch (err) { console.error(err); } } } else rec.el.hidden = true;
     }
+    // ---- Demo: the hero is exhibit 01, the others go full-bleed behind one line ----
+    const demo = () => ctx.mode === 'demo';
+    let hero = null, heroEl = null;
+    const steps = h('nav.radio-steps.demo-only', { 'aria-label': 'Exhibits' }, EXHIBITS.map((e, i) => h('button', { type: 'button', 'data-id': e.id, 'aria-label': 'Exhibit ' + (i + 1) + ', ' + e.short, title: e.short, onclick: () => show(e.id) }, String(i + 1).padStart(2, '0'))), h('span.radio-steps-name', { 'aria-live': 'polite' }));
+    root.append(steps);
+    async function ensureHero() {
+      if (hero || heroEl) return;
+      heroEl = h('div.radio-hero'); body.append(heroEl);
+      try { hero = await (await import('./hero.js')).createHero(heroEl, ctx, lab); root.__hero = hero; sync(); }
+      catch (err) { console.error('[radio] hero failed', err); heroEl.replaceChildren(h('div.empty', null, icon('alert', 28), h('h3', null, 'This view needs WebGL 2'), h('p.muted', null, String(err.message || err)))); }
+    }
+    function sync() {
+      const heroOn = demo() && current === 'twin';
+      if (heroEl) heroEl.hidden = !heroOn;
+      try { heroOn && visible ? hero?.onShow() : hero?.onHide(); } catch (err) { console.error(err); }
+      steps.lastChild.textContent = EXHIBITS.find((e) => e.id === current)?.short || '';
+      steps.querySelectorAll('button').forEach((b) => b.setAttribute('aria-current', String(b.dataset.id === current)));
+    }
+    setInterval(() => { if (!visible || !demo() || ctx.kit.reducedMotion()) return; const el = recs.get(current)?.el; const b = current === 'sar' ? el?.querySelector('.radio-sar-bar .btn-primary') : current === 'sparse' ? el?.querySelector('.radio-sparse-head .btn') : null; if (b && !/Pause|Stop/.test(b.textContent)) b.click(); }, 9000);     // in Demo the exhibits replay themselves
+    ctx.bus.on('mode', () => { show(current); });
     ctx.bus.on('prefs', () => { lab.clearTokens(); try { recs.get(current)?.api?.onShow?.(); } catch (err) { console.error(err); } });
     await show(ctx.params?.exhibit || 'twin', ctx.params);
     return {
-      onShow() { visible = true; try { recs.get(current)?.api?.onShow?.(); } catch (err) { console.error(err); } },
-      onHide() { visible = false; try { recs.get(current)?.api?.onHide?.(); } catch (err) { console.error(err); } },
+      onShow() { visible = true; sync(); if (demo() && current === 'twin') return; try { recs.get(current)?.api?.onShow?.(); } catch (err) { console.error(err); } },
+      onHide() { visible = false; sync(); try { recs.get(current)?.api?.onHide?.(); } catch (err) { console.error(err); } },
       onParams(p) { if (p?.exhibit) show(p.exhibit, p); },
     };
   },

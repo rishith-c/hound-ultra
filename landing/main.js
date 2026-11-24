@@ -1,6 +1,7 @@
 // HOUND landing page: scroll scenes, reveals, counters, and lazy loading of the heavy parts.
 import { reduced, clamp, easeOut, el, getNN } from './shared.js';
 
+window.__landing = { getNN };
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
@@ -9,8 +10,9 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 // p is u clamped to 0..1 and is also set on the element as --p for CSS.
 const scenes = $$('[data-scene]').map((node) => ({ node, name: node.dataset.scene, top: 0, h: 1, p: -1, u: -9 }));
 const handlers = {};
-export const onScene = (name, fn) => { (handlers[name] ||= []).push(fn); const s = scenes.find((x) => x.name === name); if (s && s.u > -9) fn(s.p, s.u); };
-let vh = innerHeight, ticking = false;
+let vh = innerHeight;
+export const onScene = (name, fn) => { (handlers[name] ||= []).push(fn); const s = scenes.find((x) => x.name === name); if (s && s.u > -9) fn(s.p, s.u, Math.max(1, s.h - vh) / vh); };
+let ticking = false;
 function measure() {
   vh = innerHeight;
   for (const s of scenes) { const r = s.node.getBoundingClientRect(); s.top = r.top + scrollY; s.h = r.height; }
@@ -41,27 +43,32 @@ const spy = new IntersectionObserver((entries) => {
 }, { rootMargin: '-45% 0px -50% 0px' });
 $$('main > section[id]').forEach((s) => spy.observe(s));
 
-// ---------- the moment: words light as you scroll ----------
-const paras = $$('[data-words]').map((p) => {
-  const words = p.textContent.trim().split(/\s+/);
-  p.setAttribute('aria-label', p.textContent.trim());
-  p.replaceChildren(...words.flatMap((w, i) => (i < words.length - 1 ? [el('span.w', { 'aria-hidden': 'true' }, w), ' '] : [el('span.w', { 'aria-hidden': 'true' }, w)])));
-  return { p, spans: $$('.w', p) };
-});
-const plate = $('#moment-plate'), plates = $$('img', plate);
-if (!reduced) onScene('moment', (p, u, spanVh) => {
-  const n = paras.length, lead = 0.6 / spanVh;          // the first paragraph starts lighting while the scene scrolls in
-  const at = Math.min(n - 1, Math.max(0, Math.floor(u * n)));
-  plates.forEach((im, i) => im.classList.toggle('is-on', i + 1 === at)); plate.classList.toggle('has-img', at >= 1);   // the first paragraph stands alone
-  paras.forEach(({ p: node, spans }, i) => {
-    const a = i / n, b = (i + 1) / n;
-    const on = (i === 0 ? true : u >= a) && (i === n - 1 ? true : u < b);
-    node.classList.toggle('is-on', on); node.classList.toggle('is-past', i < n - 1 && u >= b);
-    const f = clamp((u - a + (i === 0 ? lead : 0)) / ((b - a) * 0.66 + (i === 0 ? lead : 0)));
-    const lit = Math.round(f * spans.length);
-    for (let k = 0; k < spans.length; k++) spans[k].classList.toggle('lit', k < lit);
-  });
-});
+// ---------- the film: which beat is on, its caption and the progress marks ----------
+const CAPTIONS = [
+  $('#film-caption').textContent,
+  'Illustration. Not a photograph of a real building.',
+  'Illustration. Not a photograph of a real building.',
+  'Illustration. The wave is drawn to show the idea: Wi-Fi cannot be seen. The real rover, as built, is next.',
+];
+const beats = $$('.beat'), marks = $$('#film-marks i'), filmEl = $('#top'), caption = $('#film-caption');
+const BEAT_IN = [-9, 0.98, 2.2, 3.34], BEAT_OUT = [0.42, 1.74, 2.9, 99], MARK = [0, 0.74, 2.0, 3.14, 4.1];
+const showStills = () => beats.forEach((b) => { if (b.dataset.img) b.style.backgroundImage = `url(${b.dataset.img})`; b.style.backgroundSize = 'cover'; });
+let filmAt = -1;
+const filmStep = (x) => {
+  beats.forEach((b, i) => b.classList.toggle('is-on', x >= BEAT_IN[i] && x < BEAT_OUT[i]));
+  filmEl.classList.toggle('quiet', !beats.some((b) => b.classList.contains('is-on')));
+  marks.forEach((m, i) => m.style.setProperty('--f', clamp((x - MARK[i]) / (MARK[i + 1] - MARK[i])).toFixed(3)));
+  let at = 0; while (at < 3 && x >= MARK[at + 1]) at++;
+  if (at !== filmAt) { filmAt = at; caption.textContent = CAPTIONS[at]; for (let i = 0; i < 4; i++) filmEl.classList.toggle('at-' + i, i === at); }
+};
+if (reduced) showStills();
+else {
+  onScene('film', (p, u, spanVh) => filmStep(Math.max(0, u * spanVh)));
+  const canvas = $('#film-gl');
+  import('./film.js').then(({ startFilm }) => startFilm(canvas, 'assets/img/landing/'))
+    .then((film) => { canvas.classList.add('on'); onScene('film', (p, u, spanVh) => film.set(Math.max(0, u * spanVh))); window.__landing.film = film; })
+    .catch((e) => { console.warn('[landing] the film is off, showing the stills:', e.message); canvas.remove(); showStills(); });
+}
 
 // ---------- reveals and counters ----------
 const revealSets = ['.sec-head > *', '.truth-head > *', '.answer-head > *', '.big-num', '.why-col', '.answer-steps li', '.ledger-row', '.built-col li', '.built-col h3', '.open-links > div', '.real-coda', '.proof', '.ladder', '.cmd', '.tour-group', '.open h2', '.open-cta'];
@@ -99,14 +106,6 @@ bars.append(...RESULTS.map((r, i) => el('div.tb-row' + (r.weak ? '.weak' : ''), 
   el('div.tb-axis', null, el('span'), el('div', null, el('span', null, '0'), el('span', null, '50'), el('span', null, '100 % of test windows')), el('span')));
 new IntersectionObserver((es, io) => { if (es[0].isIntersecting) { bars.classList.add('in'); io.disconnect(); } }, { threshold: 0.3 }).observe(bars);
 
-// ---------- the hero: atmosphere ----------
-if (!reduced) {
-  const canvas = $('#hero-gl');
-  import('./atmosphere.js').then(({ startAtmosphere }) => startAtmosphere(canvas, { image: 'assets/img/landing/hero.webp', depth: 'assets/img/landing/hero-depth.png' }))
-    .then((atmo) => { canvas.classList.add('on'); onScene('hero', (p) => atmo.setScroll(p)); })
-    .catch((e) => { console.warn('[landing] hero atmosphere is off:', e.message); canvas.remove(); });
-}
-
 // ---------- heavy parts, loaded when they are needed ----------
 const near = (sel, margin, load) => {
   const node = $(sel); if (!node) return;
@@ -115,8 +114,7 @@ const near = (sel, margin, load) => {
 const idle = (fn) => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 1200 }) : setTimeout(fn, 400));
 idle(() => { import('./proof.js').then((m) => m.startProof({ onScene })).catch((e) => console.error('[landing] proof', e)); });
 near('#rover', '120% 0px', () => import('./rover.js').then((m) => m.startRover({ onScene })));
-near('#command', '90% 0px', () => import('./command.js').then((m) => m.startCommand()));
+near('#command', '120% 0px', () => import('./command.js').then((m) => m.startCommand()));
 near('#tour', '100% 0px', () => import('./tour.js').then((m) => m.startTour({ assignReveals })));
 
 measure();
-window.__landing = { scenes, getNN };

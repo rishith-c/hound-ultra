@@ -32,6 +32,7 @@
 <script type="module">
 // Test page for the 3-D twin (twin-core and twin-actors both use it). Not part of the product.
 //   ?t=300  seek to 5:00     ?speed=8   ?paused      ?cam=orbit|top|follow|fpv|cinematic
+//   ?mode=demo|advanced   ?light=dawn|day|night   ?safe=left,top,right,bottom
 //   ?quality=low   ?bare (no debug bar)   ?static (hero mode: not interactive)   ?reduced
 //   ?on=walls-xray,grid   ?off=labels,scan      ?sel=room:103     ?pose=x,y,yawDeg,pitchDeg,dist   (orbit camera pose, site metres)
 import { createBus } from '../core/bus.js';
@@ -45,7 +46,7 @@ const Q = new URLSearchParams(location.search), h = kit.h;
 if (Q.has('bare')) document.body.classList.add('bare');
 if (Q.has('reduced')) document.documentElement.dataset.motion = 'reduce';
 const bus = createBus(), nn = await loadNN(), sim = createSim({ bus, nn });
-const ctx = { sim, bus, world, nn, kit, PHASE_INFO, FAULTS, COMMANDS, prefs: { contrast: 'normal', palette: 'default', motion: Q.has('reduced') ? 'reduce' : 'auto' }, selection: null,
+const ctx = { sim, bus, world, nn, kit, PHASE_INFO, FAULTS, COMMANDS, mode: Q.get('mode') || 'advanced', prefs: { contrast: 'normal', palette: 'default', motion: Q.has('reduced') ? 'reduce' : 'auto' }, selection: null,
   select(sel) { ctx.selection = sel; bus.emit('select', sel); },
   setPref(k, v) { ctx.prefs[k] = v; bus.emit('prefs', ctx.prefs); },
   shell: { toast: (s) => console.log('[toast]', s), confirm: async () => true, open() {}, current: () => 'twin-test' } };
@@ -57,6 +58,8 @@ const twin = await createTwin(document.getElementById('view'), ctx, { interactiv
 window.TWIN = twin;
 for (const id of (Q.get('on') || '').split(',').filter(Boolean)) twin.setLayer(id, true);
 for (const id of (Q.get('off') || '').split(',').filter(Boolean)) twin.setLayer(id, false);
+if (Q.get('light')) twin.setLight(Q.get('light'), { instant: true });
+if (Q.get('safe')) { const [left, top, right, bottom] = Q.get('safe').split(',').map(Number); twin.setSafeArea({ left, top, right, bottom }); }
 if (Q.get('speed')) sim.setSpeed(+Q.get('speed'));
 if (Q.get('t')) sim.seek(+Q.get('t'));
 if (Q.get('pose') && twin.ok) { const [x, y, yaw, pitch, dist] = Q.get('pose').split(',').map(Number); const T3 = twin.three.camera.position.constructor; twin.engine.cams.setPose({ target: new T3(x, 0, -y), yaw: yaw * Math.PI / 180, pitch: pitch * Math.PI / 180, dist }); }
@@ -73,9 +76,10 @@ const seek = h('input', { type: 'range', min: 0, max: 720, step: 1, value: 0, 'a
 const clock = h('span.num', null, '00:00');
 const layerBox = h('div.row', { style: { gap: '10px', flexWrap: 'wrap' } });
 function buildLayers() { layerBox.replaceChildren(...twin.layers().map((l) => h('label', null, h('input', { type: 'checkbox', checked: l.on, onchange: (e) => twin.setLayer(l.id, e.target.checked) }), l.label))); }
-bar.append(h('span.dim', null, 'Camera'), camSeg, h('span.sep'), play, h('button.btn.btn-sm', { onclick: () => sim.reset() }, 'Restart'), speed, seek, clock, h('span.sep'), layerBox);
+const lightSeg = seg(['dawn', 'day', 'night'], () => twin.light, (m) => twin.setLight(m), 'Light');
+bar.append(h('span.dim', null, 'Camera'), camSeg, lightSeg, h('span.sep'), play, h('button.btn.btn-sm', { onclick: () => sim.reset() }, 'Restart'), speed, seek, clock, h('span.sep'), layerBox);
 buildLayers();
-bus.on('twin:layer', buildLayers); bus.on('twin:camera', () => camSeg.sync());
+bus.on('twin:layers', buildLayers); bus.on('twin:camera:changed', () => camSeg.sync());
 function refresh() { camSeg.sync(); }
 let lastSel = '';
 bus.on('select', (s) => { lastSel = s ? s.type + ' ' + s.id : ''; });

@@ -77,6 +77,7 @@ export function lut(kind) {
 }
 // Paint a grid (row 0 at the bottom unless flip is false) into an offscreen canvas, one pixel per cell.
 export function gridImage(cv, data, nx, nz, kind, lo, hi, { flip = true, alpha = 1, mask = null } = {}) {
+  if (typeof document === 'undefined') return null; // solving in the worker: there is nothing to paint
   if (!cv) cv = document.createElement('canvas');
   if (cv.width !== nx || cv.height !== nz) { cv.width = nx; cv.height = nz; }
   const c = cv.getContext('2d'), img = c.createImageData(nx, nz), L = lut(kind), px = img.data, k = 255 / (hi - lo || 1);

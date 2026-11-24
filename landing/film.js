@@ -38,7 +38,6 @@ float dust(vec2 uv, float n, float sp){
   float r = length(f - q * 0.7);
   return smoothstep(0.07, 0.0, r) * step(0.72, hash(i + 4.7)) * (0.4 + 0.6 * sin(uTime * 0.9 + hash(i) * 40.0));
 }
-vec3 place(vec2 q, float d){ float z = 1.0 / (0.07 + d); return vec3((q - 0.5) * vec2(ASP, 1.0) * z, z); }
 
 vec3 shot(sampler2D tI, sampler2D tD, vec4 org, vec4 k, float push, float pulse){
   vec2 uv = (v - org.xy) / k.x + org.xy;
@@ -50,7 +49,7 @@ vec3 shot(sampler2D tI, sampler2D tD, vec4 org, vec4 k, float push, float pulse)
   d = texture(tD, q).r;
   vec3 c = texture(tI, q).rgb;
   float l = dot(c, vec3(0.299, 0.587, 0.114));
-  c = mix(vec3(l), c, 0.82); c = pow(c, vec3(1.1)) * 0.9; c *= vec3(0.97, 1.0, 1.03);
+  c = mix(vec3(l), c, 0.82); c = pow(c, vec3(1.06)) * 1.0; c *= vec3(0.975, 1.0, 1.025);
 
   // fog sits between the planes: thick far away, thin wisps crossing in front
   float t = uTime, far = fbm(vec2(q.x * 2.6 - t * 0.012, q.y * 4.2 + t * 0.004));
@@ -69,18 +68,21 @@ vec3 shot(sampler2D tI, sampler2D tD, vec4 org, vec4 k, float push, float pulse)
 
   // the pulse: wavefronts that leave the antenna and travel over the shape of the scene, tracing what they touch
   if (pulse > 0.001){
-    vec2 src = vec2(0.387, 0.32); vec3 S = place(src, 0.34), P = place(q, d);
-    float D = length(P - S), w = 0.0;
-    float ed = clamp(length(vec2(dFdx(d), dFdy(d))) * 26.0, 0.0, 1.0);
-    for (int i = 0; i < 3; i++){
-      float T = fract(uTime / 5.4 + float(i) / 3.0), r = 0.02 + 10.0 * pow(T, 1.55), fade = smoothstep(0.0, 0.05, T) * smoothstep(1.0, 0.55, T);
-      float back = r - D, wd = 0.012 + r * 0.02;
-      float front = exp(-back * back / (wd * wd));
-      float trail = step(0.0, back) * exp(-back / (0.12 + r * 0.22));
-      float lines = smoothstep(0.80, 1.0, abs(fract(D * (10.0 / (0.5 + 0.5 * D))) * 2.0 - 1.0));
-      w += fade * (front * 1.0 + trail * (lines * 0.22 + ed * 1.1 + 0.05));
+    vec2 px = vec2(1.6 / 384.0, 1.6 / 216.0);
+    float ds = (d * 2.0 + texture(tD, q + vec2(px.x, 0.0)).r + texture(tD, q - vec2(px.x, 0.0)).r + texture(tD, q + vec2(0.0, px.y)).r + texture(tD, q - vec2(0.0, px.y)).r) / 6.0;
+    vec2 f2 = (q - vec2(0.387, 0.235)) * vec2(ASP, 1.0);
+    float D = sqrt(dot(f2, f2) + pow((ds - 0.36) * 1.15, 2.0)), w = 0.0, e2 = 0.0;
+    float gx = texture(tD, q + vec2(px.x, 0.0)).r - texture(tD, q - vec2(px.x, 0.0)).r, gy = texture(tD, q + vec2(0.0, px.y)).r - texture(tD, q - vec2(0.0, px.y)).r;
+    float ed = smoothstep(0.05, 0.28, length(vec2(gx, gy)));
+    for (int i = 0; i < 2; i++){
+      float T = fract(uTime / 5.6 + float(i) * 0.5), r = 1.45 * T, fade = smoothstep(0.0, 0.06, T) * smoothstep(1.0, 0.6, T), back = r - D;
+      float env = step(0.0, back) * exp(-back * 5.0) * smoothstep(0.0, 0.012, back);      // the wave train: crests behind the front
+      float crest = pow(0.5 + 0.5 * cos(back * 105.0), 4.0);
+      w += fade * (env * (crest * 0.85 + 0.10) + exp(-pow(back / 0.006, 2.0)) * 0.9);
+      e2 += fade * step(0.0, back) * exp(-back * 3.2) * ed;
     }
-    c = c * (1.0 - 0.30 * pulse) + w * pulse * vec3(0.50, 0.74, 1.0) * (0.32 + 0.8 * l + 0.25 * ed);
+    c *= 1.0 - 0.18 * pulse;
+    c += pulse * vec3(0.46, 0.72, 1.0) * (w * (0.34 + 1.1 * l) + e2 * 0.75);
   }
   return c;
 }
@@ -95,7 +97,7 @@ void main(){
     float bank = 4.0 * m * (1.0 - m);
     c = mix(c, MIST * (0.42 + 0.5 * n), bank * 0.55 * smoothstep(0.0, 0.2, uMix) * smoothstep(1.0, 0.8, uMix));
   }
-  vec2 e = v - 0.5; c *= 1.0 - dot(e, e) * 0.66;
+  vec2 e = v - 0.5; c *= 1.0 - dot(e, e) * 0.5;
   c += (hash(v * uRes + fract(uTime) * 91.0) - 0.5) * 0.026;
   o = vec4(c, 1.0);
 }`;

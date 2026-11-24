@@ -143,8 +143,8 @@
 :root[data-mode="demo"] #tb-stop:hover { background: var(--danger); color: #fff; }
 :root[data-mode="demo"][data-hold="true"] #tb-stop { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
 :root[data-mode="demo"] #dock { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 18px; padding: 0 14px 0 16px; background: var(--bg-0); min-width: 0; }
-.dock-note { display: flex; gap: 10px; align-items: baseline; font-size: var(--fs-11); color: var(--text-3); min-width: 0; line-height: 1.35; }
-.dock-note span { max-width: 190px; }
+.dock-note { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; justify-content: center; font-size: var(--fs-11); color: var(--text-3); min-width: 0; line-height: 1.35; }
+.dock-note span { white-space: nowrap; }
 .dock-note a { color: var(--text-2); white-space: nowrap; text-underline-offset: 3px; }
 .dock-chapters { display: flex; gap: 0; }
 .dock-item { position: relative; display: flex; flex-direction: column; justify-content: center; gap: 4px; height: 60px; padding: 0 15px; color: var(--text-3); text-decoration: none; white-space: nowrap; transition: color var(--t-fast) var(--ease); }
@@ -156,7 +156,7 @@
 .dock-item[aria-current="page"] b { font-weight: 600; }
 .dock-item:focus-visible { outline-offset: -4px; }
 .dock-step { display: flex; gap: 6px; justify-content: flex-end; }
-@media (max-width: 1500px) { .dock-item { padding: 0 11px; } .dock-item::before { left: 11px; right: 11px; } .dock-item b { font-size: var(--fs-12); } .dock-note span { display: none; } }
+@media (max-width: 1500px) { .dock-item { padding: 0 11px; } .dock-item::before { left: 11px; right: 11px; } .dock-item b { font-size: var(--fs-12); } .dock-item.first:not(:first-child) { margin-left: 12px; } }
 
 /* ---------- boot and hand-over ---------- */
 #boot { z-index: 6; transition: opacity 480ms var(--ease-in-out); }
@@ -174,3 +174,12 @@
 #veil.on { opacity: 1; transition-duration: 150ms; }
 #veil span { font: italic 400 28px/1 var(--font-display); color: var(--text-3); }
 @media (prefers-reduced-motion: reduce) { .boot-mark i, .boot-mark b { animation: none; } }
+
+/* ---------- Demo flow: one story, and only the controls the current chapter needs ---------- */
+.tb-promise { order: 2; flex: 1; min-width: 0; margin: 0; padding-left: 14px; border-left: 1px solid var(--line-2); font-size: var(--fs-14); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:root[data-mode="demo"]:not([data-ws="mission"]) #topbar > .tb-group, :root[data-mode="demo"]:not([data-ws="mission"]) .tb-mission, :root[data-mode="demo"]:not([data-ws="mission"]) #tb-stop { display: none; }
+:root[data-mode="demo"][data-ws="mission"] .tb-promise { display: none; }
+.dock-item { justify-content: flex-start; padding-top: 12px; gap: 6px; }
+.dock-item .dock-part { height: 11px; font: 400 11px/1 var(--font); color: var(--text-3); overflow: visible; }
+.dock-item.first:not(:first-child) { margin-left: 26px; }
+#dock-next { min-width: 148px; justify-content: space-between; }

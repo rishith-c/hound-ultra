@@ -42,9 +42,9 @@ export async function create(stage, side, ctx, lab) {
   const hudClock = h('div.radio-twin-clock.glass', null, h('span', null, 'Wavefront'), h('b.num', null, '0.0 ns'), h('i.num', null, '0.00 m from the transmitter'));
   const probe = h('div.radio-twin-probe.glass', { hidden: true });
   const camSeg = lab.seg([['orbit', 'Orbit'], ['top', 'Plan'], ['low', 'Inside']], 'orbit', (v) => setCamera(v), { label: 'Camera' });
-  const legend = h('div.radio-twin-legend.glass', null, h('span', null, 'Path gain on the floor'), h('div.radio-twin-ramp'), h('div.radio-twin-ramp-ticks.num', null, ...[-100, -80, -60, -40].map((v) => h('i', { style: { left: ((v - DB_LO) / (DB_HI - DB_LO)) * 100 + '%' } }, v))), h('span.dim', null, 'dB, sum of path powers, contours every 10 dB'));
+  const legend = h('div.radio-twin-legend.glass', null, h('span', null, 'Path gain on the floor'), h('div.radio-twin-ramp'), h('div.radio-twin-ramp-ticks.num', null, ...[-100, -80, -60, -40].map((v) => h('i', { style: { left: ((v - DB_LO) / (DB_HI - DB_LO)) * 100 + '%' } }, v))), h('span.dim', null, 'dB. Contours every 10 dB'));
   view.append(labels, hudClock, h('div.radio-twin-cam.glass', null, camSeg), legend, probe,
-    h('div.radio-twin-hint', null, 'Drag the transmitter or the receiver. Drag elsewhere to orbit, scroll to zoom.'));
+    h('div.radio-twin-hint', null, 'Drag a radio, or drag to orbit'));
   const figH = lab.figure('Multipath carves the channel differently on every subcarrier', { caption: 'Channel 6, 2437 MHz. The 51 subcarriers HOUND records, 312.5 kHz apart.' });
   const figP = lab.figure('Each path arrives at its own nanosecond', { caption: 'Impulse response from the traced paths. It fills in as the wavefront above arrives.' });
   const figF = lab.figure('Standing waves at the receiver');
@@ -117,7 +117,7 @@ export async function create(stage, side, ctx, lab) {
     mesh.position.set((w.a[0] + w.b[0]) / 2, hgt / 2, -(w.a[1] + w.b[1]) / 2); mesh.rotation.y = Math.atan2(dy, dx); mesh.renderOrder = 2;
     const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), collapsed ? edgeDim : edgeMat); mesh.add(edges); wallGroup.add(mesh);
   }
-  const rubMat = new THREE.MeshStandardMaterial({ color: col('--text-3'), roughness: 1, flatShading: true });
+  const rubMat = new THREE.MeshStandardMaterial({ color: 0x2c2a27, roughness: 1, flatShading: true });
   const inPoly = (p, poly) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) if ((poly[i][1] > p[1]) !== (poly[j][1] > p[1]) && p[0] < ((poly[j][0] - poly[i][0]) * (p[1] - poly[i][1])) / (poly[j][1] - poly[i][1]) + poly[i][0]) c = !c; return c; };
   for (const o of world.OBSTACLES) {
     if (o.kind === 'building') continue;
@@ -150,7 +150,8 @@ export async function create(stage, side, ctx, lab) {
       'uniform float uFront; uniform float uSteady; uniform float uLo; uniform float uHi; uniform vec3 uCol; uniform vec3 uHot; varying float vDist; varying float vPow;',
       'void main(){ float p = clamp((vPow - uLo) / (uHi - uLo), 0.0, 1.0); float p2 = p * p;',
       '  float ahead = vDist - uFront; float pulse = exp(-ahead * ahead / 0.28); float wake = ahead < 0.0 ? exp(ahead / 9.0) : 0.0;',
-      '  float a = p2 * (uSteady + 0.2 * wake) + pulse * (0.05 + 0.42 * p);',
+      '  float far = smoothstep(0.2, 7.0, vDist); far = 0.06 + 0.94 * far * far;                       // every ray starts at the transmitter: thin them where they pile up
+  float a = (p2 * (uSteady + 0.2 * wake) + pulse * (0.05 + 0.42 * p)) * far;',
       '  vec3 c = mix(uCol, uHot, clamp(pulse * 0.85 + p2 * 0.25, 0.0, 1.0));',
       '  gl_FragColor = vec4(c * a, 1.0); }'].join('\n'),
   });
@@ -346,7 +347,7 @@ export async function create(stage, side, ctx, lab) {
     const pad = Math.max(1.5, (hi - lo) * 0.2); lo = Math.floor((lo - pad) / 2) * 2; hi = Math.ceil((hi + pad) / 2) * 2; const stepY = hi - lo > 24 ? 10 : hi - lo > 10 ? 5 : 2;
     const yt = []; for (let v = Math.ceil(lo / stepY) * stepY; v <= hi; v += stepY) yt.push(v);
     const S = lab.plot(c, { x: 40, y: 20, w: w - 52, h: hh - 56, xd: [-27, 27], yd: [lo, hi], xt: [-26, -13, 0, 13, 26], yt, xl: 'subcarrier (−26 is ' + ((F0 - 26 * DF) / 1e6).toFixed(1) + ' MHz, +26 is ' + ((F0 + 26 * DF) / 1e6).toFixed(1) + ' MHz)', yl: '|H|, dB', ylx: 34 });
-    const direct = paths.find((p) => p.kind === 'direct'); if (direct) { const y = S.Y(direct.gainDb); if (y > 20 && y < hh - 36) { lab.line(c, [[40, y], [w - 12, y]], lab.tok('--text-3'), 1, [3, 3]); lab.label(c, 'straight path alone', w - 16, y - 7, { align: 'right', color: lab.tok('--text-3') }); } }
+    const direct = paths.find((p) => p.kind === 'direct'); if (direct) { const y = S.Y(direct.gainDb); if (y > 20 && y < hh - 36) { lab.line(c, [[40, y], [w - 12, y]], lab.tok('--text-3'), 1, [3, 3]); lab.label(c, 'straight path alone', 46, y + 9, { color: lab.tok('--text-3'), bg: true }); } }
     const neg = amp.filter(([s]) => s < 0).map(([s, v]) => [S.X(s), S.Y(v)]), pos = amp.filter(([s]) => s > 0).map(([s, v]) => [S.X(s), S.Y(v)]);
     for (const seg of [neg, pos]) { c.save(); c.beginPath(); c.moveTo(seg[0][0], hh - 36); for (const p of seg) c.lineTo(p[0], p[1]); c.lineTo(seg[seg.length - 1][0], hh - 36); const g = c.createLinearGradient(0, 20, 0, hh - 36); g.addColorStop(0, lab.rgba('--accent', 0.28)); g.addColorStop(1, lab.rgba('--accent', 0)); c.fillStyle = g; c.fill(); c.restore(); lab.line(c, seg, lab.tok('--accent'), 1.6); }
     c.fillStyle = lab.tok('--text'); for (const p of [...neg, ...pos]) c.fillRect(p[0] - 1, p[1] - 1, 2, 2);
@@ -366,7 +367,7 @@ export async function create(stage, side, ctx, lab) {
     }
     c.globalAlpha = 1;
     if (!still && tNow < tmax) lab.line(c, [[S.X(tNow), 20], [S.X(tNow), hh - 36]], lab.rgba('--text', 0.55), 1);
-    let lx = 46; for (const [t, colr, dash] of [['straight', '--text'], ['bounced', '--accent'], ['bent at a door frame', '--accent-2', true]]) { c.strokeStyle = lab.tok(colr); c.lineWidth = 2; if (dash) c.setLineDash([3, 2]); c.beginPath(); c.moveTo(lx, 29); c.lineTo(lx + 12, 29); c.stroke(); c.setLineDash([]); lab.label(c, t, lx + 16, 29); lx += 22 + c.measureText(t).width + 12; }
+    let lx = Math.max(46, w - 262); for (const [t, colr, dash] of [['straight', '--text'], ['bounced', '--accent'], ['bent at a door frame', '--accent-2', true]]) { c.strokeStyle = lab.tok(colr); c.lineWidth = 2; if (dash) c.setLineDash([3, 2]); c.beginPath(); c.moveTo(lx, 29); c.lineTo(lx + 12, 29); c.stroke(); c.setLineDash([]); lab.label(c, t, lx + 16, 29); lx += 22 + c.measureText(t).width + 12; }
   }, { label: 'Power delay profile of the traced paths' });
   figF.cv = lab.canvas(figF.body, (c, w, hh) => {
     if (!fringeImg) { lab.label(c, 'Tracing…', w / 2, hh / 2, { align: 'center' }); return; }

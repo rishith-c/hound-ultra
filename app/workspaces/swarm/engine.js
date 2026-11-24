@@ -517,6 +517,16 @@ export function createSwarm(world, { n = 6, strategy = 'hungarian', startCharge 
     r.path = homeDist[k] < INF ? tracePath(homePrev, k) : null; r.pi = 0; r.goal = { x: bx, y: by, cell: world.baseCell, home: true };
     if (!r.path) { dijkstra(known, world.baseCell, homeDist, homePrev); r.path = homeDist[k] < INF ? tracePath(homePrev, k) : [k]; }
   }
+  // drive straight to the furthest point of the path that is in the clear, instead of tracing grid steps
+  function pull(r) {
+    const last = r.path.length - 1;
+    for (let q = Math.min(last, r.pi + 26); q > r.pi; q -= q - r.pi > 8 ? 4 : 1) {
+      const k = r.path[q], dx = cx(k % W) - r.x, dy = cx((k / W) | 0) - r.y, d = Math.hypot(dx, dy), m = Math.ceil(d / 0.25), nx = (-dy / (d || 1)) * 0.32, ny = (dx / (d || 1)) * 0.32; let ok = true;
+      for (let w = 1; w <= m && ok; w++) { const x = r.x + (dx * w) / m, y = r.y + (dy * w) / m; ok = known[cellOf(x, y)] === K.FREE && known[cellOf(x + nx, y + ny)] === K.FREE && known[cellOf(x - nx, y - ny)] === K.FREE; }
+      if (ok) return q;
+    }
+    return r.pi;
+  }
   function move(r, dt) {
     const spec = P[r.kind]; let left = spec.speed * dt, moved = 0, arrived = false;
     if (r.kind === 'drone') {
@@ -526,6 +536,7 @@ export function createSwarm(world, { n = 6, strategy = 'hungarian', startCharge 
     } else {
       if (!r.path || r.pi >= r.path.length) return true;
       while (left > 1e-6 && r.pi < r.path.length) {
+        if (r.pulledPath !== r.path || r.pulled < r.pi) { r.pulledPath = r.path; r.pulled = pull(r); r.pi = r.pulled; }
         const k = r.path[r.pi], tx = cx(k % W), ty = cx((k / W) | 0), dx = tx - r.x, dy = ty - r.y, d = Math.hypot(dx, dy);
         if (d <= left) { r.x = tx; r.y = ty; left -= d; moved += d; r.pi++; } else { r.x += (dx / d) * left; r.y += (dy / d) * left; moved += left; left = 0; r.heading = Math.atan2(dy, dx); }
       }

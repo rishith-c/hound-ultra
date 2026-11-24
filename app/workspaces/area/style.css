@@ -78,13 +78,13 @@
 .area-key { display: flex; align-items: center; gap: 6px; margin-left: auto; color: var(--text-2); font-size: var(--fs-11); }
 .area-key i { width: 14px; height: 3px; border-radius: 2px; margin-left: 8px; } .area-key .k-steep { background: var(--warn); } .area-key .k-water { background: var(--accent); height: 8px; opacity: 0.6; }
 
-.area-caption { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); padding: 10px 18px 9px; text-align: center; font: 500 var(--fs-14)/1.3 var(--font); color: var(--text); background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); border: 1px solid var(--glass-line); border-radius: var(--r-3); box-shadow: var(--shadow-1); white-space: pre; pointer-events: none; z-index: 4; font-variant-numeric: tabular-nums; }
-.area-caption::after { content: "Click the map to take control"; display: block; margin-top: 5px; font: 400 var(--fs-12)/1.2 var(--font); color: var(--text-3); }
+.area-caption { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); padding: 7px 14px; text-align: center; font: 500 var(--fs-13)/1.3 var(--font); color: var(--text); background: var(--glass); border: 1px solid var(--glass-line); border-radius: var(--r-2); white-space: pre; pointer-events: none; z-index: 4; font-variant-numeric: tabular-nums; }
+.area-caption::after { content: "  ·  click to take control"; color: var(--text-3); font-weight: 400; }
 
 /* markers */
 .area-mk { width: 26px; height: 26px; padding: 0; border: 0; background: none; color: var(--text); cursor: pointer; }
 .area-mk i { position: absolute; inset: 0; display: grid; place-items: center; border-radius: 50%; background: var(--bg-1); border: 1.5px solid var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.6); }
-.area-mk span { position: absolute; left: 32px; top: 50%; transform: translateY(-50%); display: flex; align-items: baseline; gap: 6px; padding: 2px 7px; border-radius: var(--r-1); background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); border: 1px solid rgba(255,255,255,0.08); white-space: nowrap; font-size: var(--fs-12); line-height: 1.5; }
+.area-mk span { position: absolute; left: 32px; top: 50%; transform: translateY(-50%); display: flex; align-items: baseline; gap: 6px; padding: 2px 7px; border-radius: var(--r-1); background: var(--glass); border: 1px solid rgba(255,255,255,0.08); white-space: nowrap; font-size: var(--fs-12); line-height: 1.5; }
 .area-mk b { font-weight: 600; } .area-mk em { font-style: normal; color: var(--text-2); font-size: var(--fs-11); }
 .area-mk:focus-visible { outline: none; } .area-mk:focus-visible i, .area-mk.sel i { box-shadow: 0 0 0 3px var(--accent); }
 .area-mk-unit::before { content: ""; position: absolute; left: 50%; top: 50%; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 8px solid var(--text); transform: translate(-50%, -50%) rotate(var(--rot, 0deg)) translateY(-19px); }
@@ -105,9 +105,30 @@
 /* MapLibre's own controls, restyled to the console */
 .area .maplibregl-ctrl-bottom-right { right: calc(var(--area-r) + 24px); bottom: var(--area-pad-bottom); display: flex; flex-direction: column; align-items: flex-end; z-index: 2; transition: opacity 420ms var(--ease); }
 .area.flying .maplibregl-ctrl-bottom-right { opacity: 0; }
-.area .maplibregl-ctrl-group { background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--r-2); box-shadow: var(--shadow-1); overflow: hidden; }
+.area .maplibregl-ctrl-group { background: var(--glass); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--r-2); box-shadow: var(--shadow-1); overflow: hidden; }
 .area .maplibregl-ctrl-group button { width: 30px; height: 30px; background: transparent; } .area .maplibregl-ctrl-group button + button { border-top: 1px solid var(--line); }
 .area .maplibregl-ctrl-group button:hover { background: var(--bg-4); }
 .area .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(1) brightness(1.6); }
 .area .maplibregl-ctrl-scale { background: transparent; border-color: var(--text); color: var(--text); font: 500 11px var(--mono); text-shadow: 0 1px 2px rgba(0,0,0,0.9); margin: 0 0 8px; }
 .area .maplibregl-canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* Demo: the film */
+.area-demo { position: absolute; inset: 0; overflow: hidden; background: #05070a; z-index: 4; }
+.area-film, .area-film-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.area-film-canvas { cursor: grab; touch-action: none; outline: none; } .area-film-canvas:active { cursor: grabbing; }
+.area-film-canvas:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+.area-demo-shade { position: absolute; inset: auto 0 0 0; height: 46%; pointer-events: none; background: linear-gradient(0deg, rgba(4,6,9,0.82), rgba(4,6,9,0.34) 48%, rgba(4,6,9,0)); }
+.area-demo-title { position: absolute; left: 40px; bottom: 40px; width: 520px; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.area-demo-title button { pointer-events: auto; }
+.area-demo-title h1 { font: 400 40px/1.04 var(--font-display); letter-spacing: -0.01em; margin: 2px 0 0; color: #f4f6f8; }
+.area-demo-title p { font-size: var(--fs-14, 14px); line-height: 1.45; color: rgba(226,232,238,0.82); max-width: 468px; margin: 0 0 6px; }
+.area-demo-now { font: 500 12px/1 var(--mono); color: rgba(226,232,238,0.78); white-space: pre; margin-left: 6px; }
+.area-demo-figs { position: absolute; right: 40px; bottom: 58px; display: flex; gap: 34px; pointer-events: none; }
+.area-fig { display: flex; flex-direction: column; gap: 5px; min-width: 104px; }
+.area-fig b { font: 400 30px/1 var(--font-display); color: #f4f6f8; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.area-fig span { font-size: var(--fs-12); color: rgba(226,232,238,0.66); white-space: nowrap; }
+.area-demo-credit { position: absolute; right: 40px; bottom: 16px; margin: 0; font-size: var(--fs-11); color: rgba(226,232,238,0.5); pointer-events: none; }
+.area-demo-mark { position: absolute; left: 0; top: 0; opacity: 0; pointer-events: none; will-change: transform; }
+.area-demo-mark i { position: absolute; left: 0; bottom: 0; width: 1px; height: 64px; background: linear-gradient(0deg, rgba(255,255,255,0), rgba(255,255,255,0.8)); }
+.area-demo-mark span { position: absolute; left: 0; bottom: 64px; display: flex; gap: 7px; align-items: baseline; white-space: nowrap; padding: 0 0 5px 0; border-bottom: 1px solid rgba(255,255,255,0.75); font-size: var(--fs-12); text-shadow: 0 1px 6px rgba(0,0,0,0.7); }
+.area-demo-mark b { font-weight: 600; color: #fff; } .area-demo-mark em { font-style: normal; color: rgba(255,255,255,0.72); }

@@ -2,18 +2,18 @@
 import { agreement, whereOf } from './inspector.js';
 import { createMap } from './map2d.js';
 import { planPath } from '../../core/planner.js';
-import { pathLength, pointAlong } from '../../core/geometry.js';
+import { pathLength, pointAlong, pointInPoly } from '../../core/geometry.js';
 
 export function createAlerts(app) {
   const { ctx } = app, { kit, sim } = ctx, { h, icon } = kit;
   const el = h('div.mission-alerts', { role: 'region', 'aria-label': 'Mission alerts', 'aria-live': 'assertive' });
   const cards = new Set();
   function add(card, ms) {
-    // the person card stays on top; at most two smaller cards sit under it
+    // the person card stays on top; at most one smaller card sits under it
     const firstSmall = [...el.children].find((c) => !c.classList.contains('person'));
     if (card.classList.contains('person')) el.prepend(card); else el.insertBefore(card, firstSmall || null);
     cards.add(card);
-    const smalls = [...cards].filter((c) => !c.classList.contains('person')); smalls.slice(0, Math.max(0, smalls.length - 2)).forEach(close);
+    const smalls = [...cards].filter((c) => !c.classList.contains('person')); smalls.slice(0, Math.max(0, smalls.length - 1)).forEach(close);
     const people = [...cards].filter((c) => c.classList.contains('person')); people.slice(0, Math.max(0, people.length - 1)).forEach(close);
     let left = ms, last = performance.now(), paused = false;
     const life = card.querySelector('.mission-card-life i');
@@ -91,6 +91,14 @@ export function runDrill(app, where) {
   return true;
 }
 
+// Hazard areas the planned path really enters. Some kinds cost the planner extra but do not block it, so the
+// approval dialog has to say when a route goes through one.
+export function crossed(r, S, world) {
+  const names = new Set();
+  for (const l of r.legs) if (l.ok) { const len = pathLength(l.path); for (let s = 0; s <= len; s += 0.5) { const p = pointAlong(l.path, s).pos; for (const hz of [...world.HAZARDS, ...S.hazards]) if (pointInPoly(p, hz.poly)) names.add(hz.name); } }
+  return [...names];
+}
+
 // ---------- route approval ----------
 const AVOID = [['slope', 'Unstable slope'], ['mud', 'Deep mud and debris'], ['gas', 'Possible gas (concept sensor)'], ['collapse', 'Collapse-risk areas']];
 export function createRouteDialog(app) {
@@ -120,6 +128,7 @@ export function createRouteDialog(app) {
       h('p.mission-sub', null, 'Suggested order: still people first, then moving people, then unconfirmed leads. It is a planning aid, not a medical assessment. Change it if you know better.'),
       h('h4', null, 'What the route goes around'),
       r.avoided.length ? h('ul.mission-route-avoid', null, ...r.avoided.map((a) => h('li', null, h('i'), a))) : h('p.mission-sub', null, 'Nothing lies between the team and the stops on this plan.'),
+      crossed(r, S, world).length ? h('p.note.warn', null, 'The route still passes through: ' + crossed(r, S, world).join('; ') + '. The planner counts that ground as slower and riskier, but does not block it.') : null,
       h('h4', null, 'Keep clear of'),
       h('div.mission-route-opts', null, ...AVOID.map(([k, label]) => h('label.check', null, h('input', { type: 'checkbox', checked: r.avoid[k] !== false, onchange: (e) => replan({ avoid: { [k]: e.target.checked } }) }), label))),
       r.avoid.collapse === false ? h('p.note.danger', null, 'Collapse-risk areas are no longer blocked. The route may pass under the undercut wall. Not recommended.') : null,

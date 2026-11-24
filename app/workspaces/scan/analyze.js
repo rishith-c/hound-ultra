@@ -294,6 +294,10 @@ export function findVoids(pos, n, cls, hag, g, B, { minH = 0.5, minL = 1.2, whol
         for (let t = V * 1.2; t < L; t += V * 0.7) { const a = ((x + dx * t - wx0) * inv) | 0, b = ((y + dy * t - wy0) * inv) | 0, c = ((z + dz * t - wz0) * inv) | 0; if (a < 0 || b < 0 || c < 0 || a >= nx || b >= ny || c >= nz) break; seen[c * sxy + b * nx + a] = 1; }
       }
     }
+    if (seen) { // claim nothing more than 0.6 m beyond where a beam actually passed: past that, 'empty' is only a guess
+      let near = seen; for (let round = 0; round < 3; round++) { const o = new Uint8Array(near); for (let k = 0; k < N; k++) { if (!near[k]) continue; const z = (k / sxy) | 0, r = k - z * sxy, y = (r / nx) | 0, x = r - y * nx; if (x > 0) o[k - 1] = 1; if (x < nx - 1) o[k + 1] = 1; if (y > 0) o[k - nx] = 1; if (y < ny - 1) o[k + nx] = 1; if (z > 0) o[k - sxy] = 1; if (z < nz - 1) o[k + sxy] = 1; } near = o; }
+      for (let k = 0; k < N; k++) if (vol[k] && !near[k]) { vol[k] = 0; core[k] = 0; }
+    }
     // pockets: connected pieces of 'vol'
     const cid = new Int32Array(N).fill(-1), stack = [];
     for (let s = 0; s < N; s++) {
@@ -329,7 +333,9 @@ export function findVoids(pos, n, cls, hag, g, B, { minH = 0.5, minL = 1.2, whol
         len = (a1 - a0 + 1) * V; wid = (b1 - b0 + 1) * V;
       }
       const area = (fp.length / 2) * V * V;
-      if (clear < minH - 1e-6 || len < minL - 1e-6 || wid < 0.5 || area < 0.8) { rejected++; continue; }
+      if (clear < minH - 1e-6 || len < minL - 1e-6 || wid < 0.5 || area < 0.8 || wallF < openF) { rejected++; continue; } // the last one: a canopy open on most sides is not a shelter
+      // how many people could lie here: 2.0 x 0.6 m places packed onto the floor that has the headroom
+      let places = 0; { const key = new Set(); for (let q = 0; q < fp.length; q += 2) key.add(fp[q + 1] * nx + fp[q]); const put = (a, b, la, lb) => { for (let j = 0; j < lb; j++) for (let i = 0; i < la; i++) if (!key.has((b + j) * nx + a + i)) return false; for (let j = 0; j < lb; j++) for (let i = 0; i < la; i++) key.delete((b + j) * nx + a + i); return true; }; for (let q = 0; q < fp.length; q += 2) if (put(fp[q], fp[q + 1], 10, 3) || put(fp[q], fp[q + 1], 3, 10)) places++; }
       // the probe position nearest the middle of the pocket: the flood fill knows the way from there to open air
       let best = -1, bestD = 0; { let bd = Infinity; const mx = sx / nC, my = sy / nC, mz = sz / nC; for (const k of cells) { if (!core[k]) continue; const z = (k / sxy) | 0, r = k - z * sxy, d = (r % nx - mx) ** 2 + (((r / nx) | 0) - my) ** 2 + (z - mz) ** 2; if (d < bd) { bd = d; best = k; } } if (best >= 0) bestD = dist[best]; }
       // the way in: follow the flood fill back from the pocket's most reachable voxel to open air
@@ -352,11 +358,14 @@ export function findVoids(pos, n, cls, hag, g, B, { minH = 0.5, minL = 1.2, whol
       const bw = x1 - x0 + 1, bh = y1 - y0 + 1, bd = zt - zb + 1, mask = new Uint8Array(bw * bh * bd);
       for (const k of cells) { const z = (k / sxy) | 0, r = k - z * sxy, y = (r / nx) | 0, x = r - y * nx; mask[((z - zb) * bh + (y - y0)) * bw + (x - x0)] = 1; }
       const mesh = skin(mask, bw, bh, bd, wx0 + x0 * V, wy0 + y0 * V, wz0 + zb * V, V);
-      voids.push({ volume: nC * V * V * V, clear, length: len, width: wid, area, angle: ang, centre: [cx, cy, cz], floorZ: wz0 + zb * V, topZ: wz0 + (zt + 1) * V,
+      const samp = [], step = Math.max(1, Math.floor(nC / 500)); for (let q = 0; q < nC; q += step) { const k = cells[q], z = (k / sxy) | 0, r = k - z * sxy; samp.push(wx0 + ((r % nx) + 0.5) * V, wy0 + (((r / nx) | 0) + 0.5) * V, wz0 + (z + 0.5) * V); }
+      voids.push({ samp, places, volume: nC * V * V * V, clear, length: len, width: wid, area, angle: ang, centre: [cx, cy, cz], floorZ: wz0 + zb * V, topZ: wz0 + (zt + 1) * V,
         box: [wx0 + x0 * V, wy0 + y0 * V, wx0 + (x1 + 1) * V, wy0 + (y1 + 1) * V], enclosure: wallF / Math.max(1, wallF + openF), seen: seen ? nSeen / nC : null, access, slope, kind: kindOf, mesh });
     }
   }
   voids.sort((a, b) => b.volume - a.volume);
+  // search blocks overlap, so one pocket can turn up twice: keep the first
+  for (let i = voids.length - 1; i > 0; i--) for (let j = 0; j < i; j++) if (Math.hypot(voids[i].centre[0] - voids[j].centre[0], voids[i].centre[1] - voids[j].centre[1], voids[i].centre[2] - voids[j].centre[2]) < 0.5 && voids[i].volume > 0.8 * voids[j].volume) { voids.splice(i, 1); break; }
   voids.forEach((v, i) => { v.id = 'Void ' + String.fromCharCode(65 + (i % 26)) + (i >= 26 ? Math.floor(i / 26) : ''); });
   return { list: voids, rejected, zones, zoneArea, voxel: V, probe: PROBE, voxels, params: { minH, minL, whole } };
 }

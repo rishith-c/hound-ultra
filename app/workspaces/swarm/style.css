@@ -7,7 +7,7 @@
 .swarm-bar { display: flex; align-items: flex-end; gap: var(--s-3); padding: 0 20px 10px; background: var(--bg-1); flex: none; flex-wrap: wrap; row-gap: 6px; border-bottom: 1px solid var(--line); }
 .swarm-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .swarm-field > span { font-size: var(--fs-11); color: var(--text-3); line-height: 1.2; white-space: nowrap; }
-.swarm-field .select { width: auto; min-height: 30px; padding-right: 6px; }
+.swarm-field .select { width: auto; min-height: 30px; }
 .swarm-field .seg button { min-height: 24px; }
 .swarm-seed { display: flex; gap: 4px; }
 .swarm-seed .input { width: 64px; min-height: 30px; font-family: var(--mono); }
@@ -43,7 +43,8 @@
 .swarm-badge .bar { margin-top: 4px; height: 4px; }
 .swarm-badge.lead .swarm-win { color: var(--ok); }
 .swarm-tools { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-.swarm-tools .seg { background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+.swarm-toolrow { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.swarm-tools .seg { background: var(--glass); }
 .swarm-layers { padding: 6px 10px; display: flex; flex-direction: column; }
 .swarm-layers .check { min-height: 24px; font-size: var(--fs-12); color: var(--text-2); }
 .swarm-legend { position: absolute; left: 10px; bottom: 10px; padding: 6px 10px; font-size: var(--fs-11); pointer-events: none; max-width: calc(100% - 20px); }
@@ -53,7 +54,7 @@
 .swarm-caption.alert { border-color: var(--person-line); } .swarm-caption.alert .num { color: var(--person); }
 .swarm-caption.ok .num { color: var(--ok); }
 @keyframes swarm-cap { from { opacity: 0; transform: translate(-50%, 6px); } }
-.swarm-tools .btn { background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+.swarm-tools .btn { background: var(--glass); }
 .swarm-link { border: 0; background: none; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; text-decoration-color: var(--accent-line); text-underline-offset: 3px; font: inherit; }
 .swarm-link:hover { color: var(--accent-2); }
 .swarm-meshbox { padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
@@ -72,8 +73,8 @@
 .swarm-chart { position: relative; flex: 1; min-height: 0; }
 .swarm-chart canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .swarm-kpi { width: 100%; border-collapse: collapse; font-size: var(--fs-12); table-layout: fixed; }
-.swarm-kpi th:first-child { width: 43%; overflow: hidden; text-overflow: ellipsis; }
-.swarm-kpi th { font-weight: 500; color: var(--text-3); text-align: right; padding: 2px 0 5px 8px; white-space: nowrap; }
+.swarm-kpi th:first-child { width: 38%; overflow: hidden; text-overflow: ellipsis; }
+.swarm-kpi th { font-weight: 500; color: var(--text-3); text-align: right; padding: 2px 0 5px 6px; white-space: nowrap; }
 .swarm-kpi th:first-child, .swarm-kpi td:first-child { text-align: left; padding-left: 0; color: var(--text-2); }
 .swarm-kpi td { text-align: right; padding: 4px 0 4px 8px; font-size: 11.5px; font-family: var(--mono); font-variant-numeric: tabular-nums; border-top: 1px solid var(--line); white-space: nowrap; }
 .swarm-kpi td:first-child { font-family: var(--font); font-size: var(--fs-12); }
@@ -128,3 +129,28 @@
 .swarm-dialog .table td:last-child { color: var(--text-2); }
 .swarm-dialog p { color: var(--text-2); line-height: 1.5; }
 @media (max-width: 1500px) { .swarm-main { grid-template-columns: minmax(0, 1fr) 352px; } .swarm-fleet .table th:nth-child(n+5), .swarm-fleet .table td:nth-child(n+5) { display: none; } .swarm-left { grid-template-rows: minmax(0, 1fr) 216px; } .swarm-legend { gap: 9px; } }
+
+/* Demo: the scene is the page. One title block, one caption, three figures. */
+.swarm-demo { position: absolute; inset: 0; pointer-events: none; }
+:root[data-mode="demo"] .swarm { position: absolute; inset: 0; }
+:root[data-mode="demo"] .swarm-main { display: block; padding: 0; position: absolute; inset: 0; }
+:root[data-mode="demo"] .swarm-left { display: block; position: absolute; inset: 0; }
+:root[data-mode="demo"] .swarm-stage { position: absolute; inset: 0; border: 0; border-radius: 0; }
+:root[data-mode="demo"] .swarm-stage.crop::before, :root[data-mode="demo"] .swarm-stage.crop::after { display: none; }
+.swarm-demo::before { content: ""; position: absolute; left: 0; bottom: 0; width: 62%; height: 46%; background: radial-gradient(120% 120% at 0% 100%, rgba(4, 6, 9, 0.82) 0%, rgba(4, 6, 9, 0.5) 38%, transparent 70%); }
+.swarm-dtitle { position: absolute; left: 40px; bottom: 34px; display: flex; flex-direction: column; gap: 12px; width: min(560px, 46%); }
+.swarm-dtitle > * { pointer-events: auto; }
+.swarm-dtags { display: flex; gap: 8px; }
+.swarm-dtitle h1 { font: var(--type-display); letter-spacing: -0.012em; text-wrap: balance; }
+.swarm-dcap { font-size: var(--fs-16); line-height: 1.45; color: var(--text); min-height: 2.9em; transition: opacity 240ms var(--ease), transform 240ms var(--ease); text-wrap: pretty; }
+.swarm-dcap.out { opacity: 0; transform: translateY(4px); }
+.swarm-dtitle .row { display: flex; gap: 8px; }
+.swarm-dfig { position: absolute; right: 40px; bottom: 34px; display: flex; gap: 36px; text-shadow: 0 1px 14px rgba(4, 6, 9, 0.9); }
+.swarm-dfig div { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; min-width: 84px; }
+.swarm-dfig b { font: 500 var(--fs-28)/1 var(--mono); letter-spacing: -0.03em; color: var(--text); }
+.swarm-dfig span { font-size: var(--fs-12); color: var(--text-2); }
+:root[data-mode="demo"] .swarm-label { background: transparent; border-color: transparent; text-shadow: 0 1px 8px rgba(4, 6, 9, 1); font-size: var(--fs-12); }
+:root[data-mode="demo"] .swarm-l-lead.person { font-size: var(--fs-14); }
+@media (prefers-reduced-motion: reduce) { .swarm-dcap { transition: none; } }
+.swarm-demo::after { content: ""; position: absolute; right: 0; bottom: 0; width: 38%; height: 26%; background: radial-gradient(110% 130% at 100% 100%, rgba(4, 6, 9, 0.85) 0%, rgba(4, 6, 9, 0.5) 45%, transparent 72%); }
+.swarm-dfig, .swarm-dtitle { z-index: 1; }

@@ -30,7 +30,7 @@ export default {
   labels: ['concept', 'live-algo'],
   labelNote: 'Both spectra come from textbook formulas with simulated noise. The fields are fitted back from the noisy curves in this page. Line widths, noise, the dipole size and the heart field are assumed.',
   sentences: [
-    'Excite an atom until its outer electron orbits thousands of times farther out than normal, and a radio wave visibly splits its spectral line; cool-running diamond defects do the same for magnetic fields.',
+    'Excite an atom until its outer electron orbits thousands of times farther out than normal, and a radio wave visibly splits its spectral line; defects in diamond do the same for magnetic fields.',
     'An antenna made of atoms hears any radio band without metal, and a diamond can feel a beating heart, so both could one day listen for a person where nothing else fits.',
   ],
   needs: 'Lasers, a vapour cell and optics that survive dust and shock. For a heart: sensitivity far below a picotesla next to rebar, motors and the Earth’s field, which is a million times stronger, and a sensor within centimetres.',
@@ -50,7 +50,7 @@ export default {
     const fCell = L.figure({ area: 'cell', title: 'A radio wave pulls one line into two' }), fDia = L.figure({ area: 'dia', title: 'A magnetic field pulls two dips apart' });
     const fAcc = L.figure({ area: 'line', title: 'Weaker fields stop splitting the line' }), fFar = L.figure({ area: 'far', title: 'A heart fades too fast to feel from a distance' });
     stage.append(fCell.el, fDia.el, fAcc.el, fFar.el);
-    const P = { le: -0.3, B: 0.06, noise: 0.02, ls: 0, dist: 0.1, seed: 3 };
+    const P = { le: -0.3, B: 0.06, noise: 0.02, ls: 0, dist: 0.3, seed: 3 };
     const N = 260, dps = Float64Array.from({ length: N }, (_, i) => -14 + (28 * i) / (N - 1)), M = 300, fs = Float64Array.from({ length: M }, (_, i) => 2862 + (16 * i) / (M - 1));
     const yA = new Float64Array(N), tA = new Float64Array(N), yB = new Float64Array(M), tB = new Float64Array(M);
     let S = {}, acc = null, clock = 0;
@@ -108,7 +108,7 @@ export default {
       L.text(g, 'magnetic field', 58, 11, { color: 'text3', size: 11 });
       const xs = Array.from({ length: 60 }, (_, i) => 0.05 * 40 ** (i / 59)); L.trace(g, Pl, xs, xs.map((x) => HEART * (HEART_AT / x) ** 3), { color: 'person', width: 2 });
       L.rule(g, Pl, { y: 5e-5, label: 'the Earth’s field', color: 'text2' }); L.rule(g, Pl, { y: 10 ** P.ls * 1e-12, label: 'sensor noise in one second (assumed)', color: 'accent' });
-      L.dots(g, Pl, [P.dist], [S.heart], { color: 'person', r: 4.5 }); L.text(g, 'the heart (assumed)', Pl.X(0.2), Pl.Y(HEART * (HEART_AT / 0.2) ** 3) - 10, { color: 'person', halo: true });
+      L.dots(g, Pl, [P.dist], [S.heart], { color: 'person', r: 4.5 }); L.text(g, 'the heart (assumed)', Pl.X(0.75), Pl.Y(HEART * (HEART_AT / 0.75) ** 3) + 22, { color: 'person', halo: true, align: 'right' });
     };
     const sE = L.stat('radio field from the fit'), sEe = L.stat('error against truth', { unit: '%' }), sB = L.stat('magnetic field from the fit', { unit: 'µT' }), sBe = L.stat('error against truth', { unit: 'µT' }), sT = L.stat('of averaging to feel a heart at that distance');
     function paint() {
@@ -127,7 +127,7 @@ export default {
       L.slider({ label: 'Reading noise (assumed)', min: 0.005, max: 0.1, step: 0.005, value: P.noise, format: (v) => (v * 100).toFixed(1) + ' %', onInput: (v) => { P.noise = v; C(); accSoon(); } }).el,
       L.slider({ label: 'Distance to the heart', min: 0.05, max: 1, step: 0.01, value: P.dist, format: (v) => L.fmtDist(v), onInput: (v) => { P.dist = v; C(); } }).el,
       L.slider({ label: 'Diamond noise in one second (assumed)', min: -2, max: 3, step: 0.1, value: P.ls, format: (v) => (10 ** v).toPrecision(2) + ' pT', onInput: (v) => { P.ls = v; C(); } }).el,
-      L.row(L.button({ label: 'Measure again', icon: 'refresh', onClick: () => { P.seed++; compute(); } })));
+      L.row(L.button({ label: 'Measure again', icon: 'reset', onClick: () => { P.seed++; compute(); } })));
     compute(); accSoon();
     const loop = L.loop((dt) => { clock += dt; fCell.redraw(); });
     return { start() { compute(); loop.start(); }, stop() { loop.stop(); } };

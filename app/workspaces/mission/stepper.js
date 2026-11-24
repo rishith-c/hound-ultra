@@ -40,7 +40,7 @@ export function createStepper(app) {
   const ring = h('i.mission-ring'), dHint = h('p.mission-dhint'), dAuto = h('p.mission-dauto'), more = h('div.row.wrap');
   const idle = h('div.mission-idle', null, h('i'), h('span'));
   const modeSeg = h('div.seg.mission-mode', { role: 'group', 'aria-label': 'Who makes the routine choices' },
-    h('button', { onclick: () => app.setAutoplay(true), title: 'The mission makes the routine choices by itself, so it can be watched like a film.' }, 'Autoplay'),
+    h('button', { onclick: () => app.setAutoplay(true), title: 'The mission makes the routine choices by itself, so it can be watched like a film.' }, 'Auto'),
     h('button', { onclick: () => app.setAutoplay(false), title: 'Every step waits for you: start, check leads, plan and approve.' }, 'Manual'));
   const tally = { people: h('b.num'), leads: h('b.num'), rooms: h('b.num') };
   const unitEls = Object.values(sim.state.units).map((u) => { const mode = h('span.dim'), bat = h('i'), batv = h('span.num.dim'), link = h('span.num.dim'); const el = h('button.mission-unit', { 'data-id': u.id, onclick: () => app.select({ type: 'unit', id: u.id }, true) }, icon(u.kind === 'team' ? 'person' : u.kind, 16), h('b', null, u.name), u.built ? null : h('small', { title: u.kind === 'drone' ? 'Concept: only one rover has been built.' : 'Simulated.' }, u.kind === 'drone' ? 'concept' : 'simulated'), h('span.grow'), mode, u.kind === 'rover' ? h('div.mission-unit-tele', null, h('div.bar', { title: 'Battery (simulated)' }, bat), batv, link) : null); return { id: u.id, el, mode, bat, batv, link }; });

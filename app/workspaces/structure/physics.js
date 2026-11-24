@@ -33,7 +33,12 @@ const colliderFor = (b, density, m) => R.ColliderDesc.cuboid(b.h[0], b.h[1], b.h
 function boxesVolume(boxes) { let v = 0; for (const b of boxes) v += 8 * b.h[0] * b.h[1] * b.h[2]; return v; }
 
 // ---------------------------------------------------------------- the bay
-export function buildPile({ seed = 7, scenario = 'vshape' } = {}) {
+// The same bay as geometry only, before the engine has loaded: buildPile against a stand-in that records nothing.
+export function blueprint(opts) {
+  const real = R; let n = 1; const stub = new Proxy(function () {}, { get: (t, k) => (k === 'handle' ? n++ : k === Symbol.toPrimitive ? () => 0 : stub), apply: () => stub, construct: () => stub, set: () => true });
+  try { R = stub; return buildPile(opts); } finally { R = real; }
+}
+export function buildPile({ seed = 7, scenario = 'vshape', tie = 1 } = {}) {
   const rnd = rng32(seed * 2654435761 + 17);
   const world = new R.World({ x: 0, y: -G, z: 0 });
   world.timestep = DT; world.numSolverIterations = 8;
@@ -98,7 +103,7 @@ export function buildPile({ seed = 7, scenario = 'vshape' } = {}) {
       const I = { x: 0, y: 0, z: 0, w: 1 };
       const jd = moment ? R.JointData.fixed(a1, I, a2, I) : R.JointData.spherical(a1, a2);
       const joint = world.createImpulseJoint(jd, world.getRigidBody(pl.handle), world.getRigidBody(beam.handle), false);
-      pile.ties.push({ handle: joint.handle, a: pl.idx, b: beam.idx, alive: true, moment, strength: moment ? Infinity : 22 + rnd() * 60, at: aw });
+      pile.ties.push({ handle: joint.handle, a: pl.idx, b: beam.idx, alive: true, moment, strength: moment ? Infinity : (22 + rnd() * 60) * tie, at: aw });
     }
   }
   // masonry infill on some perimeter bays, four blocks each
@@ -380,7 +385,7 @@ export function* controlTrial(pile, snap, { box = null } = {}) {
 }
 
 // Tremor or slide: a horizontal ground acceleration, applied to every loose piece as the inertial force -m a(t).
-export function* shakeTrial(pile, snap, { pga = 0.2, kind = 'tremor', seed = 1, box = null, base = null } = {}) {
+export function* shakeTrial(pile, snap, { pga = 0.2, kind = 'tremor', seed = 1, box = null, base = null, onStep = null } = {}) {
   const world = restoreWorld(snap), rnd = rng32(seed * 7919 + 13);
   const before = readPoses(pile, world);
   const th = rnd() * Math.PI * 2, f1 = 1.2 + rnd() * 2.6, f2 = 2.5 + rnd() * 4, ph1 = rnd() * 6.28, ph2 = rnd() * 6.28, dur = kind === 'tremor' ? 2.4 : 1.4;
@@ -394,10 +399,10 @@ export function* shakeTrial(pile, snap, { pga = 0.2, kind = 'tremor', seed = 1, 
     if (kind === 'tremor') { const a = pga * G * env, s1 = Math.sin(2 * Math.PI * f1 * t + ph1), s2 = Math.sin(2 * Math.PI * f2 * t + ph2); ax = a * (dx * s1 - dz * 0.45 * s2); az = a * (dz * s1 + dx * 0.45 * s2); ay = a * 0.3 * s2; }
     else { const a = pga * G * Math.sin(Math.PI * t / dur) ** 2; ax = a * dx; az = a * dz; }
     for (const [b, m] of bodies) { b.resetForces(true); b.addForce({ x: m * ax, y: m * ay, z: m * az }, true); }
-    world.step(); if (s % 20 === 19) yield;
+    world.step(); onStep?.(world, s, ax, az); if (s % 20 === 19) yield;
   }
   for (const [b] of bodies) b.resetForces(true);
-  for (let s = 0, quiet = 0; s < 220; s++) { world.step(); if (s > 20 && s % 6 === 0) { quiet = maxSpeed(pile, world, snap.alive) < 0.035 ? quiet + 1 : 0; if (quiet >= 3) break; } if (s % 20 === 19) yield; }
+  for (let s = 0, quiet = 0; s < 220; s++) { world.step(); onStep?.(world, n + s, 0, 0); if (s > 20 && s % 6 === 0) { quiet = maxSpeed(pile, world, snap.alive) < 0.035 ? quiet + 1 : 0; if (quiet >= 3) break; } if (s % 20 === 19) yield; }
   const res = summarise(pile, world, snap, before, -1, box, base);
   res.dir = th; res.seed = seed; res.pga = pga; res.before = before;
   world.free();

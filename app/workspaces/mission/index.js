@@ -32,8 +32,7 @@ export default {
     // ---------- panels ----------
     const collapseBtn = (panel, name, first = 'open') => { const b = h('button.btn.btn-ghost.btn-sm.btn-icon.mission-collapse', { 'aria-label': 'Collapse or expand ' + name, 'aria-expanded': 'true', onclick: () => { const closed = panel.dataset.closed !== 'true'; panel.dataset.closed = String(closed); b.setAttribute('aria-expanded', String(!closed)); store.set('hound.mission.' + name, closed ? 'closed' : 'open'); requestAnimationFrame(layout); } }, icon('chevron')); queueMicrotask(() => { if (store.get('hound.mission.' + name, first) === 'closed') { panel.dataset.closed = 'true'; b.setAttribute('aria-expanded', 'false'); } }); return b; };
     const stepper = createStepper(app), inspector = createInspector(app), timeline = createTimeline(app), alerts = createAlerts(app), routeDialog = createRouteDialog(app);
-    app.alerts = alerts;
-    const left = h('aside.mission-left.glass', { 'aria-label': 'Mission' });
+    app.alerts = alerts;    const left = h('aside.mission-left.glass', { 'aria-label': 'Mission' });
     const simTag = realityTag('sim'); simTag.title = 'The site, the people and the radar, thermal and drone readings are simulated. The Wi-Fi network, the fusion maths and the route planner run for real.';
     left.append(h('header.mission-head', null, h('h3', null, 'Mission'), simTag, stepper.modeSeg, collapseBtn(left, 'mission panel')),
       h('p.mission-lede.mission-intro', null, 'Run the whole search here, from drone survey to rescue.'), stepper.el);
@@ -180,7 +179,7 @@ export default {
     function applyMode() {
       const demo = ctx.mode === 'demo';
       alerts.clear(); closePop(); if (demo) { routeDialog.close(); ctx.select(null); } else { film.release(); film.reset(); }
-      if (app.twin) for (const [id, on] of [['labels', demo ? false : layerState.labels], ['hazards', demo ? true : layerState.hazards], ['walls-xray', demo ? false : !!layerState['walls-xray']]]) safe(() => app.twin.setLayer(id, on));
+      if (app.twin) for (const [id, on] of [['labels', demo ? false : layerState.labels], ['hazards', demo ? true : layerState.hazards], ['coverage', demo ? true : layerState.coverage], ['walls-xray', demo ? false : !!layerState['walls-xray']]]) safe(() => app.twin.setLayer(id, on));
       if (app.view === '3d') app.setCamera('cinematic');
       if (app.visible) run(true);
       requestAnimationFrame(() => { layout(); autoFrame(); slow(true); });

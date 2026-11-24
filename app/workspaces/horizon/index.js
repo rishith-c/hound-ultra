@@ -1,6 +1,6 @@
 // Horizon: the far frontier. Eleven ideas that sound like science fiction, each anchored in published research,
 // each with a simulation that runs its real mathematics in this page.
-// This file is the frame: the overview (every exhibit placed by readiness and by how far the sensor stands from the
+// Demo is the descent in ./dive.js. This file is the Advanced frame: the overview (every exhibit placed by readiness and by how far the sensor stands from the
 // person) and the exhibit view (stage on the left, placard and controls on the right). Exhibits live in ./exhibits/.
 import * as lib from './lib.js';
 const { h, icon, realityTag, tokens, rgba, text, TAU, clamp } = lib;
@@ -21,7 +21,12 @@ export default {
     const href = new URL('./style.css', import.meta.url).href;
     if (!document.querySelector('link[href="' + href + '"]')) { const l = h('link', { rel: 'stylesheet', href }); document.head.append(l); await new Promise((r) => { l.onload = l.onerror = r; setTimeout(r, 1500); }); }
     root.classList.add('horizon');
-    root.append(h('div.empty', null, h('div.spinner'), h('p', null, 'Opening the exhibits…')));
+    const opening = h('div.empty', null, h('div.spinner'), h('p', null, 'Opening the exhibits…')); root.append(opening);
+    // Demo: the descent. Built the first time Demo is shown; three.js loads only then.
+    let dive = null, diveP = null, visible = false;
+    const demo = () => ctx.mode === 'demo';
+    const needDive = () => diveP || (diveP = import('./dive.js').then((m) => m.createDive({ onStop: () => {} })).then((d) => { dive = d; root.append(d.el); opening.remove(); if (visible && demo()) d.start(); return d; }).catch((err) => { console.error('[horizon] the descent could not start', err); opening.remove(); root.append(h('div.empty.demo-only', null, icon('alert', 28), h('h2', null, 'This view needs 3-D graphics'), h('p.muted', null, 'Switch to Advanced to use the exhibits without it.'))); }));
+    if (demo()) needDive();
 
     // One retry with a fresh URL: a failed module fetch is otherwise remembered for the life of the page.
     const load = (f) => import('./exhibits/' + f + '.js').catch(() => new Promise((r) => setTimeout(r, 400)).then(() => import('./exhibits/' + f + '.js?retry=1')));
@@ -30,10 +35,10 @@ export default {
     loaded.forEach((r, i) => { if (r.status === 'fulfilled' && r.value.default?.id) EX.push(r.value.default); else console.warn('[horizon] exhibit "' + FILES[i] + '" is not available', r.reason?.message || ''); });
     EX.sort((a, b) => a.readiness - b.readiness);
     EX.forEach((e, i) => { e.num = String(i + 1).padStart(2, '0'); });
-    root.replaceChildren();
+    if (!demo()) opening.remove(); else opening.hidden = !!dive;
     if (!EX.length) { root.append(h('div.empty', null, icon('alert', 28), h('h2', null, 'No exhibit could be loaded'), h('p.muted', null, 'Reload the page. If this stays, the exhibit files are missing.'))); return {}; }
 
-    let visible = false, view = 'overview', current = null, featured = EX[0].id, userPicked = false;
+    let view = 'overview', current = null, featured = EX[0].id, userPicked = false;
     const recs = new Map();
     const byId = (id) => EX.find((e) => e.id === id);
 
@@ -41,7 +46,7 @@ export default {
     const ovCanvas = h('canvas.horizon-ov-canvas', { 'aria-hidden': 'true' });
     const nodeLayer = h('div.horizon-ov-nodes', { role: 'list', 'aria-label': 'Exhibits, placed by readiness and by distance from the person' });
     const placard = h('div.horizon-placard', { 'aria-live': 'polite' });
-    const ov = h('section.horizon-ov', { 'aria-label': 'Overview of the exhibits' },
+    const ov = h('section.horizon-ov.adv-only', { 'aria-label': 'Overview of the exhibits' },
       h('div.horizon-ov-chart', null, ovCanvas, nodeLayer),
       h('div.horizon-ov-left', null,
         h('header.horizon-ov-head', null,
@@ -116,7 +121,7 @@ export default {
       // exhibits: a range bar (nearest to farthest the sensor works) and a living miniature
       for (const n of nodes) {
         const on = n.e.id === featured, col = on ? 'accent' : 'text3';
-        g.strokeStyle = rgba(col, on ? 0.9 : 0.5); g.lineWidth = 1; g.beginPath(); g.moveTo(n.x + 0.5, n.y1); g.lineTo(n.x + 0.5, n.y0); g.moveTo(n.x - 4, n.y1 + 0.5); g.lineTo(n.x + 5, n.y1 + 0.5); g.moveTo(n.x - 4, n.y0 + 0.5); g.lineTo(n.x + 5, n.y0 + 0.5); g.stroke();
+        g.strokeStyle = rgba(col, on ? 0.9 : 0.2); g.lineWidth = 1; g.beginPath(); g.moveTo(n.x + 0.5, n.y1); g.lineTo(n.x + 0.5, n.y0); g.moveTo(n.x - 4, n.y1 + 0.5); g.lineTo(n.x + 5, n.y1 + 0.5); g.moveTo(n.x - 4, n.y0 + 0.5); g.lineTo(n.x + 5, n.y0 + 0.5); g.stroke();
         g.fillStyle = T.bg1; g.beginPath(); g.arc(n.x, n.y, 21, 0, TAU); g.fill();
         g.strokeStyle = on ? T.accent : T.line3; g.lineWidth = on ? 1.5 : 1; g.beginPath(); g.arc(n.x, n.y, 21, 0, TAU); g.stroke();
         if (on) { g.strokeStyle = rgba('accent', 0.25); g.lineWidth = 4; g.beginPath(); g.arc(n.x, n.y, 24.5, 0, TAU); g.stroke(); }
@@ -141,7 +146,7 @@ export default {
     // ================= exhibit view =================
     const stageHost = h('div.horizon-stage-host'), sideHost = h('div.horizon-side-host');
     const strip = h('nav.horizon-strip', { 'aria-label': 'Exhibits' });
-    const exView = h('section.horizon-ex', { hidden: true, 'aria-label': 'Exhibit' }, h('div.horizon-ex-main', null, stageHost, sideHost), strip);
+    const exView = h('section.horizon-ex.adv-only', { hidden: true, 'aria-label': 'Exhibit' }, h('div.horizon-ex-main', null, stageHost, sideHost), strip);
     const stripBtns = new Map();
     strip.append(h('button.btn.btn-ghost', { type: 'button', onclick: () => showOverview(), title: 'Back to the overview (Escape)' }, icon('arrow-left'), h('span', null, 'All exhibits')));
     BANDS.forEach((b, i) => {
@@ -188,12 +193,12 @@ export default {
       ovLoop.stop(); view = 'exhibit'; current = e.id; featured = e.id; ov.hidden = true; exView.hidden = false;
       const rec = ensure(e); rec.stage.hidden = false; rec.side.hidden = false; rec.side.scrollTop = 0;
       stripBtns.forEach((b, k) => b.setAttribute('aria-current', String(k === e.id)));
-      if (visible) { try { rec.api.start?.(); } catch (err) { console.error(err); } }
+      if (visible && !demo()) { try { rec.api.start?.(); } catch (err) { console.error(err); } }
     }
     function showOverview() {
       if (current) { const p = recs.get(current); try { p?.api.stop?.(); } catch (err) { console.error(err); } }
       view = 'overview'; exView.hidden = true; ov.hidden = false; placard.replaceChildren(); const f = featured; featured = null; feature(f);
-      if (visible) ovLoop.start();
+      if (visible && !demo()) ovLoop.start();
       nodes.find((n) => n.e.id === f)?.b.focus({ preventScroll: true });
     }
     function step(d) { const i = EX.findIndex((e) => e.id === current); open(EX[(i + d + EX.length) % EX.length].id); }
@@ -202,17 +207,21 @@ export default {
     feature(featured);
     const typing = () => /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName);
     window.addEventListener('keydown', (ev) => {
-      if (!visible || view !== 'exhibit' || ev.metaKey || ev.ctrlKey || ev.altKey || typing()) return;
+      if (visible && demo() && dive && !ev.metaKey && !ev.ctrlKey && !ev.altKey && !typing()) { if (ev.key === 'ArrowRight' || ev.key === 'ArrowDown') { ev.preventDefault(); dive.next(1); } else if (ev.key === 'ArrowLeft' || ev.key === 'ArrowUp') { ev.preventDefault(); dive.next(-1); } return; }
+      if (!visible || demo() || view !== 'exhibit' || ev.metaKey || ev.ctrlKey || ev.altKey || typing()) return;
       if (ev.key === 'ArrowRight') step(1); else if (ev.key === 'ArrowLeft') step(-1);
     });
-    ctx.bus.on('escape', () => { if (visible && view === 'exhibit') showOverview(); });
-    ctx.bus.on('prefs', () => { lib.refreshTokens(); if (view === 'overview') drawOverview(performance.now() / 1000); else recs.get(current)?.api.start?.(); });
+    ctx.bus.on('escape', () => { if (visible && !demo() && view === 'exhibit') showOverview(); });
+    ctx.bus.on('prefs', () => { lib.refreshTokens(); if (demo()) return; if (view === 'overview') drawOverview(performance.now() / 1000); else recs.get(current)?.api.start?.(); });
+    const runAdv = (on) => { if (!on) { ovLoop.stop(); try { recs.get(current)?.api.stop?.(); } catch (err) { console.error(err); } } else if (view === 'overview') ovLoop.start(); else { try { recs.get(current)?.api.start?.(); } catch (err) { console.error(err); } } };
+    const runAll = () => { if (demo()) { runAdv(false); needDive(); if (visible) dive?.start(); else dive?.pause(); } else { dive?.pause(); opening.remove(); if (dive && !current && !userPicked) feature(dive.stop); runAdv(visible); } };
+    ctx.bus.on('mode', runAll);
 
     const want = ctx.params?.exhibit || new URLSearchParams(location.search).get('x');
     if (want && byId(want)) open(want);
     return {
-      onShow() { visible = true; if (view === 'overview') ovLoop.start(); else { try { recs.get(current)?.api.start?.(); } catch (err) { console.error(err); } } },
-      onHide() { visible = false; ovLoop.stop(); try { recs.get(current)?.api.stop?.(); } catch (err) { console.error(err); } },
+      onShow() { visible = true; runAll(); },
+      onHide() { visible = false; dive?.pause(); runAdv(false); },
       onParams(p) { if (p?.exhibit && byId(p.exhibit)) open(p.exhibit); else if (p?.view === 'overview') showOverview(); },
     };
   },

@@ -26,3 +26,19 @@ Measured in headless Chrome at 1680x1000: glass panels with `backdrop-filter: bl
 every frame ran at 3.5 frames a second; the same page without the blur ran at 60. Mission therefore overrides
 `.glass` inside `.mission` to a denser tint with no blur. Other workspaces that float `.glass` over a live canvas
 may want the same.
+
+## To twin-core, twin-actors (resumed session)
+
+4. **Black frames (twin-actors, rover.js).** A full-size 3-D run sampled 137 near-black frames out of 298 (mean brightness under 8 of 255),
+   at 1680x1000. Ruled out by A/B in one page: the lens shift (57 of 73 dark with it off, 42 of 50 with it on) and 'walls-xray' (still dark
+   with it never used). Reading sceneRT (half float) found NaN pixels, 261 at t=215 and 408 at t=415; hiding HOUND-01, then its inner
+   Group, removed them. One NaN pixel is enough for bloom to blacken the frame. rover.js was saved at 18:14:00 on 23 November, after those
+   two runs; the next run found no NaN in 40 tries over about 35 s of mission time. Please confirm that edit was the fix. A guard in post.js
+   (replace non-finite colours before bloom) would stop any material from doing this again (twin-core). Earlier text here blamed 'walls-xray': that was wrong.
+5. **setSafeArea (twin-core).** Not there yet. Until it is, Mission shifts the lens with camera.setViewOffset and switches over by itself.
+6. **Listen shot (twin-core).** yaw0 = C.yaw + 0.5 can put a wall between the camera and the rover (seen at S1 and S2). Please pick
+   the yaw with a clear line to the rover.
+7. **Room decal (twin-actors).** Room 103 keeps "Possible person" on the floor after the person is confirmed: the simulator does not update
+   coverage after a second look. roomCover() in mission/map2d.js shows the fix.
+8. **Simulator (foundation).** The planned rescue route enters "Unstable slope above the block" with avoid.slope on (2 of 18 path points). Mission
+   says so in the approval dialog and the film.

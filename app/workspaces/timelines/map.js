@@ -101,7 +101,7 @@ export function createMap(canvas, { world, kit, onPick, onPlace, onHover }) {
       else if (c && c.status === 'blocked') { g.fillStyle = rgba(C.text3, 0.08); g.fillRect(x, y, w, h); }
       if (!r.corridor && k > 4.5) {
         label(r.id, x + 5, y + 9, { colour: C.text3, mono: true, halo: false });
-        if (c && k > 6) { const word = c.status === 'clear' ? 'clear · ' + (c.residual * 100).toFixed(0) + ' % missed' : c.status === 'blocked' ? 'not searched' : c.status === 'lead' ? 'lead' : c.status === 'person' ? 'person' : ''; if (word) label(word, x + 5, y + h - 8, { colour: c.status === 'clear' ? C.ok : c.status === 'lead' ? C.warn : c.status === 'person' ? C.person : C.text3, size: 11, halo: false }); }
+        if (c && k > 6) { const word = c.status === 'clear' ? (c.residual * 100).toFixed(0) + ' % missed' : c.status === 'blocked' ? 'not searched' : c.status === 'lead' ? 'lead' : c.status === 'person' ? 'person' : ''; if (word) label(word, x + 5, y + h - 8, { colour: c.status === 'clear' ? C.ok : c.status === 'lead' ? C.warn : c.status === 'person' ? C.person : C.text3, size: 11, halo: false }); }
       }
     }
     // hazards known at this moment

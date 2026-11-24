@@ -12,18 +12,18 @@ export function mountCf(pane, app) {
   let pinned = null, cur = null;
 
   function ladder(steps, { thresholds, title, now, alt }) {
-    const W = Math.max(380, ladderEl.clientWidth - 2), L = 210, R = 58, rowH = 24, top = 30, n = steps.length + 1, H = top + n * rowH + 26;
+    const W = Math.max(380, ladderEl.clientWidth - 26), L = 196, R = 40, rowH = 38, top = 44, n = steps.length + 1, H = top + n * rowH + 26;
     const X = (p) => L + ((logit(Math.min(0.9992, Math.max(0.004, p))) - LO) / (HI - LO)) * (W - L - R);
     let s = '<svg class="chart tl-ladder" width="' + W + '" height="' + H + '" role="img" aria-label="' + esc(title) + '">';
-    for (const p of [0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99, 0.999]) s += '<line class="gridline" x1="' + X(p).toFixed(1) + '" x2="' + X(p).toFixed(1) + '" y1="' + (top - 4) + '" y2="' + (H - 22) + '"/><text x="' + X(p).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + (p * 100 >= 99.5 ? '99.9' : p * 100) + ' %</text>';
-    for (const [p, cls, word] of [[thresholds.possible, 'warn', 'lead stays open'], [thresholds.confirmed, 'person', 'confirmed']]) s += '<line class="tl-th ' + cls + '" x1="' + X(p).toFixed(1) + '" x2="' + X(p).toFixed(1) + '" y1="' + (top - 14) + '" y2="' + (H - 22) + '"/><text class="tl-th-t ' + cls + '" x="' + (X(p) + 4).toFixed(1) + '" y="' + (top - 8) + '">' + word + ' ≥ ' + (p * 100).toFixed(0) + ' %</text>';
+    for (const p of [0.01, 0.05, 0.2, 0.5, 0.8, 0.95, 0.99, 0.999]) s += '<line class="gridline" x1="' + X(p).toFixed(1) + '" x2="' + X(p).toFixed(1) + '" y1="' + (top - 4) + '" y2="' + (H - 22) + '"/><text x="' + X(p).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + (p * 100 >= 99.5 ? '99.9' : p * 100) + ' %</text>';
+    for (const [p, cls, word] of [[thresholds.possible, 'warn', 'lead stays open'], [thresholds.confirmed, 'person', 'confirmed']]) s += '<line class="tl-th ' + cls + '" x1="' + X(p).toFixed(1) + '" x2="' + X(p).toFixed(1) + '" y1="' + (top - (cls === 'person' ? 18 : 34)) + '" y2="' + (H - 22) + '"/><text class="tl-th-t ' + cls + '" x="' + (X(p) + 4).toFixed(1) + '" y="' + (top - (cls === 'person' ? 8 : 24)) + '">' + word + ' ≥ ' + (p * 100).toFixed(0) + ' %</text>';
     let prev = PRIOR;
-    s += '<text class="tl-ld-l" x="8" y="' + (top + 15) + '">Before any reading</text><text class="tl-ld-lr" x="' + (L - 10) + '" y="' + (top + 15) + '" text-anchor="end">prior, assumed</text><circle class="tl-ld-dot" cx="' + X(prev).toFixed(1) + '" cy="' + (top + 11) + '" r="3"/>';
+    s += '<text class="tl-ld-l" x="8" y="' + (top + 15) + '">Before any reading</text><text class="tl-ld-lr" x="8" y="' + (top + 29) + '">prior, assumed</text><circle class="tl-ld-dot" cx="' + X(prev).toFixed(1) + '" cy="' + (top + 11) + '" r="3"/>';
     steps.forEach((st, i) => {
       const y = top + (i + 1) * rowH, x0 = X(prev), x1 = X(st.p), up = st.lr > 1.0001, flat = Math.abs(st.lr - 1) < 1e-4;
       const says = SAYS[st.sensor]?.[st.result] || (st.result === 'blind' ? 'could not see' : st.result);
       s += '<g class="' + (st.cf ? 'cf' : '') + '"><text class="tl-ld-l" x="8" y="' + (y + 15) + '"><tspan class="t">' + (st.t != null ? clock(st.t) : 'added') + '</tspan> ' + esc(sensorName(st.sensor)) + (st.repeat ? ' again' : '') + '<title>' + esc(says + (st.note ? '. ' + st.note : '')) + '</title></text>';
-      s += '<text class="tl-ld-lr' + (st.assumed ? ' assumed' : '') + '" x="' + (L - 10) + '" y="' + (y + 15) + '" text-anchor="end">' + (flat ? 'no information' : '×' + (st.lr >= 10 ? st.lr.toFixed(0) : st.lr.toFixed(2)) + (st.assumed ? ' assumed' : ' measured')) + '</text>';
+      s += '<text class="tl-ld-lr' + (st.assumed ? ' assumed' : '') + '" x="8" y="' + (y + 29) + '">' + (flat ? 'no information' : '×' + (st.lr >= 10 ? st.lr.toFixed(0) : st.lr.toFixed(2)) + (st.assumed ? ' assumed' : ' measured')) + '</text>';
       s += '<line class="tl-ld-drop" x1="' + x0.toFixed(1) + '" x2="' + x0.toFixed(1) + '" y1="' + (y - rowH + 11) + '" y2="' + (y + 11) + '"/>';
       if (!flat) s += '<line class="tl-ld-bar ' + (up ? 'up' : 'down') + '" x1="' + x0.toFixed(1) + '" x2="' + x1.toFixed(1) + '" y1="' + (y + 11) + '" y2="' + (y + 11) + '"/><path class="tl-ld-head ' + (up ? 'up' : 'down') + '" d="M' + x1.toFixed(1) + ',' + (y + 11) + 'l' + (up ? -5 : 5) + ',-3.5v7z"/>';
       else s += '<circle class="tl-ld-nil" cx="' + x0.toFixed(1) + '" cy="' + (y + 11) + '" r="2"/>';

@@ -48,7 +48,7 @@ export async function create(stage, side, ctx, lab) {
   const L = (i) => link(TX, rxAt(i), st.p, st.chestMm);
   const chestNow = () => { const ph = 2 * Math.PI * (st.bpm / 60) * tNow, s = Math.sin(ph) + 0.25 * Math.sin(2 * ph + 0.8); return (st.chestMm / 2) * (s / 1.19); };   // mm, same breath shape as the simulator
 
-  const figPlan = lab.figure('Bright bands: breathing shows. Dark bands: it does not. They are 3 cm apart.', { tag: h('span.tag.tag-sim', null, 'Model'), caption: 'Plan view. Shade: how much a 5 mm breath there changes the received amplitude, for the receiver where it is now. Drag the person.' });
+  const figPlan = lab.figure('Bright bands: breathing shows. Dark bands: it does not.', { tag: h('span.tag.tag-sim', null, 'Model'), caption: 'Plan view. Shade: how much a 5 mm breath there changes the received amplitude, for the receiver where it is now. Drag the person.' });
   const figPh = lab.figure('Why: two arrows that add', { caption: 'The straight path (long arrow) and the body’s echo (short arrow). Breathing swings the echo through the shaded arc. The white bar is how far the received strength moves: the arc’s shadow on the long arrow.' });
   const figStops = lab.figure('The ripple at each stop', { caption: 'Amplitude change over 10 s at every stop, with the model’s noise after averaging (0.4 %). A stop counts when the ripple is 1.5 times the noise.' });
   const figMc = lab.figure('What the dither buys, over many people', { caption: 'Still people placed at random 0.8 to 3.5 m behind the wall. Bars: this page, now. White ticks: the project’s Python run (400 people, wavelength rounded to 12.5 cm).' });
@@ -143,7 +143,7 @@ export async function create(stage, side, ctx, lab) {
       lab.label(c, 'Stop ' + (i + 1), x + 5, y0 - 10, { color: on ? lab.tok('--text') : lab.tok('--text-3'), font: '600 11px ' + lab.tok('--font') });
       lab.label(c, (i * STEP * 100).toFixed(1) + ' cm', x + cw - 4, y0 - 10, { align: 'right', font: '500 10.5px ' + lab.tok('--mono'), color: lab.tok('--text-3') });
       const snr = l.sens / NOISE; lab.label(c, snr.toFixed(1) + '× noise', x + 5, y0 + ph + 13, { font: '500 10.5px ' + lab.tok('--mono'), color: ok ? lab.tok('--ok') : lab.tok('--text-3') });
-      lab.label(c, ok ? (i === best ? 'breathing shows: listen here' : 'breathing shows') : 'lost in the noise', x + 5, y0 + ph + 28, { color: ok ? lab.tok('--ok') : lab.tok('--text-3') });
+      lab.label(c, ok ? (i === best ? 'shows best: listen' : 'it shows') : 'lost in the noise', x + 5, y0 + ph + 28, { color: ok ? lab.tok('--ok') : lab.tok('--text-3') });
     }
     c.fillStyle = lab.tok('--text-3'); c.textAlign = 'right'; c.textBaseline = 'middle'; for (const v of [top / 1.25, 0, -top / 1.25]) c.fillText((v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1), x0 - 6, y0 + ph / 2 - (v / top) * (ph / 2));
     lab.label(c, '%', x0 - 6, y0 - 10, { align: 'right', color: lab.tok('--text-3') });
@@ -158,7 +158,7 @@ export async function create(stage, side, ctx, lab) {
       const y = y0 + i * rowH + 5, bh = rowH - 12, v = mc ? mc.p[i] : 0;
       lab.label(c, names[i], x0 - 10, y + bh / 2, { align: 'right', color: lab.tok('--text') });
       c.fillStyle = lab.tok('--bg-4'); c.fillRect(x0, y, x1 - x0, bh);
-      if (mc) { c.fillStyle = i === 0 ? lab.tok('--text-3') : lab.tok('--accent'); c.fillRect(x0, y, X(v) - x0, bh); lab.label(c, (v * 100).toFixed(1) + ' %', X(v) + 7, y + bh / 2, { font: '500 12px ' + lab.tok('--mono'), color: lab.tok('--text') }); }
+      if (mc) { c.fillStyle = i === 0 ? lab.tok('--text-3') : lab.tok('--accent'); c.fillRect(x0, y, X(v) - x0, bh); lab.label(c, (v * 100).toFixed(1) + ' %', X(v) - 7, y + bh / 2, { align: 'right', font: '500 12px ' + lab.tok('--mono'), color: lab.tok('--bg-0') }); }
       const px = Math.round(X(PROJECT[i])) + 0.5; c.strokeStyle = lab.tok('--text'); c.lineWidth = 1.5; c.beginPath(); c.moveTo(px, y - 4); c.lineTo(px, y + bh + 4); c.stroke();
     }
     lab.label(c, 'Share of still people whose breathing would show' + (mc ? ' · ' + (mcJob ? 'running, ' : '') + mc.n.toLocaleString('en-US') + ' placed' : ''), 12, 13, { color: lab.tok('--text-3') });

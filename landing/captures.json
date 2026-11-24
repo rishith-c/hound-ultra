@@ -1,1 +1,112 @@
-{}
+{
+ "area": {
+  "file": "assets/img/landing/ws-area.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "mission": {
+  "file": "assets/img/landing/ws-mission.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "triage": {
+  "file": "assets/img/landing/ws-triage.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "swarm": {
+  "file": "assets/img/landing/ws-swarm.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "sense": {
+  "file": "assets/img/landing/ws-sense.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "fusion": {
+  "file": "assets/img/landing/ws-fusion.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "aerial": {
+  "file": "assets/img/landing/ws-aerial.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "scan": {
+  "file": "assets/img/landing/ws-scan.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "signals": {
+  "file": "assets/img/landing/ws-signals.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "radio": {
+  "file": "assets/img/landing/ws-radio.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "deepscan": {
+  "file": "assets/img/landing/ws-deepscan.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "vision": {
+  "file": "assets/img/landing/ws-vision.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "strategy": {
+  "file": "assets/img/landing/ws-strategy.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "timelines": {
+  "file": "assets/img/landing/ws-timelines.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "forge": {
+  "file": "assets/img/landing/ws-forge.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "structure": {
+  "file": "assets/img/landing/ws-structure.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "horizon": {
+  "file": "assets/img/landing/ws-horizon.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "graph": {
+  "file": "assets/img/landing/ws-graph.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "report": {
+  "file": "assets/img/landing/ws-report.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "globe": {
+  "file": "assets/img/landing/ws-globe.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "train": {
+  "file": "assets/img/landing/ws-train.jpg",
+  "w": 1680,
+  "h": 1000
+ },
+ "copilot": {
+  "file": "assets/img/landing/ws-copilot.jpg",
+  "w": 1680,
+  "h": 1000
+ }
+}

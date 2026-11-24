@@ -59,3 +59,4 @@
 .radio-fresnel-grid { grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.78fr); grid-template-areas: "plan ph" "plan stops" "plan mc"; }
 .radio-fresnel-grid > :nth-child(1) { grid-area: plan; } .radio-fresnel-grid > :nth-child(2) { grid-area: ph; } .radio-fresnel-grid > :nth-child(3) { grid-area: stops; } .radio-fresnel-grid > :nth-child(4) { grid-area: mc; }
 .radio-fig-cap { text-wrap: pretty; }
+@media (max-width: 1560px) { .radio-tab { padding: 0 8px; gap: 6px; } .radio-tab-t { font-size: 11px; } }

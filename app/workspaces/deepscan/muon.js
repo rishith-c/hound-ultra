@@ -188,7 +188,7 @@ export default function create(env) {
       { who: 'Morishima et al., Nature 552 (2017).', what: 'ScanPyramids: muons reveal a big void in Khufu’s pyramid.', url: 'https://doi.org/10.1038/nature24647' },
       { who: 'Shukla and Sankrith (2018).', what: 'The sea-level muon energy and angle formula used for the flux here.', url: 'https://arxiv.org/abs/1606.06907' },
     ],
-    _dbg: () => ({ shown, recon, active, truthC, P, rebuild, solve, expose, dets, M }),
+    _demo: () => ({ shown, recon, active, truthC, P, rebuild, solve, expose, dets, M }),
     setPile, controls, drawStage, drawReadout, tick, verdicts,
     stageTitle: () => 'Missing density, rebuilt from muon counts', stageNote: () => L.fmtDur(P.hours) + ' of counting · ' + L.fmtInt(M.total) + ' muons',
     readoutTitle: () => ['More muons arrive from the directions that cross a void', 'Each dot is one 2° bin with its counting error. Blue: more than 3σ above a solid pile.'],

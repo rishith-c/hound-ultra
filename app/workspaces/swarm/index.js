@@ -1,7 +1,11 @@
 // Swarm workspace: several rovers and drones sharing one search, in a sandbox of its own.
 // The fleet is a concept (one rover exists). The algorithms are real and run live: see engine.js.
-import { genWorld, createSwarm, runHeadless, STRATEGIES, LAYOUTS, PARAMS, DT, fleetMix } from './engine.js';
+import { genWorld, runHeadless, STRATEGIES, LAYOUTS, PARAMS, DT, fleetMix } from './engine.js';
+import { createLive } from './live.js';
+import { createDirector } from './director.js';
 import { LR } from '../../core/fusion.js';
+
+const DEMO = { layout: 'campus', seed: 3, n: 8, strategy: 'hungarian', race: false, charge: 1 };
 
 const ORDER = ['nearest', 'greedy', 'hungarian'];
 const clock = (t) => (t == null ? '–' : Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0'));
@@ -14,8 +18,9 @@ export default {
     const w = ctx.world;
     const blockB = { staging: w.SITE.staging.slice(), building: w.BUILDING.rect.slice(), walls: w.WALLS.map((x) => ({ a: x.a, b: x.b, mat: x.mat, state: x.state })), obstacles: w.OBSTACLES.map((o) => ({ kind: o.kind, name: o.name, poly: o.poly, passable: !!o.passable })), doors: w.DOORS.map((d) => ({ pos: d.pos, blocked: !!d.blocked })) };
 
-    const cfg = { layout: 'campus', seed: 7, n: 6, strategy: 'hungarian', strategyB: 'nearest', race: false, speed: 30, charge: 1, ...(ctx.params || {}) };
-    let world = null, runs = [], playing = false, started = false, visible = false, raf = 0, last = 0, acc = 0, uiAcc = 1, focus = 0, selRobot = null, selLead = null, scene = null, sceneError = null, chartTab = 'seed', hover = null, effSpeed = 0, speedAcc = { sim: 0, real: 0 };
+    const cfg = { ...DEMO, strategyB: 'nearest', speed: 30, ...(ctx.params || {}) };
+    let demo = ctx.mode === 'demo', director = null, dCapNext = '', paused = false;
+    let world = null, runs = [], playing = false, started = false, visible = false, raf = 0, last = 0, acc = 0, uiAcc = 1, focus = 0, selRobot = null, selLead = null, scene = null, sceneError = null, chartTab = 'seed', hover = null;
     const history = new Map(), bench = new Map();
     const key = () => [cfg.layout, cfg.seed, cfg.n, cfg.charge].join('|');
     const benchKey = () => [cfg.layout, cfg.n, cfg.charge].join('|');
@@ -28,7 +33,7 @@ export default {
     const seg = (items, get, set, label) => { const el = h('div.seg', { role: 'group', 'aria-label': label }); const draw = () => el.replaceChildren(...items.map(([v, t, tip]) => h('button', { type: 'button', 'aria-pressed': String(get() === v), title: tip || null, onclick: () => { set(v); draw(); } }, t))); draw(); el.redraw = draw; return el; };
     const selLayout = h('select.select', { 'aria-label': 'Site layout', onchange: (e) => { cfg.layout = e.target.value; build(); play(); } }, ...Object.entries(LAYOUTS).map(([k, v]) => h('option', { value: k, title: v.does }, v.label)));
     const inSeed = h('input.input', { type: 'number', min: 1, max: 9999, value: cfg.seed, 'aria-label': 'Seed for the site generator', onchange: (e) => { cfg.seed = Math.max(1, Math.min(9999, Math.round(+e.target.value) || 1)); e.target.value = cfg.seed; build(); play(); } });
-    const btnDice = h('button.btn.btn-icon', { 'aria-label': 'New random seed', title: 'New random site', onclick: () => { cfg.seed = 1 + Math.floor(Math.random() * 999); inSeed.value = cfg.seed; build(); play(); } }, icon('reset'));
+    const btnDice = h('button.btn.btn-icon', { 'aria-label': 'New random seed', title: 'New random site', onclick: () => { cfg.seed = 1 + Math.floor(Math.random() * 999); inSeed.value = cfg.seed; build(); play(); } }, icon('rotate'));
     const nVal = h('b', null, String(cfg.n)), nMix = h('small', null, '');
     const nMinus = h('button', { type: 'button', 'aria-label': 'One robot fewer', onclick: () => setN(cfg.n - 1) }, '−'), nPlus = h('button', { type: 'button', 'aria-label': 'One robot more', onclick: () => setN(cfg.n + 1) }, '+');
     const setN = (n) => { cfg.n = Math.max(2, Math.min(12, n)); build(); play(); };
@@ -41,31 +46,40 @@ export default {
     const segSpeed = seg([[1, '1×'], [10, '10×'], [30, '30×'], [60, '60×'], [120, '120×']], () => cfg.speed, (v) => { cfg.speed = v; }, 'Simulation speed');
     const selCharge = h('select.select', { 'aria-label': 'Battery charge at the start', onchange: (e) => { cfg.charge = +e.target.value; build(); play(); } }, ...[[1, 'Full packs'], [0.6, '60 % packs'], [0.35, '35 % packs']].map(([v, t]) => h('option', { value: v }, t)));
 
-    const head = h('header.ws-head.swarm-head', null,
-      h('div', null, h('h1', null, 'Swarm'), h('p', null, 'What several rovers and drones would do with one search: split up, share one map, bid for leads and keep a radio path to base.')),
+    const head = h('header.ws-head.swarm-head.adv-only', null,
+      h('div', null, h('h1', null, 'Swarm'), h('p', null, 'Several robots, one search: one shared map, bids for every lead, a radio path home.')),
       h('span', { title: 'Only one rover exists. The fleet, the drones and the relay beacons are a concept.' }, realityTag('concept')), h('span.tag.tag-ok', { title: 'Exploration, assignment, auction, mesh routing and battery scheduling run live in this sandbox. Every number is measured from the run.' }, 'Live algorithm'),
       h('span', { title: 'How many simulated seconds pass per real second' }, segSpeed), btnRestart, btnPlay);
-    const bar = h('div.swarm-bar', null,
+    const bar = h('div.swarm-bar.adv-only', null,
       field('Site', selLayout), field('Seed', h('div.swarm-seed', null, inSeed, btnDice)),
       field('Robots', h('div.swarm-step', null, nMinus, nVal, nPlus, nMix)),
       field('Who goes where', segStrat), field('Mode', segMode), fieldB, field('Battery at start', selCharge));
 
     // ---------- stage ----------
     const stage = h('div.swarm-stage.crop');
-    const caption = h('div.swarm-caption.glass', { role: 'status', hidden: true });
-    const badges = [0, 1].map(() => { const el = h('div.swarm-badge.glass'); el.t = h('b'); el.big = h('div.swarm-big.num'); el.s1 = h('span'); el.s2 = h('span.swarm-win'); el.fill = h('i'); el.append(el.t, el.big, h('div.bar', null, el.fill), el.s1, el.s2); return el; });
+    const caption = h('div.swarm-caption.glass.adv-only', { role: 'status', hidden: true });
+    const badges = [0, 1].map(() => { const el = h('div.swarm-badge.glass.adv-only'); el.t = h('b'); el.big = h('div.swarm-big.num'); el.s1 = h('span'); el.s2 = h('span.swarm-win'); el.fill = h('i'); el.append(el.t, el.big, h('div.bar', null, el.fill), el.s1, el.s2); return el; });
     const divider = h('div.swarm-divider', { hidden: true });
     let camMode = 'overview';
     const segCam = seg([['overview', 'Overview'], ['plan', 'Plan'], ['follow', 'Follow']], () => camMode, (v) => { if (v === 'follow') { const r = runs[focus]?.swarm.state.robots; selRobot = selRobot || r?.[0]?.id; } camMode = v; scene?.setCamera(v, selRobot); scene?.select(v === 'follow' ? selRobot : null); drawFleet(true); }, 'Camera');
     const layerDefs = [['mesh', 'Radio mesh'], ['trails', 'Trails'], ['range', 'Sensor reach'], ['goals', 'Assignments'], ['truth', 'Hidden map (debug)']];
-    const layerBox = h('div.swarm-layers.glass', { role: 'group', 'aria-label': 'Layers' }, ...layerDefs.map(([id, t]) => h('label.check', { title: id === 'truth' ? 'Shows the walls and the people the fleet has not found yet. The robots never use this.' : null }, h('input', { type: 'checkbox', checked: id !== 'truth', onchange: (e) => scene?.setLayer(id, e.target.checked) }), t)));
+    const layerBox = h('div.swarm-layers.glass', { role: 'group', 'aria-label': 'Layers', hidden: true }, ...layerDefs.map(([id, t]) => h('label.check', { title: id === 'truth' ? 'Shows the walls and the people the fleet has not found yet. The robots never use this.' : null }, h('input', { type: 'checkbox', checked: id !== 'truth', onchange: (e) => scene?.setLayer(id, e.target.checked) }), t)));
     const btnFail = h('button.btn.btn-sm', { title: 'Kills the beacon that carries the most robots, to show what the mesh does next. You can also click any beacon in the view.', onclick: () => failRelay('busiest') }, icon('alert', 14), 'Fail the busiest beacon');
-    const tools = h('div.swarm-tools', null, segCam, layerBox, btnFail);
+    const btnLayers = h('button.btn.btn-sm', { 'aria-expanded': 'false', onclick: () => { layerBox.hidden = !layerBox.hidden; btnLayers.setAttribute('aria-expanded', String(!layerBox.hidden)); } }, icon('layers', 14), 'Layers');
+    const tools = h('div.swarm-tools.adv-only', null, h('div.swarm-toolrow', null, segCam, btnLayers, btnFail), layerBox);
     const sw = (c, cls = '') => h('i' + (cls ? '.' + cls : ''), { style: { background: c, color: c } });
     const lg = (cls, c, text) => h('span', null, h('i' + (cls ? '.' + cls : ''), { style: '--c:' + c }), text);
-    const legend = h('div.swarm-legend.glass.legend', null, lg('line', 'var(--text)', 'Frontier: where the known map ends'), lg('hollow', 'var(--accent)', 'Robot'), lg('line', 'var(--ok)', 'Radio link (amber: weak)'),
-      lg('', 'var(--warn)', 'Lead: possible person'), lg('', 'var(--person)', 'Person confirmed'), h('span.dim', null, 'Walls are drawn cut at 1.6 m'));
-    stage.append(...badges, divider, tools, legend, caption);
+    const legend = h('div.swarm-legend.glass.legend.adv-only', null, lg('line', 'var(--text)', 'Frontier: where the known map ends'), lg('hollow', 'var(--accent)', 'Robot'), lg('line', 'var(--accent-2)', 'Radio link (amber: weak)'),
+      lg('', 'var(--warn)', 'Lead: possible person'), lg('', 'var(--person)', 'Person confirmed'), h('span.dim', null, 'Walls are cut at 1.7 m; building heights are drawn, not measured'));
+    // ---------- demo overlay ----------
+    const dCap = h('p.swarm-dcap', { role: 'status' }), dFig = ['mapped', 'search time', 'searching'].map((t) => { const b = h('b.num', null, '–'); return { el: h('div', null, b, h('span', null, t)), b }; });
+    const btnDemo = h('button.btn.btn-primary', { title: 'Kills the beacon that carries the most machines. You can also click any beacon.', onclick: () => failRelay('busiest') }, icon('alert', 14), 'Fail a beacon');
+    const btnHold = h('button.btn', { 'aria-label': 'Pause', onclick: () => { paused = !paused; btnHold.replaceChildren(icon(paused ? 'play' : 'pause', 14)); btnHold.setAttribute('aria-label', paused ? 'Play' : 'Pause'); } }, icon('pause', 14));
+    const demoBox = h('div.swarm-demo.demo-only', null,
+      h('div.swarm-dtitle', null, h('div.swarm-dtags', null, realityTag('concept'), h('span.tag.tag-ok', null, 'Live algorithm')), h('h1', null, 'One search, eight machines'), dCap, h('div.row', null, btnDemo, btnHold)),
+      h('div.swarm-dfig', null, ...dFig.map((f) => f.el)));
+    const setCap = (text) => { if (dCapNext === text) return; dCapNext = text; dCap.classList.add('out'); setTimeout(() => { dCap.textContent = dCapNext; dCap.classList.remove('out'); }, 260); };
+    stage.append(...badges, divider, tools, legend, caption, demoBox);
 
     // ---------- panels ----------
     const chartCanvas = h('canvas', { role: 'img', 'aria-label': 'Coverage over time for each strategy' });
@@ -96,15 +110,15 @@ export default {
       h('button.swarm-link', { type: 'button', onclick: () => openModel() }, 'Model and assumptions')));
 
     root.append(h('div.swarm', null, head, bar, h('div.swarm-main', null,
-      h('div.swarm-left', null, stage, h('div.swarm-dock', null, chartPanel, auctionPanel)),
-      h('div.swarm-right', null, kpiPanel, fleetPanel, realNote))));
+      h('div.swarm-left', null, stage, h('div.swarm-dock.adv-only', null, chartPanel, auctionPanel)),
+      h('div.swarm-right.adv-only', null, kpiPanel, fleetPanel, realNote))));
 
     // ---------- the 3-D scene ----------
     try {
       const mod = await import('./scene.js');
       scene = mod.createScene(stage, { kit: ctx.kit, onPick: (p) => {
         if (p.view !== focus && runs.length > 1) { focus = p.view; fleetAB.redraw(); selLead = null; }
-        if (p.type === 'robot') { selRobot = p.id; camMode = 'follow'; segCam.redraw(); scene.setCamera('follow', p.id); scene.select(p.id); refreshAll(true); }
+        if (p.type === 'robot') { if (demo) { scene.select(p.id); scene.film({ id: p.id, d: 22, el: 0.55, az: 0.4, st: 1.8, drift: 0.05 }); return; } selRobot = p.id; camMode = 'follow'; segCam.redraw(); scene.setCamera('follow', p.id); scene.select(p.id); refreshAll(true); }
         else if (p.type === 'relay') failRelay(p.id, p.view);
       } });
       stage.prepend(scene.canvas);
@@ -117,42 +131,45 @@ export default {
     // ---------- runs ----------
     function build() {
       world = genWorld({ layout: cfg.layout, seed: cfg.seed, blockB });
-      const mk = (strategy, tag) => ({ strategy, tag, swarm: createSwarm(world, { n: cfg.n, strategy, startCharge: cfg.charge, track: !!scene }) });
+      const mk = (strategy, tag) => ({ strategy, tag, swarm: createLive(world, { n: cfg.n, strategy, startCharge: cfg.charge }, { layout: cfg.layout, seed: cfg.seed, blockB }) });
+      for (const r of runs) r.swarm.dispose();
       runs = cfg.race ? [mk(cfg.strategy, 'A'), mk(cfg.strategyB, 'B')] : [mk(cfg.strategy, '')];
-      for (const r of runs) r.swarm.step();
+      for (const r of runs) r.swarm.advance(0, 4);
+      director = null;
       focus = Math.min(focus, runs.length - 1); selLead = null; acc = 0; started = false; playing = false; hover = null;
       if (selRobot && !runs[0].swarm.state.robots.some((r) => r.id === selRobot)) { selRobot = null; if (camMode === 'follow') { camMode = 'overview'; segCam.redraw(); } }
-      scene?.setSwarms(runs.map((r) => r.swarm)); scene?.setCamera(camMode, selRobot); scene?.select(camMode === 'follow' ? selRobot : null);
+      scene?.setSwarms(runs.map((r) => r.swarm)); applyCam();
       const mix = fleetMix(cfg.n); nVal.textContent = String(cfg.n); nMix.textContent = mix.rovers + ' rover' + (mix.rovers === 1 ? '' : 's') + (mix.drones ? ' + ' + mix.drones + ' drone' + (mix.drones === 1 ? '' : 's') : '');
       nMinus.disabled = cfg.n <= 2; nPlus.disabled = cfg.n >= 12; selLayout.value = cfg.layout; inSeed.value = cfg.seed; selCharge.value = String(cfg.charge);
       fieldB.hidden = !cfg.race; fleetAB.hidden = !cfg.race; divider.hidden = !cfg.race; badges[1].hidden = !cfg.race; segStrat.redraw(); segMode.redraw();
       fleetBody.replaceChildren(); fleetRows.clear(); record(); refreshAll(true);
     }
+    function applyCam() { if (!scene) return; scene.setCinema(demo); if (demo && !ctx.kit.reducedMotion()) scene.setCamera('film'); else scene.setCamera(demo ? 'overview' : camMode, selRobot); scene.select(!demo && camMode === 'follow' ? selRobot : null); }
+    function makeDirector() { const run = runs[0]; director = createDirector({ scene, live: run.swarm, world, onCaption: setCap, failBeacon: () => { if (run === runs[0]) run.swarm.failRelay('busiest'); }, onEnd: () => { scene.setFade(0); setTimeout(() => { if (!demo || runs[0] !== run) { scene.setFade(1); return; } Object.assign(cfg, DEMO); build(); play(); scene.setFade(1); }, 1300); } }); }
+    function setMode(m) { const on = m === 'demo'; if (on === demo) return; demo = on; if (demo && cfg.race) { cfg.race = false; build(); } director = null; applyCam(); if (demo) { play(); uiAcc = 1; } else refreshAll(true); requestAnimationFrame(() => scene?.resize()); }
     function record() { const H = hist(); for (const r of runs) H[r.strategy] = { series: r.swarm.state.series, sum: r.swarm.summary(), live: true, dt: r.swarm.state.seriesDt }; }
     function play() { if (runs.every((r) => r.swarm.state.done)) return; playing = true; started = true; drawPlay(); }
     function pause() { playing = false; drawPlay(); }
     function togglePlay() { if (runs.every((r) => r.swarm.state.done)) { build(); play(); } else if (playing) pause(); else play(); }
     function drawPlay() { const done = runs.every((r) => r.swarm.state.done); btnPlay.replaceChildren(icon(done ? 'reset' : playing ? 'pause' : 'play'), h('span', null, done ? 'Run again' : playing ? 'Pause' : started ? 'Resume' : 'Start search')); btnPlay.setAttribute('aria-pressed', String(playing)); }
     function failRelay(id, view) {
-      const targets = view != null ? [runs[view]] : runs; let any = null;
-      for (const r of targets) { const rel = r.swarm.failRelay(id); if (rel) any = rel; }
-      if (!any) ctx.shell.toast('No beacon is carrying traffic yet. Beacons are dropped once robots get far from base.', { level: 'info' });
-      refreshAll(true);
+      const targets = view != null ? [runs[view]] : runs;
+      Promise.all(targets.map((r) => r.swarm.failRelay(id))).then((res) => { if (!res.some(Boolean)) ctx.shell.toast('No beacon is carrying traffic yet. Beacons are dropped once robots get far from base.', { level: 'info' }); else refreshAll(true); });
     }
 
     function tick(now) {
       raf = requestAnimationFrame(tick);
-      const dt = Math.min(0.1, (now - last) / 1000 || 0.016); last = now;
-      if (playing) {
-        acc += dt * cfg.speed; const t0 = performance.now(); let n = 0;
-        while (acc >= DT && performance.now() - t0 < 12) { for (const r of runs) r.swarm.step(); acc -= DT; n++; }
-        if (acc > DT * 6) acc = 0;
-        speedAcc.sim += n * DT; speedAcc.real += dt; if (speedAcc.real > 1) { effSpeed = speedAcc.sim / speedAcc.real; speedAcc = { sim: 0, real: 0 }; }
-        if (runs.every((r) => r.swarm.state.done)) { playing = false; drawPlay(); announceEnd(); uiAcc = 1; }
+      const dt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now; let speed = 0;
+      if (playing && !(demo && paused)) {
+        if (demo && scene && !ctx.kit.reducedMotion()) { if (!director) makeDirector(); speed = director.update(dt); } else speed = demo ? 6 : cfg.speed;
+        let adv = dt * speed; if (runs.length > 1) for (const r of runs) if (!r.swarm.state.done) adv = Math.min(adv, Math.max(0, r.swarm.buffered()));   // keep a race in step
+        for (const r of runs) r.swarm.advance(adv, Math.max(3, speed * (demo ? 0.7 : 0.4)));
+        if (runs.every((r) => r.swarm.state.done)) { playing = false; drawPlay(); if (!demo) announceEnd(); uiAcc = 1; }
       }
-      try { scene?.frame(dt, playing ? cfg.speed : 0); } catch (e) { console.error('[swarm] scene', e); scene = null; }
-      uiAcc += dt; if (uiAcc > 0.2) { uiAcc = 0; refreshAll(false); }
+      try { scene?.frame(dt, speed); } catch (e) { console.error('[swarm] scene', e); scene = null; }
+      uiAcc += dt; if (uiAcc > (demo ? 0.1 : 0.25)) { uiAcc = 0; if (demo) drawDemo(); else refreshAll(false); }
     }
+    function drawDemo() { const S = runs[0].swarm.state, out = S.robots.filter((r) => r.mode === 'explore' || r.mode === 'lead' || r.mode === 'listen').length, v = [(S.m.coverage * 100).toFixed(0) + ' %', clock(S.t), out + ' of ' + S.n]; dFig.forEach((f, i) => { if (f.b.textContent !== v[i]) f.b.textContent = v[i]; }); }
     function announceEnd() {
       const a = runs[0].swarm.summary(); if (runs.length === 1) ctx.shell.toast(STRATEGIES[a.strategy].label + ': search finished in ' + clock(a.tExplored) + ' of simulated time, ' + (a.coverage * 100).toFixed(1) + ' % mapped.', { level: 'ok' });
       else { const b = runs[1].swarm.summary(); if (a.t95 && b.t95) { const win = a.t95 <= b.t95 ? a : b, lose = win === a ? b : a; ctx.shell.toast(STRATEGIES[win.strategy].label + ' reached 95 % in ' + clock(win.t95) + ', ' + clock(lose.t95 - win.t95) + ' ahead of ' + STRATEGIES[lose.strategy].label.toLowerCase() + ' on this site.', { level: 'ok', ms: 7000 }); } }
@@ -167,7 +184,7 @@ export default {
         b.t.replaceChildren(...(r.tag ? [h('i', null, r.tag)] : []), STRATEGIES[r.strategy].label);
         b.big.replaceChildren((m.coverage * 100).toFixed(1) + ' %', h('small', null, 'mapped'));
         b.fill.style.width = (m.coverage * 100).toFixed(1) + '%';
-        b.s1.textContent = clock(S.t) + ' simulated' + (playing && effSpeed && Math.abs(effSpeed - cfg.speed) > cfg.speed * 0.2 ? ' · running at ' + Math.round(effSpeed) + '×' : '') + (m.t95 ? ' · 95 % at ' + clock(m.t95) : '');
+        b.s1.textContent = clock(S.t) + ' simulated' + (m.t95 ? ' · 95 % at ' + clock(m.t95) : '');
         let win = ''; if (runs.length === 2) { const o = runs[1 - i].swarm.state.m; if (m.t95 && (!o.t95 || m.t95 < o.t95)) win = o.t95 ? 'First to 95 %, by ' + clock(o.t95 - m.t95) : 'First to 95 %'; }
         if (S.done || m.tExplored != null) win = (win ? win + ' · ' : '') + 'search finished ' + clock(m.tExplored);
         b.s2.textContent = win; b.s2.hidden = !win;
@@ -412,12 +429,13 @@ export default {
     }
 
     build();
-    root._swarm = { cfg, get runs() { return runs; }, get scene() { return scene; }, build, play, pause, failRelay, history, bench, runBench, measureOthers, setTab };
-    const offEsc = ctx.bus.on('escape', () => { if (camMode === 'follow') { camMode = 'overview'; segCam.redraw(); scene?.setCamera('overview'); scene?.select(null); drawFleet(true); } });
-    let firstShow = true;
+    root._swarm = { cfg, get director() { return director; }, get runs() { return runs; }, get scene() { return scene; }, build, play, pause, failRelay, history, bench, runBench, measureOthers, setTab };
+    const offMode = ctx.bus.on('mode', ({ mode }) => setMode(mode));
+    const offEsc = ctx.bus.on('escape', () => { if (!demo && camMode === 'follow') { camMode = 'overview'; segCam.redraw(); scene?.setCamera('overview'); scene?.select(null); drawFleet(true); } });
+    let firstShow = true, resumeOnShow = false;
     return {
-      onShow() { visible = true; scene?.resize(); last = performance.now(); cancelAnimationFrame(raf); raf = requestAnimationFrame(tick); if (firstShow) { firstShow = false; play(); } },
-      onHide() { visible = false; cancelAnimationFrame(raf); raf = 0; if (playing) pause(); },
+      onShow() { visible = true; scene?.resize(); last = performance.now(); cancelAnimationFrame(raf); raf = requestAnimationFrame(tick); if (firstShow) { firstShow = false; play(); } else if (demo && resumeOnShow) play(); },
+      onHide() { resumeOnShow = playing; visible = false; cancelAnimationFrame(raf); raf = 0; if (playing) pause(); },
       onParams(p) { if (!p || !Object.keys(p).length) return; Object.assign(cfg, p); segSpeed.redraw(); build(); play(); },
     };
   },

@@ -1,6 +1,6 @@
 // A small pool of workers that run branch specs. If workers cannot start, the same code runs on the page instead.
 export function createPool(nn, { size } = {}) {
-  const want = size || Math.max(2, Math.min(6, (navigator.hardwareConcurrency || 4) - 2));
+  const want = size || Math.max(2, Math.min(4, (navigator.hardwareConcurrency || 4) - 2));
   const workers = [], queue = [], jobs = new Map();
   let seq = 0, mode = 'worker', inline = null, dead = false;
   function spawn() {

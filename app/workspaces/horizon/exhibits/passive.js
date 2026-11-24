@@ -64,7 +64,7 @@ export default {
     const fMap = L.figure({ area: 'map', title: 'The scene, seen from above' }), fRD = L.figure({ area: 'rd', title: 'What the receiver computes' }), fCut = L.figure({ area: 'cut', title: 'One slice' }), fInt = L.figure({ area: 'int', title: 'Listening longer' });
     stage.append(fMap.el, fRD.el, fCut.el, fInt.el);
     const P = { cancel: true, refSnr: 25, nb: 512, seed: 2 };
-    const T0 = () => [{ p: [95, 60], v: [-0.9, 0.8], rcs: 0.6, name: 'person walking', person: true }, { p: [-60, -110], v: [0.4, 1.0], rcs: 0.6, name: 'person walking', person: true }, { p: [230, -150], v: [-3.2, 1.4], rcs: 8, name: 'vehicle' }, { p: [40, 130], v: [0, 0], rcs: 0.6, name: 'person, still', person: true }];
+    const T0 = () => [{ p: [95, 60], v: [-0.9, 0.8], rcs: 0.6, name: 'person walking', person: true }, { p: [-150, -90], v: [0.9, -0.9], rcs: 0.6, name: 'person walking', person: true }, { p: [230, -150], v: [-3.2, 1.4], rcs: 8, name: 'vehicle' }, { p: [40, 130], v: [0, 0], rcs: 0.6, name: 'person, still', person: true }];
     let T = T0(), X = null, RD = null, det = [], curve = [], img = null, clock = 0, drag = -1, M = null;
     function detect() {
       const nb = P.nb; RD = doppler(X, nb); det = []; const th = 22, at = (r, d) => RD[r * nb + ((d + nb) % nb)];
@@ -110,7 +110,7 @@ export default {
       sD.set(hit.length + ' of ' + mv.length); sD.tone(hit.length === mv.length ? 'ok' : 'warn'); sF.set(String(fa)); sF.tone(fa ? 'warn' : 'ok'); sR.set(L.fix(med(hit.map((q) => Math.abs(q.hit.r - q.r))), 1)); sV.set(L.fix(med(hit.map((q) => Math.abs(q.hit.f - q.f))), 2));
       const st = M.find((q) => Math.hypot(...q.t.v) < 0.05);
       fMap.setTitle(hit.length + ' of ' + mv.length + ' moving targets found' + (st ? st.hit ? '; the still person too' : '; the person who lies still is invisible' : '')); fMap.setNote('Each detection says only how far the echo travelled: an ellipse around mast and receiver. Drag anyone.');
-      fRD.setTitle(P.cancel ? 'With the mast cancelled, what moves stands out' : 'Without cancelling, the mast buries the echoes'); fRD.setNote(P.nb + ' blocks of 25.6 µs, one each millisecond.');
+      fRD.setTitle(P.cancel ? 'With the mast cancelled, what moves stands out' : 'Without cancelling, the mast buries the echoes'); fRD.setNote(P.nb + ' blocks of 25.6 µs, one each millisecond. Two people within about 15 m of path and 2 Hz of each other merge into one.');
       fCut.setTitle('At the first person’s range, the echo sits at ' + M[0].f.toFixed(0) + ' Hz'); fInt.setTitle('Listening twice as long adds about 3 dB (dashed)');
       fMap.redraw(); fRD.redraw(); fCut.redraw(); fInt.redraw();
     }
@@ -121,7 +121,7 @@ export default {
       L.seg({ label: 'Listening time', value: 512, options: [{ value: 64, label: '64 ms' }, { value: 128, label: '128 ms' }, { value: 256, label: '256 ms' }, { value: 512, label: '512 ms' }], onChange: (v) => { P.nb = v; detect(); paint(); } }).el,
       L.slider({ label: 'Quality of the reference copy', min: 0, max: 40, step: 1, value: P.refSnr, unit: 'dB', onInput: (v) => { P.refSnr = v; Cf(); } }).el,
       L.slider({ label: 'First person’s walking speed', min: 0, max: 2, step: 0.1, value: 1.2, unit: 'm/s', format: (v) => v.toFixed(1), onInput: (v) => { T[0].v = [-0.747 * v, 0.664 * v]; C(); } }).el,
-      L.row(L.button({ label: 'Listen again', icon: 'refresh', onClick: () => { P.seed++; compute(); } }), L.button({ label: 'Reset the scene', onClick: () => { T = T0(); compute(); } })));
+      L.row(L.button({ label: 'Listen again', icon: 'reset', onClick: () => { P.seed++; compute(); } }), L.button({ label: 'Reset the scene', onClick: () => { T = T0(); compute(); } })));
     compute();
     const loop = L.loop((dt) => { clock += dt; fMap.redraw(); });
     return { start() { paint(); loop.start(); }, stop() { loop.stop(); } };

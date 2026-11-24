@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HOUND Command: self-tests</title>
+<link rel="icon" href="../assets/img/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../app/ui/tokens.css">
+<link rel="stylesheet" href="../app/ui/base.css">
+<style>
+  body { overflow: auto; }
+  main { max-width: 1240px; margin: 0 auto; padding: 48px 32px 80px; }
+  header p { color: var(--text-2); max-width: 74ch; margin: 10px 0 20px; font-size: 14px; }
+  .bar { margin: 18px 0 6px; }
+  h2 { margin: 36px 0 4px; } h2 + p { color: var(--text-3); margin-bottom: 10px; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px 9px 0; border-top: 1px solid var(--line); line-height: 1.45; }
+  th { color: var(--text-3); font: var(--type-label); border-top: 0; } td.n, th.n { text-align: right; font-family: var(--mono); font-size: 12px; }
+  td:first-child { font-weight: 500; } td.m { color: var(--text-2); }
+  details { grid-column: 1 / -1; } summary { cursor: pointer; color: var(--text-3); font-size: 12px; margin-top: 4px; } summary:hover { color: var(--text); }
+  li.f { color: var(--danger); } li.l { color: var(--warn); } ol { margin: 6px 0 2px; padding-left: 22px; color: var(--text-3); font: 400 11.5px/1.5 var(--mono); max-height: 260px; overflow: auto; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Self-tests</h1>
+    <p>The same tests the System check workspace runs, on a plain page. They run on this computer, now. Everything is simulated people and a simulated mission; nothing here was recorded with the rover.</p>
+    <div class="row"><button class="btn btn-primary" id="go">Run again</button><button class="btn" id="md">Copy as Markdown</button><button class="btn" id="js">Copy as JSON</button><a class="btn btn-ghost" href="../app/?mode=advanced#/status">Open System check</a><span class="muted" id="sum" role="status" style="margin-left:8px"></span></div>
+    <div class="bar"><i id="prog" style="width:0"></i></div>
+  </header>
+  <div id="out"></div>
+</main>
+<script type="module">
+import { SUITE, GROUPS, toMarkdown } from '../app/workspaces/status/suite.js';
+import { createRunner } from '../app/workspaces/status/runner.js';
+const $ = (id) => document.getElementById(id), el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+let last = null, done = 0; const rows = new Map();
+function table() {
+  rows.clear(); $('out').replaceChildren(...GROUPS.flatMap((g) => {
+    const tb = el('tbody'), tab = el('table'), hd = el('tr');
+    for (const [x, w, n] of [['Test', '20%'], ['What should happen', '29%'], ['What happened', '29%'], ['Result', '9%'], ['Checks', '6%', 1], ['Time', '7%', 1]]) { const th = el('th', n ? 'n' : '', x); th.style.width = w; th.scope = 'col'; hd.append(th); }
+    const thead = el('thead'); thead.append(hd); tab.append(thead, tb);
+    for (const t of SUITE.filter((s) => s.group === g.id)) { const tr = el('tr'); tr.append(el('td', '', t.title), el('td', 'm', t.expect)); const got = el('td'), res = el('td'), n = el('td', 'n'), ms = el('td', 'n'); res.append(el('span', 'dim', 'waiting')); tr.append(got, res, n, ms); tb.append(tr); rows.set(t.id, { got, res, n, ms, checks: [] }); }
+    return [el('h2', '', g.title), el('p', '', g.line), tab];
+  }));
+}
+function go() {
+  table(); done = 0; $('sum').textContent = 'Running'; last = null; document.title = 'Running · HOUND self-tests';
+  runner.go();
+}
+const runner = createRunner((m) => {
+    if (m.type === 'error') { $('sum').textContent = 'Could not run: ' + m.message; return; }
+    const r = rows.get(m.id);
+    if (m.type === 'start') r.res.replaceChildren(el('span', 'c-accent', 'running'));
+    if (m.type === 'checks') { r.checks.push(...m.checks); r.n.textContent = r.checks.length; }
+    if (m.type === 'end') {
+      const x = m.result; r.got.textContent = x.got; r.ms.textContent = x.ms < 1000 ? x.ms.toFixed(0) + ' ms' : (x.ms / 1000).toFixed(1) + ' s';
+      r.res.replaceChildren(el('span', 'tag ' + (x.state === 'fail' ? 'tag-danger' : x.state === 'limit' ? 'tag-warn' : 'tag-ok'), x.state === 'fail' ? 'Fail' : 'Pass')); if (x.limits) r.res.append(el('div', 'caption', x.limits + ' known limits'));
+      const d = el('details'); d.append(el('summary', '', 'Evidence')); const ol = el('ol'); for (const c of [...r.checks].sort((a, b) => (a[0] === 1) - (b[0] === 1)).slice(0, 400)) ol.append(el('li', c[0] === 2 ? 'f' : c[0] === 3 ? 'l' : '', c[1] + (c[2] ? ': ' + c[2] : ''))); d.append(ol); r.got.append(d);
+      $('prog').style.width = (++done / SUITE.length) * 100 + '%';
+    }
+    if (m.type === 'done') { last = m.out; window.RESULTS = m.out; $('sum').textContent = m.out.results.length + ' tests, ' + m.out.checks.toLocaleString('en') + ' checks, ' + m.out.failed + ' failed, ' + m.out.limits + ' known limits, ' + (m.out.ms / 1000).toFixed(1) + ' s'; document.title = (m.out.failed ? 'FAIL' : 'Pass') + ' · HOUND self-tests'; }
+});
+const copy = async (text, b) => { const was = b.textContent; try { await navigator.clipboard.writeText(text); b.textContent = 'Copied'; } catch { b.textContent = 'Could not copy'; } setTimeout(() => { b.textContent = was; }, 1400); };
+$('go').onclick = go; $('md').onclick = (e) => last && copy(toMarkdown(last), e.currentTarget); $('js').onclick = (e) => last && copy(JSON.stringify(last, null, 2), e.currentTarget);
+go();
+</script>
+</body>
+</html>

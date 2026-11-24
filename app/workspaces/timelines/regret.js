@@ -8,9 +8,12 @@ export function mountRegret(pane, app) {
   const { h, kit } = app, { icon } = kit;
   const el = h('div.tl-rg'); pane.append(el);
   const OUT = { sensors: ['found by sensors alone', 'c-person'], team: ['left for the team to check', 'c-warn'], missed: ['never on the route', 'c-danger'] };
+  // Regret is about choices. A fault, a new slide or a different dice roll is luck, so those worlds are not candidates.
+  const CHOICE = new Set(['skipSecondLook', 'onlyCheck', 'dismiss', 'route', 'hold', 'params']);
+  const chosen = (b) => { for (let x = b; x && x.parent; x = app.byId(x.parent)) if (!CHOICE.has(x.dec.kind)) return false; return true; };
   function candidates() {
-    const out = app.branches.filter((b) => b.run).map((b) => ({ name: b.name, label: b.label, run: b.run, id: b.id }));
-    if (app.sweep && app.sweep.branch === 'trunk') for (const f of app.sweep.fams) for (const o of f.opts) if (o.run && !out.some((c) => c.run.hash === o.run.hash)) out.push({ name: 'Sweep', label: o.res.label, run: o.run, probe: o });
+    const out = app.branches.filter((b) => b.run && chosen(b)).map((b) => ({ name: b.name, label: b.label, run: b.run, id: b.id }));
+    if (app.sweep && app.sweep.branch === 'trunk') for (const f of app.sweep.fams) for (const o of f.opts) if (o.run && CHOICE.has(o.dec.kind) && !out.some((c) => c.run.hash === o.run.hash)) out.push({ name: 'Sweep', label: o.res.label, run: o.run, probe: o });
     return out;
   }
   function paint() {
@@ -34,10 +37,10 @@ export function mountRegret(pane, app) {
     const cell = (p) => h('td', null, h('span', { class: OUT[p.outcome][1] }, OUT[p.outcome][0]), h('small', null, p.reachedAt != null ? 'reached at ' + clock(p.reachedAt) : p.det ? 'lead ' + p.det + ' ended ' + (p.dismissed ? 'dismissed' : p.detStatus === 'rejected' ? 'closed' : p.detStatus) + ', not reached' : 'never detected'));
     el.replaceChildren(
       h('div.tl-rg-verdict', null,
-        h('span.tag.tag-sim', null, 'Ground truth: known only because this is a simulation'),
+        h('span.tag.tag-sim', null, 'Ground truth, simulation only'),
         h('h2', null, none ? ['Regret: ', h('em', null, 'none found')] : ['Regret: ', h('em', null, gap.slice(0, 2).map((g) => g.text).join(', '))]),
-        h('p', null, none ? 'Of ' + plural(cands.length, 'world') + ' tried, none does better than the mission as flown' + (worse ? '; ' + worse + ' do worse.' : '.') : 'The best of ' + plural(cands.length, 'world') + ' tried is "' + best.label + '". Against it, the mission as flown has: ' + gap.map((g) => g.text).join(', ') + '. ' + better + ' of the worlds tried do better than what was flown.'),
-        h('p.caption', null, 'Worlds are ranked by, in order: ' + M.RANK_WORDS.truth.slice(1).join('; ') + '. A later item only breaks ties. "Best" means best among the forks tried here, in this one simulated world. It is hindsight, not a rule: with different luck the order can change, which is what the parameter sweeps measure.'),
+        h('p', null, none ? 'Of ' + plural(cands.length, 'set of choices', 'sets of choices') + ' tried, none does better than the mission as flown' + (worse ? '; ' + worse + ' do worse.' : '.') : 'The best of ' + plural(cands.length, 'set of choices', 'sets of choices') + ' tried is "' + best.label + '". Against it, the mission as flown has: ' + gap.map((g) => g.text).join(', ') + '. ' + better + ' of the worlds tried do better than what was flown.'),
+        h('p.caption', null, 'Worlds are ranked by, in order: ' + M.RANK_WORDS.truth.slice(1).join('; ') + '. A later item only breaks ties. "Best" means best among the forks tried here, in this one simulated world. Faults and new slides are luck, not choices, and are left out. It is hindsight, not a rule: with different luck the order can change, which is what the parameter sweeps measure.'),
         !none && best.probe ? h('button.btn.btn-sm', { type: 'button', onclick: () => { const o = app.fork('trunk', best.probe.T, best.probe.dec); if (o.branch) { app.pendingSelect = o.branch.id; app.emit('branches'); app.showTab('worlds'); } } }, icon('plus', 12), 'Add the best world to the tree') : null,
         !none && best.id ? h('button.btn.btn-sm', { type: 'button', onclick: () => { app.compareId = 'trunk'; app.setCursor(best.id, app.cursor.t); app.setCompare('trunk'); app.showTab('worlds'); } }, 'Open it side by side') : null),
       h('div.tl-rg-people', null, h('h4', null, 'The people who were really there'),
@@ -55,11 +58,11 @@ export function mountRegret(pane, app) {
 
 const SOURCES = [
   { who: 'Wachter, Mittelstadt and Russell', year: '2017', title: 'Counterfactual explanations without opening the black box', where: 'arXiv 1711.00399; Harvard Journal of Law and Technology 31(2), 2018', url: 'https://arxiv.org/abs/1711.00399', use: 'Explain a decision by the smallest change that would have reversed it. "Why this lead?" does exactly that on the fusion evidence.' },
-  { who: 'Pearl', year: '2009', title: 'Causal inference in statistics: an overview, section 3.4', where: 'Statistics Surveys 3, 96 to 146', url: 'https://doi.org/10.1214/09-SS057', use: 'A counterfactual in a structural model keeps the background noise fixed and changes one action. A branch here keeps the seed and changes one command.' },
-  { who: 'O’Callahan, Jones, Froyd, Huey, Noll and Partush', year: '2017', title: 'Engineering record and replay for deployability (the rr debugger)', where: 'USENIX Annual Technical Conference', url: 'https://www.usenix.org/conference/atc17/technical-sessions/presentation/ocallahan', use: 'Record the inputs, replay the run exactly. The trunk is rebuilt from the live mission’s command log the same way.' },
-  { who: 'DARPA Deep Green (programme led by Col. John Surdu)', year: '2008', title: 'A commander’s aid that keeps a graph of possible futures of an operation', where: 'USC Viterbi news, April 2008', url: 'https://viterbischool.usc.edu/news/2008/04/beyond-chess-deep-green-models-rapid-change-for-combat-commanders/', use: 'A fielded-research precedent for running the alternatives ahead of the decision. This page does it for one small simulated search.' },
-  { who: 'Savage', year: '1951', title: 'The theory of statistical decision', where: 'Journal of the American Statistical Association 46(253), 55 to 67', url: 'https://www.jstor.org/stable/2280094', use: 'The origin of judging a choice by its loss against the best choice in hindsight, now called regret.' },
-  { who: 'Morris', year: '1991', title: 'Factorial sampling plans for preliminary computational experiments', where: 'Technometrics 33(2), 161 to 174', url: 'https://doi.org/10.2307/1269043', use: 'Change one input at a time and measure the effect. The sweeps are one-at-a-time experiments on the mission.' },
+  { who: 'Pearl', year: '2009', title: 'Causal inference in statistics: an overview, section 3.4', where: 'Statistics Surveys 3, 96 to 146', url: 'https://doi.org/10.1214/09-SS057', use: 'Idea, in our reading: ask what would have happened by holding the background fixed and changing one action. A branch here keeps the seed and changes one command.', listing: true },
+  { who: 'O’Callahan, Jones, Froyd, Huey, Noll and Partush', year: '2017', title: 'Engineering record and replay for deployability (the rr debugger)', where: 'USENIX Annual Technical Conference', url: 'https://www.usenix.org/conference/atc17/technical-sessions/presentation/ocallahan', use: 'Record a program as it runs, then replay it. The trunk is rebuilt from the live mission’s command log in the same spirit.' },
+  { who: 'DARPA Deep Green (programme led by Col. John Surdu)', year: '2008', title: 'A commander’s aid that keeps a graph of possible futures of an operation', where: 'USC Viterbi news, April 2008', url: 'https://viterbischool.usc.edu/news/2008/04/beyond-chess-deep-green-models-rapid-change-for-combat-commanders/', use: 'A research programme on generating and watching possible futures ahead of a decision; it was in development, not fielded, when the page was written. This page does it for one small simulated search.' },
+  { who: 'Savage', year: '1951', title: 'The theory of statistical decision', where: 'Journal of the American Statistical Association 46(253), 55 to 67', url: 'https://www.jstor.org/stable/2280094', use: 'The origin of judging a choice by its loss against the best choice in hindsight, now called regret.', listing: true },
+  { who: 'Morris', year: '1991', title: 'Factorial sampling plans for preliminary computational experiments', where: 'Technometrics 33(2), 161 to 174', url: 'https://doi.org/10.2307/1269043', use: 'Change one input at a time and measure the effect. The sweeps are one-at-a-time experiments on the mission.', listing: true },
 ];
 
 export function mountMethod(pane, app) {
@@ -76,8 +79,8 @@ export function mountMethod(pane, app) {
       h('p.note', null, icon('info'), h('span', null, h('b', null, 'What would have to be true in the field. '), 'A real mission can only be forked if every sensor reading is logged and a simulator can say what the sensors would have seen on the path not taken. Here that is possible because the people are invented. For a real collapse nobody can simulate the building, the people and the radio well enough to trust a branch; what carries over today is the cheap part: replaying the log, and asking of a lead what evidence would change the call.')),
       h('p.caption', null, 'Reality: live algorithm (the engine, the planner, the fusion maths and the Wi-Fi network all run for real in each branch) on a simulated scenario. Radar, thermal and drone likelihoods are assumed design values. No branch is a prediction about a real building.')),
     h('div.tl-m-col', null, h('h4', null, 'Replay proof'), proofEl),
-    h('div.tl-m-col', null, h('h4', null, 'Sources, checked'), h('ul.tl-src', null, ...SOURCES.map((s) => h('li', null, h('a', { href: s.url, target: '_blank', rel: 'noopener noreferrer' }, s.who + ', ' + s.year, icon('external', 11)), h('span.tl-src-t', null, s.title + '. ' + s.where + '.'), h('span.tl-src-u', null, s.use)))),
-      h('p.caption', null, 'Each reference was looked up and its authors, year and venue confirmed before it was listed. None of them is about HOUND; they are where the ideas come from.'))));
+    h('div.tl-m-col', null, h('h4', null, 'Where the ideas come from'), h('ul.tl-src', null, ...SOURCES.map((s) => h('li', null, h('a', { href: s.url, target: '_blank', rel: 'noopener noreferrer' }, s.who + ', ' + s.year, icon('external', 11)), h('span.tl-src-t', null, s.title + '. ' + s.where + '.'), h('span.tl-src-u', null, s.use), h('span.tag', null, s.listing ? 'Listing only' : 'Page read')))),
+      h('p.caption', null, '“Page read” means the linked page was opened and its authors, year and title checked. “Listing only” means the title, year and venue were confirmed in a search listing but the publisher’s page could not be opened. None of them is about HOUND; they are where the ideas come from.'))));
   function paint() {
     if (pane.hidden) return;
     const L = app.proof.live, rows = app.branches;

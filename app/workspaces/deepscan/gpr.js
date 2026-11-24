@@ -78,7 +78,14 @@ export default function create(env) {
     pile.voids.forEach((v, vi) => { M[v.id] = one(vi + 1, v.poly); });
     const pp = pile.person; M.person = one(5, [[pp.span[0], 0.02], [pp.span[1], 0.02], [pp.span[1], 0.3], [pp.span[0], 0.3]]);
     focus = []; let bestS = 0;
-    for (let v = 0.07; v <= 0.2001; v += 0.01) { migrate(total, v, P.apMax, tmp); let a2 = 0, a4 = 0; for (const q of maskList) { const e = tmp[q] * tmp[q]; a2 += e; a4 += e * e; } const sh = a4 * maskList.length / (a2 * a2); focus.push([v, sh]); if (sh > bestS) { bestS = sh; best = v; } }
+    for (let v = 0.08; v <= 0.2001; v += 0.004) { const sh = slabEcho(v); focus.push([v, sh]); if (sh > bestS) { bestS = sh; best = v; } }
+  }
+  // The one reflector whose depth is known before digging is the floor slab at street level. Line up every trace on the
+  // delay that slab would have at speed v, and measure how well they agree. No buried truth is used.
+  function slabEcho(v) {
+    const at = (a, t) => { const f = t / DT, j = Math.floor(f); return j < 0 || j >= NT - 1 ? 0 : total[a * NT + j] * (1 - f + j) + total[a * NT + j + 1] * (f - j); }; let top = 0;
+    for (let dt = -1.5; dt <= 1.5; dt += 0.25) { let s = 0, e = 0, c = 0; for (let a = 0; a < ant.length; a++) { const d = ant[a].z; if (d < 0.8) continue; const t = 2 * d / v + dt; let nrm = 0; for (let k = -6; k <= 6; k++) nrm += at(a, t + k * 0.5) ** 2; const q = at(a, t) / Math.sqrt(nrm / 13 + 1e-9); s += q; e += q * q; c++; } top = Math.max(top, s * s / (c * e)); }
+    return top;
   }
   function paint() {
     dirtyImg = false; const { nx, nz, res, z0 } = WORLD, nA = Math.max(1, acq);
@@ -86,8 +93,8 @@ export default function create(env) {
     // gain with depth (as every radargram is shown), then colour: white = positive, blue = negative
     if (!migCv) { migCv = document.createElement('canvas'); migCv.width = nx; migCv.height = nz; }
     const c = migCv.getContext('2d'), im = c.createImageData(nx, nz), px = im.data, acc = L.rgbOf('--accent');
-    let clip = 0; const gained = tmp; for (const q of maskList) { const i = q % nx, k = (q - i) / nx, d = Math.max(0, pile.surf[i] - (z0 + (k + 0.5) * res)); gained[q] = mig[q] * Math.min(40, Math.exp(0.75 * d)) * (0.4 + d); }
-    const samp = []; for (let n = 0; n < maskList.length; n += 7) samp.push(Math.abs(gained[maskList[n]])); samp.sort((a, b) => a - b); clip = samp[Math.floor(samp.length * 0.992)] || 1;
+    let clip = 0; const gained = tmp; for (const q of maskList) { const i = q % nx, k = (q - i) / nx, d = Math.max(0, pile.surf[i] - (z0 + (k + 0.5) * res)); gained[q] = mig[q] * Math.min(40, Math.exp(0.6 * d)) * (0.4 + d); }
+    const samp = []; for (let n = 0; n < maskList.length; n += 7) samp.push(Math.abs(gained[maskList[n]])); samp.sort((a, b) => a - b); clip = samp[Math.floor(samp.length * 0.985)] || 1;
     for (const q of maskList) { const i = q % nx, k = (q - i) / nx, o = ((nz - 1 - k) * nx + i) * 4, v = gained[q] / clip, a = Math.min(1, Math.abs(v)); if (v > 0) { px[o] = 244; px[o + 1] = 248; px[o + 2] = 255; } else { px[o] = acc[0]; px[o + 1] = acc[1]; px[o + 2] = acc[2]; } px[o + 3] = 255 * Math.pow(a, 1.25) * 0.95; }
     c.putImageData(im, 0, 0);
     // the raw B-scan, gained with time
@@ -96,9 +103,9 @@ export default function create(env) {
     bscan = L.gridImage(bscan, view, ant.length, NT, 'bipolar', -cl, cl, { flip: false });
   }
   function controls() {
-    const vel = ui.slider({ label: 'Assumed radar speed in the pile', min: 0.07, max: 0.2, step: 0.002, value: P.v, fmt: (v) => v.toFixed(3) + ' m/ns', hint: 'Migration needs one speed for the whole pile. Too slow and the curves stay frowns; too fast and they flip into smiles.', oninput: (v) => { P.v = v; P.auto = false; dirtyImg = true; analyse(); env.refresh(); } });
+    const vel = ui.slider({ label: 'Assumed radar speed in the pile', min: 0.08, max: 0.2, step: 0.002, value: P.v, fmt: (v) => v.toFixed(3) + ' m/ns', hint: 'Migration needs one speed for the whole pile. Too slow and the curves stay frowns; too fast and they flip into smiles.', oninput: (v) => { P.v = v; P.auto = false; dirtyImg = true; analyse(); env.refresh(); } });
     const go = ui.button({ label: 'Collapse the hyperbolas', ico: 'play', primary: true, title: 'Widen the migration aperture from nothing to 3.2 m and watch each curve fold onto its source', onclick: () => { P.ap = 0; P.focusing = true; } });
-    const af = ui.button({ label: 'Autofocus', ico: 'target', title: 'Pick the speed that makes the image sharpest', onclick: () => { P.v = best; vel.set(best); dirtyImg = true; analyse(); env.refresh(); } });
+    const af = ui.button({ label: 'Find the speed', ico: 'target', title: 'Line up the echo of the floor slab, whose depth below the surface is known', onclick: () => { P.v = best; vel.set(best); dirtyImg = true; analyse(); env.refresh(); } });
     const wet = ui.seg({ label: 'How wet is the rubble', value: P.wet, options: [{ v: 'dry', l: 'Dry' }, { v: 'damp', l: 'Damp' }, { v: 'wet', l: 'Soaked' }], hint: 'Water absorbs radar. After a flood, this is the control that matters.', onchange: (v) => { P.wet = v; synth(); analyse(); env.refresh(); } });
     const fc = ui.seg({ label: 'Antenna frequency', value: P.fc, options: [{ v: 0.2, l: '200 MHz' }, { v: 0.4, l: '400 MHz' }, { v: 0.9, l: '900 MHz' }], hint: 'Higher frequency draws finer detail and dies sooner.', onchange: (v) => { P.fc = v; synth(); analyse(); env.refresh(); } });
     env._gprVel = vel;
@@ -117,7 +124,6 @@ export default function create(env) {
     // antenna track and the antenna itself
     c.save(); c.strokeStyle = L.col('--accent', 0.9); c.lineWidth = S.thumb ? 1 : 1.5; c.beginPath(); const nA = Math.max(1, acq); for (let a = 0; a < nA; a++) { const x = S.X(ant[a].x), y = S.Z(ant[a].z) - 2; if (a) c.lineTo(x, y); else c.moveTo(x, y); } c.stroke();
     if (!S.thumb && acq < ant.length) { const A = ant[Math.min(ant.length - 1, acq)], x = S.X(A.x), y = S.Z(A.z); c.fillStyle = L.tok('--accent'); c.fillRect(x - 7, y - 9, 14, 6); for (let k = 1; k < 4; k++) { c.strokeStyle = L.col('--accent', 0.5 - k * 0.11); c.beginPath(); c.arc(x, y, k * 0.45 * S.s, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke(); } }
-    if (!S.thumb && S.truth && acq >= ant.length) for (const id of ['A', 'B', 'C', 'D', 'person']) { const r = M[id]; if (!r || r.snr < 8 || id === 'A') continue; }
     c.restore();
   }
   function drawReadout(R) {
@@ -137,11 +143,11 @@ export default function create(env) {
       curve(pile.person.x, 0.25, 'the person', '--person'); c.restore(); }
     // focus curve inset
     if (focus.length) { const bw = 176, bh = 74, bx = r - bw - 10, by = t + 10; c.fillStyle = L.col('--bg-1', 0.9); c.fillRect(bx, by, bw, bh); c.strokeStyle = L.tok('--line-3'); c.strokeRect(bx + 0.5, by + 0.5, bw, bh);
-      let mx = 0, mn = 1e9; for (const f of focus) { mx = Math.max(mx, f[1]); mn = Math.min(mn, f[1]); } const fx = (v) => bx + 10 + (v - 0.07) / 0.13 * (bw - 20), fy = (s) => by + bh - 20 - (s - mn) / (mx - mn || 1) * (bh - 40);
+      let mx = 0, mn = 1e9; for (const f of focus) { mx = Math.max(mx, f[1]); mn = Math.min(mn, f[1]); } const fx = (v) => bx + 10 + (v - 0.08) / 0.12 * (bw - 20), fy = (s) => by + bh - 20 - (s - mn) / (mx - mn || 1) * (bh - 40);
       c.beginPath(); focus.forEach((f, i) => { if (i) c.lineTo(fx(f[0]), fy(f[1])); else c.moveTo(fx(f[0]), fy(f[1])); }); c.strokeStyle = L.tok('--text-2'); c.lineWidth = 1.25; c.stroke();
       c.strokeStyle = L.tok('--accent'); c.beginPath(); c.moveTo(fx(P.v), by + 18); c.lineTo(fx(P.v), by + bh - 16); c.stroke();
-      c.font = L.font(11, 600); c.fillStyle = L.tok('--text'); c.textAlign = 'left'; c.textBaseline = 'top'; c.fillText('Image sharpness against speed', bx + 8, by + 5);
-      c.font = L.font(10.5); c.fillStyle = L.tok('--text-3'); c.textBaseline = 'bottom'; c.fillText('0.07', bx + 8, by + bh - 3); c.textAlign = 'right'; c.fillText('0.20 m/ns', bx + bw - 8, by + bh - 3); c.textAlign = 'center'; c.fillStyle = L.tok('--accent'); c.fillText('sharpest ' + best.toFixed(2), L.clamp(fx(best), bx + 50, bx + bw - 60), by + bh - 3); }
+      c.font = L.font(11, 600); c.fillStyle = L.tok('--text'); c.textAlign = 'left'; c.textBaseline = 'top'; c.fillText('Floor-slab echo against speed', bx + 8, by + 5);
+      c.font = L.font(10.5); c.fillStyle = L.tok('--text-3'); c.textBaseline = 'bottom'; c.fillText('0.08', bx + 8, by + bh - 3); c.textAlign = 'right'; c.fillText('0.20 m/ns', bx + bw - 8, by + bh - 3); c.textAlign = 'center'; c.fillStyle = L.tok('--accent'); c.fillText('best ' + best.toFixed(3), L.clamp(fx(best), bx + 50, bx + bw - 60), by + bh - 3); }
     if (acq < ant.length) { c.font = L.font(12, 500); c.fillStyle = L.tok('--text-2'); c.textAlign = 'left'; c.textBaseline = 'top'; c.fillText('Scanning: trace ' + acq + ' of ' + ant.length, l + 10, t + 8); }
     c.restore();
   }
@@ -161,13 +167,14 @@ export default function create(env) {
       { who: 'Schneider, Geophysics 43 (1978).', what: 'Integral formulation for migration in two and three dimensions: the Kirchhoff summation used here.', url: 'https://doi.org/10.1190/1.1440828' },
       { who: 'Stolt, Geophysics 43 (1978).', what: 'Migration by Fourier transform, the fast frequency-domain form of the same idea.', url: 'https://doi.org/10.1190/1.1440826' },
     ],
+    _demo: () => ({ P, ant, sc, total, M, mask, maskList, migrate, NT, DT, focus, best, analyse, get migCv() { return migCv; }, runAll() { while (acq < ant.length) { shoot(acq); synth(acq, acq + 1); acq++; } analyse(); P.v = best; analyse(); P.ap = P.apMax; P.focusing = false; P.auto = true; dirtyImg = true; } }),
     setPile, controls, drawStage, drawReadout, tick, verdicts,
     stageTitle: () => (P.ap < 0.05 ? 'Raw echoes, drawn under the antenna' : 'Echoes focused by migration'), stageNote: () => acq < ant.length ? 'scanning the surface' : 'aperture ' + P.ap.toFixed(1) + ' m · speed ' + P.v.toFixed(3) + ' m/ns',
     readoutTitle: () => ['Every edge in the pile draws a hyperbola in the raw scan', 'B-scan: one column per antenna position, time running down. White and blue are the two polarities.'],
     results: () => { const found = ['A', 'B', 'C', 'D'].filter((id) => M[id]?.snr >= 8), err = found.length ? found.reduce((a, id) => a + M[id].err, 0) / found.length : NaN;
       return [
-        { k: 'Assumed speed', v: P.v.toFixed(3) + ' m/ns', sub: 'true: 0.134 in rubble, 0.113 in slab, 0.300 in a void' },
-        { k: 'Sharpest image at', v: best.toFixed(2) + ' m/ns', sub: 'found by autofocus, no truth used' },
+        { k: 'Assumed speed', v: P.v.toFixed(3) + ' m/ns', sub: 'truth: 0.134 in rubble, 0.113 in slab, 0.300 in a void' },
+        { k: 'Floor-slab speed', v: best.toFixed(3) + ' m/ns', sub: 'slab depth known from street level' },
         { k: 'Placement error', v: isNaN(err) ? 'none found' : (err * 100).toFixed(0) + ' cm', sub: 'focused echo to the true edge, found voids', tone: err < 0.25 ? 'ok' : 'warn' },
         { k: 'Scan', v: ant.length + ' traces', sub: (ant.length * 0.2).toFixed(0) + ' m of surface, about ten minutes on foot' },
       ]; },

@@ -73,3 +73,85 @@ Square seamless tileable top-down material texture of fine broken concrete rubbl
 ## `og-card.jpg`
 
 Wide 1200:630 framing, with room for a center crop. Dark, quiet composition showing the same small hand-built civilian rescue rover as the reference, seen from behind facing a cracked wall. Soft, subtle concentric rings of light pass through the wall as if the rover were listening.
+
+## Twin set
+
+### `twin/wet-mud.jpg`
+
+Fresh dark brown-grey flood silt, fine ripples and drainage channels, a few pebbles. Photorealistic full-bleed 1:1 square material texture, exactly straight-on orthographic view, even diffuse lighting, no perspective or object shadows, high micro-detail. Seamless periodic repeat on both axes with matching opposite edges. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/dry-mud.jpg`
+
+Drying cracked flood clay, lighter brown-grey, curled edges. Photorealistic full-bleed 1:1 square material texture, exactly straight-on orthographic view, even diffuse lighting, no perspective or object shadows, high micro-detail. Seamless periodic repeat on both axes with matching opposite edges. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/gravel.jpg`
+
+River gravel and small stones pressed into mud. Photorealistic full-bleed 1:1 square material texture, exactly straight-on orthographic view, even diffuse lighting, no perspective or object shadows, high micro-detail. Seamless periodic repeat on both axes with matching opposite edges. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/plaster-wall.jpg`
+
+Painted plaster school wall, faded pale yellow over grey, hairline cracks and peeling patches. Photorealistic full-bleed 1:1 square material texture, exactly straight-on orthographic view, even diffuse lighting, no perspective or object shadows, high micro-detail. Seamless periodic repeat on both axes with matching opposite edges. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/plaster-flood.jpg`
+
+Edit the supplied photograph of faded pale yellow plaster over grey, preserving the exact wall, framing, hairline cracks, and peeling patches. Add a continuous horizontal flood line across the middle, with realistically muddy and stained plaster below it. Preserve the upper half as photographed. Square 1:1 photorealistic material texture at the largest native size, straight-on orthographic view, even diffuse lighting, no perspective or object shadows. Keep the flood line at the same height on both edges and match the left and right edges for horizontal repeats. No text, logos, watermarks, borders, or people.
+
+### `twin/stone-wall.jpg`
+
+Himalayan dry-stone masonry, flat grey-brown schist, irregular courses. Photorealistic full-bleed 1:1 square material texture, exactly straight-on orthographic view, even diffuse lighting, no perspective or object shadows, high micro-detail. Seamless periodic repeat on both axes with matching opposite edges. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/brick-broken.jpg`
+
+Exposed red-brown brick with broken mortar and plaster remnants. Photorealistic full-bleed 1:1 square material texture, exactly straight-on orthographic view, even diffuse lighting, no perspective or object shadows, high micro-detail. Seamless periodic repeat on both axes with matching opposite edges. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/concrete-cracked.jpg`
+
+Board-marked structural concrete, spalled, hairline cracks and rust streaks. Photorealistic full-bleed 1:1 square material texture, exactly straight-on orthographic view, even diffuse lighting, no perspective or object shadows, high micro-detail. Seamless periodic repeat on both axes with matching opposite edges. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/tin-roof.jpg`
+
+Corrugated galvanised roofing with vertical corrugations, rust streaks and dents. Photorealistic full-bleed 1:1 square material texture, exactly straight-on orthographic view, even diffuse lighting, no perspective or object shadows, high micro-detail. Seamless periodic repeat on both axes with matching opposite edges. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/wood-planks.jpg`
+
+Weathered wet timber planks. Photorealistic full-bleed 1:1 square material texture, exactly straight-on orthographic view, even diffuse lighting, no perspective or object shadows, high micro-detail. Seamless periodic repeat on both axes with matching opposite edges. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/floor-tile.jpg`
+
+Old terrazzo classroom floor with muddy film and scuffs. Photorealistic full-bleed 1:1 square material texture, exactly straight-on orthographic view, even diffuse lighting, no perspective or object shadows, high micro-detail. Seamless periodic repeat on both axes with matching opposite edges. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/rock-cliff.jpg`
+
+Wet Himalayan cliff rock, dark grey with moss in cracks. Photorealistic full-bleed 1:1 square material texture, exactly straight-on orthographic view, even diffuse lighting, no perspective or object shadows, high micro-detail. Seamless periodic repeat on both axes with matching opposite edges. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/forest-slope.jpg`
+
+Dense pine and rhododendron forest on a steep slope seen straight on from far away. Photorealistic full-bleed 1:1 square material texture, exactly straight-on orthographic view, even diffuse lighting, no perspective or object shadows, high micro-detail. Seamless periodic repeat on both axes with matching opposite edges. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/sky-dawn.jpg`
+
+First light in a high Himalayan valley, cool blue overcast with a warm break near one horizon and soft layered cloud. Only sky above the middle line, soft haze below, no land. Photorealistic 2:1 full-sphere 360-degree equirectangular sky panorama, with continuous matching left and right edges and the horizon on the equator. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/sky-night.jpg`
+
+Clear moonlit night, thin cloud, faint stars, deep blue-black. Only sky above the middle line, soft haze below, no land. Photorealistic 2:1 full-sphere 360-degree equirectangular sky panorama, with continuous matching left and right edges and the horizon on the equator. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/ridge-strip.jpg`
+
+Continuous distant ridge of steep Himalayan mountains, snow on top and forest below, flat pale sky above, seen straight on from the valley floor. Photorealistic panoramic strip in the widest available format, continuous matching left and right edges. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/decal-cracks.jpg`
+
+Black cracks and impact spalls on a pure white background, alpha mask. Square 1:1 full-resolution mask with realistic fine detail, straight on, without perspective or lighting gradients. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/decal-splash.jpg`
+
+Black mud splashes and drip marks on a pure white background, alpha mask. Square 1:1 full-resolution mask with realistic fine detail, straight on, without perspective or lighting gradients. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/foam.jpg`
+
+White river foam patterns on pure black, seamless tileable mask. Square 1:1 full-resolution mask with realistic fine detail, straight on, without perspective or lighting gradients. Largest native size available. No text, logos, watermarks, borders, or people.
+
+### `twin/smoke.jpg`
+
+Soft wispy mist on pure black, seamless tileable fog mask. Square 1:1 full-resolution mask with realistic fine detail, straight on, without perspective or lighting gradients. Largest native size available. No text, logos, watermarks, borders, or people.

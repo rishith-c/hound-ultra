@@ -5,6 +5,7 @@ import * as P from './physics.js';
 import { voxelise, distanceTransform, classify, findVoids, bettiCurve, selfTest, PATTERNS } from './voxel.js';
 import { ROBOTS, reach, routeTo } from './robots.js';
 import { createView } from './view3d.js';
+import { createFilm } from './film.js';
 import { makeChart, drawSpark, drawBetti, drawPersistence, drawTrials, drawFragility, wilson, resetPalette } from './charts.js';
 
 const SRC = {
@@ -42,11 +43,11 @@ export default {
 
     // ------------------------------------------------------------ frame
     const stage = h('div.structure-stage');
-    const loading = h('div.structure-loading', null, h('div.spinner'), h('p', null, 'Loading the physics engine (Rapier, 1.5 MB of WebAssembly)…'));
+    const loading = h('div.structure-loading.adv-only', null, h('div.spinner'), h('p', null, 'Loading the physics engine (Rapier, 1.5 MB of WebAssembly)…'));
     const tip = h('div.structure-tip.glass', { hidden: true });
-    const dock = h('aside.structure-dock', { 'aria-label': 'Structure worksheet' });
+    const dock = h('aside.structure-dock.adv-only', { 'aria-label': 'Structure worksheet' });
     root.append(
-      h('header.ws-head.structure-head', null,
+      h('header.ws-head.structure-head.adv-only', null,
         h('div', null, h('h1', null, 'Structure', realityTag('live-algo'), h('span.tag.tag-sim', { title: 'The crane, shores and robots are not HOUND hardware. They are drawn to show the idea.' }, 'Concept hardware')),
           h('p', null, 'The pile is a physics problem. Collapse a building bay with real rigid-body physics, then test every lift, tremor and shore in a copy of that world before anyone touches a slab.')),
         h('p.structure-disclaimer', null, 'The physics engine and every measurement on this pile are real computation. The pile is not a real building, and this is not an engineering assessment.')),
@@ -57,7 +58,7 @@ export default {
     const scnSeg = h('div.seg', { role: 'radiogroup', 'aria-label': 'Which supports fail' }, P.SCENARIOS.map((s) => h('button', { role: 'radio', 'data-id': s.id, title: s.fail, onclick: () => { S.scenario = s.id; rebuild(); } }, s.label)));
     const scnText = h('p'); const seedB = h('b', null, '7');
     const goBtn = h('button.btn.btn-primary', { onclick: () => (S.phase === 'intact' ? startCollapse() : rebuild()) }, icon('bolt'), h('span', null, 'Fail the supports'));
-    const scn = h('div.structure-scn.glass', null, scnSeg, scnText,
+    const scn = h('div.structure-scn.glass.adv-only', null, scnSeg, scnText,
       h('div.row', null, goBtn, h('div.grow'),
         h('span.structure-seed', { title: 'The seed fixes the column break heights, the furniture, the infill walls and the tie strengths. Same seed, same collapse.' }, 'Seed',
           h('button.btn.btn-icon.btn-sm', { 'aria-label': 'Previous seed', onclick: () => { S.seed = Math.max(1, S.seed - 1); rebuild(); } }, icon('minus', 14)), seedB,
@@ -67,11 +68,11 @@ export default {
     const mkCheck = (label, key, title) => { const inp = h('input', { type: 'checkbox', checked: S.show[key], onchange: () => { S.show[key] = inp.checked; if (key === 'xray') S.userXray = true; applyOverlays(); } }); return { el: h('label.check', { title }, inp, h('span', null, label)), inp }; };
     const ckX = mkCheck('See through the pile', 'xray', 'Draw the pieces as ghosts so the voids and routes inside are visible'), ckV = mkCheck('Voids', 'voids', 'The pockets of air found by the topology pass'), ckF = mkCheck('Load path', 'forces', 'One bar per contact, thicker and hotter with force. Solver estimate.');
     const cut = h('input.slider', { type: 'range', min: -60, max: 60, step: 1, value: 60, 'aria-label': 'Section cut position', oninput: () => { const z = +cut.value / 10; view.setSection(+cut.value >= 60 ? null : z); } });
-    const tools = h('div.structure-tools.glass', null, camSeg, ckX.el, ckV.el, ckF.el, h('div.structure-cut', { title: 'Slice the pile open along a vertical plane' }, h('span', null, 'Section'), cut));
+    const tools = h('div.structure-tools.glass.adv-only', null, camSeg, ckX.el, ckV.el, ckF.el, h('div.structure-cut', { title: 'Slice the pile open along a vertical plane' }, h('span', null, 'Section'), cut));
     // telemetry
     const hud = { state: h('b', null, 'Loading'), sub: h('span', null, ''), n: h('b', null, '0'), mass: h('b', null, '0'), ke: h('b', null, '0'), ms: h('b', null, '0'), spark: h('canvas'), jobL: h('span', null, 'Idle'), jobB: h('i', { style: { width: '0%' } }) };
     const stat = (b, l) => h('div.stat', null, b, h('span', null, l));
-    const hudEl = h('div.structure-hud.glass', null, h('div.stat.structure-state', null, hud.state, hud.sub), stat(hud.n, 'loose pieces'), stat(hud.mass, 'loose mass'), stat(hud.ke, 'kinetic energy'), stat(hud.ms, 'physics per step'),
+    const hudEl = h('div.structure-hud.glass.adv-only', null, h('div.stat.structure-state', null, hud.state, hud.sub), stat(hud.n, 'loose pieces'), stat(hud.mass, 'loose mass'), stat(hud.ke, 'kinetic energy'), stat(hud.ms, 'physics per step'),
       h('div', { title: 'Kinetic energy of the pile since the supports failed' }, hud.spark), h('div.structure-job', { role: 'status' }, hud.jobL, h('div.bar', null, hud.jobB)));
     const sparkChart = makeChart(ctx.kit, hud.spark, drawSpark);
 
@@ -81,11 +82,22 @@ export default {
     dock.append(tabBar, ...Object.values(panes));
 
     // ------------------------------------------------------------ physics engine and view
-    try { await P.loadRapier(); }
-    catch (e) { loading.replaceChildren(icon('alert', 28), h('h3', null, 'The physics engine did not load'), h('p.muted', { style: { maxWidth: '460px', textAlign: 'center' } }, 'Rapier is fetched from the jsDelivr network on first use. Check the connection and try again. (' + String(e.message || e) + ')'), h('button.btn.btn-primary', { onclick: () => location.reload() }, 'Try again')); return {}; }
-    const view = createView(stage, ctx, { onFrame, onHover, onPick, onVoid: (id) => selectVoid(id, true) });
+    const view = createView(stage, ctx, { onFrame: (dt) => { if (S.pile && ctx.mode === 'advanced') onFrame(dt); }, onHover: (a, b) => S.pile && ctx.mode === 'advanced' && onHover(a, b), onPick: (a, b) => S.pile && ctx.mode === 'advanced' && onPick(a, b), onVoid: (id) => selectVoid(id, true) });
+    const film = createFilm({ ctx, view, host: stage });
     stage.append(scn, tools, hudEl, tip);
-    loading.remove();
+    // Advanced brings its own live world, loaded the first time it is opened. The film keeps its recordings.
+    let readying = null;
+    function ready() {
+      return (readying ||= P.loadRapier().then(() => { loading.remove(); rebuild(); setTab(S.tab); }, (e) => { readying = null; loading.replaceChildren(icon('alert', 28), h('h3', null, 'The physics engine did not load'), h('p.muted', { style: { maxWidth: '460px', textAlign: 'center' } }, 'Rapier is fetched from the jsDelivr network on first use. Check the connection and try again. (' + String(e.message || e) + ')'), h('button.btn.btn-primary', { onclick: () => ready() }, 'Try again')); }));
+    }
+    function applyMode() {
+      if (!S.visible) return;
+      if (ctx.mode === 'demo') { tip.hidden = true; jobs.clear(); view.clearLayer('voids'); for (const k of ['prot', 'forces', 'zones', 'ghost', 'routes']) view.clearLayer(k); view.setXray(false); film.start(); return; }
+      film.stop(); view.setLook('advanced');
+      if (S.pile) { view.clearFx(); view.setPile(S.pile); view.sync(S.pile, S.poses); view.setClock(0, S.pile.t); view.setCamera('orbit'); renderAll(); applyOverlays(); hudNow(); if (S.phase === 'settled' && !S.grid) analyse(); }
+      else ready().then(autoStart);
+    }
+    function autoStart() { if (!S.autoStarted && S.pile && S.phase === 'intact') { S.autoStarted = true; setTimeout(() => { if (S.visible && S.phase === 'intact' && ctx.mode === 'advanced') startCollapse(); }, 1100); } }
 
     // ------------------------------------------------------------ jobs: long computations spread over frames
     const jobs = { q: [], cur: null, done: 0,
@@ -103,6 +115,7 @@ export default {
 
     // ------------------------------------------------------------ build, collapse, settle
     function rebuild() {
+      view.clearFx(); view.setClock(0, 0);
       S.epoch++; jobs.clear(); S.live = null; S.liveQueue = [];
       if (S.pile) S.pile.world.free();
       S.pile = P.buildPile({ seed: S.seed, scenario: S.scenario }); S.poses = P.readPoses(S.pile); S.phase = 'intact'; S.ke = []; S.peakKE = 0; S.acc = 0; S.quiet = 0;
@@ -176,7 +189,7 @@ export default {
       if (moving && !(reducedMotion() && S.phase === 'collapsing')) {
         S.acc = Math.min(S.acc + dt, 3 * P.DT); dust.length = 0;
         while (S.acc >= P.DT && (S.phase === 'collapsing' || S.phase === 'moving')) { stepLive(dust); S.acc -= P.DT; }
-        for (const d of dust) view.puff(d);
+        for (const d of dust) view.puff(d, S.pile.t); view.setClock(0, S.pile.t);
         if (S.phase !== 'settled') { S.poses = P.readPoses(S.pile, S.pile.world, S.poses); view.sync(S.pile, S.poses); }
         jobs.tick(2);
       } else jobs.tick(reducedMotion() ? 14 : 9);
@@ -545,13 +558,13 @@ export default {
 
     // ------------------------------------------------------------ go
     ctx.bus.on('prefs', () => { resetPalette(); if (S.pile) { renderAll(); applyOverlays(); } });
-    rebuild(); setTab('collapse');
+    ctx.bus.on('mode', applyMode);
     const api = {
-      onShow() { S.visible = true; view.start(); if (!S.autoStarted && S.phase === 'intact') { S.autoStarted = true; setTimeout(() => { if (S.visible && S.phase === 'intact') startCollapse(); }, 1100); } },
-      onHide() { S.visible = false; view.stop(); tip.hidden = true; },
-      onParams(p) { if (p?.tab && panes[p.tab]) setTab(p.tab); if (p?.scenario && P.SCENARIOS.some((s) => s.id === p.scenario)) { S.scenario = p.scenario; rebuild(); } },
+      onShow() { S.visible = true; view.start(); applyMode(); },
+      onHide() { S.visible = false; view.stop(); film.stop(); tip.hidden = true; },
+      onParams(p) { if (p?.tab && panes[p.tab]) { if (S.pile) setTab(p.tab); else S.tab = p.tab; } if (p?.scenario && P.SCENARIOS.some((s) => s.id === p.scenario)) { S.scenario = p.scenario; if (S.pile) rebuild(); } },
     };
-    root.__structure = { S, view, jobs, setTab, rebuild, startCollapse, rankAll, planOrder, runShake, sweep, planRoutes, suggestShores, selectPiece, selectVoid, liveLift };
+    root.__structure = { S, view, film, jobs, setTab, rebuild, startCollapse, rankAll, planOrder, runShake, sweep, planRoutes, suggestShores, selectPiece, selectVoid, liveLift };
     if (ctx.params && Object.keys(ctx.params).length) api.onParams(ctx.params);
     return api;
   },

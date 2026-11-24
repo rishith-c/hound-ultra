@@ -2,7 +2,7 @@
 // point is to the sky, and whether the sun reaches it. Nothing here knows how the scene was made, so it works on any scan.
 import { poseAt } from './scene.js';
 
-export const SUN = (() => { const v = [-0.78, -0.3, 0.52], l = Math.hypot(...v); return v.map((x) => x / l); })();
+export const SUN = (() => { const v = [-0.70, 0.46, 0.50], l = Math.hypot(...v); return v.map((x) => x / l); })();
 const DIRS = (() => { const out = []; for (let i = 0; i < 11; i++) { const z = 0.12 + 0.86 * ((i + 0.5) / 11), r = Math.sqrt(1 - z * z), a = i * 2.39996; out.push([r * Math.cos(a), r * Math.sin(a), z]); } return out; })();
 
 // smallest-eigenvalue direction of a symmetric 3x3, by a few Jacobi sweeps. Returns [planarity 0..1].
@@ -52,8 +52,8 @@ export function bakeLight(pos, n, B, { time, traj, cut }) {
   // ---- what blocks light
   const c2 = Math.max(0.22, Math.cbrt((ex * ey * ez) / 1.6e7)), w2 = Math.ceil(ex / c2) + 2, h2 = Math.ceil(ey / c2) + 2, d2 = Math.ceil(ez / c2) + 2, sl = w2 * h2, occ = new Uint8Array(sl * d2);
   for (let i = 0; i < n; i++) { const X = pos[i * 3], Y = pos[i * 3 + 1], Z = pos[i * 3 + 2], k = ((Z - oz) / c2 | 0) * sl + ((Y - oy) / c2 | 0) * w2 + ((X - ox) / c2 | 0); occ[k] |= cut && X > cut.x0 && X < cut.x1 && Y > cut.y0 && Y < cut.y1 && Z > cut.z ? 1 : 3; } // bit 1: anything; bit 2: still there once the top is cut away
-  const at = (x, y, z) => { const i = (x - ox) / c2, j = (y - oy) / c2, k = (z - oz) / c2; return i < 0 || j < 0 || k < 0 || i >= w2 || j >= h2 || k >= d2 ? 0 : occ[(k | 0) * sl + (j | 0) * w2 + (i | 0)]; };
-  const N = new Int8Array(n * 4), L = new Uint8Array(n * 4), p3 = [0, 0, 0], rays = n > 1.1e6 ? 2 : 4, T1 = B.max[2] + 0.3;
+  const at = (x, y, z) => { const i = (x - ox) * i1, j = (y - oy) * i1, k = (z - oz) * i1; return i < 0 || j < 0 || k < 0 || i >= w2 || j >= h2 || k >= d2 ? 0 : occ[(k | 0) * sl + (j | 0) * w2 + (i | 0)]; };
+  const N = new Int8Array(n * 4), L = new Uint8Array(n * 4), p3 = [0, 0, 0], rays = n > 4e5 ? 2 : 4, i1 = 1 / c2, T1 = B.max[2] + 0.3;
   let rs = 0x2545f491; const rnd = () => { rs ^= rs << 13; rs ^= rs >>> 17; rs ^= rs << 5; return (rs >>> 0) / 4294967296; };
   for (let i = 0; i < n; i++) {
     const X = pos[i * 3], Y = pos[i * 3 + 1], Z = pos[i * 3 + 2];
@@ -78,7 +78,7 @@ export function bakeLight(pos, n, B, { time, traj, cut }) {
       o1 += a; o2 += b;
     }
     let s1 = 0, s2 = 0; // the sun, with a soft edge
-    for (let q = 0; q < rays; q++) {
+    if (nx * SUN[0] + ny * SUN[1] + nz * SUN[2] > -0.12) for (let q = 0; q < rays; q++) {
       const jx = SUN[0] + (rnd() - 0.5) * 0.05, jy = SUN[1] + (rnd() - 0.5) * 0.05, jz = SUN[2] + (rnd() - 0.5) * 0.04; let a = 1, b = 1, x = gx + jx * c2 * rnd(), y = gy + jy * c2 * rnd(), z = gz + jz * c2 * rnd();
       for (let s = 0; s < 130 && z < T1 && (a || b); s++) { const f = at(x, y, z); if (f & 1) a = 0; if (f & 2) b = 0; x += jx * c2; y += jy * c2; z += jz * c2; }
       s1 += a; s2 += b;

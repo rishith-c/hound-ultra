@@ -7,12 +7,12 @@ import { rng, clamp } from './util.js';
 
 const C = (r, g, b) => new THREE.Color(r, g, b), V = (x, y, z) => new THREE.Vector3(x, y, z).normalize();
 export const LIGHTS = {
-  dawn: { sunDir: V(0.86, 0.36, -0.14), sun: C(1.0, 0.66, 0.4), sunI: 5.2, sky: C(0.42, 0.58, 0.9), earth: C(0.2, 0.15, 0.11), hemi: 0.62, zen: C(0.035, 0.07, 0.15), hor: C(0.27, 0.31, 0.39), warm: C(1.0, 0.5, 0.22), warmI: 1.0, fog: C(0.2, 0.245, 0.32), fogSun: C(0.95, 0.52, 0.27), fogA: 0.0016, fogH: 0.021, fogB: 0.034, fogBase: -46, env: 0.85, exp: 1.12, lamps: 1.0, stars: 0 },
-  day: { sunDir: V(0.5, 0.68, 0.46), sun: C(1.0, 0.93, 0.82), sunI: 3.6, sky: C(0.6, 0.72, 0.88), earth: C(0.3, 0.26, 0.21), hemi: 0.95, zen: C(0.13, 0.2, 0.31), hor: C(0.5, 0.54, 0.58), warm: C(0.9, 0.82, 0.68), warmI: 0.35, fog: C(0.42, 0.46, 0.5), fogSun: C(0.7, 0.66, 0.58), fogA: 0.0011, fogH: 0.012, fogB: 0.032, fogBase: -50, env: 0.95, exp: 0.95, lamps: 0.0, stars: 0 },
-  night: { sunDir: V(-0.5, 0.62, -0.35), sun: C(0.55, 0.68, 1.0), sunI: 0.95, sky: C(0.2, 0.3, 0.55), earth: C(0.05, 0.05, 0.06), hemi: 0.28, zen: C(0.006, 0.011, 0.026), hor: C(0.03, 0.042, 0.068), warm: C(0.1, 0.13, 0.2), warmI: 0.25, fog: C(0.022, 0.03, 0.048), fogSun: C(0.05, 0.06, 0.09), fogA: 0.0015, fogH: 0.018, fogB: 0.034, fogBase: -46, env: 0.65, exp: 1.25, lamps: 1.6, stars: 1 },
+  dawn: { sunDir: V(0.86, 0.36, -0.14), sun: C(1.0, 0.66, 0.4), sunI: 5.2, sky: C(0.42, 0.58, 0.9), earth: C(0.2, 0.15, 0.11), hemi: 0.85, zen: C(0.035, 0.07, 0.15), hor: C(0.27, 0.31, 0.39), warm: C(1.0, 0.5, 0.22), warmI: 1.0, fog: C(0.2, 0.245, 0.32), fogSun: C(0.95, 0.52, 0.27), fogA: 0.0007, fogH: 0.0085, fogB: 0.034, fogBase: -40, env: 0.85, exp: 1.12, lamps: 1.0, stars: 0, pic: 0.92 },
+  day: { sunDir: V(0.5, 0.68, 0.46), sun: C(1.0, 0.93, 0.82), sunI: 3.6, sky: C(0.6, 0.72, 0.88), earth: C(0.3, 0.26, 0.21), hemi: 0.95, zen: C(0.13, 0.2, 0.31), hor: C(0.5, 0.54, 0.58), warm: C(0.9, 0.82, 0.68), warmI: 0.35, fog: C(0.42, 0.46, 0.5), fogSun: C(0.7, 0.66, 0.58), fogA: 0.0005, fogH: 0.005, fogB: 0.032, fogBase: -50, env: 0.95, exp: 0.95, lamps: 0.0, stars: 0, pic: 0 },
+  night: { sunDir: V(-0.5, 0.62, -0.35), sun: C(0.55, 0.68, 1.0), sunI: 0.95, sky: C(0.2, 0.3, 0.55), earth: C(0.05, 0.05, 0.06), hemi: 0.28, zen: C(0.006, 0.011, 0.026), hor: C(0.03, 0.042, 0.068), warm: C(0.1, 0.13, 0.2), warmI: 0.25, fog: C(0.022, 0.03, 0.048), fogSun: C(0.05, 0.06, 0.09), fogA: 0.0008, fogH: 0.008, fogB: 0.034, fogBase: -46, env: 0.65, exp: 1.25, lamps: 1.6, stars: 1, pic: 0.9 },
 };
 const SKY = `
-  uniform vec3 uZen, uHor, uWarm, uSunDir, uSun, uFog; uniform float uWarmI, uTime, uStars; varying vec3 vDir;
+  uniform vec3 uZen, uHor, uWarm, uSunDir, uSun, uFog; uniform float uWarmI, uTime, uStars, uPicK, uSkyRot; uniform sampler2D tSkyA, tSkyB, tRidge; varying vec3 vDir;
   float h2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float n2(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h2(i), h2(i + vec2(1, 0)), f.x), mix(h2(i + vec2(0, 1)), h2(i + vec2(1, 1)), f.x), f.y); }
   float fb(vec2 p) { float s = 0.0, a = 0.5; for (int i = 0; i < 5; i++) { s += a * n2(p); p = p * 2.07 + vec2(11.3, 4.7); a *= 0.52; } return s; }
@@ -29,11 +29,11 @@ const SKY = `
     vec3 under = mix(uHor * 0.5 + uZen * 0.35, uWarm * 1.15, clamp(pow(sa, 2.0) * 1.1 * uWarmI * exp(-y * 1.5) * (0.35 + c2), 0.0, 1.0));
     col = mix(col, under * (0.75 + c2 * 0.5), deck * 0.86);
     float st = step(0.9975, h2(floor(d.xy * 240.0 + d.z * 130.0))) * uStars * smoothstep(0.1, 0.4, y) * (1.0 - deck); col += st * 0.5;
-    // far snow peaks, above and behind the valley's own walls
-    float pk = 0.1 + 0.2 * rdg(az, 7.0) * (0.75 + 0.25 * sin(az * 2.0 + 1.0)), in1 = smoothstep(pk + 0.002, pk - 0.002, y);
-    float snow = smoothstep(0.35, 0.62, n2(vec2(az * 26.0, y * 60.0)) * 0.5 + (pk - y) * -6.0 + 0.62);
-    float face = 0.5 + 0.5 * sin(az * 41.0 + n2(vec2(az * 17.0, y * 30.0)) * 5.0); vec3 pc = mix(vec3(0.09, 0.11, 0.15), vec3(0.5, 0.55, 0.64), snow) * (uHor * 1.5 + 0.02) + uWarm * uWarmI * 0.75 * snow * face * smoothstep(0.08, 0.2, y);
-    col = mix(col, mix(uFog * 1.05, pc, smoothstep(0.03, 0.26, y) * 0.8 + 0.08), in1);
+    // photographed cloud, turned so that its sunrise sits where the sun is
+    float su = fract(az / 6.2832 + uSkyRot), sv = 0.5 + asin(clamp(y, -1.0, 1.0)) / 3.14159; vec2 suv = vec2(su, clamp(sv, 0.505, 0.995));
+    vec3 pa = texture2D(tSkyA, suv).rgb, pb = texture2D(tSkyB, suv).rgb; pa = pa * vec3(0.5, 0.5, 0.56) + pow(pa, vec3(2.0)) * vec3(1.5, 1.0, 0.6) * pow(sa, 2.0); col = mix(col, mix(pa, pb * 0.55, uStars), uPicK * smoothstep(-0.02, 0.05, y));
+    // far snow peaks over the valley's own walls
+    vec2 ruv = vec2(fract(az / 6.2832 * 3.0 + 0.13), (y + 0.10) / 0.36); if (ruv.y > 0.0 && ruv.y < 1.0) { vec4 rg = textureGrad(tRidge, ruv, dFdx(ruv) * 0.0, dFdy(ruv)); float lum = dot(rg.rgb, vec3(0.3, 0.59, 0.11)); vec3 rc = mix(vec3(lum), rg.rgb, 0.45) * (uHor * 1.15 + 0.01) + uWarm * uWarmI * smoothstep(0.35, 0.9, lum) * (0.25 + 0.75 * pow(sa, 1.0)) * 0.5; col = mix(col, mix(uFog, rc, smoothstep(0.0, 0.2, y) * 0.75 + 0.1), rg.a); }
     col = mix(col, uFog, smoothstep(0.07, -0.02, y) * 0.9); col = mix(col, vec3(0.03, 0.027, 0.024) * (0.4 + uHor.g * 2.0), smoothstep(-0.03, -0.3, y));
     gl_FragColor = vec4(min(col, vec3(1.9)), 1.0);
   }`;
@@ -45,7 +45,7 @@ export function buildEnvironment(env, D) {
   let mode = 'dawn', target = null, tk = 1, envDirty = 0;
 
   // ---- sky and its reflection map ----
-  const skyMat = new THREE.ShaderMaterial({ uniforms: { uZen: { value: cur.zen }, uHor: { value: cur.hor }, uWarm: { value: cur.warm }, uSun: { value: cur.sun }, uFog: { value: cur.fog }, uSunDir: { value: cur.sunDir }, uWarmI: { value: 1 }, uStars: { value: 0 }, uTime: { value: 0 } }, vertexShader: 'varying vec3 vDir; void main() { vDir = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }', fragmentShader: SKY, side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false });
+  const skyMat = new THREE.ShaderMaterial({ uniforms: { uZen: { value: cur.zen }, uHor: { value: cur.hor }, uWarm: { value: cur.warm }, uSun: { value: cur.sun }, uFog: { value: cur.fog }, uSunDir: { value: cur.sunDir }, uWarmI: { value: 1 }, uStars: { value: 0 }, uTime: { value: 0 }, uPicK: { value: 0 }, uSkyRot: { value: 0.83 - Math.atan2(0.86, 0.14) / (Math.PI * 2) }, tSkyA: { value: env.photos['sky-dawn']?.map || null }, tSkyB: { value: env.photos['sky-night']?.map || null }, tRidge: { value: env.photos.ridge?.map || null } }, vertexShader: 'varying vec3 vDir; void main() { vDir = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }', fragmentShader: SKY, side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false });
   const sky = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 24), skyMat); sky.scale.setScalar(4000); sky.renderOrder = -10; sky.frustumCulled = false; sky.name = 'sky'; group.add(sky);
   scene.fog = null; scene.background = null;
   const pm = new THREE.PMREMGenerator(renderer), skyScene = new THREE.Scene(), skyCopy = new THREE.Mesh(sky.geometry, skyMat); skyCopy.scale.setScalar(50); skyScene.add(skyCopy); let envRT = null;
@@ -96,8 +96,8 @@ export function buildEnvironment(env, D) {
 
   function apply() {
     sun.color.copy(cur.sun); sun.intensity = cur.sunI; hemi.color.copy(cur.sky); hemi.groundColor.copy(cur.earth); hemi.intensity = cur.hemi * 2.2; scene.environmentIntensity = cur.env; renderer.toneMappingExposure = cur.exp;
-    skyMat.uniforms.uWarmI.value = cur.warmI; skyMat.uniforms.uStars.value = cur.stars; fog.a = cur.fogA; fog.h = cur.fogH; fog.b = cur.fogB; fog.base = cur.fogBase;
-    flood.intensity = cur.lamps * 950; bulb.intensity = cur.lamps * 40; lampMat.color.setRGB(5, 4.3, 3.3).multiplyScalar(0.05 + cur.lamps); beamMat.uniforms.uK.value = cur.lamps * 0.2; beam.visible = cur.lamps > 0.01;
+    skyMat.uniforms.uWarmI.value = cur.warmI; skyMat.uniforms.uStars.value = cur.stars; skyMat.uniforms.uPicK.value = env.photos['sky-dawn'] ? cur.pic : 0; fog.a = cur.fogA; fog.h = cur.fogH; fog.b = cur.fogB; fog.base = cur.fogBase;
+    flood.intensity = cur.lamps * 420; bulb.intensity = cur.lamps * 26; lampMat.color.setRGB(5, 4.3, 3.3).multiplyScalar(0.05 + cur.lamps); beamMat.uniforms.uK.value = cur.lamps * 0.2; beam.visible = cur.lamps > 0.01;
   }
   function setLight(m, { instant = false } = {}) { if (!LIGHTS[m]) return false; mode = m; target = LIGHTS[m]; tk = instant ? 1 : 0; if (instant) { step(1); bakeEnv(); } light.mode = m; return true; }
   function step(k) { for (const [key, v] of Object.entries(target)) { if (v.isVector3) cur[key].lerp(v, k).normalize(); else if (v.isColor) cur[key].lerp(v, k); else cur[key] += (v - cur[key]) * k; } apply(); }

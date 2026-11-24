@@ -34,9 +34,6 @@ function glyph(kind, size = 11) {
 // Scores, counts and curves. Everything the view shows is derived here, once.
 function buildModel(data) {
   const T = data.test, N = T.n, S = T.person_score;
-  // The file keeps scores to 4 decimals, and one empty-room window sits within that rounding of the rover's
-  // threshold (0.5345024…). Comparing against the middle of the gap below the rounded threshold keeps a score stored
-  // as 0.5345 on the alarm side, which is what the published table needs. "reproduces" below tests exactly this.
   const rover = data.threshold;                                // scores are stored to 6 places, so the rover's own rule (score > threshold) applies as is
   const RK = Math.round(data.threshold * 100);                 // the slider stop that IS the rover's setting
   const TH = Array.from({ length: 101 }, (_, k) => (k === RK ? rover : k / 100));
@@ -466,7 +463,7 @@ export async function create(el, ctx, { open, params }) {
     for (const s of TR) g.append('path').attr('class', 'sense-ev-line ' + s.cls).attr('d', d3.line().defined((p) => p[key[s.id]] != null).x((p) => x(p.t)).y((p) => y(p[key[s.id]]))(M.sweep));
     const sAt = (f) => M.sweep[Math.round(f / 0.0025)];
     const name = (s, f, dy, anchor, yv) => g.append('text').attr('class', 'sense-ev-lab sense-ev-halo ' + s.cls + '-t').attr('x', x(f)).attr('y', y(yv != null ? yv : sAt(f)[key[s.id]]) + dy).attr('text-anchor', anchor).text(s.short || s.name);
-    name(TR[0], 0.99, 15, 'end', sAt(0.8).moving); name(TR[1], 0.99, 14, 'end', sAt(0.8).prec); name(TR[2], 0.62, 4, 'start', 0.45); name(TR[3], 0.04, 17, 'start', sAt(0.3).fa);
+    name(TR[0], 0.99, 15, 'end', sAt(0.8).moving); name(TR[1], 1, -5, 'end', 1); name(TR[2], 0.62, 4, 'start', 0.45); name(TR[3], 0.04, 17, 'start', sAt(0.3).fa);
     const xr = x(M.rover);
     g.append('line').attr('class', 'sense-ev-roverline').attr('x1', xr).attr('x2', xr).attr('y1', y(1)).attr('y2', y(0) + 22);
     g.append('text').attr('class', 'sense-axis sense-ev-halo').attr('x', xr - 4).attr('y', y(0) + 31).attr('text-anchor', 'end').call((tx) => { tx.append('tspan').text('rover '); tx.append('tspan').attr('class', 'num').text(M.label(RK)); });

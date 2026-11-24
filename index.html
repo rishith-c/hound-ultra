@@ -48,19 +48,19 @@
 </header>
 
 <main>
-<!-- 1. The moment -->
-<section class="hero pin" id="top" data-scene="hero" aria-labelledby="hero-title">
-  <div class="stick">
-    <div class="hero-art" aria-hidden="true">
-      <img class="hero-img" src="assets/img/landing/hero.webp" width="1672" height="941" alt="" decoding="async" fetchpriority="high">
-      <canvas class="hero-gl" id="hero-gl"></canvas>
-      <div class="hero-scrim"></div>
+<!-- 1. The moment: one continuous film of four stills, scrubbed by the scroll (landing/film.js) -->
+<section class="film pin" id="top" data-scene="film" aria-labelledby="hero-title">
+  <span class="anchor" id="moment" aria-hidden="true"></span>
+  <div class="stick" id="film-stick">
+    <div class="film-art" aria-hidden="true">
+      <img class="film-img" src="assets/img/landing/hero.webp" width="1672" height="941" alt="" decoding="async" fetchpriority="high">
+      <canvas class="film-gl" id="film-gl"></canvas>
+      <div class="film-scrim"></div>
     </div>
-    <div class="hero-body">
+    <div class="hero-body beat is-on" data-beat="0">
       <div class="hero-copy">
-        <p class="hero-place"><span class="num">26 August 2026</span><i></i>Bhote Koshi valley, Nepal</p>
-        <h1 id="hero-title">Is anyone alive<br>in there?</h1>
-        <p class="hero-lede">HOUND is a low-cost rover that drives into buildings that are not safe for people, stops, and listens through the walls with a Wi-Fi neural network. HOUND Command is the console a rescue team would run it from.</p>
+        <h1 id="hero-title">We built a way to find trapped survivors with a Wi-Fi neural network.</h1>
+        <p class="hero-lede">HOUND is a low-cost rover that drives into buildings that are not safe for people, stops, and listens through the walls. HOUND Command is the console a rescue team would run it from.</p>
         <div class="hero-cta">
           <a class="lbtn lbtn-solid lbtn-lg" href="app/">Open the console<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.500 4l4 4-4 4"/></svg></a>
           <a class="lbtn lbtn-line lbtn-lg" href="#command">Watch a mission run on this page</a>
@@ -76,43 +76,27 @@
         <div class="hp-foot"><span id="hp-truth">&nbsp;</span><span>See all 30 windows</span></div>
       </a>
     </div>
-    <p class="hero-caption">Illustration, not a photograph of the flood. The flood was real; the search exercise on this site is invented.</p>
-    <div class="hero-cue" aria-hidden="true"><i></i></div>
-  </div>
-</section>
-
-<section class="moment pin" id="moment" data-scene="moment" aria-labelledby="moment-title">
-  <div class="stick">
-    <figure class="moment-plate" id="moment-plate" aria-hidden="true">
-      <img src="assets/img/landing/hero-block.webp" width="1664" height="936" alt="" loading="lazy" decoding="async">
-      <img src="assets/img/landing/scene-corridor.webp" width="1664" height="936" alt="" loading="lazy" decoding="async">
-      <figcaption>Illustration. Not a photograph of a real building.</figcaption>
-    </figure>
-    <div class="wrap moment-grid">
-      <aside class="moment-margin">
-        <div class="sec-no"><span class="num">01</span>The moment</div>
-        <dl class="margin-facts">
-          <div><dt>Where</dt><dd>Timure, Rasuwa, Nepal</dd></div>
-          <div><dt>Position</dt><dd class="num">28.25285 N, 85.36667 E</dd></div>
-          <div><dt>Counted by 15 September</dt><dd><span class="num">about 1,399</span> dead<br><span class="num">about 5,130</span> missing</dd></div>
-          <div><dt>Source</dt><dd>Nepal's disaster authority, as cited in the team's earlier write-up</dd></div>
-        </dl>
-      </aside>
-      <div class="moment-text">
-        <h2 id="moment-title" class="sr-only">After the flood</h2>
-        <p class="moment-p" data-words>On 26 August 2026 the Bhote Koshi flooded its valley on the border of Nepal and Tibet. Three weeks later about 1,399 people had been counted dead, and about 5,130 were still missing.</p>
-        <p class="moment-p" data-words>When the water drops, the buildings left standing are the hard part. Someone may be inside. The walls may not hold for whoever goes in to look.</p>
-        <p class="moment-p" data-words>Radar that senses a person through a wall exists. The units rescue teams use cost thousands of dollars. We wanted to know how much of that job cheap parts and a small neural network could do.</p>
+    <div class="beat beat-l" data-beat="1" data-img="assets/img/landing/hero-block.webp">
+      <div class="beat-copy">
+        <h2>Is anyone alive in there?</h2>
+        <p>On 26 August 2026 the Bhote Koshi flooded its valley on the border of Nepal and Tibet. By 15 September about 1,399 people had been counted dead, and about 5,130 were still missing.</p>
+        <small>Figures: Nepal's disaster authority, as cited in the team's earlier write-up.</small>
       </div>
     </div>
-  </div>
-</section>
-
-<section class="interlude" data-scene="interlude" aria-label="HOUND, in one sentence">
-  <img src="assets/img/landing/scene-rover.webp" width="1664" height="936" alt="Illustration: a small four-wheeled rover with a sensor mast drives through a muddy doorway into a dark, damaged building, its headlight cutting through dust" loading="lazy" decoding="async">
-  <div class="interlude-copy">
-    <p>It is named after the rescue dog. It stops, goes quiet, and listens.</p>
-    <p>Illustration of the idea. The real rover, as built, is next.</p>
+    <div class="beat beat-l" data-beat="2" data-img="assets/img/landing/scene-corridor.webp">
+      <div class="beat-copy">
+        <h2>The walls may not hold for whoever goes in to look.</h2>
+        <p>Radar that senses a person through a wall exists. The units rescue teams use cost thousands of dollars. We wanted to know how much of that job cheap parts and a small neural network could do.</p>
+      </div>
+    </div>
+    <div class="beat beat-r" data-beat="3" data-img="assets/img/landing/scene-rover.webp">
+      <div class="beat-copy">
+        <h2>So we send a rover. It stops, goes quiet, and listens.</h2>
+        <p>Wi-Fi passes through the wall. A body on the other side changes how it arrives.</p>
+      </div>
+    </div>
+    <p class="film-caption" id="film-caption">Illustration of the Bhote Koshi valley, Nepal, after the flood of 26 August 2026. Not a photograph. The flood was real; the search on this site is invented.</p>
+    <div class="film-marks" id="film-marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   </div>
 </section>
 
@@ -123,7 +107,7 @@
       <canvas id="rover-gl" aria-label="A 3-D model of the HOUND rover that turns as you scroll" role="img"></canvas>
       <img class="rover-poster" id="rover-poster" src="assets/img/rover_white.png" width="2200" height="2000" alt="CAD render of the HOUND rover: a flat deck on four mecanum wheels with a sensor mast" loading="lazy" hidden>
       <div class="rover-status" id="rover-status" role="status"></div>
-      <div class="rover-dims" aria-hidden="true"><span class="num" id="rover-angle">000°</span><span>CAD model, earlier revision of the frame</span></div>
+      <div class="rover-dims" aria-hidden="true"><span class="num" id="rover-angle">000°</span><span>Older CAD model, not the rover as built</span></div>
     </div>
     <div class="wrap rover-grid">
       <div class="rover-copy">
@@ -131,7 +115,7 @@
         <h2 id="rover-title">It goes where people should not, stops, and listens.</h2>
         <ol class="rover-steps" id="rover-steps">
           <li>
-            <h3>Built from parts a school lab can buy</h3>
+            <h3>A frame, four motors, four odd wheels</h3>
             <p>An aluminium extrusion frame on four 80 mm mecanum wheels, each driven by a NEMA 17 stepper. It drives forward, sideways and turns on the spot, which is what a doorway full of debris asks for.</p>
             <dl><div><dt>Drive</dt><dd>4 × NEMA 17, DRV8825 drivers</dd></div><div><dt>Power</dt><dd>3S 2200 mAh LiPo</dd></div></dl>
           </li>
@@ -168,6 +152,8 @@
 
 <!-- 3. The real AI -->
 <section class="network" id="network" aria-labelledby="network-title">
+  <canvas class="net-ridge" id="net-ridge" role="img" aria-label="The Wi-Fi window being read below, drawn as 52 ridges: one line for each row of signal strength over ten seconds"></canvas>
+  <p class="net-ridge-cap" id="net-ridge-cap"></p>
   <div class="wrap">
     <header class="sec-head">
       <div class="sec-no"><span class="num">03</span>The real AI<span class="rl rl-live-ai">Live AI</span></div>
@@ -255,7 +241,7 @@
       <div class="cmd-hud cmd-hud-tr">
         <h3>Findings<span class="num" id="cmd-count">0</span></h3>
         <ul id="cmd-finds"><li class="cmd-empty">Nothing found yet.</li></ul>
-        <h3>Rooms<span id="cmd-cover-note">8 to search</span></h3>
+        <h3 class="cmd-rooms-h">Rooms<span id="cmd-cover-note">8 to search</span></h3>
         <div class="cmd-rooms" id="cmd-rooms"></div>
       </div>
       <div class="cmd-hud cmd-hud-bl">
@@ -289,7 +275,7 @@
     <header class="sec-head">
       <div class="sec-no"><span class="num">05</span>The workspaces</div>
       <h2 id="tour-title"><span id="tour-count">Twenty-three</span> workspaces around one mission.</h2>
-      <p class="sec-lede">Each one does a single job and carries a label that says how real it is. The pictures are captures of the running console, not mock-ups.</p>
+      <p class="sec-lede">Each one does a single job and carries a label that says how real it is. Every picture is a capture of the running console in its Demo view.</p>
     </header>
     <div class="tour-grid">
       <div class="tour-list" id="tour-list"></div>
@@ -304,14 +290,14 @@
     <header class="sec-head">
       <div class="sec-no"><span class="num">06</span>What is real</div>
       <h2 id="real-title">We would rather tell you than have you find out.</h2>
-      <p class="sec-lede">Six labels are used across the console. Every workspace wears one, and every feature inside it that differs wears its own.</p>
+      <p class="sec-lede">The console uses six labels: Live AI, Live algorithm, Real data, Your device, Simulated and Concept. Every workspace wears one. Here is what stands behind them, and the part that is not done.</p>
     </header>
     <div class="ledger" role="table" aria-label="What is real and what is simulated">
       <div class="ledger-row ledger-head" role="row"><span role="columnheader">Label</span><span role="columnheader">What carries it</span><span role="columnheader">How you can check</span></div>
       <div class="ledger-row" role="row"><span role="cell"><span class="rl rl-live-ai">Live AI</span></span><span role="cell"><b>The Wi-Fi neural network.</b> The trained weights, running in your browser on held-out test windows.</span><span role="cell">Its output matches the Python reference on all 30 bundled windows. The check runs above, on this page.</span></div>
       <div class="ledger-row" role="row"><span role="cell"><span class="rl rl-live-algo">Live algorithm</span></span><span role="cell"><b>Route planning, sensor fusion, coverage and residual risk.</b> Real computation on simulated input.</span><span role="cell">Change the map in the console and the route is planned again. Every fusion step is shown with its number.</span></div>
       <div class="ledger-row" role="row"><span role="cell"><span class="rl rl-real">Real hardware</span></span><span role="cell"><b>The rover.</b> Frame, drive, sensors, firmware, a web remote and the 400 ms fail-safe.</span><span role="cell">It is in the project film. It is not connected to this console.</span></div>
-      <div class="ledger-row" role="row"><span role="cell"><span class="rl rl-sim">Simulated</span></span><span role="cell"><b>The scenario.</b> The block of buildings, the people, the damage, the rover's and drone's motion, and the radar, thermal and drone readings.</span><span role="cell">Stated on every screen. The terrain and satellite imagery of the valley are real; nothing in the exercise happened.</span></div>
+      <div class="ledger-row" role="row"><span role="cell"><span class="rl rl-sim">Simulated</span></span><span role="cell"><b>The scenario.</b> The block of buildings, the people, the damage, the rover's and drone's motion, and the radar, thermal and drone readings.</span><span role="cell">Stated in the console. The terrain and satellite imagery of the valley are real data; nothing in the exercise happened.</span></div>
       <div class="ledger-row" role="row"><span role="cell"><span class="rl rl-sim">Assumed</span></span><span role="cell"><b>Fusion likelihoods for radar, thermal, drone and acoustic evidence.</b> Design values, not measurements.</span><span role="cell">Marked "assumed" wherever the number appears. Only the Wi-Fi network's likelihood is measured.</span></div>
       <div class="ledger-row" role="row"><span role="cell"><span class="rl rl-concept">Concept</span></span><span role="cell"><b>The drone, a second rover, relay beacons, gas sensing, the phone finder.</b> Drawn to show the idea.</span><span role="cell">Only one rover exists. These are labelled Concept in the console.</span></div>
       <div class="ledger-row ledger-not" role="row"><span role="cell"><span class="rl rl-none">Not done</span></span><span role="cell"><b>Any test on a real person.</b> No real recordings exist yet. The network has only ever seen simulated people.</span><span role="cell">Until that is done, none of these numbers say anything about accuracy in a real building.</span></div>
@@ -329,22 +315,24 @@
     </header>
     <div class="built-grid">
       <div class="built-col">
-        <h3><span class="num">Before 21 November 2026</span></h3>
+        <figure><img src="assets/img/landing/rover-real.jpg" width="1060" height="596" alt="The real HOUND rover on a wooden floor, a frame from the project film" loading="lazy" decoding="async"><figcaption><span class="rl rl-real">Real footage</span>The rover, from the project film of 15 November</figcaption></figure>
+        <h3>Existed before</h3>
         <ul>
-          <li><b>The rover.</b> Frame, mecanum drive, wiring, every sensor, the Arduino and ESP32 firmware, the web remote.</li>
-          <li><b>The Wi-Fi neural network.</b> The Blender people, the channel simulator, the training code and the test results on 955 windows.</li>
-          <li><b>An earlier operator console.</b> One flat screen: a satellite map, a route button with approval, sensor panels on simulated readings.</li>
-          <li><b>The project film.</b></li>
+          <li><b>The rover.</b> Frame, mecanum drive, wiring, sensors, the Arduino and ESP32 firmware, the web remote.</li>
+          <li><b>The Wi-Fi neural network.</b> The Blender people, the channel simulator, the training code and the test results. Trained and evaluated on 15 November 2026.</li>
+          <li><b>The project film,</b> 15 November 2026.</li>
+          <li><b>An earlier console and landing page.</b> One flat screen: a satellite map, a route button with approval, sensor panels on simulated readings, and a first version of the network in the browser. Made for another event, EvoHacks 2, handed in on 22 November.</li>
         </ul>
       </div>
-      <div class="built-axis" aria-hidden="true"><i></i><span class="num">21 Nov</span></div>
+      <div class="built-axis" aria-hidden="true"><i></i><span class="num">23 Nov</span></div>
       <div class="built-col built-now">
-        <h3><span class="num">21 to 28 November 2026</span>Global AI Builder's Challenge</h3>
+        <figure id="built-shot"><img src="assets/img/landing/ws-mission.jpg" width="1680" height="1000" alt="" loading="lazy" decoding="async"><figcaption><span class="rl rl-sim">Simulated</span>HOUND Command</figcaption></figure>
+        <h3>New for the Global AI Builder's Challenge. First commit 23 November 2026.</h3>
         <ul id="built-now">
-          <li><b>HOUND Command, rebuilt from scratch.</b> A mission simulator, a world model, a hazard-aware route planner and Bayesian fusion, written for this console.</li>
-          <li><b>The network in the browser.</b> The trained weights ported to JavaScript and checked against Python on 30 windows.</li>
-          <li><b>The 3-D operating picture and the workspaces</b> shown above, each with its reality label.</li>
-          <li><b>This page.</b></li>
+          <li><b>HOUND Command, from scratch.</b> A mission simulator, a world model, a hazard-aware route planner and Bayesian fusion, with the network rerun and checked against Python inside it.</li>
+          <li><b>A 3-D operating picture.</b> The site, the rover, the search and the route, drawn live from the simulator's state.</li>
+          <li><b><span id="built-count">The</span> workspaces</b> shown above, each with its reality label, in a Demo view and an Advanced view.</li>
+          <li><b>This page,</b> with the network and the mission running in it.</li>
         </ul>
       </div>
     </div>
@@ -375,7 +363,7 @@
   </div>
   <footer class="foot wrap">
     <p>HOUND Command is a student project and a training exercise. It is not a certified rescue tool and has not been used by a rescue team. The Bhote Koshi flood of 26 August 2026 was real; we name it with respect for the people it affected. The block of buildings, the people, the damage and every reading shown here are invented.</p>
-    <p class="foot-row"><a href="#top">Back to the top</a><a href="app/#/status">The full list of what is real</a><a href="login.html">Sign in</a></p>
+    <p class="foot-row"><a href="#top">Back to the top</a><a href="#real">What is real</a><a href="login.html">Sign in</a></p>
   </footer>
 </section>
 </main>

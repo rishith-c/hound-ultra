@@ -15,10 +15,10 @@ const AIR = `
   float ign(vec2 p) { return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715)))); }
   vec3 wpos(vec2 uv, float d) { vec4 p = uInvVP * vec4(vec3(uv, d) * 2.0 - 1.0, 1.0); return p.xyz / p.w; }
   void main() {
-    vec4 s = texture2D(tScene, vUv); float d = texture2D(tDepth, vUv).x; vec3 col = s.rgb;
+    vec4 s = texture2D(tScene, vUv); float d = texture2D(tDepth, vUv).x; vec3 col = s.rgb; if (any(isnan(col))) col = vec3(0.0);
     if (d < 1.0) {
       vec3 P = wpos(vUv, d), toP = P - uCam; float dist = length(toP); vec3 V = toP / dist;
-      col *= mix(1.0, texture2D(tAO, vUv).r, uAO * smoothstep(320.0, 90.0, dist));
+      float ao = texture2D(tAO, vUv).r; if (isnan(ao)) ao = 1.0; col *= mix(1.0, ao, uAO * smoothstep(320.0, 90.0, dist));
       float wet = clamp(1.0 - s.a, 0.0, 1.0);
       if (uSSR > 0.5 && wet > 0.03 && dist < 220.0) {
         vec2 rp = vec2(nn(P.xz * 3.0 + uTime * 0.35), nn(P.xz * 3.0 - uTime * 0.3 + 8.0)) - 0.5;
@@ -36,10 +36,11 @@ const AIR = `
       // mist: density falls off with height; integrate it along the ray
       float b = uFog.z, y0 = uCam.y - uFog.w, dy = V.y * dist; float k = abs(dy * b) > 0.001 ? (1.0 - exp(-dy * b)) / (dy * b) : 1.0;
       float patchy = 0.55 + 0.9 * nn(P.xz / 70.0 + uTime * 0.03) * nn(P.xz / 23.0 - uTime * 0.05 + 3.0) * 2.0;
-      float od = (uFog.x + uFog.y * exp(-y0 * b) * k * patchy) * max(dist - 8.0, 0.0), f = 1.0 - exp(-od);
-      float sd = max(dot(V, uSunDir), 0.0); vec3 fc = uFogCol + uFogSun * (pow(sd, 3.0) * 0.4 + pow(sd, 14.0) * 0.5) ; col = mix(col, fc, clamp(f, 0.0, 0.97));
+      float od = (uFog.x + uFog.y * exp(-y0 * b) * k * patchy) * max(dist - 30.0, 0.0), f = 1.0 - exp(-od);
+      float sd = max(dot(V, uSunDir), 0.0); vec3 fc = uFogCol + uFogSun * (pow(sd, 4.0) * 0.16 + pow(sd, 18.0) * 0.4) ; col = mix(col, fc, clamp(f, 0.0, 0.97));
     }
-    gl_FragColor = vec4(col, 1.0);
+    if (any(isnan(col)) || any(isinf(col))) col = vec3(0.0);
+    gl_FragColor = vec4(clamp(col, 0.0, 40.0), 1.0);
   }`;
 const DOF = `
   varying vec2 vUv; uniform sampler2D tColor, tDepth; uniform mat4 uInvVP; uniform vec3 uCam; uniform float uFocus, uRange, uMax; uniform vec2 uTexel;
@@ -71,8 +72,8 @@ export function createPost(renderer, scene, camera, { quality = 'high' } = {}) {
     // Use the main render's depth and rebuild normals from it, so the scene is not drawn a second time.
     gtao.normalRenderTarget.dispose(); gtao.normalRenderTarget = { depthTexture, texture: null, setSize() {}, dispose() {} };
     gtao.setGBuffer(depthTexture, undefined); gtao.gtaoMaterial.needsUpdate = true; gtao.pdMaterial.needsUpdate = true; gtao.output = GTAOPass.OUTPUT.Off;
-    gtao.updateGtaoMaterial({ radius: 0.9, distanceExponent: 1.2, thickness: 1.4, distanceFallOff: 1, scale: 1.25, samples: 12, screenSpaceRadius: false });
-    gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 12 });
+    gtao.updateGtaoMaterial({ radius: 0.9, distanceExponent: 1.2, thickness: 1.4, distanceFallOff: 1, scale: 1.25, samples: 8, screenSpaceRadius: false });
+    gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 8 });
   }
   const white = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1); white.needsUpdate = true;
   const M = (fs, uniforms) => new THREE.ShaderMaterial({ vertexShader: VS, fragmentShader: fs, uniforms, depthTest: false, depthWrite: false, toneMapped: false });
@@ -84,7 +85,7 @@ export function createPost(renderer, scene, camera, { quality = 'high' } = {}) {
   return {
     sceneRT, bloom, gtao,
     setSize(w, h, pr) {
-      const W = Math.max(2, Math.round(w * pr)), H = Math.max(2, Math.round(h * pr)), s = pr > 1.1 ? 0.5 : 0.75;
+      const W = Math.max(2, Math.round(w * pr)), H = Math.max(2, Math.round(h * pr)), s = 0.5;
       sceneRT.setSize(W, H); airRT.setSize(W, H); dofRT.setSize(W >> 1, H >> 1); gtao && gtao.setSize(Math.round(W * s), Math.round(H * s)); bloom.setSize(W >> 1, H >> 1); final.uniforms.uRes.value.set(W, H); air.uniforms.uRes.value.set(W, H); dof.uniforms.uTexel.value.set(2 / W, 2 / H);
     },
     setAO(on) { aoOn = on && !!gtao; },

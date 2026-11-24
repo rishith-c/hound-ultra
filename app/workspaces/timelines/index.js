@@ -11,6 +11,7 @@ import * as M from './model.js';
 import { mountSweeps } from './sweeps.js';
 import { mountCf } from './cfview.js';
 import { mountRegret, mountMethod } from './regret.js';
+import { mountDemo } from './demo.js';
 
 const { clock, span, plural } = M;
 let cssLoaded = false;
@@ -180,8 +181,9 @@ export default {
     // ------------------------------------------------------------------ header
     const truthBox = h('input', { type: 'checkbox', 'aria-describedby': 'tl-truth-note', onchange: (e) => app.setTruth(e.target.checked) });
     const proofChip = h('button.tl-proof', { type: 'button', title: 'Open the determinism proof', onclick: () => showTab('method') });
-    root.append(h('header.ws-head.tl-head', null,
-      h('div', null, h('h1', null, 'Timelines'), h('p', null, 'Fork the mission at any moment, change one decision, and run both worlds to the end. The simulator is deterministic, so each branch is a full replay with the same people and the same noise, and one thing different.')),
+    const demo = mountDemo(root, { ctx, pool: () => pool });
+    root.append(h('header.ws-head.tl-head.adv-only', null,
+      h('div', null, h('h1', null, 'Timelines'), h('p', null, 'Fork the mission at any moment, change one thing, and run both worlds to the end: same people, same noise, one difference.')),
       h('div.tl-head-right', null, proofChip,
         h('label.check.switch.tl-truthsw', { title: 'Score every branch against what was really in the building. A real team would never have this.' }, truthBox, h('span', { id: 'tl-truth-note' }, 'Ground truth', h('small', null, 'known only because this is a simulation'))),
         realityTag('live-algo'), realityTag('sim'))));
@@ -192,7 +194,7 @@ export default {
       h('span', null, h('i.tl-lg.possible'), 'possible person'), h('span', null, h('i.tl-lg.confirmed'), 'confirmed'), h('span', null, h('i.tl-lg.reached'), 'reached by the team'),
       h('span', null, h('i.tl-lg.node'), 'decision'), h('span', null, h('i.tl-lg.dia'), 'fault or hazard'), h('span', null, h('i.tl-lg.x'), 'lead closed'), h('span', null, h('i.tl-lg.tri'), 'route approved'));
     const busy = h('span.tl-busy');
-    root.append(h('section.tl-treewrap', { 'aria-label': 'Branching timeline' },
+    root.append(h('section.tl-treewrap.adv-only', { 'aria-label': 'Branching timeline' },
       h('div.tl-treebar', null, h('h3', null, 'Every world, on one clock'), legend, h('div.grow'), busy,
         h('span.kbd-hint', null, h('kbd', null, '←'), h('kbd', null, '→'), 'time'), h('span.kbd-hint', null, h('kbd', null, '↑'), h('kbd', null, '↓'), 'branch'), h('span.kbd-hint', null, h('kbd', null, 'F'), 'fork')),
       treeHost));
@@ -208,7 +210,7 @@ export default {
     const tabBar = h('div.tabs', { role: 'tablist' }, ...tabs.map(([id, label]) => h('button', { type: 'button', role: 'tab', id: 'tl-tab-' + id, 'aria-selected': 'false', 'aria-controls': 'tl-pane-' + id, onclick: () => showTab(id) }, label)));
     const panes = Object.fromEntries(tabs.map(([id]) => [id, h('div.tl-pane', { id: 'tl-pane-' + id, role: 'tabpanel', 'aria-labelledby': 'tl-tab-' + id, hidden: true })]));
     const work = h('section.panel.tl-work', null, tabBar, ...Object.values(panes));
-    root.append(h('div.tl-lower', null, composer, work));
+    root.append(h('div.tl-lower.adv-only', null, composer, work));
     let tab = 'worlds';
     function showTab(id) { tab = id; app.tab = id; for (const [k, el] of Object.entries(panes)) el.hidden = k !== id; tabBar.querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', String(b.id === 'tl-tab-' + id))); app.emit('tab', id); if (id === 'worlds') { requestAnimationFrame(() => { mapA.tick(0, true); mapB.tick(0, true); }); } }
     app.showTab = showTab;
@@ -256,8 +258,8 @@ export default {
       if (instant || kit.reducedMotion()) { mapA.tick(0, true); mapB.tick(0, true); }
       WA.name.replaceChildren(A ? h('b', null, A.name) : '', A ? ' ' + A.label : '');
       WB.name.replaceChildren(B ? h('b', null, B.name) : h('span.dim', null, 'Pick a second world: press B on any branch'), B ? ' ' + B.label : '');
-      WA.state.replaceChildren(...(A?.run ? stateLine(A.run, t) : [h('span.dim', null, 'Running…')]));
-      WB.state.replaceChildren(...(B?.run ? stateLine(B.run, Math.min(t, B.run.endT)) : [h('span.dim', null, B ? 'Running…' : 'No second world selected')]));
+      WA.state.replaceChildren(...(A?.run ? stateLine(A.run, t).filter(Boolean) : [h('span.dim', null, 'Running…')]));
+      WB.state.replaceChildren(...(B?.run ? stateLine(B.run, Math.min(t, B.run.endT)).filter(Boolean) : [h('span.dim', null, B ? 'Running…' : 'No second world selected')]));
       WB.el.classList.toggle('is-empty', !B);
       timeOut.textContent = clock(t); scrub.value = String(Math.round(t));
       const mx = Math.max(A?.run?.endT || 0, 1); scrub.max = String(Math.ceil(mx)); scrub.style.setProperty('--p', (100 * t) / mx + '%');
@@ -416,7 +418,7 @@ export default {
       const done = app.branches.filter((b) => b.run), ok = done.filter((b) => b.verify === 'ok').length, bad = done.filter((b) => b.verify === 'fail').length, L = app.proof.live;
       const cls = bad || (L && L.state === 'differs') ? 'bad' : ok === done.length && done.length && L && L.state === 'ok' ? 'ok' : 'wait';
       proofChip.className = 'tl-proof ' + cls;
-      proofChip.replaceChildren(icon(cls === 'ok' ? 'check-circle' : cls === 'bad' ? 'alert' : 'clock', 14), h('span', null, cls === 'bad' ? 'Replay check failed' : cls === 'ok' ? 'Replay verified' : 'Verifying replay'), h('small.num', null, ok + ' of ' + done.length + ' branches run twice, same fingerprint' + (L && L.state === 'ok' ? ' · trunk matches live at ' + clock(L.t) : L && L.state === 'differs' ? ' · trunk differs from live' : '')));
+      proofChip.replaceChildren(icon(cls === 'ok' ? 'check-circle' : cls === 'bad' ? 'alert' : 'clock', 14), h('span', null, cls === 'bad' ? 'Replay check failed' : cls === 'ok' ? 'Replay verified' : 'Verifying replay'), h('small.num', null, ok + '/' + done.length + ' branches twice' + (L && L.state === 'ok' ? ' · matches live at ' + clock(L.t) : L && L.state === 'differs' ? ' · differs from live' : '')));
     }
     app.on('branches', () => {
       if (app.pendingSelect && app.runOf(app.pendingSelect)) { const id = app.pendingSelect; app.pendingSelect = null; const b = app.byId(id); app.compareId = b.parent; app.setCursor(id, Math.min(b.run.endT, Math.max(b.forkT, app.cursor.t))); return; }
@@ -431,11 +433,25 @@ export default {
     showTab('worlds'); buildOpts(); paintTree(); paintProof(); paintDiff();
     if (ctx.params && ctx.params.tab && panes[ctx.params.tab]) showTab(ctx.params.tab);
 
+    // Demo shows the braid and nothing else runs; the analysis (live replay, branches) starts with Advanced.
+    let shown = false;
+    function modeNow() {
+      const adv = shown && ctx.mode === 'advanced';
+      if (shown && !adv) demo.show(); else demo.hide();
+      if (adv === visible) return;
+      visible = adv;
+      if (adv) { if (!app.live || stale) sync(); tree.setLive(sim.state.t); requestAnimationFrame(() => { paintTree(); paintMaps(true); kick(); }); }
+      else { stopPlay(); cancelAnimationFrame(raf); raf = 0; }
+    }
+    offs.push(bus.on('mode', () => modeNow()));
+    const recheckTimer = setInterval(() => { if (visible && app.live && app.proof.live?.state === 'ok' && !app.branches.some((b) => b.status === 'running') && Math.abs(sim.state.t - app.proof.live.t) > 5) app.recheck(); }, 15000);
+    offs.push(() => clearInterval(recheckTimer));
+
     return {
-      onShow() { visible = true; if (!app.live || stale) sync(); tree.setLive(sim.state.t); paintMaps(true); kick(); },
-      onHide() { visible = false; stopPlay(); cancelAnimationFrame(raf); raf = 0; },
+      onShow() { shown = true; modeNow(); },
+      onHide() { shown = false; modeNow(); },
       onParams(p) { if (p && p.tab && panes[p.tab]) showTab(p.tab); if (p && p.truth != null) app.setTruth(p.truth); },
-      dispose() { offs.forEach((f) => f()); pool.dispose(); tree.dispose(); mapA.dispose(); mapB.dispose(); },
+      dispose() { offs.forEach((f) => f()); demo.dispose(); pool.dispose(); tree.dispose(); mapA.dispose(); mapB.dispose(); },
     };
   },
 };

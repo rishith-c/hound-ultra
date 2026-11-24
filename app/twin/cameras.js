@@ -10,7 +10,6 @@
 import * as THREE from 'three';
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-const ease = (t) => t * t * t * (t * (t * 6 - 15) + 10);
 const wrap = (a) => { a = (a + Math.PI) % (Math.PI * 2); if (a < 0) a += Math.PI * 2; return a - Math.PI; };
 const yawBehind = (heading) => heading - Math.PI / 2;        // camera yaw that looks along a sim heading (0 = east)
 export const MODES = ['orbit', 'top', 'follow', 'fpv', 'cinematic'];
@@ -18,17 +17,16 @@ const HOLD = { follow: 5, fpv: 4, cinematic: 9 };            // seconds the dire
 
 const mkPose = (o = {}) => ({ target: new THREE.Vector3(62, 0, -42), yaw: -0.42, pitch: 0.62, dist: 92, fov: 38, ...o });
 function copyPose(a, b) { a.target.copy(b.target); a.yaw = b.yaw; a.pitch = b.pitch; a.dist = b.dist; a.fov = b.fov; return a; }
-function mixPose(out, a, b, t) {
-  out.target.lerpVectors(a.target, b.target, t); out.yaw = a.yaw + wrap(b.yaw - a.yaw) * t; out.pitch = a.pitch + (b.pitch - a.pitch) * t;
-  out.dist = Math.exp(Math.log(a.dist) + (Math.log(b.dist) - Math.log(a.dist)) * t); out.fov = a.fov + (b.fov - a.fov) * t; return out;
-}
-
-export function createCameras({ camera, dom, ctx, world, reduced = () => false, interactive = true, mode: startMode = 'orbit' }) {
+export function createCameras({ camera, dom, ctx, world, reduced = () => false, interactive = true, mode: startMode = 'orbit', heightAt = null }) {
   const B = world.BUILDING.rect, siteC = new THREE.Vector3((B[0] + B[2]) / 2 - 2, 0, -(B[1] + B[3]) / 2 + 2);
-  const home = mkPose({ target: siteC.clone(), yaw: -0.44, pitch: 0.6, dist: 88, fov: 38 });
-  const G = mkPose(), C = mkPose(), from = mkPose(), D = mkPose();      // goal, current, transition start, director's pose
+  const home = mkPose({ target: siteC.clone(), yaw: -0.44, pitch: 0.42, dist: 84, fov: 38 });
+  const G = mkPose(), C = mkPose(), D = mkPose();      // goal, current, director's pose
+  const vel = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, dist: 0, fov: 0 }, sp = [0, 0];                    // the rig's velocity: critically damped springs, so nothing overshoots
+  const spring = (x, v, g, w, dt) => { const e = Math.exp(-w * dt), d = x - g, q = (v + w * d) * dt; sp[0] = g + (d + q) * e; sp[1] = (v - w * q) * e; };
+  const safe = { left: 0, top: 0, right: 0, bottom: 0 }, safeC = { x: 0, y: 0, k: 1, vx: 0, vy: 0, vk: 0 }, view = { x: 0, y: 0, w: 0, h: 0 };
+  const glass = { x: 64, z: -44, r: 0 }, camXY = [0, 0], tgtXY = [0, 0]; let lift = 0, liftV = 0, ground0 = heightAt;
   copyPose(G, home); copyPose(C, home);
-  let mode = MODES.includes(startMode) ? startMode : 'orbit', trans = null, lastInput = -1e9, now = 0, aspect = 1.6, held = false, moved = 0;
+  let mode = MODES.includes(startMode) ? startMode : 'orbit', soft = 0, softRate = 1, lastInput = -1e9, now = 0, aspect = 1.6, held = false, moved = 0;
   let shot = { key: '', t0: 0, yaw0: 0 }, find = null, routeUntil = 0, userYaw = false;
   const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3(), ray = new THREE.Raycaster(), ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), ndc = new THREE.Vector2();
   const unit = (S, id) => S.units[id];
@@ -40,8 +38,8 @@ export function createCameras({ camera, dom, ctx, world, reduced = () => false, 
     offs.push(ctx.bus.on('detection', (d) => { if (d && d.pos && d.status !== 'rejected') find = { pos: d.pos.slice(), until: now + 5.5, id: d.id }; }));
     offs.push(ctx.bus.on('survivor', (s) => { if (s && s.pos) find = { pos: s.pos.slice(), until: now + 5, id: s.id }; }));
     offs.push(ctx.bus.on('route', (r) => { if (r && r.status === 'planned') routeUntil = now + 7; }));
-    offs.push(ctx.bus.on('reset', () => { find = null; routeUntil = 0; shot.key = ''; }));
-    offs.push(ctx.bus.on('seek', () => { find = null; routeUntil = 0; }));
+    offs.push(ctx.bus.on('reset', () => { find = null; routeUntil = 0; shot.key = ''; snap = true; }));
+    offs.push(ctx.bus.on('seek', () => { find = null; routeUntil = 0; shot.key = ''; snap = true; }));
   }
   const inB = (p) => p[0] > B[0] - 1 && p[0] < B[2] + 1 && p[1] > B[1] - 1 && p[1] < B[3] + 1;
   function routeBox(S) {
@@ -51,18 +49,20 @@ export function createCameras({ camera, dom, ctx, world, reduced = () => false, 
     return a === Infinity ? null : [a, b, c, d];
   }
   // Each shot fills D for the current moment. tau = seconds since the shot began; k = 0 under reduced motion.
+  const slowIn = (tau, T) => { const x = clamp(tau / T, 0, 1); return x * x * (3 - 2 * x); };
   const SHOTS = {
-    establish(S, tau, k) { D.target.copy(siteC); D.yaw = shot.yaw0 + tau * 0.03 * k; D.pitch = 0.4; D.dist = 104; D.fov = 38; },
-    survey(S, tau, k) { const d = unit(S, 'DRONE-01'); u3(tmp, d.pos, 0).lerp(siteC, 0.62); D.target.copy(tmp).setY(4); D.yaw = -0.7 + tau * 0.028 * k; D.pitch = 0.5; D.dist = 118; D.fov = 36; },
-    drone(S, tau, k) { const d = unit(S, 'DRONE-01'); u3(D.target, d.pos, (d.alt || 0) * 0.82); D.yaw = yawBehind(d.heading || 0) + 0.55 + tau * 0.02 * k; D.pitch = 0.5; D.dist = 30; D.fov = 44; },
-    track(S, tau, k) { const r = unit(S, 'HOUND-01'); u3(D.target, r.pos, 0.3); D.yaw = yawBehind(r.heading) + 2.5 + Math.sin(tau * 0.12) * 0.3 * k; D.pitch = 0.3; D.dist = 7.5; D.fov = 36; },
-    inside(S, tau, k) { const r = unit(S, 'HOUND-01'); u3(D.target, r.pos, 0.4); D.yaw = 0.42 + Math.sin(tau * 0.09) * 0.25 * k; D.pitch = 1.02; D.dist = 21; D.fov = 36; },
-    listen(S, tau, k) { const r = unit(S, 'HOUND-01'); u3(D.target, r.pos, 0.5); D.yaw = shot.yaw0 + tau * 0.07 * k; D.pitch = 0.66; D.dist = Math.max(8.5, 12 - tau * 0.5 * k); D.fov = 34; },
-    find(S, tau, k) { u3(D.target, find ? find.pos : [64, 44], 0.7); D.yaw = shot.yaw0 + tau * 0.06 * k; D.pitch = 0.56; D.dist = Math.max(7, 11 - tau * 0.8 * k); D.fov = 32; },
-    route(S, tau, k) { const b = routeBox(S) || [20, 8, 84, 58]; D.target.set((b[0] + b[2]) / 2, 0, -(b[1] + b[3]) / 2); D.yaw = 0.12 + tau * 0.01 * k; D.pitch = 0.98; D.dist = clamp(Math.max(b[2] - b[0], (b[3] - b[1]) * 1.5) * 1.25 + 14, 40, 150); D.fov = 36; },
-    team(S, tau, k) { const m = unit(S, 'TEAM-1'); u3(D.target, m.pos, 1); D.yaw = (inB(m.pos) ? 0.3 : yawBehind(m.heading || 0) + 2.6) + Math.sin(tau * 0.1) * 0.2 * k; D.pitch = inB(m.pos) ? 0.78 : 0.42; D.dist = inB(m.pos) ? 17 : 13; D.fov = 36; },
-    done(S, tau, k) { D.target.copy(siteC); D.yaw = shot.yaw0 + tau * 0.035 * k; D.pitch = 0.5; D.dist = 78; D.fov = 38; },
+    establish(S, tau, k) { D.target.copy(siteC).setY(13); D.yaw = -0.06 - tau * 0.008 * k; D.pitch = 0.05; D.dist = 80 - 14 * slowIn(tau, 26) * k; D.fov = 42; },
+    survey(S, tau, k) { const d = unit(S, 'DRONE-01'); u3(tmp, d.pos, 0).lerp(siteC, 0.72); D.target.copy(tmp).setY(14); D.yaw = 0.02 - tau * 0.009 * k; D.pitch = 0.08; D.dist = 82; D.fov = 42; },
+    drone(S, tau, k) { const d = unit(S, 'DRONE-01'); u3(D.target, d.pos, (d.alt || 0) * 0.9); D.yaw = -0.2 + tau * 0.015 * k; D.pitch = 0.2; D.dist = 19; D.fov = 36; },
+    track(S, tau, k) { const r = unit(S, 'HOUND-01'); u3(D.target, r.pos, 0.55); D.yaw = yawBehind(r.heading) + 0.55 - 0.25 * slowIn(tau, 14) * k; D.pitch = 0.13; D.dist = 5.6 - 0.8 * slowIn(tau, 14) * k; D.fov = 36; },
+    inside(S, tau, k) { const r = unit(S, 'HOUND-01'); u3(D.target, r.pos, 0.35); D.yaw = 0.3 + Math.sin(tau * 0.07) * 0.2 * k; D.pitch = 0.6; D.dist = 12.5; D.fov = 34; },
+    listen(S, tau, k) { const r = unit(S, 'HOUND-01'); u3(D.target, r.pos, 0.45); D.yaw = shot.yaw0 + tau * 0.03 * k; D.pitch = 0.46; D.dist = 9.5 - 2.6 * slowIn(tau, 9) * k; D.fov = 34; },
+    find(S, tau, k) { const r = unit(S, 'HOUND-01'); u3(D.target, find ? find.pos : [64, 44], 0.5); D.yaw = shot.yaw0 + tau * 0.025 * k; D.pitch = 0.46 - 0.14 * slowIn(tau, 5) * k; D.dist = 10.5 - 4.2 * slowIn(tau, 6) * k; D.fov = 32; },
+    route(S, tau, k) { const b = routeBox(S) || [20, 8, 84, 58], far = clamp(Math.max(b[2] - b[0], (b[3] - b[1]) * 1.5) * 1.15 + 14, 40, 130), u = k ? slowIn(tau, 6) : 1; D.target.set((b[0] + b[2]) / 2, 0, -(b[1] + b[3]) / 2); D.yaw = -0.22 + tau * 0.008 * k; D.pitch = 0.42 + 0.34 * u; D.dist = far * (0.5 + 0.5 * u); D.fov = 36; },
+    team(S, tau, k) { const m = unit(S, 'TEAM-1'), i = inB(m.pos); u3(D.target, m.pos, 0.9); D.yaw = (i ? 0.3 : yawBehind(m.heading || 0) + 0.7) + Math.sin(tau * 0.08) * 0.15 * k; D.pitch = i ? 0.6 : 0.16; D.dist = i ? 13 : 9; D.fov = 34; },
+    done(S, tau, k) { D.target.copy(siteC).setY(13); D.yaw = -0.1 - tau * 0.008 * k; D.pitch = 0.07; D.dist = 78; D.fov = 42; },
   };
+  const DOF = { establish: 0, survey: 0, drone: 0.5, track: 0.85, inside: 0.35, listen: 0.7, find: 0.8, route: 0, team: 0.5, done: 0 };
   function pickShot(S) {
     const r = unit(S, 'HOUND-01'), d = unit(S, 'DRONE-01');
     if (find && now < find.until) return 'find';
@@ -81,8 +81,8 @@ export function createCameras({ camera, dom, ctx, world, reduced = () => false, 
     const want = pickShot(S), urgent = want === 'find' || want === 'route';
     if (want !== shot.key && (shot.key === '' || urgent || now - shot.t0 > 3.2)) {
       const first = shot.key === '';
-      shot = { key: want, t0: now, yaw0: C.yaw + (first ? 0 : 0.5) };
-      if (!first) begin(want === 'find' ? 1.8 : 2.6);
+      shot = { key: want, t0: now, yaw0: want === 'listen' || want === 'find' ? wrap(C.yaw) * 0.4 + 0.2 : C.yaw };
+      if (!first) begin(want === 'find' ? 2.6 : 3.4);
     }
     SHOTS[shot.key](S, now - shot.t0, reduced() ? 0 : 1);
   }
@@ -99,7 +99,7 @@ export function createCameras({ camera, dom, ctx, world, reduced = () => false, 
     if (mode === 'cinematic' && S) { direct(S, dt); return; }
     copyPose(D, G);
   }
-  function begin(dur) { if (reduced() || dur <= 0) { trans = null; return; } copyPose(from, C); trans = { t: 0, dur }; }
+  function begin(dur) { soft = reduced() || dur <= 0 ? 0 : 1; softRate = 1 / Math.max(0.1, dur); }      // soft = 1: the springs start slack and tighten
   function fitTop() { const need = Math.max(98, 132 / aspect); return need / (2 * Math.tan(THREE.MathUtils.degToRad(10))); }
   function setMode(m, { instant = false } = {}) {
     if (!MODES.includes(m)) return false;
@@ -116,7 +116,7 @@ export function createCameras({ camera, dom, ctx, world, reduced = () => false, 
   // ---------- user input ----------
   const userActive = () => held || now - lastInput < (HOLD[mode] || 0);
   function grab() {                                        // the user takes over: carry on from exactly where the camera is
-    if (trans) { trans = null; }
+    soft = 0;
     if (mode === 'cinematic' || mode === 'fpv') { if (!userActive()) copyPose(G, C); }
     else if (mode === 'follow') { if (!userYaw) { G.yaw = C.yaw; G.pitch = C.pitch; } userYaw = true; }
     lastInput = now;
@@ -163,7 +163,7 @@ export function createCameras({ camera, dom, ctx, world, reduced = () => false, 
       case 'ArrowUp': e.altKey ? panBy(0, step) : orbitBy(0, step); break; case 'ArrowDown': e.altKey ? panBy(0, -step) : orbitBy(0, -step); break;
       case '+': case '=': zoomBy(0.85); break; case '-': case '_': zoomBy(1.18); break;
       case 'a': case 'A': panBy(step, 0); break; case 'd': case 'D': panBy(-step, 0); break; case 'w': case 'W': panBy(0, step); break; case 's': case 'S': panBy(0, -step); break;
-      case 'Home': case '0': copyPose(G, home); if (mode === 'top') { G.dist = fitTop(); G.target.set(60, 0, -45); } trans = null; lastInput = now; break;
+      case 'Home': case '0': copyPose(G, home); begin(1.4); if (mode === 'top') { G.dist = fitTop(); G.target.set(60, 0, -45); } soft = Math.max(soft, 0.6); softRate = 0.5; lastInput = now; break;
       default: used = false;
     }
     if (used) { e.preventDefault(); e.stopPropagation(); }
@@ -195,51 +195,66 @@ export function createCameras({ camera, dom, ctx, world, reduced = () => false, 
   }
   function focus(sel, S) {
     const f = locate(sel, S); if (!f) return false;
-    trans = null; if (mode === 'cinematic' || mode === 'fpv') copyPose(G, C); if (mode === 'follow' || mode === 'fpv') { mode = 'orbit'; copyPose(G, C); G.fov = 38; }
+    soft = Math.max(soft, 0.6); softRate = 0.5; if (mode === 'cinematic' || mode === 'fpv') copyPose(G, C); if (mode === 'follow' || mode === 'fpv') { mode = 'orbit'; copyPose(G, C); G.fov = 38; }
     lastInput = now + 3;                                   // hold the shot a little longer than after a drag
     u3(G.target, f.p, f.h);
     if (mode === 'top') { G.dist = clamp(f.dist * 6.5, 90, fitTop()); return true; }
     G.dist = f.dist; G.pitch = f.pitch ?? clamp(G.pitch, 0.5, 0.9); G.fov = 38;
     return true;
   }
-  function flyTo(point, dist) { trans = null; if (mode === 'cinematic') copyPose(G, C); lastInput = now + 2; G.target.copy(point); if (dist) G.dist = dist; }
+  function flyTo(point, dist) { soft = Math.max(soft, 0.6); softRate = 0.5; if (mode === 'cinematic') copyPose(G, C); lastInput = now + 2; G.target.copy(point); if (dist) G.dist = dist; }
 
   // ---------- every frame ----------
-  let wasUser = false;
-  function update(dt, S, asp) {
-    now += dt; aspect = asp || aspect;
+  let wasUser = false, viewW = 0, viewH = 0;
+  function update(dt, S, w, h) {
+    now += dt; viewW = w; viewH = h; aspect = w / h || aspect;
     const user = userActive(), driven = mode === 'cinematic' || mode === 'fpv' || mode === 'follow' || mode === 'top';
     if (mode === 'follow' && !user) userYaw = false;
     if (wasUser && !user && (mode === 'cinematic' || mode === 'fpv' || mode === 'follow')) begin(mode === 'cinematic' ? 2.4 : 1.2);
     wasUser = user;
-    let tgt = G, rateT = 9, rateA = 9;
+    let tgt = G, rateT = 16, rateA = 16;
     if (driven && !(user && (mode === 'cinematic' || mode === 'fpv'))) {
       modePose(S, dt); tgt = D;
-      if (mode === 'follow') { rateT = 5; rateA = user ? 9 : 2.2; } else if (mode === 'fpv') { rateT = 14; rateA = 7; } else if (mode === 'cinematic') { rateT = 2.6; rateA = 2.2; } else { rateT = 9; rateA = 9; }
+      if (mode === 'follow') { rateT = 9; rateA = user ? 14 : 3; } else if (mode === 'fpv') { rateT = 18; rateA = 9; } else if (mode === 'cinematic') { rateT = 2.6; rateA = 2.0; } else { rateT = 10; rateA = 10; }
     }
-    if (snap || reduced()) { copyPose(C, tgt); trans = null; snap = false; }
-    else if (trans) {
-      trans.t += dt; const k = ease(Math.min(1, trans.t / trans.dur));
-      mixPose(C, from, tgt, k); if (trans.t >= trans.dur) trans = null;
-    } else {
-      const kt = 1 - Math.exp(-rateT * dt), ka = 1 - Math.exp(-rateA * dt);
-      C.target.lerp(tgt.target, kt); C.yaw += wrap(tgt.yaw - C.yaw) * ka; C.pitch += (tgt.pitch - C.pitch) * ka;
-      C.dist = Math.exp(Math.log(C.dist) + (Math.log(tgt.dist) - Math.log(C.dist)) * ka); C.fov += (tgt.fov - C.fov) * ka;
+    // wide shots step back when panels cover part of the view
+    const sw = (viewW || 1) - safe.left - safe.right, sh = (viewH || 1) - safe.top - safe.bottom, fit = viewW ? clamp(Math.sqrt(Math.max(0.2, (sw * sh) / (viewW * viewH))), 0.6, 1) : 1;
+    spring(safeC.x, safeC.vx, (safe.left - safe.right) / 2, 3, dt); safeC.x = sp[0]; safeC.vx = sp[1]; spring(safeC.y, safeC.vy, (safe.top - safe.bottom) / 2, 3, dt); safeC.y = sp[0]; safeC.vy = sp[1];
+    const back = mode === 'cinematic' && !user ? 1 / fit : 1, gd = tgt.dist * back;
+    if (snap || reduced()) { copyPose(C, tgt); C.dist = gd; for (const q in vel) vel[q] = 0; safeC.x = (safe.left - safe.right) / 2; safeC.y = (safe.top - safe.bottom) / 2; soft = 0; snap = false; lift = liftV = 0; }
+    else {
+      soft = Math.max(0, soft - dt * softRate); const q = 1 - soft * soft * 0.9, wt = rateT * q, wa = rateA * q;
+      spring(C.target.x, vel.x, tgt.target.x, wt, dt); C.target.x = sp[0]; vel.x = sp[1]; spring(C.target.y, vel.y, tgt.target.y, wt, dt); C.target.y = sp[0]; vel.y = sp[1]; spring(C.target.z, vel.z, tgt.target.z, wt, dt); C.target.z = sp[0]; vel.z = sp[1];
+      spring(C.yaw, vel.yaw, C.yaw + wrap(tgt.yaw - C.yaw), wa, dt); C.yaw = sp[0]; vel.yaw = sp[1]; spring(C.pitch, vel.pitch, tgt.pitch, wa, dt); C.pitch = sp[0]; vel.pitch = sp[1];
+      const ld = Math.log(C.dist); spring(ld, vel.dist, Math.log(gd), wa, dt); C.dist = Math.exp(sp[0]); vel.dist = sp[1]; spring(C.fov, vel.fov, tgt.fov, wa, dt); C.fov = sp[0]; vel.fov = sp[1];
     }
     const cp = Math.cos(C.pitch);
     camera.position.set(C.target.x + Math.sin(C.yaw) * cp * C.dist, C.target.y + Math.sin(C.pitch) * C.dist, C.target.z + Math.cos(C.yaw) * cp * C.dist);
-    if (camera.position.y < 0.12) camera.position.y = 0.12;
+    // never inside the hillside, never through a wall: rise over whatever is in the way, smoothly
+    let need = 0; const y0 = camera.position.y;
+    if (ground0) { const g = ground0(camera.position.x, -camera.position.z) + (mode === 'fpv' ? 0.12 : C.dist > 20 ? 2.2 : 0.5); if (y0 < g) need = g - y0; }
+    if (mode !== 'fpv' && C.dist < 45 && y0 < 4.2) { camXY[0] = camera.position.x; camXY[1] = -camera.position.z; tgtXY[0] = C.target.x; tgtXY[1] = -C.target.z; if (world.wallsCrossed(camXY, tgtXY).length) need = Math.max(need, 4.4 - y0); }
+    if (soft === 0 && lift === 0 && need > 0 && dt === 0) lift = need; spring(lift, liftV, need, 4, dt); lift = sp[0]; liftV = sp[1]; if (lift < 1e-4) lift = 0;
+    camera.position.y = Math.max(y0 + lift, ground0 ? ground0(camera.position.x, -camera.position.z) + 0.1 : 0.12);
     camera.up.set(0, 1, 0); camera.lookAt(C.target);
-    const near = clamp(C.dist * 0.02, 0.06, 2.5), far = 5200;
-    if (camera.fov !== C.fov || camera.near !== near || camera.aspect !== aspect) { camera.fov = C.fov; camera.near = near; camera.far = far; camera.aspect = aspect; camera.updateProjectionMatrix(); }
+    // radio passes through the walls around the rover while it listens, and around a person as they are found
+    const listening = S && S.sensors && S.sensors.listen, gk = mode === 'cinematic' || mode === 'follow' || mode === 'orbit';
+    if (gk && find && now < find.until) { glass.x = find.pos[0]; glass.z = -find.pos[1]; glass.r = 5.5; }
+    else if (gk && listening) { const r = unit(S, 'HOUND-01'); glass.x = r.pos[0]; glass.z = -r.pos[1]; glass.r = 6.2; } else glass.r = 0;
+    const near = clamp(C.dist * 0.02, 0.06, 2.5), far = 5200, vx = Math.round(-safeC.x * 2) / 2, vy = Math.round(-safeC.y * 2) / 2;
+    if (camera.fov !== C.fov || camera.near !== near || camera.aspect !== aspect || view.x !== vx || view.y !== vy || view.w !== viewW || view.h !== viewH) {
+      camera.fov = C.fov; camera.near = near; camera.far = far; camera.aspect = aspect; view.x = vx; view.y = vy; view.w = viewW; view.h = viewH;
+      if (viewW && (vx || vy)) camera.setViewOffset(viewW, viewH, vx, vy, viewW, viewH); else { camera.clearViewOffset(); } camera.updateProjectionMatrix();
+    }
     camera.updateMatrixWorld();
   }
 
   return {
     update, setMode, focus, flyTo, groundAt,
-    get mode() { return mode; }, get pose() { return C; }, get goal() { return G; }, dof: 0.0, get shot() { return mode === 'cinematic' ? shot.key : ''; },
+    get mode() { return mode; }, get pose() { return C; }, get goal() { return G; }, glass, safe, setSafeArea(a = {}) { for (const k of ['left', 'top', 'right', 'bottom']) safe[k] = Math.max(0, +a[k] || 0); }, setGround(fn) { ground0 = fn; },
+    get dof() { return mode === 'cinematic' && !userActive() ? DOF[shot.key] || 0 : 0; }, get shot() { return mode === 'cinematic' ? shot.key : ''; },
     get userActive() { return userActive(); }, wasDrag: () => moved >= 4,
-    setPose(p) { copyPose(G, { ...G, ...p, target: p.target ? p.target : G.target }); copyPose(C, G); trans = null; },
+    setPose(p) { copyPose(G, { ...G, ...p, target: p.target ? p.target : G.target }); copyPose(C, G); soft = Math.max(soft, 0.6); softRate = 0.5; },
     dispose() {
       offs.forEach((f) => f());
       dom.removeEventListener('pointerdown', onDown); dom.removeEventListener('pointermove', onMove); dom.removeEventListener('pointerup', onUp); dom.removeEventListener('pointercancel', onUp);

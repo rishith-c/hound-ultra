@@ -4,6 +4,7 @@
 //   const twin = await createTwin(hostElement, ctx, { interactive: true, quality: 'high' });
 //   twin.setCamera('orbit' | 'top' | 'follow' | 'fpv' | 'cinematic');   twin.focus({ type, id });
 //   twin.setLayer(name, on);  twin.layers() -> [{ id, label, on }]
+//   twin.setLight('dawn' | 'day' | 'night');  twin.setSafeArea({ left, top, right, bottom })   pixels your panels cover
 //   twin.start(); twin.stop(); twin.resize(); twin.dispose();  twin.screenshot() -> dataURL;  twin.three
 //
 // Options: interactive (true), quality ('high' | 'low'), camera (starting mode, 'orbit'), caption (true: a one-line
@@ -29,7 +30,7 @@ function message(host, title, body) {
 function hasWebGL2() { try { const c = document.createElement('canvas'); return !!c.getContext('webgl2'); } catch { return false; } }
 function stub(host) {
   const no = () => false;
-  return { ok: false, setCamera: no, focus: no, setLayer: no, layers: () => [], start() {}, stop() {}, resize() {}, dispose() { host.querySelector(':scope > .twin-message')?.remove(); host.classList.remove('twin-host'); }, screenshot: () => '', three: null, cameraMode: 'orbit', cameraModes: CAMERA_MODES, shot: '', stats: { fps: 0, ms: 0, calls: 0, triangles: 0 }, running: false };
+  return { ok: false, setCamera: no, focus: no, setLayer: no, setLight: no, setSafeArea() {}, light: 'dawn', layers: () => [], start() {}, stop() {}, resize() {}, dispose() { host.querySelector(':scope > .twin-message')?.remove(); host.classList.remove('twin-host'); }, screenshot: () => '', three: null, cameraMode: 'orbit', cameraModes: CAMERA_MODES, shot: '', stats: { fps: 0, ms: 0, calls: 0, triangles: 0 }, running: false };
 }
 
 export async function createTwin(host, ctx, opts = {}) {
@@ -52,6 +53,7 @@ export async function createTwin(host, ctx, opts = {}) {
     ok: true,
     setCamera: (m, o) => engine.setCamera(m, o), focus: (sel) => engine.focus(sel),
     setLayer: (id, on) => engine.setLayer(id, on), layers: () => engine.layers(),
+    setLight: (m, o) => engine.setLight(m, o), setSafeArea: (a) => engine.setSafeArea(a), get light() { return engine.light; },
     start: () => engine.start(), stop: () => engine.stop(), resize: () => engine.resize(), dispose: () => engine.dispose(),
     screenshot: () => engine.screenshot(), three: engine.three,
     get cameraMode() { return engine.cams.mode; }, cameraModes: CAMERA_MODES, get shot() { return engine.cams.shot; },

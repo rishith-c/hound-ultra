@@ -102,3 +102,33 @@ button.structure-label:hover span, button.structure-label:focus-visible span { b
 .structure-test { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: var(--fs-11); color: var(--text-3); } .structure-test span::before { content: "✓ "; color: var(--ok); } .structure-test span.is-bad::before { content: "✗ "; color: var(--danger); }
 .structure-empty { padding: 18px 12px; border: 1px dashed var(--line-2); border-radius: var(--r-2); color: var(--text-3); font-size: var(--fs-12); line-height: 1.5; text-align: center; }
 @media (max-width: 1500px) { .structure-main { grid-template-columns: minmax(0, 1fr) 436px; } .structure-scn { width: 330px; } .structure-hud { grid-template-columns: 1.3fr repeat(4, auto) 110px 1fr; gap: 0 12px; } .structure-hud canvas { width: 110px; } }
+
+/* Demo: the film. The stage is the whole window; text sits in the lower left and never over the pocket. */
+:root[data-mode="demo"] .structure-main { grid-template-columns: minmax(0, 1fr); }
+:root[data-mode="demo"] .structure-labels, :root[data-mode="demo"] .structure-tip { display: none; }
+.structure-film { position: absolute; inset: 0; pointer-events: none; z-index: var(--z-float); }
+.structure-film button { pointer-events: auto; }
+.structure-shade { position: absolute; inset: auto 0 0 0; height: 46%; background: linear-gradient(to top, color-mix(in srgb, var(--bg-0) 78%, transparent), color-mix(in srgb, var(--bg-0) 26%, transparent) 48%, transparent); }
+.structure-title { position: absolute; left: 44px; bottom: 74px; width: min(520px, 40vw); display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.structure-title h1 { font: var(--type-display); color: var(--text); text-wrap: balance; letter-spacing: -0.01em; }
+.structure-tags { display: flex; gap: 6px; }
+.structure-cap { font: 400 var(--fs-16)/1.4 var(--font); color: var(--text-2); min-height: 45px; max-width: 420px; transition: opacity 160ms var(--ease), transform 160ms var(--ease); }
+.structure-cap.is-out { opacity: 0; transform: translateY(3px); }
+.structure-act { height: 38px; padding: 0 16px; }
+.structure-figs { position: absolute; right: 44px; bottom: 78px; display: flex; gap: 40px; align-items: flex-end; }
+.structure-fig { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; min-width: 96px; max-width: 150px; transition: opacity 260ms var(--ease), transform 260ms var(--ease); }
+.structure-fig.is-off { opacity: 0; transform: translateY(6px); }
+.structure-fig div { display: flex; align-items: baseline; gap: 5px; }
+.structure-fig b { font: 400 var(--fs-56)/0.9 var(--font-display); font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; transition: color 240ms var(--ease); }
+.structure-fig small { font: 400 var(--fs-16)/1 var(--font); color: var(--text-2); }
+.structure-fig span { font: 400 var(--fs-12)/1.3 var(--font); color: var(--text-2); }
+.structure-fig[data-tone="bad"] b { color: var(--danger); } .structure-fig[data-tone="ok"] b { color: var(--ok); }
+.structure-foot { position: absolute; left: 44px; right: 44px; bottom: 20px; display: grid; gap: 10px; }
+.structure-steps { display: flex; gap: 26px; }
+.structure-steps button { background: none; border: 0; padding: 4px 0; color: var(--text-3); font: var(--type-label); cursor: pointer; display: inline-flex; gap: 8px; align-items: baseline; transition: color var(--t-fast) var(--ease); }
+.structure-steps button i { font: 500 var(--fs-11)/1 var(--mono); font-style: normal; opacity: 0.7; }
+.structure-steps button:hover { color: var(--text-2); } .structure-steps button[aria-pressed="true"] { color: var(--text); }
+.structure-steps button:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.structure-prog { height: 1px; background: var(--line-2); overflow: hidden; } .structure-prog i { display: block; height: 100%; width: 100%; background: var(--text-2); transform: scaleX(0); transform-origin: left; }
+@media (max-width: 1500px) { .structure-title { left: 32px; } .structure-figs { right: 32px; gap: 28px; } .structure-fig b { font-size: var(--fs-40); } .structure-foot { left: 32px; right: 32px; } }
+@media (prefers-reduced-motion: reduce) { .structure-cap, .structure-fig { transition: none; } }
