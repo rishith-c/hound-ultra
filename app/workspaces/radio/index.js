@@ -89,7 +89,7 @@ export default {
       if (hero || heroEl) return;
       heroEl = h('div.radio-hero'); body.append(heroEl);
       try { hero = await (await import('./hero.js')).createHero(heroEl, ctx, lab); root.__hero = hero; sync(); }
-      catch (err) { console.error('[radio] hero failed', err); heroEl.replaceChildren(h('div.empty', null, icon('alert', 28), h('h3', null, 'This view needs WebGL 2'), h('p.muted', null, String(err.message || err)))); }
+      catch (err) { console.error('[radio] hero failed', err); heroEl.replaceChildren(h('div.empty', null, icon('alert', 28), h('h3', null, 'The live picture could not start'), h('p.muted', null, String(err.message || err)))); }
     }
     function sync() {
       const heroOn = demo() && current === 'twin';

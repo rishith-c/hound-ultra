@@ -250,7 +250,7 @@ export function createFilm(host, { dem, model, osm, frame, SITE, BUILDING, OBSTA
   const P = new THREE.Vector3(), L = new THREE.Vector3(), O = new THREE.Vector3(), OT = new THREE.Vector3(16, 5, 2), UPV = new THREE.Vector3(), dir = new THREE.Vector3(), off = new THREE.Vector3(), frustum = new THREE.Frustum(), vp = new THREE.Matrix4(), tmp = new THREE.Vector3();
   const ctl = { yaw: 0, pitch: 0, zoom: 1, vy: 0, vp: 0, tYaw: 0, tPitch: 0, tZoom: 1, last: -1e9, roll: 0, cRoll: 0 };
   let t = FILM.open, running = false, raf = 0, last = 0, dead = false, startedAt = 0, frameNo = 0, lastInfo = 0, slow = 0, fast = 0, minutes = FILM.dayStart, wetHa = 0, lastSun = -1;
-  const END = { az: 2.78, r: 56, y: 21 };
+  const END = { az: 2.78, r: 66, y: 27 };
   let rate = 1, want = 1, dip = 1, dipTo = -1, firstAt = 0;
   const progress = (tt) => { const u = clamp(tt / FILM.flight, 0, 1); return u < 1 ? 0.5 * u + 0.5 * (u * u * (3 - 2 * u)) : 1; };
   function pose(tt) {
@@ -259,9 +259,10 @@ export function createFilm(host, { dem, model, osm, frame, SITE, BUILDING, OBSTA
     const sway = Math.sin(tt * 0.33) * 26; P.x += sway * 0.8; P.z += sway * 0.25;
     // the push-in: from the river course round to the uphill side of the block, then a hold with a slow sway
     const k = smoother(clamp((tt - FILM.pushAt) / (FILM.arrive - 2 - FILM.pushAt), 0, 1)), e = smoother(clamp((tt - FILM.pushAt) / (FILM.arrive - FILM.pushAt), 0, 1)), hold = Math.max(0, tt - FILM.arrive);
-    const a = END.az - 0.5 * (1 - e) + 0.045 * Math.sin(hold * 0.11), r = lerp(330, END.r, e), hy = lerp(150, END.y, e);
+    // after the arrival it holds for a breath, then cranes up and back until the valley is the picture and the light is one point in it
+    const out = smoother(clamp((hold - 2.6) / 17, 0, 1)), a = END.az - 0.5 * (1 - e) + 0.0075 * hold, r = lerp(330, END.r, e) + 190 * out, hy = lerp(150, END.y, e) + 118 * out;
     O.set(OT.x + Math.sin(a) * r, 0, OT.z + Math.cos(a) * r); O.y = Math.max(hy, ground(O.x, O.z) + lerp(60, 7, e));
-    P.lerp(O, k); L.lerp(OT, k);
+    P.lerp(O, k); L.lerp(OT, k); if (out > 0) { L.x -= Math.sin(a) * 120 * out; L.z -= Math.cos(a) * 120 * out; L.y += 26 * out; }
     // the hand on the camera
     const idle = performance.now() - ctl.last > 5000; if (idle) { ctl.tYaw *= 0.985; ctl.tPitch *= 0.985; ctl.tZoom += (1 - ctl.tZoom) * 0.015; }
     ctl.yaw += (ctl.tYaw - ctl.yaw) * 0.12; ctl.pitch += (ctl.tPitch - ctl.pitch) * 0.12; ctl.zoom += (ctl.tZoom - ctl.zoom) * 0.1;
@@ -297,7 +298,7 @@ export function createFilm(host, { dem, model, osm, frame, SITE, BUILDING, OBSTA
     void c;
     lineMat.uniforms.uLine.value = sm(10.5, 14, tt) * (1 - sm(13.6, 15.2, tt));
     dustMat.uniforms.uDustOn.value = sm(12, 16, tt);
-    { const p = (c) => Math.exp(-(((tt - c) / 0.42) ** 2)); U.uGlow.value.w = 0.14 * sm(16.5, 18.2, tt) + 0.6 * (p(18.9) + p(20.7)); } // two pulses, then it stays faint
+    { const p = (c) => Math.exp(-(((tt - c) / 0.42) ** 2)); const c = 18.9 + 5.2 * Math.max(0, Math.floor((tt - 18.2) / 5.2)), far = 1 + 2.4 * sm(20, 34, tt); U.uGlow.value.w = far * (0.14 * sm(16.5, 18.2, tt) + 0.6 * (p(c) + p(c + 1.8))); } // two pulses, again every five seconds, brighter as the camera leaves
     const fin = reduced() ? 1 : dip; finalMat.uniforms.uFade.value = fin;
     finalMat.uniforms.uExposure.value = lerp(1.15, 1.5, sm(10, 17, tt)); airMat.uniforms.uMist.value = lerp(lerp(0.95, 0.17, sm(2.5, 7, tt)), 0.07, sm(9, 16, tt)); castMat.uniforms.uCast.value = 0.55 * sm(0.08, 0.3, U.uSun.value.y);
     return { k, front };

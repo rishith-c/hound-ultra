@@ -15,7 +15,7 @@ export function createDemo(root, ctx, opts) {
       h('div.row', null, (el.fly = h('button.btn.btn-ghost', { type: 'button', onclick: () => film?.fly() }, 'Fly to the block')),
         (el.again = h('button.btn.btn-ghost.btn-icon', { type: 'button', 'aria-label': 'Play the flight again', title: 'Play the flight again', onclick: () => film?.restart() }, icon('reset'))),
         (el.now = h('span.area-demo-now', { role: 'status' })))),
-    h('div.area-demo-figs', null, fig('front', 'surge to the block'), fig('ha', 'flooded now'), fig('need', 'river rise to reach the block')),
+    h('div.area-demo-figs', null, fig('front', 'surge to the block'), fig('ha', 'flooded now'), fig('need', 'rooms to search')),
     (el.credit = h('p.area-demo-credit', null, h('span', null, 'Timure, Nepal, from real elevation and satellite imagery. The water is illustrative, not a forecast or a reconstruction.'), h('span', null, 'The block, its damage and the people are a simulated exercise. Trees, mist, dust, building heights and the ground under the block are drawn.'), h('span', null, 'Imagery © Esri, Maxar · Terrain: Mapzen, AWS · © OpenStreetMap'))));
   root.append(ui);
   let film = null, starting = null, lastText = 0, gone = false, shown = false;
@@ -25,8 +25,8 @@ export function createDemo(root, ctx, opts) {
     el.mark.style.opacity = f.siteOn ? String(Math.min(1, Math.max(0, (f.k - 0.75) * 5)) * f.fade) : '0';
     if (f.siteOn) el.mark.style.transform = 'translate3d(' + f.siteX.toFixed(1) + 'px,' + f.siteY.toFixed(1) + 'px,0)';
     const now = performance.now(); if (now - lastText < 200) return; lastText = now;
-    set(el.ha, f.ha.toFixed(1) + ' ha'); set(el.front, f.toBlock > 20 ? fmtDist(f.toBlock) : 'passed'); set(el.need, '+' + opts.blockNeed.toFixed(1) + ' m');
-    const what = f.t < 3.5 ? 'First light on the Lende Khola' : f.toBlock > 900 ? 'A 15 m surge runs down the Bhote Koshi' : f.toBlock > 0 ? 'The surge nears Timure' : opts.blockNeed > 15 ? 'The surge passes below the block' : 'The surge has reached the block';
+    set(el.ha, f.ha.toFixed(1) + ' ha'); set(el.front, f.toBlock > 20 ? fmtDist(f.toBlock) : 'passed'); set(el.need, '8');
+    const what = f.t < 3.5 ? 'First light on the Lende Khola' : f.toBlock > 900 ? 'A 15 m surge runs down the Bhote Koshi' : f.toBlock > 0 ? 'The surge nears Timure' : f.t < 22 ? 'Block B has come down' : 'Someone is in there';
     set(el.now, fmtClock(f.minutes) + '  ' + what);
   }
   async function ensure() {

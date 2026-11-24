@@ -1,22 +1,30 @@
 /* Demo mode: the hero and the full-bleed exhibits. */
-.radio-hero { position: absolute; inset: 0; overflow: hidden; background: var(--bg-0); }
+.radio-hero { position: absolute; inset: 0; overflow: hidden; background: var(--bg-0) url(./poster.webp) center / cover no-repeat; }  /* the opening frame, so there is a picture while the live one is built */
 .radio-hero[hidden] { display: none; }
 :root[data-mode="demo"] .radio .radio-body { position: relative; flex: 1; min-height: 0; }
-.radio-hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; }
+.radio-hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; opacity: 0; transition: opacity 500ms var(--ease); }
+.radio-hero.live .radio-hero-canvas { opacity: 1; }
+.radio-hero:not(.live) .radio-hero-pins { visibility: hidden; }
 .radio-hero-canvas:focus-visible { box-shadow: inset 0 0 0 2px var(--focus); }
-.radio-hero-shade { position: absolute; inset: auto 0 0 0; height: 46%; pointer-events: none; background: linear-gradient(to top, var(--bg-0) 4%, color-mix(in srgb, var(--bg-0) 62%, transparent) 38%, transparent); }
-.radio-hero-shade::before { content: ""; position: absolute; left: 0; bottom: 0; width: 760px; height: 112%; background: radial-gradient(120% 100% at 0% 100%, color-mix(in srgb, var(--bg-0) 94%, transparent) 30%, transparent 76%); }
-.radio-hero-shade::after { content: ""; position: absolute; right: 0; bottom: 0; width: 620px; height: 80%; background: radial-gradient(120% 100% at 100% 100%, color-mix(in srgb, var(--bg-0) 80%, transparent), transparent 72%); }
-.radio-hero-band { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 124px; pointer-events: none; }
-.radio-hero-text { position: absolute; left: 32px; bottom: 150px; width: 460px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; pointer-events: none; }
+.radio-hero-shade { position: absolute; inset: auto 0 0 0; height: 44%; pointer-events: none; background: linear-gradient(to top, var(--bg-0) 7%, color-mix(in srgb, var(--bg-0) 72%, transparent) 46%, transparent); }
+.radio-hero-shade::before { content: ""; position: absolute; left: 0; bottom: 0; width: 820px; height: 118%; background: radial-gradient(100% 100% at 0% 100%, color-mix(in srgb, var(--bg-0) 86%, transparent) 30%, transparent 80%); }
+
+.radio-hero-shade::after { content: ""; position: absolute; right: 0; bottom: 0; width: 900px; height: 92%; background: radial-gradient(100% 100% at 100% 100%, color-mix(in srgb, var(--bg-0) 88%, transparent) 30%, transparent 78%); }
+.radio-hero-text { position: absolute; left: 40px; bottom: 60px; width: 520px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; pointer-events: none; }
 .radio-hero-text > * { pointer-events: auto; }
 .radio-hero-tags { display: flex; gap: 6px; }
-.radio-hero-text h2 { margin: 0; font: 400 40px/1.04 var(--font-display); color: var(--text); text-wrap: balance; }
-.radio-hero-cap { margin: 0 0 4px; min-height: 44px; font: 400 16px/1.4 var(--font); color: var(--text-2); transition: opacity 220ms var(--ease); text-wrap: pretty; }
-.radio-hero-figs { position: absolute; right: 32px; bottom: 150px; display: flex; gap: 40px; align-items: flex-end; text-align: right; pointer-events: none; }
-.radio-hero-figs > div { display: flex; flex-direction: column; gap: 2px; min-width: 104px; }
-.radio-hero-figs b { font: 400 40px/1 var(--font-display); font-variant-numeric: lining-nums tabular-nums; color: var(--text); }
-.radio-hero-figs small { margin-left: 4px; font: 400 14px/1 var(--mono); color: var(--text-3); }
+.radio-hero-text h2 { margin: 2px 0 0; font: 400 40px/1.04 var(--font-display); color: var(--text); text-wrap: balance; }
+.radio-hero-cap { margin: 0; min-height: 22px; font: 400 16px/1.4 var(--font); color: var(--text-2); transition: opacity 220ms var(--ease); }
+/* the instrument: 51 live bars in their own band above the chapters */
+.radio-hero-inst { position: absolute; left: 55.6%; right: 40px; bottom: 60px; display: flex; flex-direction: column; pointer-events: none; }
+.radio-hero-band { width: 100%; height: 108px; display: block; border-bottom: 1px solid var(--line-2); }
+.radio-hero-insthead { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
+.radio-hero-bandcap { margin: 0; white-space: nowrap; display: flex; flex-direction: column; gap: 6px; font: 500 12px/1 var(--font); color: var(--text); }
+.radio-hero-bandcap span { font-weight: 400; color: var(--text-2); }
+.radio-hero-figs { white-space: nowrap; display: flex; gap: 22px; justify-content: flex-end; text-align: right; }
+.radio-hero-figs > div { display: flex; flex-direction: column; gap: 2px; min-width: 84px; }
+.radio-hero-figs b { font: 400 34px/1 var(--font-display); font-variant-numeric: lining-nums tabular-nums; color: var(--text); }
+.radio-hero-figs small { margin-left: 4px; font: 400 13px/1 var(--mono); color: var(--text-3); }
 .radio-hero-figs span { font: var(--type-caption); color: var(--text-2); }
 .radio-hero-score[data-on="true"] b, .radio-hero-score[data-on="true"] span { color: var(--person); }
 .radio-hero-pins { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
@@ -26,13 +34,13 @@
 .radio-hero-pin.person span { color: var(--person); }
 .radio-hero-pin.tx span { left: auto; right: -1px; }
 .radio-hero-pin.rx span { left: auto; right: -1px; }
-.radio-steps { position: absolute; right: 24px; top: 14px; z-index: 5; display: flex; flex-direction: row-reverse; align-items: center; gap: 2px; direction: ltr; }
-.radio-steps { flex-direction: row; }
-.radio-steps-name { order: -1; margin-right: 12px; font: 500 13px/1 var(--font); color: var(--text); text-shadow: 0 0 8px var(--bg-0); }
-.radio-steps button { width: 32px; height: 32px; padding: 0; border: 0; border-bottom: 1px solid var(--line-2); background: color-mix(in srgb, var(--bg-0) 55%, transparent); color: var(--text-2); font: 500 12px/1 var(--mono); cursor: pointer; transition: color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease); }
-.radio-steps button:hover { color: var(--text); border-bottom-color: var(--text-2); }
+.radio-steps { position: absolute; right: 40px; bottom: 14px; z-index: 5; display: flex; align-items: center; }
+.radio-steps-name { order: -1; margin-right: 10px; font: 400 12px/1 var(--font); color: var(--text-2); }
+.radio-steps button { width: 30px; height: 28px; padding: 0; border: 0; background: none; color: var(--text-3); font: 500 11px/1 var(--mono); cursor: pointer; transition: color var(--t-fast) var(--ease); }
+.radio-steps button:last-of-type { width: 22px; text-align: right; }
+.radio-steps button:hover { color: var(--text); }
 .radio-steps button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
-.radio-steps button[aria-current="true"] { color: var(--text); border-bottom-color: var(--accent); box-shadow: inset 0 -1px 0 var(--accent); }
+.radio-steps button[aria-current="true"] { color: var(--accent); }
 /* exhibits 02 to 07 in Demo: the one figure, edge to edge, over one line of text */
 :root[data-mode="demo"] .radio-exhibit { grid-template-columns: minmax(0, 1fr); }
 :root[data-mode="demo"] .radio-stage { position: absolute; inset: 60px 0 128px 0; }
@@ -48,10 +56,10 @@
 :root[data-mode="demo"] .radio-bf-col > :nth-child(2) { display: none; }
 :root[data-mode="demo"] .radio-sar-main { grid-row: auto; }
 :root[data-mode="demo"] .radio-sar-view { background: none; }
-.radio-demo-text { position: absolute; left: 32px; right: 32px; bottom: 0; height: 128px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.radio-demo-text { position: absolute; left: 40px; right: 40px; bottom: 0; height: 128px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
 .radio-demo-text h2 { margin: 0; font: 400 36px/1.05 var(--font-display); color: var(--text); }
 .radio-demo-text p { margin: 0; font: 400 15px/1.4 var(--font); color: var(--text-2); }
-.radio-demo-text .radio-hero-tags { position: absolute; right: 0; bottom: 26px; }
+.radio-demo-text .radio-hero-tags { position: absolute; right: 0; bottom: 56px; }
 /* 04 is nearly square: the figure takes the full height and the words sit beside it */
 :root[data-mode="demo"] .radio-exhibit[data-exhibit="sar"] .radio-stage { inset: 56px 0 8px 420px; }
 [data-exhibit="sar"] .radio-demo-text { right: auto; bottom: 40px; width: 400px; height: auto; gap: 10px; }

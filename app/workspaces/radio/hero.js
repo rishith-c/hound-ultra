@@ -1,29 +1,55 @@
-// The Demo hero: building B at night, seen in radio.
+// The Demo hero, "the idea": a Wi-Fi wave crosses a partition, a person moves, the wave comes back changed.
 //   the wave       fdtd.js, a live 2-D wave-equation solve at 2.437 GHz through the real walls, drawn as light
 //   the person     a second solve without them runs beside it; the difference is what the body scattered (orange)
 //   the channel    rf.js traced paths plus the body's echoes on the 51 subcarriers, 100 packets a second
 //   the score      the real network, on the last ten seconds of those packets (nnworker.js, same code and weights)
-// The building, furniture and rubble are the twin's own builders (read only), lit by the field itself.
+// The set (stage.js) is the plan of classrooms 111 and 112. It is built in slices; the first picture comes before the post passes.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import * as U from '../../twin/util.js';
 import * as rf from './rf.js';
 import { createField } from './fdtd.js';
+import { buildStage, patch, noiseTexture } from './stage.js';
 import { BODY, TX as TX0, RX as RX0, RIPPLE, buildBody, toWindow, normalise } from './person.js';
 import { F0, DF, C0 } from './lab.js';
+import roverActor from '../../twin/actors/rover.js';
 
-const RECT = [61.4, 41.4, 84.4, 58.6], HZ = 100, KEEP = 10.6, STEPS = 4, NS = 10;
+const RECT = [66.4, 43.2, 83.6, 59.2], HZ = 100, KEEP = 10.6, STEPS = 5, DRAWN = 100;
 const DK = (2 * Math.PI * DF) / C0, KC = (2 * Math.PI * F0) / C0, PARAM = { wall: 0.5, ref: 0.3 };
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
 // ---------- the person: an articulated figure, the only warm thing in the frame ----------
 function makeFigure(colPerson, colHot) {
   const uniforms = { uC: { value: colPerson }, uH: { value: colHot }, uA: { value: 1 }, uBreath: { value: 0 } };
-  const vs = 'varying vec3 vN; varying vec3 vV; uniform float uBreath; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vN = normalize(mat3(modelMatrix) * normal); vV = cameraPosition - w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }';
-  const solid = new THREE.ShaderMaterial({ uniforms, vertexShader: vs, transparent: true, fragmentShader: 'varying vec3 vN; varying vec3 vV; uniform vec3 uC, uH; uniform float uA; void main(){ vec3 n = normalize(vN), v = normalize(vV); float d = max(dot(n, v), 0.0); float rim = pow(1.0 - d, 2.6); float top = 0.5 + 0.5 * n.y; vec3 c = uC * (0.10 + 0.34 * d * top) + uC * rim * 1.5 + uH * pow(d, 5.0) * 0.16; gl_FragColor = vec4(c * uA, uA); }' });
-  const ghost = new THREE.ShaderMaterial({ uniforms, vertexShader: vs, transparent: true, depthWrite: false, depthFunc: THREE.GreaterDepth, blending: THREE.CustomBlending, blendEquation: THREE.MaxEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, fragmentShader: 'varying vec3 vN; varying vec3 vV; uniform vec3 uC; uniform float uA; void main(){ float d = max(dot(normalize(vN), normalize(vV)), 0.0); gl_FragColor = vec4(uC * (0.34 + 0.75 * pow(1.0 - d, 2.0)) * uA, 0.0); }' });
+  const J = Array.from({ length: 20 }, () => new THREE.Vector3()), uni = { ...uniforms, uJ: { value: J }, uLamp: { value: new THREE.Vector3(71.6, 3.6, -46.2) }, uMoon: { value: new THREE.Vector3(0.82, 0.42, -0.4).normalize() } };
+  const proxy = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.0, 1.5), new THREE.ShaderMaterial({ uniforms: uni, transparent: true, side: THREE.BackSide,
+    vertexShader: 'varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
+    fragmentShader: `varying vec3 vW; uniform vec3 uJ[20], uC, uH, uLamp, uMoon; uniform float uA, uBreath; uniform mat4 projectionMatrix;
+      float sm(float a, float b, float k){ float h = max(k - abs(a - b), 0.0) / k; return min(a, b) - h * h * k * 0.25; }
+      float cp(vec3 p, vec3 a, vec3 b, float r0, float r1){ vec3 d = b - a; float h = clamp(dot(p - a, d) / max(dot(d, d), 1e-6), 0.0, 1.0); return length(p - a - d * h) - mix(r0, r1, h); }
+      float map(vec3 p){
+        vec3 ch = uJ[1], pe = uJ[0], lat = normalize(uJ[5] - uJ[4] + 1e-5), fwd = normalize(cross(lat, vec3(0.0, 1.0, 0.0)));
+        vec3 q = p - ch; float f = dot(q, fwd); vec3 pf = p + fwd * f * 0.28;                                     // the trunk is flatter than it is wide
+        float d = cp(pf, pe - lat * 0.065, pe + lat * 0.065, 0.118, 0.118);
+        d = sm(d, cp(pf, pe + vec3(0.0, 0.06, 0.0), ch, 0.122, 0.132), 0.10);
+        d = sm(d, cp(pf, ch + vec3(0.0, 0.05, 0.0) - lat * 0.075, ch + vec3(0.0, 0.05, 0.0) + lat * 0.075, 0.128 + uBreath, 0.128 + uBreath), 0.10);
+        d = sm(d, cp(p, uJ[4], uJ[5], 0.06, 0.06), 0.09);
+        d = sm(d, cp(p, uJ[2] - vec3(0.0, 0.06, 0.0), uJ[3] - vec3(0.0, 0.03, 0.0), 0.058, 0.048), 0.06);
+        float hd = cp(p, uJ[3] + vec3(0.0, 0.045, 0.0) - fwd * 0.012, uJ[3] - vec3(0.0, 0.055, 0.0) + fwd * 0.02, 0.092, 0.062); d = sm(d, hd, 0.035);
+        for (int s = 0; s < 2; s++) { int o = 4 + s;
+          float a = cp(p, uJ[o], uJ[o + 2], 0.060, 0.044); a = sm(a, cp(p, uJ[o + 2], uJ[o + 4], 0.045, 0.030), 0.03); a = sm(a, cp(p, uJ[o + 4], uJ[o + 6], 0.033, 0.026), 0.03); d = sm(d, a, 0.045);
+          float l = cp(p, uJ[o + 8], uJ[o + 10], 0.098, 0.064); l = sm(l, cp(p, mix(uJ[o + 10], uJ[o + 12], 0.02), uJ[o + 12], 0.064, 0.042), 0.04); l = sm(l, cp(p, uJ[o + 12] - vec3(0.0, 0.035, 0.0), uJ[o + 14], 0.044, 0.034), 0.04); d = sm(d, l, 0.05); }
+        return d; }
+      void main(){ vec3 ro = cameraPosition, rd = normalize(vW - ro); float tb = length(vW - ro), t = max(tb - 2.7, 0.0), best = 1.0, tb0 = t, d = 1.0; bool hit = false;
+        for (int i = 0; i < 80; i++) { d = map(ro + rd * t); if (d < best) { best = d; tb0 = t; } if (d < 0.0012) { hit = true; break; } t += d * 0.6; if (t > tb) break; }
+        float px = t * fwidth(rd.x + rd.y) * 0.9 + 0.0015, al = hit ? 1.0 : 1.0 - smoothstep(0.0, px, best); if (al <= 0.01) discard; if (!hit) t = tb0;
+        vec3 p = ro + rd * t; vec2 e = vec2(0.0035, -0.0035); vec3 n = normalize(e.xyy * map(p + e.xyy) + e.yyx * map(p + e.yyx) + e.yxy * map(p + e.yxy) + e.xxx * map(p + e.xxx));
+        float ao = clamp(map(p + n * 0.07) / 0.07, 0.0, 1.0) * 0.6 + 0.4, v = max(dot(n, -rd), 0.0), rim = pow(1.0 - v, 2.4);
+        float lk = max(dot(n, normalize(uLamp - p)) * 0.6 + 0.4, 0.0), mk = max(dot(n, uMoon), 0.0), weave = 0.94 + 0.06 * sin(p.y * 260.0);
+        vec3 c = uC * (0.045 + 0.46 * lk * lk) * ao * weave + uC * vec3(1.0, 0.9, 0.8) * pow(mk, 1.4) * 0.75 * ao + uH * pow(mk, 6.0) * 0.25 + uC * rim * 1.15 + uH * rim * rim * 0.25;
+        vec4 k = projectionMatrix * viewMatrix * vec4(p, 1.0); gl_FragDepth = clamp(k.z / k.w * 0.5 + 0.5, 0.0, 1.0); gl_FragColor = vec4(c, uA * al); }` })); body.position.y = 0.98; body.renderOrder = 1; body.frustumCulled = false;
   const root = new THREE.Group(), meshes = [];
-  const put = (parent, geo, x, y, z, sx = 1, sy = 1, sz = 1) => { for (const m of [solid, ghost]) { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.scale.set(sx, sy, sz); o.renderOrder = m === ghost ? 6 : 1; parent.add(o); meshes.push(o); } };
+  const put = (parent, geo, x, y, z, sx = 1, sy = 1, sz = 1) => { const o = new THREE.Mesh(geo, proxy); o.position.set(x, y, z); o.scale.set(sx, sy, sz); o.castShadow = true; parent.add(o); meshes.push(o); }; root.add(body);
   const pivot = (parent, x, y, z) => { const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g); return g; };
   const taper = (r0, r1, len) => { const p = []; for (let i = 0; i <= 5; i++) { const a = (i / 5) * Math.PI / 2; p.push(new THREE.Vector2(r1 * Math.sin(a), -len - r1 * Math.cos(a) + 0)); } for (let i = 1; i <= 5; i++) { const t = i / 5; p.push(new THREE.Vector2(r1 + (r0 - r1) * t + 0.1 * r0 * Math.sin(t * Math.PI), -len * (1 - t))); } for (let i = 1; i <= 5; i++) { const a = (i / 5) * Math.PI / 2; p.push(new THREE.Vector2(r0 * Math.cos(a), r0 * Math.sin(a))); } return new THREE.LatheGeometry(p, 24); };
   const hips = pivot(root, 0, 0.93, 0), spine = pivot(hips, 0, 0.06, 0);
@@ -41,41 +67,13 @@ function makeFigure(colPerson, colHot) {
       const b = Math.sin(t * 1.7) * 0.008;
       hips.position.y = 0.93 - 0.02 * walk * Math.abs(Math.cos(phase)) ; spine.rotation.x = 0.06 * walk + b * 0.6; spine.rotation.y = 0.12 * walk * Math.sin(phase); hips.rotation.y = -0.1 * walk * Math.sin(phase); head.rotation.y = -0.06 * walk * Math.sin(phase);
       for (const [sh, el, s] of arms) { sh.rotation.x = -s * 0.5 * walk * Math.sin(phase) - 0.04; sh.rotation.z = s * (0.11 + b); el.rotation.x = -0.18 - 0.3 * walk * (0.5 - 0.5 * s * Math.sin(phase)); }
-      for (const [hp, kn, s] of legs) { hp.rotation.x = s * 0.52 * walk * Math.sin(phase); hp.rotation.z = s * 0.03; kn.rotation.x = walk * Math.max(0, 0.75 * Math.sin(phase * 1 + (s > 0 ? Math.PI : 0) + Math.PI + 0.9)) + 0.03; }
+      for (const [hp, kn, s] of legs) { hp.rotation.x = s * 0.42 * walk * Math.sin(phase); hp.rotation.z = s * 0.03; kn.rotation.x = walk * Math.max(0, 0.75 * Math.sin(phase * 1 + (s > 0 ? Math.PI : 0) + Math.PI + 0.9)) + 0.03; }
+      // joints in world space, for the ray-marched body
+      root.updateMatrixWorld(true); uniforms.uBreath.value = 0.006 * Math.sin(t * 1.57); const at = (o, i, x, y, z) => J[i].set(x, y, z).applyMatrix4(o.matrixWorld);
+      at(hips, 0, 0, 0.0, 0); at(spine, 1, 0, 0.3, 0); at(spine, 2, 0, 0.56, 0); at(head, 3, 0, 0.01, 0);
+      for (let q = 0; q < 2; q++) { const [sh, el] = arms[q], [hp, kn] = legs[q]; at(sh, 4 + q, 0, 0, 0); at(el, 6 + q, 0, 0, 0); at(el, 8 + q, 0, -0.25, 0); at(el, 10 + q, 0, -0.36, 0.012); at(hp, 12 + q, 0, 0.02, 0); at(kn, 14 + q, 0, 0, 0); at(kn, 16 + q, 0, -0.4, 0); at(kn, 18 + q, 0, -0.46, 0.14); }
     },
   };
-}
-
-// The field as light, injected into every lit material of the scene: surfaces glow where the wave is, floors carry its
-// crests, and standing walls turn to glass while it passes through them.
-const FIELD_GLSL = `
-uniform sampler2D uZ, uAmp; uniform vec4 uRect; uniform float uPh, uGain, uWarmG; uniform vec3 uCool, uCore, uWarm, uTxw;
-float rfIn(vec2 u){ vec2 e = min(u, 1.0 - u) * uRect.zw; return smoothstep(0.5, 2.2, min(e.x, e.y)); }
-float rfDb(float a, float ref, float span){ return clamp(1.0 + log(max(a, 1e-6) / ref) * 8.685889 / span, 0.0, 1.0); }
-float rfTone(float a){ float t = rfDb(a, uGain, 40.0); return t * t; }
-float rfWarm(float a){ float t = rfDb(a, uWarmG, 30.0); return t * t; }
-`;
-function patch(mat, shared, glass) {
-  if (mat.userData.radioPatched) return; mat.userData.radioPatched = true;
-  const prev = mat.onBeforeCompile, key = mat.customProgramCacheKey ? mat.customProgramCacheKey.bind(mat) : () => '';
-  mat.onBeforeCompile = (sh, r) => {
-    prev?.call(mat, sh, r); Object.assign(sh.uniforms, shared);
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + FIELD_GLSL).replace('#include <opaque_fragment>', `
-      vec3 rw = transpose(mat3(viewMatrix)) * (-vViewPosition) + cameraPosition; vec2 ru = (vec2(rw.x, -rw.z) - uRect.xy) / uRect.zw;
-      float rin = rfIn(ru); vec2 rA = textureLod(uAmp, ru, 4.0).xy; float rT = rfTone(rA.x) * rin, rD = rfWarm(rA.y) * rin;
-      vec3 rAl = min(diffuseColor.rgb, vec3(0.42)); if (!(dot(outgoingLight, vec3(1.0)) >= 0.0)) outgoingLight = vec3(0.0);
-      outgoingLight += rAl * (uCool * rT * 1.1 + uWarm * rD * 1.1) * (0.25 + 0.75 * exp(-max(rw.y, 0.0) * 0.55));
-      if (rw.y < 0.05 && rin > 0.0) {
-        vec4 rz = texture2D(uZ, ru); vec2 ra = texture2D(uAmp, ru).xy; vec2 rp = vec2(cos(uPh), sin(uPh));
-        float cT = dot(rz.xy, rp), cD = dot(rz.zw, rp); float wet = 0.45 + 0.55 * (1.0 - roughnessFactor);
-        outgoingLight += (uCool * rfTone(max(cT, 0.0)) * 1.1 + uWarm * rfWarm(max(cD, 0.0)) * 1.5) * rin * wet * 0.6;
-      }
-      ${glass ? 'float rg = smoothstep(0.10, 0.75, rT) * smoothstep(0.12, 0.5, rw.y); diffuseColor.a = 1.0 - 0.80 * rg; outgoingLight += uCool * rg * 0.05;' : ''}
-      #include <opaque_fragment>`);
-  };
-  mat.customProgramCacheKey = () => key() + '|radio' + (glass ? 'g' : '');
-  if (glass) mat.alphaToCoverage = true;
-  mat.needsUpdate = true;
 }
 
 export async function createHero(host, ctx, lab) {
@@ -85,18 +83,20 @@ export async function createHero(host, ctx, lab) {
   // ---------- DOM ----------
   const canvas = h('canvas.radio-hero-canvas', { role: 'img', tabindex: '0', 'aria-label': 'Building B at night, with a Wi-Fi wave washing through the rooms and a person walking behind a wall. Drag the person or a radio. Space pauses, R replays.' });
   const pins = h('div.radio-hero-pins', { 'aria-hidden': 'true' });
-  const band = h('canvas.radio-hero-band', { role: 'img', 'aria-label': 'Change on each of the 51 Wi-Fi subcarriers, live' });
+  const band = h('canvas.radio-hero-band', { role: 'img', 'aria-label': 'Received strength of each of the 51 Wi-Fi channels, live, with the change drawn ' + DRAWN + ' times larger' });
   const cap = h('p.radio-hero-cap', { 'aria-live': 'polite' }, '');
   const fNs = h('b.num', null, '0'), fCh = h('b.num', null, '0.0'), fP = h('b.num', null, '–'), fPcap = h('span', null, 'network score');
-  const replay = h('button.btn.btn-primary', { type: 'button', onclick: () => restart() }, lab.icon('reset', 14), 'Replay');
   const text = h('div.radio-hero-text', null,
-    h('div.radio-hero-tags', null, Object.assign(kit.realityTag('live-algo'), { title: 'A 2-D wave equation at 2.437 GHz, solved live on this computer’s graphics chip through the real wall plan (assumed wall thickness). Crests are slowed again so the eye can follow them. The person is not slowed.' }), Object.assign(kit.realityTag('live-ai'), { title: 'The project’s trained Wi-Fi network, running here on packets synthesised in this page. A demonstration, not an evaluation.' }), h('span.tag.tag-sim', { title: 'The building, the person and every reading are simulated. HOUND has not recorded a real person with its Wi-Fi radios.' }, 'Simulated person')),
-    h('h2', null, 'Radio walks through the wall'), cap, replay);
+    h('div.radio-hero-tags', null, Object.assign(kit.realityTag('live-algo'), { title: 'A 2-D wave equation at 2.437 GHz, solved live on this computer’s graphics chip through the wall plan (assumed wall thickness). The partition is drawn whole, as the solver treats it. Crests are slowed again so the eye can follow them. The person is not slowed.' }), Object.assign(kit.realityTag('live-ai'), { title: 'The project’s trained Wi-Fi network, running here on packets synthesised in this page. A demonstration, not an evaluation.' }), h('span.tag.tag-sim', { title: 'The building, the person and every reading are simulated. HOUND has not recorded a real person with its Wi-Fi radios.' }, 'Simulated person')),
+    h('h2', null, 'Wi-Fi passes through walls. A living body changes it.'), cap);
   const figs = h('div.radio-hero-figs', null,
     h('div', null, h('div', null, fNs, h('small', null, 'ns')), h('span', null, 'since the radio spoke')),
     h('div', null, h('div', null, fCh, h('small', null, '%')), h('span', null, 'change on the link')),
     h('div.radio-hero-score', null, h('div', null, fP), fPcap));
-  host.append(canvas, pins, h('div.radio-hero-shade'), band, text, figs);
+  host.append(canvas, pins, h('div.radio-hero-shade'), h('div.radio-hero-inst', null, h('div.radio-hero-insthead', null, h('p.radio-hero-bandcap', null, '51 Wi-Fi channels, live', h('span', null, 'change drawn ' + DRAWN + '×, no receiver noise')), figs), band), text);
+  let t0 = performance.now(), worst = 0; const marks = [['start', t0]];
+  const slice = async (force) => { const n = performance.now(); if (force || n - t0 > 9) { worst = Math.max(worst, n - t0); await new Promise((r) => setTimeout(r, 0)); t0 = performance.now(); } };
+  await slice(true);
   const pin = (t, cls) => { const el = h('div.radio-hero-pin.' + cls, null, h('i'), h('span', null, t)); pins.append(el); return { el, p: new THREE.Vector3(), a: -1, x: -1, y: -1 }; };
   const pinTx = pin('Probe radio', 'tx'), pinRx = pin('HOUND-01', 'rx'), pinP = pin('Person', 'person');
 
@@ -104,43 +104,25 @@ export async function createHero(host, ctx, lab) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, depth: false, stencil: false, powerPreference: 'high-performance' });
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0; renderer.autoClear = false;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.shadowMap.autoUpdate = false;
-  const scene = new THREE.Scene(); const night = new THREE.Color(0.0045, 0.0062, 0.0095); scene.background = night; scene.fog = new THREE.FogExp2(night, 0.021);
-  const camera = new THREE.PerspectiveCamera(35, 1.8, 0.3, 300); camera.position.set(70.6, 8.6, -40.2);
-  const controls = new OrbitControls(camera, canvas); controls.target.set(75.2, 0.5, -50.6); controls.enableDamping = true; controls.dampingFactor = 0.06; controls.minDistance = 4; controls.maxDistance = 34; controls.maxPolarAngle = 1.36; controls.minPolarAngle = 0.12; controls.zoomSpeed = 0.6; controls.enablePan = false;
-  const { createPost } = await import('../../twin/post.js');
-  const post = createPost(renderer, scene, camera, { quality: 'high' }); post.setAO(false);
-  post.bloom.strength = 0.34; post.bloom.radius = 0.6; post.bloom.threshold = 0.9;
+  marks.push(['renderer', performance.now()]); await slice(true);
+  const scene = new THREE.Scene(); const night = new THREE.Color(0.0035, 0.005, 0.008); scene.background = night; scene.fog = new THREE.FogExp2(night, 0.02);
+  // a long lens at 25 degrees, along the partition from room 111; one slow push while the story runs
+  const FOV = 20, AZ = 0.61, EL = 0.40, ANCHOR = new THREE.Vector3(75, 0.15, -50.2), D0 = 12.6, D1 = 11.3;
+  const camera = new THREE.PerspectiveCamera(FOV, 1.8, 0.5, 80), goal = new THREE.Vector3();
+  const pose = (k, az) => { const D = D0 + (D1 - D0) * k, a = AZ + az; goal.set(ANCHOR.x - D * Math.cos(EL) * Math.sin(a), ANCHOR.y + D * Math.sin(EL), ANCHOR.z + D * Math.cos(EL) * Math.cos(a)); };
+  pose(0, 0); camera.position.copy(goal);
+  const controls = new OrbitControls(camera, canvas); controls.target.copy(ANCHOR); controls.enableDamping = true; controls.dampingFactor = 0.06; controls.minDistance = 5; controls.maxDistance = 18; controls.maxPolarAngle = 1.36; controls.minPolarAngle = 0.12; controls.zoomSpeed = 0.6; controls.enablePan = false;
 
-  // light: one cold moon from the north-east, a faint sky; the field does the rest
-  const moon = new THREE.DirectionalLight(0xbcd0f2, 1.25); moon.position.set(96, 30, -78); moon.target.position.set(72, 0, -48); moon.castShadow = true; moon.shadow.mapSize.set(2048, 2048); const sc = moon.shadow.camera; sc.left = -26; sc.right = 26; sc.top = 24; sc.bottom = -24; sc.near = 5; sc.far = 90; moon.shadow.bias = -0.0006; moon.shadow.normalBias = 0.03; scene.add(moon, moon.target);
-  scene.add(new THREE.HemisphereLight(0x9fb0cc, 0x1d1e21, 0.36));
-  const fill = new THREE.DirectionalLight(0xc9d4e6, 0.26); fill.position.set(60, 18, -20); fill.target.position.set(76, 0, -52); scene.add(fill, fill.target);
-  { const { RoomEnvironment } = await import('three/addons/environments/RoomEnvironment.js'); const pm = new THREE.PMREMGenerator(renderer), rt = pm.fromScene(new RoomEnvironment(), 0.05); scene.environment = rt.texture; scene.environmentIntensity = 0.1; pm.dispose(); renderer.setRenderTarget(null); }
+  // light: a warm work lamp on the two radios, a cold moon behind, a faint sky; the field does the rest
+  const moon = new THREE.DirectionalLight(0xb4caf2, 2.1); moon.position.set(90, 13, -57); moon.target.position.set(75.5, 0, -50.5); moon.castShadow = true; moon.shadow.mapSize.set(2048, 2048); { const sc = moon.shadow.camera; sc.left = -8; sc.right = 8; sc.top = 8; sc.bottom = -8; sc.near = 2; sc.far = 40; } moon.shadow.bias = -0.0004; moon.shadow.normalBias = 0.02; scene.add(moon, moon.target);
+  scene.add(new THREE.HemisphereLight(0x93a9c9, 0x26231f, 0.75));
+  const lamp = new THREE.SpotLight(0xffa35a, 250, 14, 0.27, 0.9, 2); lamp.position.set(71.6, 3.6, -46.2); lamp.target.position.set(74.7, 0.3, -50.3); lamp.castShadow = true; lamp.shadow.mapSize.set(1024, 1024); lamp.shadow.camera.near = 1; lamp.shadow.camera.far = 12; lamp.shadow.bias = -0.0005; lamp.shadow.normalBias = 0.015; scene.add(lamp, lamp.target);
+  const fill = new THREE.DirectionalLight(0x9db7de, 0.95); fill.position.set(66, 9, -41); fill.target.position.set(75, 0, -51); scene.add(fill, fill.target);
 
   // ---------- the field ----------
-  const field = createField(renderer, world, { rect: RECT });
-  const shared = { uZ: { value: field.tex[0] }, uAmp: { value: field.tex[1] }, uRect: { value: new THREE.Vector4(RECT[0], RECT[1], RECT[2] - RECT[0], RECT[3] - RECT[1]) }, uPh: { value: 0 }, uGain: { value: 0.46 }, uWarmG: { value: 0.14 }, uCool: { value: new THREE.Color(0.22, 0.56, 1.0) }, uCore: { value: new THREE.Color(0.75, 0.88, 1) }, uWarm: { value: col('--person') }, uTxw: { value: new THREE.Vector3() } };
-  // the wave in the air: thin sheets of light at ten heights; the crests are drawn as domes round the transmitter
-  const sheetGeo = new THREE.InstancedBufferGeometry(); { const p = new THREE.PlaneGeometry(RECT[2] - RECT[0], RECT[3] - RECT[1]).rotateX(-Math.PI / 2); sheetGeo.index = p.index; sheetGeo.setAttribute('position', p.attributes.position); const z = new Float32Array(NS); for (let i = 0; i < NS; i++) z[i] = 0.1 + i * 0.17; sheetGeo.setAttribute('aH', new THREE.InstancedBufferAttribute(z, 1)); sheetGeo.instanceCount = NS; }
-  const sheetMat = new THREE.ShaderMaterial({ uniforms: { ...shared, uK: { value: 2 * Math.PI * F0 / C0 }, uTxh: { value: TX0[2] }, uN: { value: NS } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
-    vertexShader: 'attribute float aH; varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); w.y += aH; vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
-    fragmentShader: FIELD_GLSL + `varying vec3 vW; uniform float uK, uTxh;
-      void main(){ vec2 u = (vec2(vW.x, -vW.z) - uRect.xy) / uRect.zw; float rin = rfIn(u); if (rin <= 0.0) discard;
-        vec4 z = texture2D(uZ, u); vec2 a = texture2D(uAmp, u).xy; vec2 am = textureLod(uAmp, u, 2.5).xy;
-        float dz = vW.y - uTxh, r = length(vec2(vW.x - uTxw.x, vW.z - uTxw.z)), ex = uK * (sqrt(r * r + dz * dz) - r); ex = min(ex, 14.0);
-        vec2 p = vec2(cos(uPh - ex), sin(uPh - ex)), p0 = vec2(cos(uPh), sin(uPh));
-        float cT = max(dot(z.xy, p), 0.0), cD = max(dot(z.zw, p0), 0.0);
-        float hg = exp(-dz * dz * 0.62) ; float near = smoothstep(0.1, 1.5, r);
-        float sT = rfTone(am.x) * 0.16 + pow(rfTone(cT), 1.7) * 0.84, sD = rfWarm(am.y) * 0.14 + pow(rfWarm(cD), 1.3);
-        vec3 c = mix(uCool, uCore, 0.55 * smoothstep(0.55, 1.0, sT)) * sT * mix(0.35, 1.0, near) + uWarm * sD * 1.25;
-        gl_FragColor = vec4(c * hg * rin * 0.19, 1.0); }` });
-  const sheets = new THREE.Mesh(sheetGeo, sheetMat); sheets.position.set((RECT[0] + RECT[2]) / 2, 0, -(RECT[1] + RECT[3]) / 2); sheets.frustumCulled = false; sheets.renderOrder = 5; scene.add(sheets);
-
-  // ---------- stand-in building until the real one is ready, so the wave is on screen at once ----------
-  const standIn = new THREE.Group(); scene.add(standIn);
-  { const m = new THREE.MeshStandardMaterial({ color: 0x3a3e44, roughness: 0.9 }); patch(m, shared, true);
-    for (const w of world.WALLS) { if (w.state === 'collapsed') continue; const dx = w.b[0] - w.a[0], dy = w.b[1] - w.a[1], g = new THREE.Mesh(new THREE.BoxGeometry(Math.hypot(dx, dy), w.h, rf.MATERIALS[w.mat]?.thick || 0.1), m); g.position.set((w.a[0] + w.b[0]) / 2, w.h / 2, -(w.a[1] + w.b[1]) / 2); g.rotation.y = Math.atan2(dy, dx); standIn.add(g); }
-    const f = new THREE.Mesh(new THREE.PlaneGeometry(40, 28).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x2b2d31, roughness: 0.55 })); patch(f.material, shared, false); f.position.set(64, 0.005, -44); standIn.add(f); }
+  const field = await createField(renderer, world, { rect: RECT, dx: 0.0145, slice }); marks.push(['field', performance.now()]); await slice(true);
+  const shared = { uZ: { value: field.tex[0] }, uAmp: { value: field.tex[1] }, uNoise: { value: noiseTexture() }, uRect: { value: new THREE.Vector4(RECT[0], RECT[1], RECT[2] - RECT[0], RECT[3] - RECT[1]) }, uPh: { value: 0 }, uGain: { value: 0.13 }, uWarmG: { value: 0.024 }, uCool: { value: new THREE.Color(0.16, 0.50, 1.0) }, uCore: { value: new THREE.Color(0.72, 0.88, 1) }, uWarm: { value: col('--person') }, uTxw: { value: new THREE.Vector3() } };
+  const set = await buildStage({ scene, shared, slice, K: 2 * Math.PI * F0 / C0 }); marks.push(['stage', performance.now()]); await slice(true);
 
   // ---------- radios and person ----------
   const fig = makeFigure(col('--person'), new THREE.Color(1, 0.86, 0.66)); scene.add(fig.root); fig.root.visible = false;
@@ -149,19 +131,18 @@ export async function createHero(host, ctx, lab) {
     const add = (g, m, x, y, z, rx = 0, rz = 0) => { const o = new THREE.Mesh(g, m); o.position.set(x, y, z); o.rotation.set(rx, 0, rz); o.castShadow = true; probe.add(o); return o; };
     for (let i = 0; i < 3; i++) { const a = (i / 3) * 6.283 + 0.4, l = add(new THREE.CylinderGeometry(0.008, 0.011, 0.74, 10), dark, Math.cos(a) * 0.14, 0.33, Math.sin(a) * 0.14); l.rotation.set(Math.sin(a) * -0.39, 0, Math.cos(a) * 0.39); }
     add(new THREE.CylinderGeometry(0.02, 0.02, 0.1, 16), al, 0, 0.66, 0); add(new THREE.BoxGeometry(0.13, 0.07, 0.085), shell, 0, 0.74, 0); add(new THREE.BoxGeometry(0.134, 0.012, 0.089), dark, 0, 0.74, 0); add(new THREE.CylinderGeometry(0.006, 0.007, 0.12, 12), dark, 0.045, 0.83, 0); add(new THREE.CylinderGeometry(0.006, 0.007, 0.12, 12), dark, -0.045, 0.83, 0);
-    const led = add(new THREE.SphereGeometry(0.007, 10, 8), new THREE.MeshBasicMaterial({ color: col('--accent').multiplyScalar(4) }), 0.04, 0.752, 0.044); led.castShadow = false; }
-  // the rover, drawn here at its plan size (0.44 x 0.34 m): four mecanum wheels, a deck, a mast with the receiver
-  const rover = new THREE.Group(); scene.add(rover);
-  { const rub = new THREE.MeshStandardMaterial({ color: 0x24272b, roughness: 0.8, emissive: 0x07090b }), shell = new THREE.MeshStandardMaterial({ color: 0xc9ced3, roughness: 0.42, emissive: 0x23282d }), dark = new THREE.MeshStandardMaterial({ color: 0x363b41, roughness: 0.5, metalness: 0.4, emissive: 0x0c0f12 });
-    const add = (g, m, x, y, z, rx = 0, ry = 0, rz = 0) => { const o = new THREE.Mesh(g, m); o.position.set(x, y, z); o.rotation.set(rx, ry, rz); o.castShadow = true; rover.add(o); return o; };
-    add(new THREE.BoxGeometry(0.42, 0.07, 0.2), dark, 0, 0.115, 0); add(new THREE.BoxGeometry(0.36, 0.05, 0.22), shell, 0, 0.175, 0); add(new THREE.BoxGeometry(0.1, 0.07, 0.16), dark, 0.1, 0.235, 0); add(new THREE.BoxGeometry(0.02, 0.035, 0.12), rub, 0.16, 0.24, 0);
-    const wheel = new THREE.CylinderGeometry(0.068, 0.068, 0.06, 28).rotateX(Math.PI / 2), hub = new THREE.CylinderGeometry(0.03, 0.03, 0.064, 18).rotateX(Math.PI / 2), roll = new THREE.CapsuleGeometry(0.012, 0.045, 4, 8);
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const x = sx * 0.145, z = sz * 0.145; add(wheel, rub, x, 0.075, z); add(hub, shell, x, 0.075, z); for (let k = 0; k < 9; k++) { const a = (k / 9) * 6.283, r = add(roll, dark, x + Math.cos(a) * 0.063, 0.075 + Math.sin(a) * 0.063, z, Math.PI / 2, 0, 0); r.rotation.set(Math.PI / 2, 0, sx * sz * 0.785); r.castShadow = false; } }
-    add(new THREE.CylinderGeometry(0.009, 0.011, 0.22, 12), shell, -0.09, 0.31, 0); add(new THREE.BoxGeometry(0.05, 0.04, 0.09), shell, -0.09, 0.44, 0); for (const z of [-0.035, 0.035]) add(new THREE.CylinderGeometry(0.005, 0.006, 0.1, 10), dark, -0.09, 0.51, z);
-    const led = add(new THREE.SphereGeometry(0.009, 10, 8), new THREE.MeshBasicMaterial({ color: col('--accent').multiplyScalar(4) }), -0.06, 0.445, 0.04); led.castShadow = false; for (const m of [rub, shell, dark]) patch(m, shared, false); }
+    const led = add(new THREE.SphereGeometry(0.007, 10, 8), new THREE.MeshBasicMaterial({ color: col('--accent').multiplyScalar(4) }), 0.04, 0.752, 0.044); led.castShadow = false; for (const m of [dark, shell, al]) patch(m, shared, 'plain'); }
+  // the rover: the same machine as in The rover and The search (its real CAD), standing still and listening
+  const rover = new THREE.Group(); rover.scale.setScalar(0.86); scene.add(rover);
+  const still = { setPosition() {}, setText() {}, setSub() {}, setTone() {}, remove() {} };
+  const machine = roverActor.create({ THREE, scene: rover, quality: 'low', ctx, world, renderer, groundY: 0, reduced: reduced(), glow() {}, pickable() {}, label: () => still });
+  const machineState = { units: { 'HOUND-01': { pos: [0, 0], heading: 0.35, mode: 'listen', odo: 1 } }, sensors: { listen: {} }, hold: false, faults: {}, phase: 'search' };
+  // the probe's antenna glows as it speaks
+  const halo = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.2, 'rgba(140,190,255,.5)'); gr.addColorStop(1, 'rgba(60,120,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false })); s.renderOrder = 7; scene.add(s); return s; })();
+  await slice(true);
 
   // ---------- handles you can drag ----------
-  const st = { tx: TX0.slice(0, 2), rx: RX0.slice(0, 2), person: [82.4, 48.2], on: 0, walk: 0, heading: Math.PI, auto: true, paused: false, T: 0, freeUntil: 0, drag: null };
+  const st = { tx: TX0.slice(0, 2), rx: RX0.slice(0, 2), person: [78.4, 50.9], on: 0, walk: 0, heading: Math.PI, auto: true, paused: false, T: 0, freeUntil: 0, drag: null };
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.45, 72).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: col('--text'), transparent: true, opacity: 0, depthTest: false })); ring.renderOrder = 9; scene.add(ring);
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.4), hit = new THREE.Vector3();
   const ground = (e) => { const r = canvas.getBoundingClientRect(); ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, 1 - ((e.clientY - r.top) / r.height) * 2); ray.setFromCamera(ndc, camera); return ray.ray.intersectPlane(plane, hit) ? [hit.x, -hit.z] : null; };
@@ -188,7 +169,7 @@ export async function createHero(host, ctx, lab) {
     const c = rf.channel(paths, 0.8 / Math.hypot(d.a[0], d.a[1]) / Math.max(1, Math.hypot(T[0] - Rr[0], T[1] - Rr[1]) / 1.5));
     for (let k = 0; k < 51; k++) { base.re[k] = c.re[k]; base.im[k] = c.im[k]; base.amp[k] = Math.hypot(c.re[k], c.im[k]); }
     let m = 0; for (let k = 0; k < 51; k++) m += base.amp[k]; st.gain = 30 / (m / 51);
-    shared.uTxw.value.set(st.tx[0], 0, -st.tx[1]); probe.position.set(st.tx[0], 0, -st.tx[1]); rover.position.set(st.rx[0], 0, -st.rx[1]);
+    shared.uTxw.value.set(st.tx[0], 0, -st.tx[1]); halo.position.set(st.tx[0], 0.88, -st.tx[1]); probe.position.set(st.tx[0], 0, -st.tx[1]); rover.position.set(st.rx[0], 0, -st.rx[1]);
   }
   function packetChannel(t) {
     H.re.set(base.re); H.im.set(base.im); if (!st.on) return;
@@ -210,7 +191,7 @@ export async function createHero(host, ctx, lab) {
   function packet() {
     tPk += 1 / HZ; packetChannel(tPk);
     if (tPk > agcAt) { agc = rnd.range(0.85, 1.2); agcAt = tPk - 14 * Math.log(1 - rnd()); }
-    let e = 0; for (let k = 0; k < 51; k++) { const d = Math.hypot(H.re[k], H.im[k]) / base.amp[k] - 1; dev[k] += (100 * d - dev[k]) * 0.35; e += Math.hypot(H.re[k] - base.re[k], H.im[k] - base.im[k]) / base.amp[k]; } change += ((100 * e) / 51 - change) * 0.06;
+    let e = 0; for (let k = 0; k < 51; k++) { dev[k] += (100 * (Math.hypot(H.re[k], H.im[k]) / base.amp[k] - 1) - dev[k]) * 0.22; e += Math.hypot(H.re[k] - base.re[k], H.im[k] - base.im[k]) / base.amp[k]; } change += ((100 * e) / 51 - change) * 0.06;
     if (rnd() < 0.05) return;                                                // lost packets, as the ESP32 model has
     const row = ringA[head], g = st.gain * agc * (1 + 0.015 * Math.sin(tPk / 20)); ringT[head] = tPk + rnd() * 0.004;
     for (let k = 0; k < 51; k++) { const s = g * RIPPLE[k], I = Math.max(-127, Math.min(127, Math.round(H.re[k] * s + 0.15 * rnd.normal()))), Q = Math.max(-127, Math.min(127, Math.round(H.im[k] * s + 0.15 * rnd.normal()))); row[k] = Math.sqrt(I * I + Q * Q); }
@@ -225,41 +206,45 @@ export async function createHero(host, ctx, lab) {
     if (worker) worker.postMessage({ id: runs, x }); else answer(ctx.nn.infer(x));
   }
 
-  // ---------- the subcarrier band: every column one subcarrier, the last two seconds rising behind it ----------
-  const bc = band.getContext('2d'), HIST = 72, hist = new Float32Array(HIST * 51); let histAt = 0, bw = 0, bh = 0, bd = 1; const order = Array.from({ length: 51 }, (_, i) => i).sort((a, b) => rowSub(a) - rowSub(b)); function rowSub(k) { return k < 25 ? k + 2 : k - 51; }
-  const tile = document.createElement('canvas'); tile.width = 51; tile.height = HIST; const tc = tile.getContext('2d'), timg = tc.createImageData(51, HIST);
-  const cP = lab.rgb(lab.tok('--person')), cA = lab.rgb(lab.tok('--accent')); let scale = 1;
+  // ---------- the instrument: 51 bars, one per subcarrier. Height = received strength; its change is drawn DRAWN times larger ----------
+  const bc = band.getContext('2d'); let bw = 0, bh = 0, bd = 1, gCool = null, gWarm = null; const order = Array.from({ length: 51 }, (_, i) => i).sort((a, b) => rowSub(a) - rowSub(b)); function rowSub(k) { return k < 25 ? k + 2 : k - 51; }
+  const rgbS = (v, a) => 'rgba(' + v.map(Math.round).join(',') + ',' + a + ')', cP = lab.rgb(lab.tok('--person')), cA = lab.rgb(lab.tok('--accent')), cT = lab.rgb(lab.tok('--text')), mixc = (a, b, k) => a.map((x, i) => x + (b[i] - x) * k);
+  const sAc = rgbS(cA, 1), sPe = rgbS(cP, 1), sTick = rgbS(cT, 0.55), sCapC = rgbS(mixc(cA, [255, 255, 255], 0.72), 1), sCapW = rgbS(mixc(cP, [255, 255, 255], 0.6), 1), peak = new Float32Array(51);
+  function bandSize() { bd = Math.min(2, window.devicePixelRatio || 1); bw = band.clientWidth; bh = band.clientHeight; if (!bw || !bh) return; band.width = Math.round(bw * bd); band.height = Math.round(bh * bd); const g = (c) => { const q = bc.createLinearGradient(0, 0, 0, bh); q.addColorStop(0, rgbS(mixc(c, [255, 255, 255], 0.35), 1)); q.addColorStop(0.45, rgbS(c, 0.9)); q.addColorStop(1, rgbS(c, 0.06)); return q; }; gCool = g(cA); gWarm = g(cP); }
   function drawBand() {
-    if (!bw) return; let mx = 0.4; for (let k = 0; k < 51; k++) mx = Math.max(mx, Math.abs(dev[k])); scale += (Math.max(mx * 1.15, 1) - scale) * (mx * 1.15 > scale ? 0.2 : 0.01);
-    histAt = (histAt + 1) % HIST; for (let i = 0; i < 51; i++) hist[histAt * 51 + i] = dev[order[i]];
-    for (let r = 0; r < HIST; r++) { const src = ((histAt - (HIST - 1 - r)) % HIST + HIST) % HIST, age = r / (HIST - 1); for (let i = 0; i < 51; i++) { const v = hist[src * 51 + i] / scale, m = Math.min(1, Math.abs(v)), w = Math.min(1, m * 1.5), o = (r * 51 + i) * 4; timg.data[o] = cA[0] + (cP[0] - cA[0]) * w; timg.data[o + 1] = cA[1] + (cP[1] - cA[1]) * w; timg.data[o + 2] = cA[2] + (cP[2] - cA[2]) * w; timg.data[o + 3] = 255 * age * age * (0.05 + 0.75 * m); } }
-    tc.putImageData(timg, 0, 0);
-    bc.setTransform(bd, 0, 0, bd, 0, 0); bc.clearRect(0, 0, bw, bh); bc.imageSmoothingEnabled = false; const mid = bh - 34, cw = bw / 51; bc.globalAlpha = 0.9; bc.drawImage(tile, 0, 0, bw, mid); bc.globalAlpha = 1;
-    bc.globalCompositeOperation = 'destination-out'; for (let i = 0; i <= 51; i++) bc.fillRect(Math.round(i * cw) - 2, 0, 4, mid); bc.globalCompositeOperation = 'source-over';
-    for (let i = 0; i < 51; i++) { const v = dev[order[i]] / scale, m = Math.min(1, Math.abs(v)), w = Math.min(1, m * 1.5), x = Math.round(i * cw) + 2, wd = Math.round((i + 1) * cw) - 2 - x; bc.fillStyle = 'rgb(' + Math.round(cA[0] + (cP[0] - cA[0]) * w) + ',' + Math.round(cA[1] + (cP[1] - cA[1]) * w) + ',' + Math.round(cA[2] + (cP[2] - cA[2]) * w) + ')'; const hh = Math.max(1.5, m * 24); bc.fillRect(x, v > 0 ? mid - 0 + 0 : mid, wd, 1.5); bc.globalAlpha = 0.95; bc.fillRect(x, mid + 3, wd, hh); bc.globalAlpha = 1; }
+    if (!bw || !gCool) return; let mean = 0; for (let k = 0; k < 51; k++) mean += base.amp[k] * RIPPLE[k]; mean /= 51;
+    bc.setTransform(bd, 0, 0, bd, 0, 0); bc.clearRect(0, 0, bw, bh); const cw = bw / 51, wd = Math.max(3, Math.round(cw * 0.34)), H0 = bh * 0.58;
+    for (let i = 0; i < 51; i++) {
+      const k = order[i], b0 = Math.min(1.45, Math.max(0.3, (base.amp[k] * RIPPLE[k]) / mean)) * H0, v = (dev[k] / 100) * DRAWN, up = smooth(0.15 + i * 0.016, 0.9 + i * 0.016, st.T), hh = Math.max(3, Math.min(bh - 4, b0 * (1 + v) * up)), w = Math.min(1, Math.max(0, Math.abs(v) - 0.03) * 4.5) , x = Math.round((i + 0.5) * cw - wd / 2), y = bh - hh;
+      peak[i] = Math.max(hh, peak[i] - 0.6);
+      bc.globalAlpha = 0.10 * (1 - w); bc.fillStyle = sAc; bc.fillRect(x - 4, y - 3, wd + 8, hh + 3); bc.globalAlpha = 0.20 * w; bc.fillStyle = sPe; bc.fillRect(x - 4, y - 3, wd + 8, hh + 3);
+      bc.globalAlpha = 1 - w; bc.fillStyle = gCool; bc.fillRect(x, y, wd, hh); bc.globalAlpha = w; bc.fillStyle = gWarm; bc.fillRect(x, y, wd, hh);
+      bc.globalAlpha = 1 - w; bc.fillStyle = sCapC; bc.fillRect(x, y, wd, 2); bc.globalAlpha = w; bc.fillStyle = sCapW; bc.fillRect(x, y, wd, 2);
+      bc.globalAlpha = 0.30; bc.fillStyle = sPe; if (peak[i] - hh > 3) bc.fillRect(x, bh - peak[i], wd, 1);
+      bc.globalAlpha = 0.6; bc.fillStyle = sTick; bc.fillRect(x - 2, bh - b0, wd + 4, 1);
+    }
+    bc.globalAlpha = 1;
   }
 
   // ---------- the story ----------
-  const WAY = [[82.4, 48.2], [79.2, 49.4], [76.5, 51.3], [77.6, 50.5], [76.25, 51.1]];
-  const ENTER = 8.5; let captionKey = '', held = 0;
-  const loss = { dry: rf.wallLossDb('drywall', 1), con: rf.wallLossDb('concrete', 1) };
+  const WAY = [[78.4, 50.9], [77.7, 50.7], [76.45, 50.0], [77.7, 49.9], [76.7, 50.6]];
+  const ENTER = 6.2; let captionKey = '', held = 0;
   const say = (k, t) => { if (captionKey === k) return; captionKey = k; cap.style.opacity = '0'; setTimeout(() => { cap.textContent = t; cap.style.opacity = '1'; }, captionKey && cap.textContent ? 220 : 0); };
-  function restart() { st.T = 0; st.auto = true; st.person = WAY[0].slice(); st.on = 0; st.walk = 0; st.leg = 0; st.phase = 0; st.paused = false; st.tx = TX0.slice(0, 2); st.rx = RX0.slice(0, 2); st.dragTo = null; st.resetting = false; relink(); field.reset(); scale = 1; prefill(); fade = 1; captionKey = ''; }
-  function prefill() { const on = st.on; st.on = 0; ringT.fill(0); for (let i = 0; i < KEEP * HZ; i++) packet(); st.on = on; score = shown = NaN; inferAt = 0; change = 0; dev.fill(0); hist.fill(0); }
-  let fade = 1; const END = 33, marks = [['start', performance.now()]];
+  function restart() { st.T = 0; st.auto = true; st.person = WAY[0].slice(); st.on = 0; st.walk = 0; st.leg = 0; st.phase = 0; st.paused = false; st.tx = TX0.slice(0, 2); st.rx = RX0.slice(0, 2); st.dragTo = null; st.resetting = false; relink(); field.reset(); prefill(); fade = 1; captionKey = ''; }
+  function prefill() { const on = st.on; st.on = 0; ringT.fill(0); for (let i = 0; i < KEEP * HZ; i++) packet(); st.on = on; score = shown = NaN; inferAt = 0; change = 0; dev.fill(0); peak.fill(0); }
+  let fade = 1; const END = 33;
   function story(dt) {
     const T = st.T;
     if (st.auto) {
       if (T > ENTER) {
         st.on = Math.min(1, st.on + dt * 1.2);
-        if (st.leg < WAY.length - 1) { const b = WAY[st.leg + 1], dx = b[0] - st.person[0], dy = b[1] - st.person[1], d = Math.hypot(dx, dy), v = 0.78; if (d < 0.02) st.leg++; else { const s = Math.min(d, v * dt); st.person[0] += (dx / d) * s; st.person[1] += (dy / d) * s; const want = Math.atan2(dx, -dy); let e = want - st.heading; e = Math.atan2(Math.sin(e), Math.cos(e)); st.heading += e * (1 - Math.exp(-6 * dt)); st.walk += (1 - st.walk) * (1 - Math.exp(-6 * dt)); } } else st.walk *= Math.exp(-4 * dt);
+        if (st.leg < WAY.length - 1) { const b = WAY[st.leg + 1], dx = b[0] - st.person[0], dy = b[1] - st.person[1], d = Math.hypot(dx, dy), v = 0.78; if (d < 0.02) st.leg = st.leg + 2 < WAY.length ? st.leg + 1 : 0; else { const s = Math.min(d, v * dt); st.person[0] += (dx / d) * s; st.person[1] += (dy / d) * s; const want = Math.atan2(dx, -dy); let e = want - st.heading; e = Math.atan2(Math.sin(e), Math.cos(e)); st.heading += e * (1 - Math.exp(-6 * dt)); st.walk += (1 - st.walk) * (1 - Math.exp(-6 * dt)); } } else st.walk *= Math.exp(-4 * dt);
       }
       const who = Number.isFinite(score) ? score : null;
-      if (T < 2.6) say('a', 'The probe radio speaks. Its wave is slowed ' + slowText() + ' times.');
-      else if (T < ENTER) say('b', 'A partition takes ' + loss.dry.toFixed(1) + ' dB. Concrete takes ' + loss.con.toFixed(1) + '. The rest goes on.');
-      else if (T < 16) say('c', 'Someone moves behind the wall. Orange is the energy their body throws back.');
-      else if (st.leg < WAY.length - 1) say('d', 'Fifty-one subcarriers bend with every step.');
-      else if (who !== null) say(who > thr ? 'e1' : 'e0', who > thr ? 'HOUND’s network reads ten seconds of it: person.' : 'HOUND’s network is not sure. That happens too.');
+      if (T < 2.2) say('a', 'The radio speaks.');
+      else if (T < ENTER + 0.8) say('b', 'The wave goes through the wall.');
+      else if (who !== null && who > thr && T > 14) say('d', 'The network hears the change.');
+      else if (captionKey !== 'd') say('c', 'Someone moves. The wave comes back changed.');
       if (T > END) st.resetting = true;
     } else {
       if (st.dragTo) { const dx = st.dragTo[0] - st.person[0], dy = st.dragTo[1] - st.person[1], k = 1 - Math.exp(-10 * dt), v = Math.hypot(dx, dy) * k / Math.max(dt, 0.001); st.person[0] += dx * k; st.person[1] += dy * k; st.walk += (Math.min(1, v / 0.8) - st.walk) * (1 - Math.exp(-8 * dt)); } else st.walk *= Math.exp(-4 * dt);
@@ -269,26 +254,21 @@ export async function createHero(host, ctx, lab) {
     if (st.resetting) { fade = Math.max(0, fade - dt * 1.4); if (fade <= 0) { restart(); fade = 0; } } else fade = Math.min(1, fade + dt * 1.2);
     st.phase = (st.phase || 0) + st.walk * dt * 2 * Math.PI * 0.92;
   }
-  const perFrame = () => STEPS * field.dt;                                   // seconds of wave per frame
-  const slowText = () => { const s = (1 / 60) / perFrame(); return Math.round(s / 1e6 / 10) * 10 + ' million'; };
-
   // ---------- frame ----------
-  let W = 0, HH = 0, pr = 1, ms = 16, slow = 0, time = 0, frames = 0, loaded = false, drift = 0; st.now = 0;
+  let post = null, W = 0, HH = 0, pr = 1, ms = 16, slow = 0, time = 0, frames = 0, loaded = false, drift = 0, easeBack = 1; st.now = 0;
   function resize() {
     const w = Math.max(2, host.clientWidth), hh = Math.max(2, host.clientHeight); if (w === W && hh === HH) return;
-    W = w; HH = hh; camera.aspect = w / hh; camera.setViewOffset(w, hh, -w * 0.06, h2(hh), w, hh); camera.updateProjectionMatrix(); setPr();
-    bd = Math.min(2, window.devicePixelRatio || 1); bw = band.clientWidth; bh = band.clientHeight; band.width = Math.round(bw * bd); band.height = Math.round(bh * bd);
+    W = w; HH = hh; camera.aspect = w / hh; camera.setViewOffset(w, hh, w * 0.02, -hh * 0.112, w, hh); camera.updateProjectionMatrix(); setPr(); bandSize();
   }
-  const h2 = (hh) => hh * 0.055;
-  function setPr() { renderer.setPixelRatio(1); renderer.setSize(Math.round(W * pr), Math.round(HH * pr), false); post.setSize(W, HH, pr); }
+  function setPr() { if (!post) return; renderer.setPixelRatio(1); renderer.setSize(Math.round(W * pr), Math.round(HH * pr), false); post.setSize(W, HH, pr); }
   pr = Math.min(1.5, window.devicePixelRatio || 1);
   const ro = new ResizeObserver(() => { resize(); if (!run.running) frame(0, 0); }); ro.observe(host);
   const v = new THREE.Vector3();
   function place(pn, x, y, z, a) { v.set(x, y, z).project(camera); const px = ((v.x + 1) / 2) * W, py = ((1 - v.y) / 2) * HH; pn.el.style.transform = 'translate3d(' + px.toFixed(1) + 'px,' + py.toFixed(1) + 'px,0)'; if (Math.abs(a - pn.a) > 0.02) { pn.a = a; pn.el.style.opacity = a.toFixed(2); } }
   let lastTxt = 0;
-  const set = (el, s) => { if (el.textContent !== s) el.textContent = s; };
+  const put = (el, s) => { if (el.textContent !== s) el.textContent = s; };
   function frame(now, dt) {
-    if (host.clientWidth < 2) return; resize(); frames++; time += dt; st.now = time;
+    if (host.clientWidth < 2 || !loaded) return; resize(); frames++; time += dt; st.now = time;
     if (dt && loaded) { ms += (dt * 1000 - ms) * 0.05; if (ms > 21 && ++slow > 90 && pr > 0.8) { pr = Math.max(0.8, pr - 0.15); slow = 0; setPr(); } else if (ms < 18) slow = Math.max(0, slow - 1); }
     if (dt && !st.paused) {
       st.T += dt; story(dt);
@@ -297,43 +277,48 @@ export async function createHero(host, ctx, lab) {
       field.step(STEPS, st.tx, st.on > 0.02 ? [st.person[0], st.person[1], st.on] : null); field.resolve();
       shared.uPh.value = (time * 5.2) % (2 * Math.PI); drawBand();
     }
-    // camera: one slow drift, only while nobody is steering
-    if (dt && !reduced() && time > st.freeUntil && !st.drag) { drift += dt; const a = Math.sin(drift * 0.11) * 0.00042, ca = Math.cos(a), sa = Math.sin(a), dx = camera.position.x - controls.target.x, dz = camera.position.z - controls.target.z; camera.position.x = controls.target.x + dx * ca - dz * sa; camera.position.z = controls.target.z + dx * sa + dz * ca; }
-    controls.update();
+    // camera: one slow push along the story, only while nobody is steering
+    if (dt && !reduced()) { drift += dt; if (time > st.freeUntil && !st.drag) { easeBack = Math.min(1, easeBack + dt * 0.4); const k = smooth(0, END, st.auto ? st.T : END); pose(k, Math.sin(drift * 0.16) * 0.02); camera.position.lerp(goal, easeBack >= 1 ? 1 : 1 - Math.exp(-2.2 * dt * easeBack)); } else easeBack = 0; }
+    controls.update(); machine.update(machineState, dt, time);
     fig.root.visible = st.on > 0.01; fig.uniforms.uA.value = st.on; fig.root.position.set(st.person[0], 0, -st.person[1]); fig.root.rotation.y = st.heading; fig.pose(st.walk, st.phase || 0, time);
     const rk = st.drag || hoverKey; ring.material.opacity += ((rk ? 0.8 : 0) - ring.material.opacity) * 0.2; if (rk) ring.position.set(st[rk][0], 0.03, -st[rk][1]);
+    { const b = 0.5 + 0.5 * Math.sin(shared.uPh.value); halo.scale.setScalar(0.34 + 0.16 * b); halo.material.opacity = 0.35 + 0.45 * b; }
+    if (st.on > 0.01 || st.drag || frames < 4) { renderer.shadowMap.needsUpdate = true; if (st.drag || frames < 4) lamp.shadow.needsUpdate = true; }
     renderer.toneMappingExposure = 1.0 * fade; post.render(time);
-    place(pinTx, st.tx[0], 0.95, -st.tx[1], 0.9); place(pinRx, st.rx[0], 0.6, -st.rx[1], 0.9); place(pinP, st.person[0], 1.86, -st.person[1], st.on);
-    if (time - lastTxt > 0.09 || !dt) { lastTxt = time; set(fNs, field.ns.toFixed(0)); set(fCh, change.toFixed(change < 1 ? 2 : 1)); if (Number.isFinite(score)) { shown = Number.isFinite(shown) ? shown + (score - shown) * 0.35 : score; set(fP, shown.toFixed(2)); const on = score > thr; if (figs.lastChild.dataset.on !== String(on)) figs.lastChild.dataset.on = String(on); set(fPcap, on ? 'network: person' : 'network: nobody'); } }
+    place(pinTx, st.tx[0], 0.98, -st.tx[1], 1); place(pinRx, st.rx[0], 0.62, -st.rx[1], 1); place(pinP, st.person[0], 1.84, -st.person[1], st.on);
+    if (time - lastTxt > 0.09 || !dt) { lastTxt = time; put(fNs, field.ns.toFixed(0)); put(fCh, change.toFixed(change < 1 ? 2 : 1)); if (Number.isFinite(score)) { shown = Number.isFinite(shown) ? shown + (score - shown) * 0.35 : score; put(fP, shown.toFixed(2)); const on = score > thr; if (figs.lastChild.dataset.on !== String(on)) figs.lastChild.dataset.on = String(on); put(fPcap, on ? 'network: person' : 'network: nobody'); } }
   }
   const run = lab.loop(frame);
 
-  relink(); field.reset(); restart(); renderer.shadowMap.needsUpdate = true;
-  if (reduced()) { field.step(1500, st.tx, null); }
-
-  // ---------- the real building, a piece at a time ----------
-  (async () => {
-    const next = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
-    try {
-      await next(); const [{ createTextures }, { createMaterials }] = await Promise.all([import('../../twin/textures.js'), import('../../twin/materials.js')]);
-      const tex = createTextures(world, Math.min(16, renderer.capabilities.getMaxAnisotropy())); await next(); const mats = createMaterials(tex); mats.cut.color.set(0x4a525b); marks.push(['mats', performance.now()]); await next();
-      const stub = new Proxy(function () {}, { get: (o, k) => (k === 'then' ? undefined : stub), apply: () => stub, set: () => true });
-      const t = { THREE, scene, camera, renderer, ctx, world, quality: 'high', v3: U.v3, groundY: 0, reduced: reduced(), pickable: (o) => o, unpickable() {}, label: () => stub, glow: (o) => o, addUpdate: () => () => {}, heightAt: () => 0 };
-      const env = { ...t, t, tex, mats, U, rng: U.rng, environment: { heightAt: () => 0 }, layer: (id) => id !== 'roof' && id !== 'walls-xray' };
-      const real = new THREE.Group(); const groups = [];
-      for (const id of ['building', 'rubble', 'interior']) { const before = new Set(scene.children); const mod = await import('../../twin/' + id + '.js'); await next(); const p = mod.build(env); p?.setLayer?.('roof', false); p?.setLayer?.('labels', false); marks.push([id, performance.now()]); if (p?.group) { p.group.visible = false; if (!p.group.parent) scene.add(p.group); groups.push(p); } for (const o of scene.children) if (!before.has(o) && o !== p?.group) o.visible = false, groups.push({ group: o }); for (let i = 0; i < 3; i++) p?.update?.(1, 1, { phase: 'search', units: {} }, { pose: { dist: 20 } }); await next(); }
-      const gmat = mats.mud.clone(); gmat.color.set(0x23262a); gmat.roughness = 0.7; const gg = new THREE.Mesh(U.worldUV(new THREE.PlaneGeometry(300, 300).rotateX(-Math.PI / 2), 0.4), gmat); gg.position.set(64, -0.03, -44); gg.receiveShadow = true; gg.visible = false; scene.add(gg); groups.push({ group: gg });
-      const glass = new Set([mats.inner, mats.plaster, mats.cut, mats.concrete, mats.paint, mats.wood].slice(0, 4));
-      for (const g of groups) g.group.traverse((o) => { for (const m of Array.isArray(o.material) ? o.material : o.material ? [o.material] : []) if (m.isMeshStandardMaterial) patch(m, shared, glass.has(m)); });
-      probe.traverse((o) => { if (o.material?.isMeshStandardMaterial) patch(o.material, shared, false); });
-      for (const g of groups) { g.group.visible = true; } 
-      try { await renderer.compileAsync(scene, camera); } catch { /* compiled on first draw instead */ }
-      marks.push(['real', performance.now()]); standIn.visible = false; renderer.shadowMap.needsUpdate = true; loaded = true; if (!run.running) frame(0, 0);
-    } catch (e) { console.error('[radio] the detailed building could not be built; the plain one stays', e); loaded = true; }
-  })();
+  await slice(true); relink(); marks.push(['link', performance.now()]); await slice(true); restart(); marks.push(['packets', performance.now()]); await slice(true);
+  // compile before the first draw, off the main thread where the browser can, so nothing stalls on a shader
+  const { createPost } = await import('../../twin/post.js'); await slice(true);
+  post = createPost(renderer, scene, camera, { quality: 'medium' }); post.sceneRT.samples = 4; post.bloom.strength = 0.42; post.bloom.radius = 0.62; post.bloom.threshold = 0.85; resize(); setPr(); marks.push(['post', performance.now()]); await slice(true);
+  // waits until the graphics chip has caught up, without blocking the page
+  const gl = renderer.getContext(), drained = async () => { const s = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0); gl.flush(); for (let i = 0; i < 600 && gl.getSyncParameter(s, gl.SYNC_STATUS) !== gl.SIGNALED; i++) await new Promise((r) => setTimeout(r, 4)); gl.deleteSync(s); t0 = performance.now(); };
+  { const g = new THREE.PlaneGeometry(1, 1), jobs = [], draw = renderer.render; fig.root.visible = true;
+    // a dry run of the passes: each draw call is noted instead of made, then every shader is compiled in parallel, a few at a time
+    renderer.render = (s) => { jobs.push([s.isScene ? scene : s.material, renderer.getRenderTarget()]); };
+    try { post.render(0); } finally { delete renderer.render; if (renderer.render !== draw) renderer.render = draw; renderer.setRenderTarget(null); }
+    const waits = []; for (const m of field.materials) jobs.push([m, null]);
+    for (const [m, rt] of jobs) { let s = scene; if (m !== scene) { s = new THREE.Scene(); s.add(new THREE.Mesh(g, m)); } renderer.setRenderTarget(rt); try { waits.push(renderer.compileAsync(s, camera).catch(() => {})); } catch { /* compiled on first draw instead */ } renderer.setRenderTarget(null); await slice(); }
+    await Promise.all(waits); await drained(); marks.push(['compiled', performance.now()]);
+    // first draws one object at a time: a driver builds each pipeline on its first draw
+    const leaves = []; scene.traverse((o) => { if (o.isMesh || o.isSprite) { if (o.visible) { leaves.push(o); o.visible = false; } } }); const seen = new Set();
+    renderer.shadowMap.needsUpdate = false;
+    for (const o of leaves) { const key = o.material.uuid + (o.isInstancedMesh ? 'i' : ''); if (!seen.has(key)) { seen.add(key); o.visible = true; renderer.setRenderTarget(post.sceneRT); renderer.render(scene, camera); renderer.setRenderTarget(null); o.visible = false; await drained(); } }
+    for (const o of leaves) o.visible = true;
+    for (const l of [moon, lamp]) l.shadow.autoUpdate = false;
+    for (const l of [moon, lamp]) { l.shadow.needsUpdate = true; renderer.shadowMap.needsUpdate = true; renderer.setRenderTarget(post.sceneRT); renderer.render(scene, camera); renderer.setRenderTarget(null); await drained(); }
+    moon.shadow.autoUpdate = true;                                           // the lamp lights the radios only: redrawn when one is moved
+    { const s = new THREE.Scene(), q = new THREE.Mesh(g, null), done = new Set(); q.frustumCulled = false; s.add(q); for (const [m, rt] of jobs) if (m !== scene && !done.has(m)) { done.add(m); q.material = m; renderer.setRenderTarget(rt); renderer.render(s, camera); renderer.setRenderTarget(null); await drained(); } }
+    marks.push(['draws', performance.now()]);
+    field.reset(); await drained(); field.step(1, st.tx, null); field.resolve(); await drained(); }
+  marks.push(['shaders', performance.now()]); field.reset(); if (reduced()) { field.step(1500, st.tx, null); field.resolve(); }
+  renderer.shadowMap.needsUpdate = true; await drained(); loaded = true; frame(0, 0); host.classList.add('live'); marks.push(['picture', performance.now()]);
 
   return {
     onShow() { resize(); run.start(); }, onHide() { run.stop(); },
-    debug: { marks, st, field, camera, controls, renderer, scene, shared, sheetMat, post, get score() { return score; }, get log() { return scoreLog; }, restart, frame, loop: run, get ms() { return ms; }, get pr() { return pr; }, moon },
+    debug: { bounds() { const o = {}; for (const k of ['person', 'tx', 'rx']) { const p = st[k], top = k === 'person' ? 1.8 : k === 'tx' ? 0.9 : 0.6, hw = k === 'person' ? 0.32 : 0.25; let a = 9, b = -9, c = 9, d = -9; for (const y of [0, top]) for (const s of [-hw, hw]) { v.set(p[0] + s, y, -p[1]).project(camera); a = Math.min(a, (v.x + 1) / 2); b = Math.max(b, (v.x + 1) / 2); c = Math.min(c, (1 - v.y) / 2); d = Math.max(d, (1 - v.y) / 2); } o[k] = [a, b, c, d].map((x) => +x.toFixed(3)); } return o; }, marks, dev, st, field, camera, controls, renderer, scene, shared, post, lamp, set, get worst() { return worst; }, get score() { return score; }, get log() { return scoreLog; }, restart, frame, loop: run, get ms() { return ms; }, get pr() { return pr; }, moon },
   };
 }

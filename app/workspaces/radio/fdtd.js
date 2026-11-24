@@ -18,13 +18,14 @@ export const BODY_EPS = 50, BODY_SIGMA = 1.7;                          // assume
 const VERT = 'in vec3 position; void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }';
 const raw = (fs, uniforms) => new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: VERT, fragmentShader: 'precision highp float; precision highp int; precision highp sampler2D;\n' + fs, uniforms, depthTest: false, depthWrite: false });
 
-export function createField(renderer, world, { rect, dx = 0.016, sponge = 1.1 }) {
+export async function createField(renderer, world, { rect, dx = 0.016, sponge = 1.1, slice = async () => {} }) {
   const [x0, y0, x1, y1] = rect, nx = Math.round((x1 - x0) / dx), ny = Math.round((y1 - y0) / dx);
   const dt = (S * dx) / C0, w = 2 * Math.PI * F0, wdt = w * dt;
   const mat = new Float32Array(nx * ny * 2);
   const C2 = S * S;
   // ---- paint the materials, with one-cell soft edges ----
   const eps = new Float32Array(nx * ny).fill(1), sig = new Float32Array(nx * ny);
+  await slice();
   const inPoly = (p, poly) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) if ((poly[i][1] > p[1]) !== (poly[j][1] > p[1]) && p[0] < ((poly[j][0] - poly[i][0]) * (p[1] - poly[i][1])) / (poly[j][1] - poly[i][1]) + poly[i][0]) c = !c; return c; };
   for (const o of world.OBSTACLES) {
     if (o.kind !== 'rubble' || o.passable) continue;
@@ -33,6 +34,7 @@ export function createField(renderer, world, { rect, dx = 0.016, sponge = 1.1 })
       if (inPoly([x0 + (i + 0.5) * dx, y0 + (j + 0.5) * dx], o.poly)) { eps[j * nx + i] = 1.6; sig[j * nx + i] = 0.0046; }        // 6 dB per metre, assumed (rf.js)
   }
   for (const wl of world.WALLS) {
+    await slice();
     if (wl.state === 'collapsed') continue;
     const m = MATERIALS[wl.mat] || MATERIALS.drywall, sg = m.c * Math.pow(F0 / 1e9, m.d), hor = Math.abs(wl.b[0] - wl.a[0]) > Math.abs(wl.b[1] - wl.a[1]), th = m.thick / 2, ext = wl.mat === 'concrete' ? th : 0;
     const ax = Math.min(wl.a[0], wl.b[0]), bx = Math.max(wl.a[0], wl.b[0]), ay = Math.min(wl.a[1], wl.b[1]), by = Math.max(wl.a[1], wl.b[1]);
@@ -43,11 +45,11 @@ export function createField(renderer, world, { rect, dx = 0.016, sponge = 1.1 })
     }
   }
   const sp = sponge / dx;
-  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+  for (let j = 0; j < ny; j++) { if (j % 64 === 0) await slice(); for (let i = 0; i < nx; i++) {
     const k = j * nx + i, d = Math.min(i, j, nx - 1 - i, ny - 1 - j), e = Math.max(0, 1 - d / sp);
     mat[k * 2] = C2 / eps[k]; mat[k * 2 + 1] = (sig[k] * dt) / (2 * EPS0 * eps[k]) + 0.32 * e * e * e;
-  }
-  const tM = new THREE.DataTexture(mat, nx, ny, THREE.RGFormat, THREE.FloatType); tM.needsUpdate = true;
+  } }
+  const tM = new THREE.DataTexture(mat, nx, ny, THREE.RGFormat, THREE.FloatType); tM.needsUpdate = true; await slice(); renderer.initTexture(tM); await slice(true);
   const mk = () => new THREE.WebGLRenderTarget(nx, ny, { type: THREE.FloatType, format: THREE.RGBAFormat, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false, stencilBuffer: false });
   let A = mk(), B = mk();
   const out = new THREE.WebGLRenderTarget(nx, ny, { count: 2, type: THREE.HalfFloatType, format: THREE.RGBAFormat, minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: true, depthBuffer: false, stencilBuffer: false });
@@ -75,7 +77,7 @@ export function createField(renderer, world, { rect, dx = 0.016, sponge = 1.1 })
   const clear = () => { const c = new THREE.Color(), a = renderer.getClearAlpha(); renderer.getClearColor(c); renderer.setClearColor(0, 0); for (const t of [A, B, out]) { renderer.setRenderTarget(t); renderer.clear(true, false, false); } renderer.setRenderTarget(null); renderer.setClearColor(c, a); };
   let n = 0;
   const api = {
-    rect, nx, ny, dx, dt, tex: out.textures, get ns() { return n * dt * 1e9; }, get steps() { return n; },
+    rect, nx, ny, dx, dt, tex: out.textures, materials: [step, demod], get ns() { return n * dt * 1e9; }, get steps() { return n; },
     reset() { n = 0; clear(); },
     step(count, tx, body) {
       const u = step.uniforms; u.uTx.value.set((tx[0] - x0) / dx, (tx[1] - y0) / dx);
