@@ -66,24 +66,26 @@ export default {
     const heroEl = h('div.demo-only');
     root.append(heroEl, head, leadView, limitsView);
 
-    const parts = {
-      lead: [createLedger(ledgerEl, ctx, api), createMap(mapEl, ctx, api), createInstruments(instEl, ctx, api)],
-      limits: [createBreathing(breathEl, ctx), createMonteCarlo(mcEl, ctx)],
-    };
-    const all = [...parts.lead, ...parts.limits];
+    // The instrument (Advanced) is built when it is first shown, so the Demo chapter does not wait for it.
+    let parts = { lead: [], limits: [] }, built = false;
+    const all = () => [...parts.lead, ...parts.limits];
+    function buildParts() {
+      if (built) return; built = true;
+      parts = { lead: [createLedger(ledgerEl, ctx, api), createMap(mapEl, ctx, api), createInstruments(instEl, ctx, api)], limits: [createBreathing(breathEl, ctx), createMonteCarlo(mcEl, ctx)] };
+    }
     let view = 'lead', raf = 0, visible = false, hero = null, building = null;
     const demo = () => ctx.mode === 'demo';
     const buildHero = () => building ||= createHero(heroEl, ctx, { openEvidence: () => ctx.setPref('mode', 'advanced') }).then((x) => { hero = x; if (visible && demo()) hero.onShow(); });
     function sync() { // only the visible mode runs
       cancelAnimationFrame(raf); raf = 0;
       if (!visible) { hero?.onHide(); return; }
-      if (demo()) { hero ? hero.onShow() : buildHero(); } else { hero?.onHide(); for (const p of all) p.dirty?.(); raf = requestAnimationFrame(frame); }
+      if (demo()) { hero ? hero.onShow() : buildHero(); } else { hero?.onHide(); buildParts(); for (const p of all()) p.dirty?.(); raf = requestAnimationFrame(frame); }
     }
     function setView(v) {
       view = v === 'limits' ? 'limits' : 'lead';
       leadView.hidden = view !== 'lead'; limitsView.hidden = view !== 'limits';
       seg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
-      for (const p of all) p.dirty?.();
+      for (const p of all()) p.dirty?.();
     }
     function frame(now) {
       raf = requestAnimationFrame(frame);
@@ -112,16 +114,16 @@ export default {
       ctx.bus.on('tick', () => { for (const p of parts.lead) p.dirty?.(); }),
       ctx.bus.on('reset', () => { vantages.clear(); for (const p of parts.lead) { p.reset?.(); p.dirty?.(); } }),
       ctx.bus.on('seek', () => { vantages.clear(); for (const p of parts.lead) { p.reset?.(); p.dirty?.(); } }),
-      ctx.bus.on('prefs', () => { dropTokens(); for (const p of all) p.dirty?.(); }),
+      ctx.bus.on('prefs', () => { dropTokens(); for (const p of all()) p.dirty?.(); }),
     ];
     if (ctx.selection) { const s = ctx.selection; if (s.type === 'detection') pin = { type: 'detection', id: s.id }; else if (s.type === 'room') pin = { type: 'room', id: s.id }; }
     applyParams(ctx.params);
     setView(view);
-    if (demo()) await buildHero();
+    if (demo()) await buildHero(); else buildParts();
 
     return {
       onShow() { if (visible) return; visible = true; sync(); },
-      onHide() { visible = false; sync(); for (const p of all) p.hide?.(); },
+      onHide() { visible = false; sync(); for (const p of all()) p.hide?.(); },
       onParams(p) { applyParams(p); },
       get hero() { return hero; },
       dispose() { offs.forEach((f) => f()); },

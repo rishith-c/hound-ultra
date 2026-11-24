@@ -54,7 +54,8 @@ export async function createStage(host, ctx, { reduced }) {
 
   const t = { THREE, scene, camera, renderer, ctx, world, quality: 'high', reduced: false, v3: U.v3, groundY: 0, pickable: (o) => o, unpickable() {}, label: () => stub, glow: (o, s = 1) => makeGlow(o, s), addUpdate: () => () => {} };
   const stub = { el: document.createElement('span'), setPosition() {}, setText() {}, setSub() {}, setTone() {}, setVisible() {}, remove() {} };
-  const tex = createTextures(world, 8), photos = await loadPhotos('high', 4); await pause();
+  const mods = Object.fromEntries(['building', 'rubble', 'interior', 'debris', 'actors/rover'].map((n) => { const m = import('../../twin/' + n + '.js'); m.catch(() => {}); return [n, m]; })), photosP = loadPhotos('high', 4);   // all fetched at once
+  const tex = createTextures(world, 8), photos = await photosP; await pause();
   const mats = createMaterials(tex, photos), env = { ...t, t, tex, mats, photos, U, rng: U.rng, layer: () => false };
 
   // ground: wet mud, photographed, with standing water that mirrors the light
@@ -64,9 +65,9 @@ export async function createStage(host, ctx, { reduced }) {
   const sky = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false, vertexShader: 'varying vec3 d;void main(){d=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}', fragmentShader: 'varying vec3 d;void main(){float y=normalize(d).y;gl_FragColor=vec4(mix(vec3(.032,.037,.044),vec3(.005,.006,.008),smoothstep(-.02,.4,y)),1.);}' })); sky.renderOrder = -10; sky.position.copy(ground.position); scene.add(sky);
 
   const parts = {};
-  for (const name of ['building', 'rubble', 'interior', 'debris']) { try { const p = (await import('../../twin/' + name + '.js')).build(env); if (p?.group && !p.group.parent) scene.add(p.group); parts[name] = p; p?.setLayer?.('roof', false); } catch (e) { console.info('[fusion] demo set: "' + name + '" left out (' + e.message + ')'); } await pause(); }
+  for (const name of ['building', 'rubble', 'interior', 'debris']) { try { const p = (await mods[name]).build(env); if (p?.group && !p.group.parent) scene.add(p.group); parts[name] = p; p?.setLayer?.('roof', false); } catch (e) { console.info('[fusion] demo set: "' + name + '" left out (' + e.message + ')'); } await pause(); }
   let rover = null; const rs = { units: { 'HOUND-01': { id: 'HOUND-01', pos: [57.6, 44], heading: 0, mode: 'listen', odo: 1 } }, sensors: { listen: null }, hold: false, faults: {}, phase: 'search' };
-  try { rover = (await import('../../twin/actors/rover.js')).default.create(t); } catch (e) { console.info('[fusion] demo set: rover left out (' + e.message + ')'); }
+  try { rover = (await mods['actors/rover']).default.create(t); } catch (e) { console.info('[fusion] demo set: rover left out (' + e.message + ')'); }
   // A light that is switched off stays compiled in, at zero, so that nothing recompiles mid-shot.
   scene.traverse((l) => { if (!l.isLight) return; let vis = l.visible, k = l.intensity; Object.defineProperty(l, 'visible', { configurable: true, get: () => true, set: (x) => { vis = x; } }); Object.defineProperty(l, 'intensity', { configurable: true, get: () => (vis ? k : 0), set: (x) => { k = x; } }); });
   await pause();

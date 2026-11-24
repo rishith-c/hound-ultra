@@ -1,8 +1,8 @@
 # Architecture and the contract between agents
 
-Static site. No build step, no bundler, no npm. Plain ES modules loaded by the browser; libraries come from a CDN
-through the import map in `app/index.html` (`three`, `three/addons/…`, `d3`). Anything else: import a pinned
-version from `https://cdn.jsdelivr.net/npm/<pkg>@<exact version>/+esm` inside your own module.
+Static site. No build step, no bundler, no npm. Plain ES modules loaded by the browser; the libraries are copied into `vendor/`
+at exact versions and reached through the import map in `app/index.html` (`three`, `three/addons/…`, `d3`). Nothing waits on a
+CDN. To add or update one, use `tools/vendor.py`.
 All URLs in the site are **relative** (the site is served from `/ultra/` locally and from `/` when deployed).
 
 ## Running and checking
