@@ -1,0 +1,30 @@
+{
+  "id": "./app/",
+  "name": "HOUND Command",
+  "short_name": "HOUND",
+  "description": "A search-and-rescue console. Training exercise: the people, damage and readings are simulated.",
+  "start_url": "./app/",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#06080a",
+  "theme_color": "#06080a",
+  "lang": "en",
+  "categories": [
+    "education",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "assets/brand/hound-app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/img/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

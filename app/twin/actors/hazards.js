@@ -61,15 +61,15 @@ const MUD_MAP = /* glsl */ `
   vec4 e = texture2D(uNoise, q * 5.3 + 0.37);
   mudH = a.r * 0.5 + b.r * 0.34 + c.r * 0.16;
   mudWet = smoothstep(0.5, 0.4, mudH);
-  vec2 nq = (a.ba - 0.5) * 0.35 + (b.ba - 0.5) * mix(0.8, 1.5, uFold) + (c.ba - 0.5) * 0.75 + (e.ba - 0.5) * 0.3;
+  vec2 nq = (a.ba - 0.5) * 0.35 + (b.ba - 0.5) * mix(0.6, 1.25, uFold) + (c.ba - 0.5) * 0.28 + (e.ba - 0.5) * 0.1;
   nq = mix(nq, (c.ba - 0.5) * 0.05, mudWet);
   mudN = uFlow * nq.x + fp * nq.y;
   float d = edgeDist(vPW);
-  float shore = smoothstep(0.05, 0.5, d + (a.r - 0.5) * 3.2 + (b.r - 0.5) * 1.8 - 0.55 + (e.r - 0.5) * 0.25);
+  float shore = smoothstep(0.12, 0.34, d + (a.r - 0.5) * 3.2 + (b.r - 0.5) * 1.8 - 0.55 + (e.r - 0.5) * 0.25);
   vec2 kc = abs(vPW - (uKeep.xy + uKeep.zw) * 0.5) - (uKeep.zw - uKeep.xy) * 0.5;
   shore *= smoothstep(0.0, 0.5, max(kc.x, kc.y) + (c.r - 0.5) * 0.3);
-  vec3 col = mix(vec3(0.052, 0.043, 0.034), vec3(0.135, 0.114, 0.09), smoothstep(0.42, 0.7, mudH) * (0.6 + 0.8 * e.r));
-  diffuseColor.rgb = mix(col, vec3(0.022, 0.02, 0.018), mudWet * 0.8);
+  vec3 col = mix(vec3(0.026, 0.0215, 0.017), vec3(0.07, 0.059, 0.047), smoothstep(0.44, 0.72, mudH) * (0.6 + 0.8 * e.r));
+  diffuseColor.rgb = mix(col, vec3(0.012, 0.011, 0.01), mudWet * 0.8) * (0.55 + 0.45 * smoothstep(0.3, 0.7, shore));
   diffuseColor.a = shore * 0.97 * uWipe;
   if (diffuseColor.a < 0.01) discard;
 }`;
@@ -100,7 +100,7 @@ const CRACK_MAP = /* glsl */ `
   float target = slope > 0.0 ? w : -w, dep = abs(target - vC.y) / max(abs(slope), 0.02), maxD = hw * 5.0 + 0.02;
   crWall = (slope > 0.0 ? -1.0 : 1.0) * step(dep, maxD);
   float grit = 0.65 + 0.7 * cn2(vec2(vC.x * 30.0, dep * 60.0));
-  vec3 inside = mix(vec3(0.004, 0.0038, 0.0035), vec3(0.12, 0.102, 0.082) * grit * exp(-dep * 16.0), step(dep, maxD));
+  vec3 inside = mix(vec3(0.004, 0.0038, 0.0035), vec3(0.05, 0.043, 0.035) * grit * exp(-dep * 16.0), step(dep, maxD));
   float e = max(ay - w, 0.0);
   crLip = exp(-e / (0.02 + hw * 0.5)) * (1.0 - smoothstep(0.1, 0.24, ay)) * (0.35 + 0.9 * cn2(vWP.xz * 24.0)) * smoothstep(0.0, 0.01, hw);
   diffuseColor.rgb = mix(vec3(0.05, 0.044, 0.037), inside, crIn);
@@ -233,13 +233,13 @@ export default {
     function mudSurface(hz, poly, shared) {
       const K = t.world.BUILDING.rect, mat = new THREE.MeshStandardMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, roughness: 0.4, metalness: 0, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
         // the picture's alpha channel tells the reflection pass how much a surface mirrors: wet mud mirrors a little
-        blending: THREE.CustomBlending, blendSrc: THREE.SrcAlphaFactor, blendDst: THREE.OneMinusSrcAlphaFactor, blendSrcAlpha: THREE.ConstantAlphaFactor, blendDstAlpha: THREE.OneMinusSrcAlphaFactor, blendAlpha: 0.55 });
+        blending: THREE.CustomBlending, blendSrc: THREE.SrcAlphaFactor, blendDst: THREE.OneMinusSrcAlphaFactor, blendSrcAlpha: THREE.ConstantAlphaFactor, blendDstAlpha: THREE.OneMinusSrcAlphaFactor, blendAlpha: 0.82 });
       const U = { ...shared, uNoise: noiseTex, uFold: { value: hz.kind === 'slope' ? 1 : 0 }, uFlow: { value: new THREE.Vector2(FLOW[0], FLOW[1]) }, uKeep: { value: new THREE.Vector4(K[0], K[1], 75.15, K[3] + 0.15) } };   // the dry rooms of block B
       mat.onBeforeCompile = (sh) => {
         for (const k of ['uPts', 'uN', 'uT', 'uWipe', 'uNoise', 'uFold', 'uFlow', 'uKeep']) sh.uniforms[k] = U[k];
         sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vPW;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvPW = uv;');
         sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + MUD_PARS).replace('#include <map_fragment>', MUD_MAP)
-          .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = mix(mix(0.3, 0.6, smoothstep(0.45, 0.75, mudH)), 0.14, mudWet);')
+          .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = mix(mix(0.24, 0.5, smoothstep(0.5, 0.78, mudH)), 0.13, mudWet);')
           .replace('#include <normal_fragment_maps>', 'normal = normalize((viewMatrix * vec4(-mudN.x, 1.0, mudN.y, 0.0)).xyz);');
       };
       mat.customProgramCacheKey = () => 'hound-mud';
@@ -249,13 +249,14 @@ export default {
     // Branching cracks: a few run out from the middle, some follow the rim the way undercut ground lets go.
     function crackLines(poly, rnd) {
       const c = polyCentroid(poly); let R = 0; for (const p of poly) R += dist2(p, c) / poly.length;
-      const lines = [];
+      const lines = [], B = t.world.BUILDING.rect, indoors = (x, y) => x > B[0] && x < B[2] && y > B[1] && y < B[3];
+      const ring = poly.some((p) => !indoors(p[0], p[1])), ok = (x, y) => inPoly([x, y], poly) || (ring && !indoors(x, y) && Math.hypot(x - c[0], y - c[1]) < R * 1.75);   // outdoors the ground goes on cracking past the edge
       function walk(x, y, a, len, w, ord, depth) {
         const pts = [[x, y, w, ord]], step = 0.16; let s = 0, drift = (rnd() - 0.5) * 0.25;
         while (s < len) {
           if (rnd() < 0.3) drift = (rnd() - 0.5) * 0.9; a += drift * 0.35 + (rnd() - 0.5) * 0.5;
           x += Math.cos(a) * step; y += Math.sin(a) * step; s += step;
-          if (!inPoly([x, y], poly)) break;
+          if (!ok(x, y)) break;
           const k = 1 - s / len; pts.push([x, y, w * Math.pow(Math.max(k, 0), 0.7), ord + s / (R * 2.2)]);
           if (depth < 3 && rnd() < 0.085 && k > 0.2) walk(x, y, a + (rnd() < 0.5 ? -1 : 1) * (0.5 + rnd() * 0.7), len * k * (0.35 + rnd() * 0.4), w * k * 0.6, ord + s / (R * 2.2), depth + 1);
         }
@@ -267,6 +268,10 @@ export default {
         const e = Math.floor(rnd() * poly.length), p = poly[e], q2 = poly[(e + 1) % poly.length], k = 0.15 + rnd() * 0.5, f = 0.74 + rnd() * 0.2;
         const x = c[0] + (p[0] + (q2[0] - p[0]) * k - c[0]) * f, y = c[1] + (p[1] + (q2[1] - p[1]) * k - c[1]) * f;
         walk(x, y, Math.atan2(q2[1] - p[1], q2[0] - p[0]) + (rnd() - 0.5) * 0.4 + (rnd() < 0.5 ? Math.PI : 0), R * (0.45 + rnd() * 0.6), 0.02 + rnd() * 0.024, 0.35, 1);
+      }
+      if (ring) for (let i = 0; i < (low ? 6 : 13); i++) {            // outward from the edge
+        const e = Math.floor(rnd() * poly.length), p = poly[e], q2 = poly[(e + 1) % poly.length], k = rnd(), x = p[0] + (q2[0] - p[0]) * k, y = p[1] + (q2[1] - p[1]) * k;
+        if (!indoors(x, y)) walk(x, y, Math.atan2(y - c[1], x - c[0]) + (rnd() - 0.5) * 1.3, 1.4 + rnd() * 2.8, 0.022 + rnd() * 0.03, 0.5, 0);
       }
       return lines;
     }

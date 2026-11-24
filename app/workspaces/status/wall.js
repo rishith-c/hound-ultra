@@ -173,7 +173,7 @@ export async function createWall(host, { nn, ctx, css, reduced = () => false, on
     }
   }
   let T = 0, story = 0, raf = 0, last = 0, on = false, pr = Math.min(1.5, window.devicePixelRatio || 1), slow = 0, fast = 0, stopAt = Infinity, ox = 0, oy = 0, tx = 0, ty = 0, w = 1, h = 1, nextFree = 0, labelDirty = 0;
-  const done = new Map(), zones = [0, 0, 0], zoneCol = [new THREE.Color(), new THREE.Color(), new THREE.Color()], tmp = new THREE.Color();
+  const done = new Map(), tmp = new THREE.Color(), ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
   function size() { const r = host.getBoundingClientRect(); w = Math.max(2, Math.round(r.width)); h = Math.max(2, Math.round(r.height)); renderer.setPixelRatio(pr); renderer.setSize(w, h, false); composer.setPixelRatio(pr); composer.setSize(w, h); bloom.setSize(w * pr * 0.5, h * pr * 0.5); camera.aspect = w / h; camera.updateProjectionMatrix(); dustMat.uniforms.uPx.value = h * pr * 2; }
   const ro = new ResizeObserver(() => { size(); if (!on) draw(); }); ro.observe(host); size();
   const onMove = (e) => { const r = host.getBoundingClientRect(); tx = ((e.clientX - r.left) / r.width - 0.5) * 2; ty = ((e.clientY - r.top) / r.height - 0.5) * 2; };
@@ -216,6 +216,14 @@ export async function createWall(host, { nn, ctx, css, reduced = () => false, on
     reset() { state.fill(0); tState.needsUpdate = true; U.uCount.value.fill(0); U.uRun.value.fill(0); done.clear(); nextFree = 0; story = 0; drawLabels(); },
     lit() { let n = 0; for (const [id, r] of done) n += Math.round(U.uCount.value[rowOf(id)] * Math.min(1, Math.max(0, (T - r.t0) / r.dur))); return n; },
     settled() { for (const [, r] of done) if (T < r.t0 + r.dur + 0.4) return false; return true; },
+    // What is under the pointer: { test } for a strip, { window } for one of the thirty panes, or null.
+    pick(cx, cy) {
+      const r = canvas.getBoundingClientRect(); ndc.set(((cx - r.left) / r.width) * 2 - 1, 1 - ((cy - r.top) / r.height) * 2); ray.setFromCamera(ndc, camera); const o = ray.ray.origin, d = ray.ray.direction; if (d.z >= -1e-4) return null;
+      const s = -o.z / d.z, x = o.x + d.x * s, y = o.y + d.y * s; if (y < 0) return null;
+      const u = (x - TX0) / TW, v = (y - TY0) / TH; if (u >= 0 && u < 3 && v >= 0 && v < 10) return { window: (9 - Math.floor(v)) * 3 + Math.floor(u) };
+      if (x > LX0 && x < XL1) for (const g of groups) { const q = (g.y - y) / PITCH; if (q >= 0 && q < g.n) return { test: ORDER[g.start + Math.floor(q)].id }; }
+      return null;
+    },
     get time() { return story; }, toEnd() { story = Math.max(story, 20); },
     start() { if (on) return; on = true; stopAt = Infinity; last = performance.now(); if (reduced()) { on = false; T += 30; size(); draw(); return; } raf = requestAnimationFrame(frame); },
     stop() { on = false; cancelAnimationFrame(raf); }, redraw: () => { if (!on) { T += 30; drawLabels(done); draw(); } },

@@ -86,7 +86,7 @@ export default {
     film.title.append('Room to ', h('em', null, 'survive'));
     const filmBox = h('section.scan-film.demo-only', { 'aria-label': 'Void finder film' },
       h('div.scan-film-text', null, film.title, film.say, h('div.row', null, film.act, realityTag('live-algo'), h('span.tag.tag-sim', { title: 'The scan is simulated. The search that runs on it is real and ran just now, on this device.' }, 'Simulated scan'))),
-      h('div.scan-film-right', null, h('div.scan-film-figs', null, [['points', 0], ['voids found', 1], ['m³ of space', 2]].map(([t, i]) => h('div', null, film.fig[i], h('span', null, t)))), film.dots));
+      h('div.scan-film-right', null, h('div.scan-film-figs', null, [['points', 0], ['voids found', 1], ['m³ of possible space', 2]].map(([t, i]) => h('div', null, film.fig[i], h('span', null, t)))), film.dots));
     stage.append(filmBox);
     const PASS_SAY = { aerial: 'A drone sweeps the site. Every beam that returns becomes a point.', orbit: 'It circles the collapse and looks in from the side.', close: 'Closer, for the cables, bars and bent roof sheets.', interior: 'Then inside, through every open door.', survey: 'A drone sweeps the building.', all: 'Every point measured, none drawn by hand.' };
     function filmSay() {
@@ -95,7 +95,7 @@ export default {
       if (s.act === 'open') return 'The roof lifts away. Now the search runs: free space, flooded inward from open air.';
       if (!v) return 'No space in this scan is big enough for a person.';
       if (s.act === 'voids') return v.kind.split(':')[0] + '. ' + v.clear.toFixed(1) + ' m of headroom. ' + (v.places ? 'Floor for ' + v.places + (v.places === 1 ? ' person' : ' people') + ' lying down, assuming 2.0 by 0.6 m each.' : 'Too short to lie flat, long enough to crouch.');
-      return 'Inside ' + v.id + '. ' + (v.seen == null ? 'A place to check, not a person found.' : 'Beams reached ' + Math.round(v.seen * 100) + ' % of it. A place to check, not a person found.');
+      return 'At the mouth of ' + v.id + '. ' + (v.seen == null ? 'A place to check, not a person found.' : 'Beams reached ' + Math.round(v.seen * 100) + ' % of it. A place to check, not a person found.');
     }
     function filmHtml(v) { return '<b>' + v.id + '</b><span>' + v.volume.toFixed(0) + ' m³</span><em>' + (v.places ? 'fits ' + v.places + ' lying down' : 'room to crouch') + '</em>'; }
     function filmAction() { const H = film.hero; if (!H) return; H.go(H.S.act === 'inside' || !H.big ? 'scan' : 'inside'); tickFilm(true); }
@@ -107,7 +107,7 @@ export default {
         const order = ACTS.map((a) => a[0]); order.forEach((id, i) => { const a = H.starts[id], b = i < 3 ? H.starts[order[i + 1]] : H.total, u = film.dots.children[i].querySelector('u'); u.style.transform = 'scaleX(' + Math.min(1, Math.max(0, (s.t - a) / (b - a))).toFixed(3) + ')'; }); }
       const key = s.act + s.cpt; if (key === film.last && !force) return; film.last = key;
       film.say.textContent = filmSay(); film.say.classList.remove('in'); void film.say.offsetWidth; film.say.classList.add('in');
-      film.act.replaceChildren(s.act === 'inside' ? 'Play again' : H.big ? 'Go inside ' + H.big.v.id : 'Play again'); film.act.prepend(icon(s.act === 'inside' ? 'reset' : 'target'));
+      film.act.replaceChildren(s.act === 'inside' ? 'Play again' : H.big ? 'Look into ' + H.big.v.id : 'Play again'); film.act.prepend(icon(s.act === 'inside' ? 'reset' : 'target'));
       [...film.dots.children].forEach((x) => { if (x.dataset.act === s.act) x.setAttribute('aria-current', 'step'); else x.removeAttribute('aria-current'); });
     }
     const demo = () => ctx.mode === 'demo';
@@ -409,7 +409,7 @@ export default {
       if (!d) return [h('div.empty', null, h('div.spinner'), h('p', null, 'Preparing the scan…'))];
       const out = [];
       out.push(panel(S.source === 'plan' ? 'How your plan was scanned' : 'How this scan was made', { tag: simTag() },
-        h('p.muted', null, S.source === 'plan' ? 'A virtual scanner flew two crossing sets of lines over your drawing and every beam was ray-cast against your walls and rubble.' : 'A virtual lidar is flown through a model of the exercise site and every beam is ray-cast, so the shadows, holes and scan lines you see are what the geometry gives, not decoration. Three passes are merged.'),
+        h('p.muted', null, S.source === 'plan' ? 'A virtual scanner flew two crossing sets of lines over your drawing and every beam was ray-cast against your walls and rubble.' : 'A virtual lidar is flown through a model of the exercise site and every beam is ray-cast, so the shadows, holes and scan lines you see are what the geometry gives, not decoration. Four passes are merged.'),
         h('div.scan-passlist', null, d.passes.map((p, i) => h('button.scan-pass', { 'data-pass': i, title: 'Replay from here', onclick: () => startReplay(p.t0) }, h('b', null, p.name), h('span.num', null, N(p.i1 - p.i0) + ' points · ' + fmt.clock(p.t1 - p.t0)), h('em', null, p.detail), h('i')))),
         S.source === 'plan' ? h('button.btn', { onclick: () => { S.planScanned = false; view.setCloud(null); S.data = null; refreshAll(); } }, 'Edit the plan') : null,
         S.source === 'site' ? h('div.note', null, icon('info'), h('span', null, 'The drone and its scanner are a concept: HOUND has no lidar today. Range noise is assumed at 8 to 20 mm and weak returns are dropped. People are not in the scan.')) : null));
@@ -429,7 +429,7 @@ export default {
         const table = h('table.table.scan-conf', null, h('thead', null, h('tr', null, h('th', null, 'Really is'), CLASSES.map((x) => h('th', null, x)))), h('tbody', null, c.confusion.map((r, i) => h('tr', i === 4 ? { class: 'aside' } : null, h('th', { scope: 'row' }, TRUTH_ROWS[i]), r.map((v, k) => { const f = v / Math.max(1, rowTot[i]); return h('td.num', { title: N(v) + ' points', style: { background: i < 4 ? (i === k ? 'rgba(65,214,160,' + (f * 0.32).toFixed(3) + ')' : f > 0.004 ? 'rgba(255,178,36,' + Math.min(0.5, f * 2.2 + 0.05).toFixed(3) + ')' : '') : 'rgba(255,255,255,' + (f * 0.1).toFixed(3) + ')' } }, (f * 100).toFixed(f > 0.1 || f === 0 ? 0 : 1)); })))));
         out.push(panel((c.accuracy * 100).toFixed(1) + ' % of points match the simulator’s own labels', { tag: h('span.tag.tag-sim', null, 'Simulated check') },
           h('p.muted', null, 'Because this scan is simulated, the true material of every point is known. It is used here only to mark the algorithm’s work. Each row adds up to 100 %.'), table,
-          h('p.scan-small', null, 'Biggest mistake: ' + ((worst.n / rowTot[worst.r]) * 100).toFixed(1) + ' % of ' + TRUTH_ROWS[worst.r].toLowerCase() + ' points are called ' + CLASSES[worst.k].toLowerCase() + '. Furniture and vehicles have no class of their own, so they are left out of the score.'),
+          h('p.scan-small', null, 'Most points wrong in one place: ' + ((worst.n / rowTot[worst.r]) * 100).toFixed(1) + ' % of ' + TRUTH_ROWS[worst.r].toLowerCase() + ' points are called ' + CLASSES[worst.k].toLowerCase() + '. Furniture and vehicles have no class of their own, so they are left out of the score.'),
           checkBox(),
           h('div.note.warn', null, icon('alert'), h('span', null, 'The rules and limits were adjusted by hand while looking at this very site, so the score above flatters them. One simulated site with clean geometry: a real scan has moving people, glass, dust and registration error, and would score lower.'))));
       } else out.push(panel('No answer key for this scan', null, h('p.muted', null, 'A file you load has no known labels, so the classes cannot be scored here. Hide and show classes to check them by eye.')));
@@ -456,13 +456,14 @@ export default {
           h('span.scan-voidmain', null, h('b', null, v.volume.toFixed(1) + ' m³', h('span', null, ' · ' + v.clear.toFixed(1) + ' m headroom · ' + v.length.toFixed(1) + ' × ' + v.width.toFixed(1) + ' m floor')), h('em', null, v.kind)),
           h('span.scan-voidmeta', null,
             h('span', { title: 'Where the flood fill found the way from open air to the middle of the pocket' }, icon('route', 13), v.access ? (v.access.from === 'above' ? 'In from above' : 'In from the ' + v.access.from) + ', ' + v.access.crawl.toFixed(1) + ' m to the middle' : 'No open way in found'),
-            h('span', { class: nl && nl.d < 3 ? 'hot' : '', title: 'Distance in plan from this pocket to the nearest thing the mission’s sensors have flagged' }, icon('person', 13), S.source !== 'site' ? 'No mission leads for this scan' : nl ? (nl.d < 0.05 ? nl.lead.id + ' is inside its footprint' : nl.d.toFixed(1) + ' m from lead ' + nl.lead.id) + (nl.lead.confirmed ? ' (person)' : ' (possible)') : 'No leads yet'),
+            h('span', { class: nl && nl.d < 3 ? 'hot' : '', title: 'Distance in plan from this pocket to the nearest thing the mission’s sensors have flagged' }, icon('person', 13), S.source !== 'site' ? 'No mission leads for this scan' : nl ? (nl.d < 0.05 ? nl.lead.id + ' is within its bounds' : nl.d.toFixed(1) + ' m from lead ' + nl.lead.id) + (nl.lead.confirmed ? ' (person)' : ' (possible)') : 'No leads yet'),
             cf ? h('span.tag.' + cf[1], { title: cf[2] }, cf[0]) : null));
       });
       const out = [panel('Survivable voids', { tag: realityTag('live-algo') },
-        h('p.muted', null, 'The scan is cut into 20 cm cubes and free space is flood-filled from open air with a 0.6 m probe. Any space the probe reaches that lies under fallen material, with enough headroom and floor for a person, is listed as a place someone could be alive.'),
+        h('p.muted', null, 'The scan is cut into 20 cm cubes and free space is flood-filled from open air with a 0.6 m probe. A space it reaches is listed as a place someone could be alive when it lies under fallen material, is at least half closed in, has headroom and floor for a person' + (d.traj ? ', and goes no more than 0.6 m past where a beam went.' : '.')),
         params,
         h('div.scan-voidsum.num', null, list.length ? h('b', null, list.length + (list.length === 1 ? ' void' : ' voids') + ' · ' + tot.toFixed(0) + ' m³') : h('b', null, 'No void meets these limits'), h('span.dim', null, V.rejected + ' smaller pockets set aside · ' + (V.params.whole ? 'whole scan searched' : V.zones.length + (V.zones.length === 1 ? ' collapsed zone, ' : ' collapsed zones, ') + N(V.zoneArea) + ' m²') + (V.ms != null ? ' · ' + V.ms.toFixed(0) + ' ms' : ''))),
+        list.length && list[0].empty != null ? h('div.scan-checkrow', { title: 'Simulated check against the model the scan was made from. The search never sees it.' }, h('span', null, 'Of that volume, really empty in the model'), h('b.num', null, (list.reduce((s, q) => s + q.volume * q.empty, 0) / tot * 100).toFixed(0) + ' %')) : null,
         list.length ? h('div.scan-voidlist', null, rows) : h('div.note', null, icon('info'), h('span', null, V.zones.length || V.params.whole ? 'Lower the limits to see the smaller pockets.' : 'Nothing in this scan is classed as a collapsed zone. Tick “search the whole scan” to look everywhere.')))];
       const v = list[S.sel];
       if (v) {
@@ -525,7 +526,7 @@ export default {
       const d = S.data, out = [];
       out.push(panel('Bring your own scan', { tag: realityTag('device') },
         h('p.muted', null, 'Drop a point cloud anywhere on this workspace: .ply (ASCII or binary little-endian) or .xyz text. It stays on this computer. It is classified, searched for voids and turned into a map the same way as the exercise scan.'),
-        h('div.row.wrap', null, h('button.btn' + (d ? '' : '.btn-primary'), { onclick: () => fileInput.click() }, icon('upload'), 'Choose a file'), h('button.btn', { title: 'A small simulated scan of a room with a fallen roof slab, 0.9 MB', onclick: openSample }, 'Load the sample scan')),
+        h('div.row.wrap', null, h('button.btn' + (d ? '' : '.btn-primary'), { onclick: () => fileInput.click() }, icon('upload'), 'Choose a file'), h('button.btn', { title: 'A small simulated scan of a room with a fallen roof slab, 0.7 MB', onclick: openSample }, 'Load the sample scan')),
         S.error ? h('div.note.danger', { role: 'alert' }, icon('alert'), h('span', null, h('b', null, 'That file could not be loaded. '), S.error)) : null,
         h('p.dim.scan-small', null, 'Coordinates are read as metres. From phone apps such as Polycam or Scaniverse, export “PLY”. Scans above 1.5 million points are thinned to stay interactive.')));
       if (d && d.kind === 'file') {

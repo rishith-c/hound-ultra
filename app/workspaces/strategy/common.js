@@ -92,7 +92,7 @@ export function createChart(canvas, kit) {
     pad.t = spec.y.label ? 26 : 10;
     const { x, y } = spec, pl = spec.padL ?? pad.l, pr = spec.padR ?? pad.r, pw = W - pl - pr, ph = H - pad.t - pad.b;
     const sx = (v) => pl + ((v - x.min) / (x.max - x.min || 1)) * pw, sy = (v) => pad.t + ph - ((v - y.min) / (y.max - y.min || 1)) * ph;
-    c.font = '400 10.5px ' + tok('--mono'); c.lineWidth = 1;
+    c.font = '400 11px ' + tok('--mono'); c.lineWidth = 1;
     const yt = y.ticks || niceTicks(y.min, y.max, Math.max(2, Math.floor(ph / 34))), xt = x.ticks || niceTicks(x.min, x.max, Math.max(2, Math.floor(pw / 64)));
     c.strokeStyle = tok('--line'); c.fillStyle = tok('--text-3'); c.textBaseline = 'middle'; c.textAlign = 'right';
     for (const v of yt) { const py = Math.round(sy(v)) + 0.5; c.beginPath(); c.moveTo(pl, py); c.lineTo(pl + pw, py); c.stroke(); c.fillText(y.fmt ? y.fmt(v) : String(v), pl - 7, py); }
@@ -103,8 +103,8 @@ export function createChart(canvas, kit) {
     if (x.label) { c.textAlign = 'right'; c.textBaseline = 'bottom'; c.fillText(x.label, pl + pw, H - 2); }
     if (y.label) { c.textAlign = 'left'; c.textBaseline = 'top'; c.fillText(y.label, 2, 0); }
     c.save(); c.beginPath(); c.rect(pl, pad.t - 2, pw + 2, ph + 4); c.clip();
-    for (const hl of spec.hlines || []) { const py = Math.round(sy(hl.y)) + 0.5; c.strokeStyle = tok(hl.color || '--text-3'); c.setLineDash(hl.dash || [3, 3]); c.beginPath(); c.moveTo(pl, py); c.lineTo(pl + pw, py); c.stroke(); c.setLineDash([]); if (hl.label) { c.fillStyle = tok(hl.color || '--text-3'); c.font = '400 10.5px ' + tok('--font'); c.textAlign = 'right'; c.textBaseline = 'bottom'; c.fillText(hl.label, pl + pw - 4, py - 2); } }
-    for (const m of spec.marks || []) { const px = Math.round(sx(m.x)) + 0.5; c.strokeStyle = tok(m.color || '--line-3'); c.setLineDash(m.dash || [2, 3]); c.beginPath(); c.moveTo(px, pad.t); c.lineTo(px, pad.t + ph); c.stroke(); c.setLineDash([]); if (m.label) { c.fillStyle = tok(m.color || '--text-3'); c.font = '400 10.5px ' + tok('--font'); c.textAlign = px > pl + pw - 60 ? 'right' : 'left'; c.textBaseline = 'top'; c.fillText(m.label, px + (px > pl + pw - 60 ? -4 : 4), pad.t + 1); } }
+    for (const hl of spec.hlines || []) { const py = Math.round(sy(hl.y)) + 0.5; c.strokeStyle = tok(hl.color || '--text-3'); c.setLineDash(hl.dash || [3, 3]); c.beginPath(); c.moveTo(pl, py); c.lineTo(pl + pw, py); c.stroke(); c.setLineDash([]); if (hl.label) { c.fillStyle = tok(hl.color || '--text-3'); c.font = '400 11px ' + tok('--font'); c.textAlign = 'right'; c.textBaseline = 'bottom'; c.fillText(hl.label, pl + pw - 4, py - 2); } }
+    for (const m of spec.marks || []) { const px = Math.round(sx(m.x)) + 0.5; c.strokeStyle = tok(m.color || '--line-3'); c.setLineDash(m.dash || [2, 3]); c.beginPath(); c.moveTo(px, pad.t); c.lineTo(px, pad.t + ph); c.stroke(); c.setLineDash([]); if (m.label) { c.fillStyle = tok(m.color || '--text-3'); c.font = '400 11px ' + tok('--font'); c.textAlign = px > pl + pw - 60 ? 'right' : 'left'; c.textBaseline = 'top'; c.fillText(m.label, px + (px > pl + pw - 60 ? -4 : 4), pad.t + 1); } }
     const labels = [];
     for (const s of spec.series || []) {
       const col = tok(s.color || '--accent');
@@ -124,7 +124,8 @@ export function createChart(canvas, kit) {
     c.restore();
     // direct labels at the end of each line, nudged apart
     labels.sort((a, b) => a.y - b.y);
-    for (let i = 1; i < labels.length; i++) if (labels[i].y - labels[i - 1].y < 12) labels[i].y = labels[i - 1].y + 12;
+    for (let i = 1; i < labels.length; i++) if (labels[i].y - labels[i - 1].y < 13) labels[i].y = labels[i - 1].y + 13;
+    for (let i = labels.length - 1, lim = pad.t + ph - 6; i >= 0; i--, lim = labels[i + 1].y - 13) if (labels[i].y > lim) labels[i].y = lim;
     c.font = '500 11px ' + tok('--font'); c.textBaseline = 'middle';
     for (const l of labels) { const w = c.measureText(l.text).width, right = l.x + 6 + w > W - 2; c.textAlign = right ? 'right' : 'left'; const ly = Math.min(pad.t + ph - 6, Math.max(pad.t + 6, l.y + (right ? -9 : 0))); c.fillStyle = l.col; c.fillText(l.text, right ? Math.min(l.x - 4, W - 3) : l.x + 6, ly); }
     if (spec.empty && !(spec.series || []).some((s) => s.pts && s.pts.length)) { c.fillStyle = tok('--text-3'); c.font = '400 12px ' + tok('--font'); c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(spec.empty, pl + pw / 2, pad.t + ph / 2); }

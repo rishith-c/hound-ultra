@@ -63,7 +63,7 @@ const RUT_MAP = /* glsl */ `
 const RUT_NORMAL = /* glsl */ `
 {
   vec3 sp = -vViewPosition, dx = dFdx(sp), dy = dFdy(sp), r1 = cross(dy, normal), r2 = cross(normal, dx);
-  float det = dot(dx, r1); vec3 gr = sign(det) * (dFdx(rutH) * r1 + dFdy(rutH) * r2), nb = abs(det) * normal - gr; float ln = length(nb);
+  float det = dot(dx, r1); vec3 gr = sign(det) * (dFdx(rutH) * r1 + dFdy(rutH) * r2), nb = abs(det) * normal - gr * (1.0 - smoothstep(0.004, 0.011, max(length(dx), length(dy)))); float ln = length(nb);
   if (ln > 1e-9) normal = nb / ln;
 }`;
 
@@ -133,9 +133,9 @@ void main() {
   float k = shown * mix(1.0, 0.42, uRank) * mix(1.0, 0.8, uPlanned) * mix(1.0, 0.3, uCalm);
   k *= mix(1.0, smoothstep(0.0, 1.2, s), uFadeIn) * (1.0 - smoothstep(uLen - 0.9, uLen - 0.1, s));
   vec3 col = mix(mix(uColor, vec3(0.8, 0.9, 1.0), 0.22 + 0.3 * min(1.0, head + chev)), uOk, uCalm * 0.3);
-  col = mix(col, uHaz, inside * 0.22);
-  vec3 light = col * I * 0.3 * k + uHaz * (iso * 0.16 + edge * 0.1) * (0.5 + n) * k * (1.0 - done);
-  gl_FragColor = vec4(light, 1.0 + I * 0.85 * k);
+  col = mix(col, uHaz, inside * 0.1);
+  vec3 light = col * I * 0.23 * k + mix(uHaz, vec3(0.5, 0.42, 0.4), 0.35) * (iso * 0.055 + edge * 0.045) * (0.5 + n) * k * (1.0 - done);
+  gl_FragColor = vec4(light, 1.0 + I * 0.6 * k);
 }`;
 const POOL_FRAG = /* glsl */ `
 ${NOISE}
@@ -178,7 +178,7 @@ void main() {
   } else {
     float u = (s + ay * 0.26) / 0.36, wu = fwidth(u);
     a = (1.0 - smoothstep(0.03, 0.03 + wu * 1.2, abs(fract(u) - 0.5))) * (1.0 - smoothstep(0.35, 0.6, ay));
-    a *= smoothstep(0.0, 0.25, s) * (0.15 + 0.4 * s / uLen) * step(s, uLen - 0.02);
+    a *= smoothstep(0.0, 0.25, s) * (0.06 + 0.22 * s / uLen) * step(s, uLen - 0.02);
   }
   gl_FragColor = vec4(uColor * 0.75, clamp(a, 0.0, 1.0) * uOpacity);
   #include <colorspace_fragment>
@@ -290,7 +290,7 @@ export default {
         sh.uniforms.uEnd = uEnd; sh.uniforms.uTrack = { value: 0.212 * SCALE.rover };
         sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vR;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvR = uv;');
         sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + RUT_PARS).replace('#include <map_fragment>', RUT_MAP)
-          .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = mix(0.92, 0.4, rutIn);').replace('#include <normal_fragment_maps>', RUT_NORMAL);
+          .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = mix(0.92, 0.62, rutIn);').replace('#include <normal_fragment_maps>', RUT_NORMAL);
       };
       mat.customProgramCacheKey = () => 'hound-ruts';
       const mesh = new THREE.Mesh(g, mat); mesh.position.y = t.groundY + 0.014; mesh.frustumCulled = false; mesh.receiveShadow = true; mesh.renderOrder = 4; trailG.add(mesh);

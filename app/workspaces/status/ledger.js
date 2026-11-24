@@ -6,6 +6,9 @@ const R = (kind, name, ws, file, mark, real, sim, proof = '') => ({ kind, name, 
 const NET = '23,372 weights trained in NumPy on simulated people', SCN = 'The building, people and readings are invented';
 
 export const LEDGER = [
+  { group: 'The rover', rows: [
+    R('built', 'The rover itself', 'rover', 'workspaces/rover/index.js', /mount/, 'An aluminium frame, four steppers on mecanum wheels, two ESP32-S3, radars, a thermal camera, a Raspberry Pi. It was built and drives.', 'This console is not connected to it.', 'Our own CAD and photographs'),
+  ] },
   { group: 'Sensing and AI', rows: [
     R('live-ai', 'Wi-Fi neural network, live', 'sense', 'core/nn.js', /export function forward/, 'The trained network runs in this page on held-out test windows.', NET + '. No real recordings exist.', 'Self-test: 30 of 30 windows match Python to 0.01'),
     R('live-ai', 'Why the network said so', 'sense', 'workspaces/sense/bench.js', /occlu/i, 'Parts of the window are hidden and the real network is asked again.', 'Simulated windows.'),
@@ -13,7 +16,7 @@ export const LEDGER = [
     R('live-ai', 'Network anatomy in 3-D', 'sense', 'workspaces/sense/anatomy.js', /three/, 'Every value drawn is a layer output of the real network.', 'Simulated window as input.'),
     R('live-algo', 'Fusion of weak sensors', 'fusion', 'core/fusion.js', /export function fuse/, 'Bayes’ rule, every step shown.', 'Only the Wi-Fi likelihood is measured (in simulation). Radar, thermal, drone and acoustic likelihoods are assumed.', 'Self-test: hand-computed values agree to 0.0005'),
     R('live-algo', 'Residual risk per room', 'fusion', 'workspaces/fusion/map.js', /residual/, 'Computed from reach and evidence at each stop.', 'The 10 % prior and the sensor reach are assumed.', 'Self-test: no room ever claims certainty'),
-    R('live-algo', 'Monte-Carlo missions', 'fusion', 'workspaces/fusion/montecarlo.js', /montecarlo|worker/i, 'Whole missions, run hundreds of times with random windows.', SCN + '.', 'Self-test: 200 missions, no one missed, no false confirmation'),
+    R('live-algo', 'Monte-Carlo missions', 'fusion', 'workspaces/fusion/montecarlo.js', /montecarlo|worker/i, 'Whole missions, run hundreds of times with random windows.', SCN + '.', 'Self-test: 200 missions with random windows'),
     R('live-ai', 'Aerial person detector', 'aerial', 'workspaces/aerial/detect.worker.js', /detr|d-?fine|dfine/i, 'A pretrained object detector (D-FINE nano) in the browser.', 'Synthetic scenes, two licensed photographs, or your own image. Not trained by us.'),
     R('live-algo', 'Colour-anomaly search', 'aerial', 'workspaces/aerial/cv.worker.js', /mahalanobis|rx/i, 'The RX detector, computed on the picture shown.', 'Synthetic scenes unless you drop a photo.'),
     R('live-algo', 'Before and after', 'aerial', 'workspaces/aerial/cv.worker.js', /change|registr/i, 'Registration and difference, computed live.', 'The picture pairs are drawn, with known truth.'),

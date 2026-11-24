@@ -90,7 +90,7 @@ export function createHero(map, M, ctx, ui) {
       if (rm()) { finishNow(); }
     },
     stop() { on = false; map.stage.hide(); map.freeCamera(); },
-    next() { if (race) begin(seed + 1); }, frame, ready,
+    next() { if (!race) return; begin(seed + 1); if (rm()) finishNow(); }, frame, ready,
     jump(to) { if (run) { run.wait = 0; run.t = Math.min(to, race.cap - 1); } },
     set speed(x) { speed = x; },
   };

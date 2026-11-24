@@ -1,10 +1,10 @@
 // All six instruments on the same pile: what each finds, side by side, and an honest table.
 import { drawPile, WORLD } from './model.js';
 const FULL = { x0: -0.4, x1: 24.4, z0: -3.2, z1: 7.2 };
-const ICON = { seen: 'check', hint: 'warning', missed: 'close', na: null }, WORD = { seen: 'found', hint: 'a hint', missed: 'missed', na: 'cannot' };
+const ICON = { seen: 'check', hint: 'alert', missed: 'close', na: null }, WORD = { seen: 'found', hint: 'a hint', missed: 'missed', na: 'cannot' };
 
 export function createCompare(env, { LENSES, exhibits, ensure, open }) {
-  const { h, icon } = env, list = LENSES.filter((l) => exhibits.has(l.id)); let stale = true, queue = [], dirtyIds = new Set(), bar = null;
+  const { h, icon } = env, list = LENSES.filter((l) => exhibits.has(l.id)); let stale = true, queue = [];
   const status = h('p', { role: 'status' }, 'Each picture is what that instrument recovers, computed here from its own simulated measurements.');
   const cells = new Map(), thumbs = h('div.ds-thumbs', { role: 'list', 'aria-label': 'The same pile through six instruments' }, list.map((l) => {
     const cv = h('canvas', { width: 520, height: 218 }), sum = h('span', null, 'measuring'); cells.set(l.id, { cv, sum });
@@ -32,7 +32,7 @@ export function createCompare(env, { LENSES, exhibits, ensure, open }) {
       if (stale) { stale = false; queue = [...list]; fill(); }
       const l = queue[0]; if (!l) return; const ex = exhibits.get(l.id);
       try { ensure(ex); ex._demo?.().runAll?.(); paint(l); } catch (e) { cells.get(l.id).sum.textContent = 'failed: ' + e.message; console.error('[deepscan] compare ' + l.id, e); }
-      queue.shift(); fill(); 
+      queue.shift(); fill();
     },
   };
 }

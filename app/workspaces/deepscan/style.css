@@ -128,3 +128,28 @@
   .ds-card { padding: 14px 14px 18px; gap: 12px; }
   .ds-cmp-grid { grid-template-columns: 1fr; }
 }
+
+/* ---- Demo: the film ---- */
+.ds-hero { position: absolute; inset: 0; overflow: hidden; background: var(--bg-0); }
+.ds-hero-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity var(--t-slow) var(--ease); cursor: grab; touch-action: none; }
+.ds-hero-cv:active { cursor: grabbing; }
+.ds-hero.ready .ds-hero-cv { opacity: 1; }
+.ds-hero-txt { position: absolute; left: 40px; bottom: 34px; width: min(460px, 36vw); display: flex; flex-direction: column; gap: 10px; pointer-events: none; text-shadow: 0 1px 12px var(--bg-0); }
+.ds-hero-txt button { pointer-events: auto; }
+.ds-hero-tags { display: flex; gap: 6px; }
+.ds-hero-h { font: 400 var(--fs-40)/1.02 var(--font-display); color: var(--text); text-wrap: balance; }
+.ds-hero-p { font: 400 var(--fs-16)/1.4 var(--font); color: var(--text-2); }
+.ds-hero-not { font: 500 var(--fs-13)/1.4 var(--font); color: var(--warn); }
+.ds-hero-row { display: flex; align-items: center; gap: 16px; margin-top: 6px; min-height: 34px; }
+.ds-hero-cap { font: 400 var(--fs-13)/1.35 var(--font); color: var(--text); }
+.ds-hero-figs { position: absolute; right: 40px; bottom: 84px; display: flex; gap: 34px; text-shadow: 0 1px 10px var(--bg-0); pointer-events: none; }
+.ds-hero-figs div { display: flex; flex-direction: column; gap: 3px; min-width: 104px; }
+.ds-hero-figs b { font: 500 var(--fs-28)/1 var(--mono); color: var(--text); letter-spacing: -0.03em; }
+.ds-hero-figs span { font: 400 var(--fs-12)/1.3 var(--font); color: var(--text-2); }
+.ds-steps { position: absolute; right: 40px; bottom: 34px; display: flex; gap: 2px; border-top: 1px solid var(--line-2); }
+.ds-steps button { background: transparent; border: 0; padding: 8px 12px 6px; font: 500 var(--fs-13)/1 var(--font); color: var(--text-2); cursor: pointer; transition: color var(--t-fast) var(--ease); }
+.ds-steps button:hover { color: var(--text); }
+.ds-steps button[aria-current="true"] { color: var(--text); background: var(--bg-3); }
+.ds-steps button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.ds-steps-p { position: absolute; left: 0; right: 0; top: -1px; height: 1px; background: var(--accent); transform-origin: left; transform: scaleX(0); }
+.ds-hero-load { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 12px; color: var(--text-2); font-size: var(--fs-14); }

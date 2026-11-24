@@ -169,7 +169,7 @@ export const FOG_FRAG = /* glsl */ `
     float un = 1.0 - smoothstep(0.02, 0.55, fd.r + (n2 - 0.5) * 0.35);
     vec2 e = smoothstep(vec2(0.0), vec2(0.04), vUv) * smoothstep(vec2(0.0), vec2(0.04), 1.0 - vUv);
     float a = body * un * e.x * e.y * uDens;
-    vec4 L = texture2D(uLight, vUv); float beam = L.r * exp(-pow((vL - 0.45) / 0.8, 2.0)) * (0.55 + 0.9 * n2);
+    vec4 L = texture2D(uLight, vUv); float beam = L.r * exp(-(vL - 0.45) * (vL - 0.45) / 0.64) * (0.55 + 0.9 * n2);
     vec3 c = uFogC * (0.7 + 0.6 * n2) + uScan * fd.b * 0.5;
     gl_FragColor = vec4(c * a + uHead * beam * 0.022 + uScan * L.b * 0.006, a);
     #include <colorspace_fragment>
@@ -181,7 +181,7 @@ export const THREAD_VERT = /* glsl */ `
   vec3 at(float t) { vec3 p = mix(iA, iB, t); p.y -= iP.x * 4.0 * t * (1.0 - t); p.y = max(p.y, 0.12); return p; }
   void main() {
     float t = position.x * iP.y; vec4 c0 = projectionMatrix * viewMatrix * vec4(at(t), 1.0), c1 = projectionMatrix * viewMatrix * vec4(at(min(1.0, t + 0.02)), 1.0), cm = projectionMatrix * viewMatrix * vec4(at(max(0.0, t - 0.02)), 1.0);
-    vec2 d = (c1.xy / c1.w - cm.xy / cm.w) * uRes; d = normalize(d + vec2(1e-5)); vec2 nrm = vec2(-d.y, d.x);
+    vec2 d = (c1.xy / max(c1.w, 0.05) - cm.xy / max(cm.w, 0.05)) * uRes; d = normalize(d + vec2(1e-5)); vec2 nrm = vec2(-d.y, d.x);
     c0.xy += nrm * position.y * uPx / uRes * 2.0 * c0.w; gl_Position = c0;
     vT = t; vS = position.y; vC = iC; vP4 = iP; vLen = distance(iA, iB);
   }`;
@@ -190,7 +190,7 @@ export const THREAD_FRAG = /* glsl */ `
   void main() {
     float core = exp(-vS * vS * 30.0), halo = exp(-vS * vS * 5.0) * 0.12;
     float ph = fract(vT * vLen / 11.0 - uTime * 0.55 + vP4.w); float pulse = pow(1.0 - ph, 14.0) + 0.0;
-    float head = vP4.y < 0.995 ? exp(-pow((vP4.y - vT) * vLen / 1.2, 2.0)) * 3.0 : 0.0;
+    float head = vP4.y < 0.995 ? exp(-(vP4.y - vT) * vLen * (vP4.y - vT) * vLen / 1.44) * 3.0 : 0.0;
     float k = (core + halo) * (0.62 + 2.2 * pulse * step(0.0, vP4.w) + head) * vP4.z * uGain;
     gl_FragColor = vec4(vC * k, 1.0);
     #include <colorspace_fragment>
@@ -227,4 +227,6 @@ export const FINAL = {
       c += (fract(sin(dot(vUv * 917.0 + fract(uTime), vec2(12.9898, 78.233))) * 43758.5453) - 0.5) * 0.018;
       gl_FragColor = vec4(c * uFade, 1.0); }`,
 };
+// one bad pixel would spread through the bloom and black out the frame, so anything that is not a number is dropped first
+export const CLEAN = { uniforms: { tDiffuse: { value: null } }, vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }', fragmentShader: 'varying vec2 vUv; uniform sampler2D tDiffuse; void main() { vec3 c = texture2D(tDiffuse, vUv).rgb; if (!(c.r >= 0.0 && c.r < 1e4 && c.g >= 0.0 && c.g < 1e4 && c.b >= 0.0 && c.b < 1e4)) c = vec3(0.0); gl_FragColor = vec4(min(c, vec3(24.0)), 1.0); }' };
 export const SKY_FRAG = /* glsl */ `varying vec3 vD; uniform vec3 uHor, uZen; void main() { float h = clamp(vD.y, -0.2, 1.0); vec3 c = mix(uHor, uZen, smoothstep(0.0, 0.42, h)); c += vec3(0.10, 0.075, 0.05) * exp(-max(0.0, h) * 18.0) * (0.5 + 0.5 * sin(atan(vD.z, vD.x) * 2.0 + 1.0)) * 0.55; gl_FragColor = vec4(c, 1.0); }`;

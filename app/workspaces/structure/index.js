@@ -10,6 +10,7 @@ import { makeChart, drawSpark, drawBetti, drawPersistence, drawTrials, drawFragi
 
 const SRC = {
   fema: ['FEMA National US&R Response System, Structural Collapse Technician manual, module 1c (collapse patterns)', 'https://www.fema.gov/pdf/emergency/usr/module1c2.pdf'],
+  fema2a: ['FEMA Structural Collapse Technician manual, module 2a (shoring basics: where victims might be found, quoted above)', 'https://www.fema.gov/pdf/emergency/usr/module2a.pdf'],
   schweier: ['Schweier and Markus, “Classification of collapsed buildings for fast damage and loss assessment”, Bulletin of Earthquake Engineering, 2006', 'https://link.springer.com/article/10.1007/s10518-006-9005-2'],
   robins: ['Robins, Saadatfar, Delgado-Friedrichs and Sheppard, “Percolating length scales from topological persistence analysis of micro-CT images of porous materials”, Water Resources Research, 2016', 'https://agupubs.onlinelibrary.wiley.com/doi/10.1002/2015WR017937'],
   sog: ['US&R Shoring Operations Guide, US Army Corps of Engineers and FEMA, 2021', 'https://firemarshal.ks.gov/DocumentCenter/View/190/US-Army-Corps-of-Engineers-Shoring-Operations-Guide---10-2021-PDF'],
@@ -285,13 +286,13 @@ export default {
             h('dl.kv', null, h('dt', null, 'Leaning (15° to 72°)'), h('dd.num', null, ev.inclined + (ev.inclined ? '   ' + ev.tiltMin.toFixed(0) + '° to ' + ev.tiltMax.toFixed(0) + '°' : '')), h('dt', null, 'Hanging (steeper than 72°)'), h('dd.num', null, ev.hanging),
               h('dt', null, 'Flat and dropped over 1.2 m'), h('dd.num', null, ev.flatLow), h('dt', null, 'Level, one end unsupported'), h('dd.num', null, ev.cantilevered), h('dt', null, 'Still in place'), h('dd.num', null, ev.standing),
               h('dt', { title: '1 means every leaning plank dips the same way; 0 means they dip in opposite directions' }, 'Dip agreement'), h('dd.num', null, ev.R.toFixed(2) + (ev.twoSided ? (ev.toward ? '   two sides, toward each other' : '   two sides, apart') : '')))),
-          pat ? sec('Where the voids usually are', 'FEMA', h('div.structure-fema', null, pat.voids, h('cite', null, 'FEMA: “' + pat.fema + '”')),
+          pat ? sec('Where the voids usually are', 'FEMA', h('div.structure-fema', null, pat.voids, h('cite', null, 'FEMA module 2a: “' + pat.fema + '”')),
             h('p.structure-what', null, (() => { const z = c.zones, vs = S.voidRes.voids; const inZ = vs.filter((v) => z.some((q) => v.center[0] >= q.min[0] && v.center[0] <= q.max[0] && v.center[2] >= q.min[2] && v.center[2] <= q.max[2])); return z.length ? 'On this pile: ' + inZ.length + ' of the ' + vs.length + ' voids found by the topology pass lie inside the dashed textbook zone.' : 'No textbook zone could be placed on this pile.'; })())) : null,
           sec('The collapse in numbers', null, h('dl.kv', null, h('dt', null, 'Came to rest after'), h('dd.num', null, S.settleT.toFixed(1) + ' s'), h('dt', null, 'Peak kinetic energy'), h('dd.num', null, (S.peakKE / 1000).toFixed(0) + ' kJ'),
             h('dt', null, 'Height lost by the centre of mass'), h('dd.num', null, (() => { let pe = 0, m = 0; for (const p of S.pile.pieces) if (p.alive && !p.fixed && p.kind !== 'shore') { pe += p.mass * (p.home[1] - S.poses[p.idx * 7 + 1]); m += p.mass; } return (pe / m).toFixed(2) + ' m'; })()),
             h('dt', null, 'Plank ties broken on impact'), h('dd.num', null, (S.pile.tiesBroken || 0) + ' of ' + S.pile.ties.length), h('dt', null, 'Furniture crushed'), h('dd.num', null, (S.pile.crushed || 0) + ' of 14'), h('dt', null, 'Contacts carrying load'), h('dd.num', null, S.con.edges.length))));
       }
-      kids.push(real('a scan good enough to rebuild the pile piece by piece, and the mass and friction of each piece.', 'how far a rigid-body model can be trusted when real concrete cracks, crushes and hangs on its reinforcing bars. This model does none of that.'), sources('fema', 'schweier', 'rapier'));
+      kids.push(real('a scan good enough to rebuild the pile piece by piece, and the mass and friction of each piece.', 'how far a rigid-body model can be trusted when real concrete cracks, crushes and hangs on its reinforcing bars. This model does none of that.'), sources('fema', 'fema2a', 'schweier', 'rapier'));
       el.replaceChildren(...kids);
     }
 

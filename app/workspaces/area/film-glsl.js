@@ -116,7 +116,7 @@ void main() { vec4 w = modelMatrix * vec4(position, 1.); w.y = texture2D(uFH, (w
 export const FAR_FRAG = COMMON + /* glsl */ `
 uniform sampler2D uFN, uF, uF2; uniform vec3 uF2B; varying vec3 vW;
 void main() {
-  vec2 nb = (vW.xz - uNB.xy) / uNB.z; if (min(min(nb.x, nb.y), min(1. - nb.x, 1. - nb.y)) > 0.0006) discard;
+  vec2 nb = (vW.xz - uNB.xy) / uNB.z; if (min(min(nb.x, nb.y), min(1. - nb.x, 1. - nb.y)) > 0.006) discard;
   vec2 uv = (vW.xz - uFB.xy) / uFB.z;
   vec4 nt = texture2D(uFN, uv); vec2 q = (nt.xy * 255. / 127.5) - 1.; vec3 N = vec3(q.x, sqrt(max(0.04, 1. - dot(q, q))), q.y);
   float h = vW.y; vec4 d = texture2D(uDet, vW.xz / 900.), d2 = texture2D(uDet, vW.xz / 210.);

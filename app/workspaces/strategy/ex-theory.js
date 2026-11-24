@@ -39,14 +39,16 @@ export default async function (pane, ctx) {
     exact: (a, b, race) => { if (raceFacts) return; raceFacts = { a, b }; raceChart.set({ padR: 12, x: { min: 0, max: race.cap / 60, label: 'minutes of search', fmt: (v) => String(v) }, y: { min: 0, max: 1, label: 'chance of having found the person', fmt: (v) => fmtPct(v) }, series: [{ pts: [[0, 0], ...race.map.filter((L) => L.t2 <= race.cap).map((L) => [L.t2 / 60, L.success])], color: '--person', step: true, width: 2, label: 'Map' }, { pts: [[0, 0], ...race.fixed.filter((L) => L.t2 <= race.cap).map((L) => [L.t2 / 60, L.success])], color: '--text-2', step: true, label: 'Fixed route' }] });
       raceRead.replaceChildren(...[[fmtClock(a), 'Map, mean search'], [fmtClock(b), 'Fixed route, mean']].map(([v, k]) => h('div', null, h('b', null, v), h('span', null, k)))); },
   });
-  map.onFrame = (dt, time) => { if (racing()) hero.frame(dt, time); else if (ex === 'next') slice(); };
+  map.onFrame = (dt, time) => { if (racing()) hero.frame(dt, time); else if (ex === 'next') { slice(); if (demo()) map.shot(-0.5 + Math.sin(time * 0.06) * 0.3, 0.5 + Math.sin(time * 0.043) * 0.06, 80, 64, 46); } };
 
+  const posPoint = h('p.strategy-point', null, 'No look yet');
   // ---------- exhibit 1, left: brief, prior ----------
   const slider = (key, label, note, max) => { const out = h('output'), inp = h('input.slider', { type: 'range', min: 0, max, step: 0.05, value: weights[key], 'aria-label': label, oninput: () => { weights[key] = +inp.value; show(); rebuildPrior(); } }); const show = () => { out.textContent = (+inp.value).toFixed(2); }; show(); return { el: h('label.strategy-ctl', null, h('span', null, label), out, inp, h('small', null, note)), inp, show }; };
   const sl = { place: slider('place', 'Where they were', 'Anywhere in the classroom', 1), shelter: slider('shelter', 'Where they would shelter', 'Along the walls', 1), exit: slider('exit', 'Where they would try to leave', 'Near doors and in the corridor', 1), outdoors: slider('outdoors', 'People outside', 'Expected number, mostly in the debris field', 1) };
+  let priorSec;
   left.theory.append(
     exhibitBrief(ctx.kit, { n: 1, title: 'Search theory', sentences: ['The map holds, for every half metre, the chance that a person is there.', 'Each look that finds nothing lowers that chance by how well the sensors could have seen, so the map always shows where the search is still worth making.'], sources: ['koopman', 'scorpion', 'af447', 'sarops', 'bourgault'], tags: ['live-algo', 'sim'], field: 'The detection rates must be measured on real rooms. The Wi-Fi rates here were measured on simulated windows, the radar and thermal rates are assumed.', unknown: 'How far repeated looks from one spot are independent. The map treats them as independent, which is optimistic.' }),
-    h('section.strategy-sec', null, h('h3', null, 'Prior: three stories about where people are', h('span.strategy-assumed', null, 'assumed')), ...Object.values(sl).map((s) => s.el),
+    priorSec = h('section.strategy-sec', null, h('h3', null, 'Prior: three stories about where people are', h('span.strategy-assumed', null, 'assumed')), ...Object.values(sl).map((s) => s.el),
       h('div.strategy-actions', null, h('button.btn.btn-sm', { type: 'button', onclick: () => { Object.assign(weights, { place: 0.5, shelter: 0.3, exit: 0.2, outdoors: 0.2 }); for (const k in sl) { sl[k].inp.value = weights[k]; sl[k].show(); } rebuildPrior(); } }, 'Reset prior'))));
   // ---------- exhibit 1, right: this mission ----------
   const lookOut = h('output'), lookInp = h('input.slider', { type: 'range', min: 0, max: 0, step: 1, value: 0, 'aria-label': 'Looks applied to the map', oninput: () => { lookK = +lookInp.value >= looks.length ? null : +lookInp.value; refresh(); } });
@@ -55,7 +57,7 @@ export default async function (pane, ctx) {
   const posChart = createChart(posCv, ctx.kit), raceChart = createChart(raceCv, ctx.kit);
   const secMission = h('div', null,
     h('section.strategy-sec', null, h('h3', null, 'The map after each look'), h('label.strategy-ctl', null, h('span', null, 'Looks applied'), lookOut, lookInp), lookText, read),
-    h('section.strategy-sec', null, h('p.strategy-point', null, 'Each stop adds less than the one before'), posCv, h('p.strategy-fine', null, 'Chance that a person inside block B would have made at least one sensor fire by now. Computed from the looks the rover has taken.')),
+    h('section.strategy-sec', null, posPoint, posCv, h('p.strategy-fine', null, 'Chance that a person inside block B would have made at least one sensor fire by now. Computed from the looks the rover has taken.')),
     h('section.strategy-sec', null, h('h3', null, 'Chance someone is in the room'), h('table.strategy-table', null, h('thead', null, h('tr', null, h('th', null, 'Room'), h('th.num', null, 'Prior'), h('th.num', null, 'Now'))), roomBody), h('p.strategy-fine', null, 'A room no look has reached keeps its prior. Leads from the console are drawn on the map and are not in this table.')));
   const secRace = h('div', { hidden: true },
     h('section.strategy-sec', null, h('h3', null, 'One hidden person, two searches'), h('p', null, 'Both searchers have the same sensors, speed, start and 20 minute limit. The fixed route repeats the mission’s four stops. The map takes the look with the most chance of detection per second.'), raceRead, tallyEl),
@@ -107,6 +109,7 @@ export default async function (pane, ctx) {
     lookOut.textContent = k + ' of ' + looks.length;
     lookText.textContent = !looks.length ? 'The rover has not listened yet. Run the mission, or watch the race.' : k === 0 ? 'Before any look: the prior.' : looks[k - 1].label + ', ' + fmtClock(looks[k - 1].t) + ': ' + looks[k - 1].says + '.';
     const full = M.replay(prior, looks, looks.length).pos;
+    posPoint.textContent = looks.length ? looks.length + (looks.length === 1 ? ' look' : ' looks') + ' would have revealed a person inside ' + fmtPct(full[full.length - 1]) + ' of the time' : 'No look yet';
     posChart.set({ x: { min: 0, max: Math.max(4, looks.length), label: 'looks taken', ticks: looks.length > 10 ? undefined : Array.from({ length: Math.max(4, looks.length) + 1 }, (_, i) => i) }, y: { min: 0, max: 1, label: 'chance of success', fmt: (v) => fmtPct(v) }, series: [{ pts: looks.length ? full.map((p, i) => [i, p]) : [], color: '--person', step: true, width: 2, dots: 2.5 }], marks: looks.length ? [{ x: k, color: '--text-3' }] : [], empty: 'No looks yet' });
     read.replaceChildren(...[[fmtPct(rep.pos[rep.pos.length - 1]), 'chance of success'], [comp.expected.toFixed(2), 'people still expected'], [Math.round(M.entropy(rep.B)) + '', 'bits unknown']].map(([v, s]) => h('div', null, h('b', null, v), h('span', null, s))));
     roomBody.replaceChildren(...M.rooms.map((r, i) => h('tr', null, h('td', null, r.name), h('td.num', null, fmtPct(priorRoom[i], 1)), h('td.num', null, fmtPct(comp.roomP[i], 1)))));
@@ -159,14 +162,17 @@ export default async function (pane, ctx) {
   function apply() {
     const d = demo();
     for (const k of ['theory', 'next']) { left[k].hidden = ex !== k; right[k].hidden = ex !== k; }
-    secMission.hidden = racing(); secRace.hidden = !racing(); seg.hidden = ex !== 'theory'; truthBtn.hidden = ex !== 'theory' || racing();
+    priorSec.hidden = racing(); secMission.hidden = racing(); secRace.hidden = !racing(); seg.hidden = ex !== 'theory'; truthBtn.hidden = ex !== 'theory' || racing();
     raceOverlay.el.hidden = !racing(); nextOverlay.el.hidden = ex !== 'next'; main.classList.toggle('is-racing', racing());
     map.setFramePad(d ? 0.055 : 0); map.setDim(1); map.setPod(null); probe = null;
     if (!visible) return;
     if (racing()) { map.setMarkers({}); hero.start(); }
     else { hero.stop(); map.stage.clear(); sig = ''; map.setView('building', false); refresh(); }
     drawLegend();
-    if (reducedMotion()) { map.stop(); map.start(); if (!racing()) setTimeout(() => {}, 0); } else map.start();
+    if (!reducedMotion()) { map.start(); return; }
+    map.stop();                                     // reduced motion: no loop, every change draws one still frame
+    if (ex === 'next' && tracing) { M.candidates(); while (!M.traceSome(60)); tracing = false; rescore(); }
+    map.renderOnce();
   }
   const onState = () => { if (!visible || racing()) return; const key = state().detections.length + '|' + Object.values(state().coverage).map((c) => c.t).join(); if (key !== lastKey) { lastKey = key; planned = planned && true; refresh(); } else if (ex === 'theory') map.stage.rover(0, state().units['HOUND-01'].pos, state().units['HOUND-01'].heading); };
   let lastKey = '';

@@ -6,7 +6,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { damp, dampAngle, clamp, lerp, smoothstep, stateWatcher, disposeTree, dist2 } from './common.js';
 
 const LT = 0.42, LS = 0.41, ANK = 0.09, HIP = 0.92;     // thigh, shank, ankle height, hip height (m)
-const REST = 0.875;                                      // hip height when standing easy
+const REST = 0.897;                                      // hip height when standing easy
 const STANCE = 0.6;                                      // share of a stride a foot is on the ground
 const BACK = [0, 1.45, 3.3], LAT = [0, 0.16, -0.12];     // file: metres behind the lead, and to the left
 const FORM = [[0, 0], [-0.95, 0.75], [-1.25, -0.6]];     // standing group at home: [back, left] offsets
@@ -235,9 +235,9 @@ function buildFigure(THREE, V, low) {
 
 // Muted, worn, real colours. The only accent is a faded orange edge on the tape.
 const WEAR = [
-  { jacket: '#27303c', trouser: '#24282d', boot: '#1c1a18', helmet: '#8f8d85', pack: '#2d3335', pack2: '#262b2e', accent: '#8a5233', skin: '#75594a', buff: '#33373a', glove: '#23262a', mask: false, kit: 'rope' },
-  { jacket: '#3a3d30', trouser: '#2b2c27', boot: '#211d19', helmet: '#85837b', pack: '#33362e', pack2: '#2a2d27', accent: '#82502f', skin: '#664c3e', glove: '#3a3228', mask: true, kit: 'bar', sledge: true },
-  { jacket: '#2a323b', trouser: '#2a2d31', boot: '#1b1b1b', helmet: '#979489', pack: '#3a382f', pack2: '#2e2d28', accent: '#8a5233', skin: '#7d6455', glove: '#26292c', mask: true, kit: 'stretcher' },
+  { jacket: '#252a31', trouser: '#24282d', boot: '#1c1a18', helmet: '#8f8d85', pack: '#2d3335', pack2: '#262b2e', accent: '#8a5233', skin: '#5f4d43', buff: '#33373a', glove: '#23262a', mask: false, kit: 'rope' },
+  { jacket: '#3a3d30', trouser: '#2b2c27', boot: '#211d19', helmet: '#85837b', pack: '#33362e', pack2: '#2a2d27', accent: '#82502f', skin: '#533f35', glove: '#3a3228', mask: true, kit: 'bar', sledge: true },
+  { jacket: '#2b2f34', trouser: '#2a2d31', boot: '#1b1b1b', helmet: '#979489', pack: '#3a382f', pack2: '#2e2d28', accent: '#8a5233', skin: '#69574c', glove: '#26292c', mask: true, kit: 'stretcher' },
 ];
 
 export default {
@@ -348,7 +348,7 @@ export default {
     }
     const nt = { x: 0, y: 0, h: 0 };
     function stepFeet(f, moved, dt, fresh, walking, kneel) {
-      const L = clamp(0.5 + 0.55 * f.sp, 0.7, 2.6), st = lerp(STANCE, 0.36, clamp((f.sp - 1.6) / 3, 0, 1));
+      const L = clamp(0.45 + 0.5 * f.sp, 0.65, 2.6), st = lerp(STANCE, 0.36, clamp((f.sp - 1.6) / 3, 0, 1));
       const c = Math.cos(f.h), n = Math.sin(f.h), fast = f.sp > 4.2;
       if (fresh || t.reduced) { for (let s = 0; s < 2; s++) { const F = f.feet[s]; neutral(f, s, kneel, nt); F.x = nt.x; F.y = nt.y; F.h = nt.h; F.swing = false; F.pitch = kneel && s ? -1.2 : 0; F.lift = 0; } return; }
       if (walking) f.phase += Math.min(moved / L, dt * 2.6);
@@ -410,7 +410,7 @@ export default {
       const wa = (mode === 'break' && i === 1) || work ? 0 : w;
       if (wa > 0.4) { p[7] = lerp(p[7], T[7], 0.6); }
       const H = b[HIPS];
-      H.position.set(0.012 * w - 0.02 * f.kn, REST - 0.02 * w * (1 + run) + 0.016 * Math.cos(2 * TAU * (f.phase - STANCE / 2)) * w - (REST - 0.49) * f.kn, -0.024 * m * w + sway * 0.014);
+      H.position.set(0.012 * w - 0.02 * f.kn, REST - 0.013 * w * (1 + run * 3) + 0.016 * Math.cos(2 * TAU * (f.phase - STANCE / 2)) * w - (REST - 0.49) * f.kn, -0.024 * m * w + sway * 0.014);
       H.rotation.set(0.055 * m * w + sway * 0.02, -0.1 * cL * w, -0.04 * w);
       b[SPINE].rotation.set(-0.03 * m * w + p[10], p[7] * 0.6 + 0.1 * cL * w * 0.5, -p[6] * 0.55); b[CHEST].rotation.set(-0.02 * m * w, p[7] * 0.6 + 0.1 * cL * w * 0.5, -p[6] * 0.45 + br * 0.012);
       b[NECK].rotation.z = p[6] * 0.35; b[HEAD].rotation.set(0, p[8] - p[7], p[6] * 0.45 + 0.04 * w + p[9]);

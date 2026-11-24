@@ -66,7 +66,7 @@ varying vec3 vN; varying vec3 vW;
 void main() {
   vec3 N = normalize(vN), V = normalize(cameraPosition - vW);
   float x = clamp(-dot(N, V) / 0.365, 0.0, 1.0);                        // 1 at the Earth's limb, 0 at the shell's edge
-  float glow = pow(x, 2.8);
+  float glow = pow(x, 3.6) + 0.55 * pow(x, 11.0);
   float s = mix(0.32, smoothstep(-0.35, 0.40, dot(N, uSun)), uSunlit);
   gl_FragColor = vec4(uAtmo * glow * (0.06 + 0.95 * s), 1.0);
   #include <tonemapping_fragment>
@@ -76,7 +76,7 @@ void main() {
 const QUAKE_VERT = `
 attribute vec3 aCol; attribute float aMag; attribute float aTime; attribute float aRnd; attribute float aId;
 uniform float uT; uniform float uWin; uniform float uTau; uniform float uScale; uniform float uPx; uniform float uMinMag;
-uniform float uSel; uniform float uHover; uniform float uClock; uniform float uPlaying; uniform float uStill;
+uniform float uSel; uniform float uHover; uniform float uWide; uniform float uClock; uniform float uPlaying; uniform float uStill;
 varying vec3 vCol; varying float vAlpha; varying float vLimb; varying float vPhase; varying float vK; varying float vR;
 varying float vSel; varying float vHov; varying float vFlash;
 void main() {
@@ -90,9 +90,9 @@ void main() {
   vSel = 1.0 - step(0.5, abs(aId - uSel));
   vHov = 1.0 - step(0.5, abs(aId - uHover));
   float recent = step(age, uWin);
-  float K = mix(1.5 + aa, 4.2, recent);
+  float K = mix(1.5 + aa, 4.2 + uWide * smoothstep(3.5, 6.0, aMag) * 7.0, recent);
   K = max(K, (1.0 + 7.0 * aa) * max(vSel, vHov));
-  K = min(K, 250.0 / r);
+  K = min(K, mix(250.0, 500.0, uWide) / r);
   vPhase = -1.0;
   if (recent > 0.5) vPhase = uStill > 0.5 ? 0.42 : (uPlaying > 0.5 ? clamp(age / uWin, 0.0, 1.0) : fract(uClock * 0.4 + aRnd));
   vFlash = recent * uPlaying * 1.1 * exp(-age / (uWin * 0.22));
@@ -192,12 +192,13 @@ export function createScene(host, { accent, backdrop, reduced, onFrame, onAfter,
 
   // Earthquakes
   const QU = { uT: { value: 0 }, uWin: { value: 3 }, uTau: { value: 17 }, uScale: { value: 1 }, uPx: { value: renderer.getPixelRatio() }, uMinMag: { value: -10 },
-    uSel: { value: -1 }, uHover: { value: -1 }, uClock: { value: 0 }, uPlaying: { value: 0 }, uStill: { value: 0 } };
+    uSel: { value: -1 }, uHover: { value: -1 }, uClock: { value: 0 }, uPlaying: { value: 0 }, uStill: { value: 0 }, uWide: { value: 0 } };
   const quakeMat = new THREE.ShaderMaterial({ vertexShader: QUAKE_VERT, fragmentShader: QUAKE_FRAG, uniforms: QU, transparent: true, depthTest: false, depthWrite: false });
   let points = null, quakes = [], tMin = 0;
 
   const site = ll2v(SITE.lat, SITE.lon);
   const frame = { cx: 0, cy: 0, size: 0 };
+  let drift = null;
   let W = 0, H = 0, dFit = 6, zoom = 1, fly = null, running = false, raf = 0, last = 0, lastInteract = -1e9, hold = false, readyAt = 0;
   const tanHalf = Math.tan(FOV * RAD / 2);
   const tanA = (d) => 1 / Math.sqrt(Math.max(1e-6, d * d - 1));
@@ -244,7 +245,11 @@ export function createScene(host, { accent, backdrop, reduced, onFrame, onAfter,
     }
     const d = camera.position.length();
     controls.rotateSpeed = 0.55 * Math.min(1, (d - 1) / Math.max(0.01, dFit - 1));
-    controls.autoRotate = !reduced() && !hold && !fly && now - lastInteract > 6000;
+    if (drift && !fly && now - lastInteract > 5000) { // Demo: glide toward where the story is, a little each frame
+      const k = reduced() ? 1 : 1 - Math.exp(-dt * 0.55);
+      tmp.copy(camera.position).normalize().lerp(drift.dir, k).normalize(); const len = camera.position.length(); camera.position.copy(tmp).setLength(len + (dFit * drift.zoom - len) * k);
+    }
+    controls.autoRotate = !reduced() && !hold && !fly && !drift && now - lastInteract > 6000;
     controls.update();
     QU.uScale.value = Math.pow(tanA(camera.position.length()) / tanA(dFit), 0.6);
     QU.uClock.value = (now / 1000) % 3600;
@@ -264,6 +269,10 @@ export function createScene(host, { accent, backdrop, reduced, onFrame, onAfter,
     // Where the globe's centre should sit (CSS pixels inside the host) and the size of the box it must fit.
     setFrame(cx, cy, size) { frame.cx = cx; frame.cy = cy; frame.size = size; applyView(); },
     setHold(v) { hold = v; },
+    // Demo: where the camera should drift to (null gives the globe back its slow turn).
+    setDrift(lat, lon, z = 1) { if (lat == null) { drift = null; return; } drift ||= { dir: new THREE.Vector3(), zoom: 1 }; ll2v(lat, lon, 1, drift.dir); drift.zoom = z; },
+    setWide(on) { QU.uWide.value = on ? 1 : 0; plates.material.opacity = on ? 0.22 : 0.35; },
+    face(lat, lon) { camera.position.copy(ll2v(lat, lon)).setLength(dFit); fly = null; controls.update(); },
     async loadTextures(urls) {
       const L = new THREE.TextureLoader();
       const [day, night, water] = await Promise.all([L.loadAsync(urls.day), L.loadAsync(urls.night), L.loadAsync(urls.water)]);

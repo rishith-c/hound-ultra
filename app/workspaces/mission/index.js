@@ -127,7 +127,7 @@ export default {
       const R0 = root.getBoundingClientRect(); if (!R0.width || !app.twin) return;
       let a;
       if (ctx.mode === 'demo') a = film.find ? { left: 0, top: 0, right: Math.round(R0.width * 0.3), bottom: 170 } : { left: 0, top: 0, right: 0, bottom: 130 };
-      else { const l = left.getBoundingClientRect(), r = right.getBoundingClientRect(), t = toolbar.getBoundingClientRect(), b = tlPanel.getBoundingClientRect(); a = { left: left.dataset.closed === 'true' ? 12 : l.right - R0.left, top: t.bottom - R0.top, right: right.dataset.closed === 'true' ? 12 : R0.right - r.left, bottom: R0.bottom - b.top }; }
+      else { const l = left.getBoundingClientRect(), r = right.getBoundingClientRect(), t = toolbar.getBoundingClientRect(), b = tlPanel.getBoundingClientRect(); a = { left: left.dataset.closed === 'true' ? 12 : l.right - R0.left, top: (alerts.el.querySelector('.person') ? alerts.el.querySelector('.person').getBoundingClientRect() : t).bottom - R0.top, right: right.dataset.closed === 'true' ? 12 : R0.right - r.left, bottom: R0.bottom - b.top }; }
       if (app.twin.setSafeArea) return void safe(() => app.twin.setSafeArea(a));
       safeGoal.x = (a.right - a.left) / 2; safeGoal.y = (a.bottom - a.top) / 2; safeW = R0.width; safeH = R0.height;
     };
@@ -150,14 +150,14 @@ export default {
     const ro = new ResizeObserver(() => layout()); for (const el of [root, left, right, tlPanel]) ro.observe(el);
 
     // ---------- the frame loop for the panels ----------
-    let raf = 0, lastSlow = 0;
+    let raf = 0, lastSlow = 0, hadCard = false;
     function frame(now) {
       raf = requestAnimationFrame(frame);
       if (ctx.mode === 'demo') film.frame(); else timeline.frame();
       frameSafe();
       if (now - lastSlow > 110) { lastSlow = now; slow(); }
     }
-    function slow(force) { if (ctx.mode === 'demo') { stepper.update(); film.slow(); return; } stepper.update(); inspector.update(force); if (app.view === '3d' && app.twin?.cameraMode && app.twin.cameraMode !== camera) { camera = app.twin.cameraMode; syncCamera(); } const S = sim.state; const txt = fmt.clock(S.t) + ' · ' + (S.hold ? 'All stop' : ctx.PHASE_INFO[S.phase].label); if (tlNow.textContent !== txt) tlNow.textContent = txt; }
+    function slow(force) { const card = !!alerts.el.querySelector('.person'); if (card !== hadCard) { hadCard = card; app.applySafe(); } if (ctx.mode === 'demo') { stepper.update(); film.slow(); return; } stepper.update(); inspector.update(force); if (app.view === '3d' && app.twin?.cameraMode && app.twin.cameraMode !== camera) { camera = app.twin.cameraMode; syncCamera(); } const S = sim.state; const txt = fmt.clock(S.t) + ' · ' + (S.hold ? 'All stop' : ctx.PHASE_INFO[S.phase].label); if (tlNow.textContent !== txt) tlNow.textContent = txt; }
     function run(on) { cancelAnimationFrame(raf); map.stop(); mini.stop(); if (app.twin) safe(() => app.twin.stop()); if (!on) return; raf = requestAnimationFrame(frame); if (app.view === '3d') { safe(() => app.twin.start()); if (ctx.mode !== 'demo') mini.start(); } else map.start(); }
 
     const offs = [

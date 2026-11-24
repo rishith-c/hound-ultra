@@ -179,3 +179,14 @@
 .aerial-rec { display: flex; align-items: baseline; gap: 8px; margin: 0; font-size: var(--fs-12); line-height: 1.45; color: var(--text-2); } .aerial-rec .tag { flex: none; }
 /* the hidden attribute must win over the pill's own display */
 .aerial-hud[hidden] { display: none; }
+
+/* ---- Advanced: layout corrections ---- */
+.aerial-hudbar { position: absolute; left: 0; right: 0; top: 0; height: 36px; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 0 6px 0 12px; background: var(--bg-1); border-bottom: 1px solid var(--line); font-size: var(--fs-12); }
+.aerial-hud-meta, .aerial-hud-zoom { position: static; padding: 0; max-width: none; } .aerial-hud-meta { flex: 1; flex-wrap: nowrap; min-width: 0; width: auto; overflow: hidden; white-space: nowrap; } .aerial-hud-meta > * { flex: none; } .aerial-hud-meta > :last-child { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.aerial-hud-zoom { flex: none; }
+.aerial-canvas { inset: 36px 0 0 0; height: calc(100% - 36px); } .aerial-cover { top: 36px; }
+.aerial-lead { margin-top: auto; z-index: 2; } .aerial-lead:disabled { opacity: 1; background: var(--bg-3); color: var(--text-3); border-color: var(--line-2); box-shadow: 0 -10px 14px 4px var(--bg-2); }
+.aerial-strip { grid-template-columns: minmax(0, 1.7fr) minmax(0, 0.8fr) minmax(0, 1.05fr); height: 268px; }
+.aerial-table th, .aerial-table tbody th, .aerial-table td { padding-left: 6px; padding-right: 6px; } .aerial-cell { min-width: 64px; } .aerial-cellbar { width: 26px; }
+.aerial-concepts-body { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } .aerial-concept { display: grid; grid-template-columns: 124px minmax(0, 1fr); gap: 12px; align-items: center; padding: 6px 12px; } .aerial-concept + .aerial-concept { border-left: 0; border-top: 1px solid var(--line); } .aerial-concept-text p { line-height: 1.36; }
+@media (max-width: 1500px) { .aerial-main { grid-template-columns: 148px minmax(0, 1fr) 340px; } .aerial-toolseg button > span:not(.tag) { display: none; } .aerial-strip { grid-template-columns: minmax(0, 1.75fr) minmax(0, 0.8fr) minmax(0, 0.95fr); } .aerial-concept { grid-template-columns: 92px minmax(0, 1fr); } .aerial-table tbody th span.dim { display: none; } }

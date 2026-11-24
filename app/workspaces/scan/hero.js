@@ -3,7 +3,7 @@
 // except the order. Runs on whatever scan is loaded.
 import * as THREE from 'three';
 
-export const ACTS = [['scan', 'Scan'], ['open', 'Open'], ['voids', 'Voids'], ['inside', 'Inside']];
+export const ACTS = [['scan', 'Scan'], ['open', 'Open'], ['voids', 'Voids'], ['inside', 'Look in']];
 const clamp = (x) => (x < 0 ? 0 : x > 1 ? 1 : x), ease = (u) => { u = clamp(u); return u * u * u * (u * (u * 6 - 15) + 10); }, span = (t, a, b) => ease((t - a) / (b - a));
 
 export function createHero(view, d, { reduced = false, html }) {
@@ -34,8 +34,8 @@ export function createHero(view, d, { reduced = false, html }) {
     key(tVoid - 0.4, [c[0], c[1], c[2]], 21, site ? 385 : 180, 37);
     const p1 = P(l + 9, c[2] + 4.6), p2 = P(l + 3.2, c[2] + 1.2);
     const inn = (s, h) => [c[0] - dx * s, c[1] - dy * s, c[2] + h], px = -dy, py = dx;
-    const m1 = l + 0.9, m2 = Math.max(0.6, l * 0.55), hold = (s, lift) => P(s, eye(c[0] + dx * s, c[1] + dy * s, lift));
-    at([tVoid + 2.6], p1, [c[0], c[1], c[2] + 0.1]); at([tVoid + 4.8], p2, inn(0.2, 0.05)); at([tVoid + 7.4], hold(m1, 0.2), inn(0.8, 0)); at([tDive - 2], hold(m2 + 0.5, 0.15), [c[0] - dx * 1.2 + px * 0.5, c[1] - dy * 1.2 + py * 0.5, c[2] - 0.05]); at([tDive], hold(m2 + 0.3, 0.15), [c[0] - dx * 1.2 + px * 0.6, c[1] - dy * 1.2 + py * 0.6, c[2] - 0.05]);
+    const hold = (s, h, side) => { const x = c[0] + dx * s + px * side, y = c[1] + dy * s + py * side; return [x, y, Math.max(gz(x, y) + 0.5, c[2] + h)]; };
+    at([tVoid + 2.6], p1, [c[0], c[1], c[2] + 0.1]); at([tVoid + 4.8], p2, inn(0.2, 0.05)); at([tVoid + 7.6], hold(l + 2.3, 0.5, -0.3), inn(0.4, 0)); at([tDive - 1.5], hold(l + 1.5, 0.35, 0.8), inn(0.7, 0)); at([tDive], hold(l + 1.4, 0.35, 0.95), inn(0.7, 0));
   } else key(total, [F[0], F[1], z0], 60, 150, 40);
   const C6 = new Float64Array(6);
   function sample(t) { // non-uniform Catmull-Rom, so the camera never stops or jerks at a key
@@ -63,9 +63,9 @@ export function createHero(view, d, { reduced = false, html }) {
       const t0 = tOpen + 0.9 + q * EACH, f = span(t, t0, t0 + 1.8), m = view.voidMeshes[i]; if (!m) return;
       const inside = q === 0 ? span(t, tVoid + 4.2, tVoid + 6.4) : span(t, tVoid + 1.0, tVoid + 3.0), fill = m.y0 - 0.1 + (m.y1 - m.y0 + 0.2) * f;
       m.solid.material.uniforms.uFill.value = m.ghost.material.uniforms.uFill.value = f > 0.001 ? fill : -1e6;
-      m.solid.material.uniforms.uAlpha.value = 0.24 * (1 - inside * (q === 0 ? 0.72 : 0.8)); m.ghost.material.uniforms.uAlpha.value = 0.085 * (1 - inside);
+      m.solid.material.uniforms.uAlpha.value = 0.24 * (1 - inside * (q === 0 ? 0.3 : 0.8)); m.ghost.material.uniforms.uAlpha.value = 0.085 * (1 - inside * (q === 0 ? 0.5 : 1));
       m.halo.material.opacity = 0.10 * f * (1 - inside);
-      if (i < 4) U.uVoidI.value[i] = f * (q === 0 ? 1 - 0.55 * inside : 1 - 0.8 * inside) * (0.92 + 0.08 * Math.sin(t * 1.3 + q));
+      if (i < 4) U.uVoidI.value[i] = f * (q === 0 ? 1 + 1.1 * inside : 1 - 0.8 * inside) * (0.92 + 0.08 * Math.sin(t * 1.3 + q));
       if (f > 0.55) { found++; vol += v.volume; }
       const tg = tags[q], show = f > 0.35 && t < tVoid + (q === 0 ? 3.4 : 1.4), here = t < t0 + EACH || t > tVoid - 1.4; tg.hidden = !show; const cls = 'scan-tag-film' + (here && show ? ' on' : ''); if (tg.cls !== cls) { tg.cls = cls; tg.el.className = 'scan-tag ' + cls; }
     });

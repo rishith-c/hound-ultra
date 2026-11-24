@@ -209,3 +209,5 @@
 .scan-check { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
 .scan-checkrow { display: flex; justify-content: space-between; font-size: var(--fs-12); color: var(--text-2); } .scan-checkrow b { color: var(--text); font-weight: 500; }
 .scan-film.loading .scan-film-right, .scan-film.loading .scan-film-text .btn { visibility: hidden; }
+.scan-stage:has(.scan-sectionbar:not([hidden])) .scan-scale, .scan-stage:has(.scan-sectionbar:not([hidden])) .scan-compass { display: none; }
+.scan-key b { white-space: nowrap; }

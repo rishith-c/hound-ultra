@@ -111,6 +111,9 @@ export function createFilm(host, { dem, model, osm, frame, SITE, BUILDING, OBSTA
     if (dead) return;
     for (let k = 0; k < data.length; k++) data[k] -= E0;
     farH = data; const t = heightTextures(data, farN, farB.z / farN); U.uFH.value = t.h; U.uHasFar.value = 1; shadowRow = -1;
+    // bring the edge of the fine grid onto the coarse one, so the two meet without a step
+    const E = Math.round(320 / cs); for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const e = Math.min(i, j, n - 1 - i, n - 1 - j); if (e >= E) { if (j >= E && j < n - E) i = n - E - 1; continue; } const fx = ((NX + (i + 0.5) * cs - farB.x) / farB.z) * farN - 0.5, fy = ((NZ + (j + 0.5) * cs - farB.y) / farB.z) * farN - 0.5, a = fx | 0, b = fy | 0, u = fx - a, v = fy - b, o = b * farN + a, hf = (data[o] * (1 - u) + data[o + 1] * u) * (1 - v) + (data[o + farN] * (1 - u) + data[o + farN + 1] * u) * v; heights[j * n + i] += (hf - 4 - heights[j * n + i]) * (1 - sm(0, E, e)); }
+    near.h.needsUpdate = true;
     const m = mat(G.FAR_VERT, G.FAR_FRAG, { uFN: { value: t.nrm }, uF: { value: F.tex }, uF2: { value: F2.tex }, uF2B: { value: tileBox(13, fx0 * 2 + 1, fy0 * 2 + 1, 10) } }, { side: THREE.DoubleSide }), FK = 10, fc = farB.z / FK, geo = LODS[0];
     for (let j = 0; j < FK; j++) for (let i = 0; i < FK; i++) { const o = add(geo, m, 2); o.position.set(farB.x + i * fc, 0, farB.y + j * fc); o.scale.set(fc, 1, fc); o.updateMatrix(); o.matrixAutoUpdate = false; farChunks.push({ o, box: new THREE.Box3(new THREE.Vector3(o.position.x, -1500, o.position.z), new THREE.Vector3(o.position.x + fc, 6000, o.position.z + fc)) }); }
     buildPath();
@@ -125,7 +128,7 @@ export function createFilm(host, { dem, model, osm, frame, SITE, BUILDING, OBSTA
     const vi = new Int32Array(N2).fill(-1), pos = [], wat = [], flow = [], idx = [];
     const needMin = (k) => { let m = 60; for (let b = -1; b <= 1; b++) for (let a = -1; a <= 1; a++) { const q = k + b * n + a; if (q >= 0 && q < N2 && need[q] < m) m = need[q]; } return m; };
     const vert = (k) => { if (vi[k] >= 0) return vi[k]; const x = k % n, y = (k / n) | 0, s = seedOf[k]; vi[k] = pos.length / 3; pos.push(NX + (x + 0.5) * cs, 0, NZ + (y + 0.5) * cs); wat.push(bed[k], s >= 0 ? sS[s] : 9999, needMin(k), 0); flow.push(fX[k], fZ[k]); return vi[k]; };
-    for (let y = 0; y < n - 1; y++) for (let x = 0; x < n - 1; x++) { const k = y * n + x; if (!use[k] || !use[k + 1] || !use[k + n] || !use[k + n + 1]) continue; if (mask[k] + mask[k + 1] + mask[k + n] + mask[k + n + 1] < 4 && m2[k] < 0.02) continue; const a = vert(k), b = vert(k + 1), c = vert(k + n), d = vert(k + n + 1); idx.push(a, c, b, b, c, d); }
+    for (let y = 0; y < n - 1; y++) for (let x = 0; x < n - 1; x++) { const k = y * n + x; if (x < 44 || y < 44 || x > n - 45 || y > n - 45 || !use[k] || !use[k + 1] || !use[k + n] || !use[k + n + 1]) continue; if (mask[k] + mask[k + 1] + mask[k + n] + mask[k + n + 1] < 4 && m2[k] < 0.02) continue; const a = vert(k), b = vert(k + 1), c = vert(k + n), d = vert(k + n + 1); idx.push(a, c, b, b, c, d); }
     // the distance along the river jumps where two reaches meet; smooth it a little over the mesh
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aWat', new THREE.Float32BufferAttribute(wat, 4)); g.setAttribute('aFlow', new THREE.Float32BufferAttribute(flow, 2)); g.setIndex(idx);
     add(g, mat(G.WATER_VERT, G.WATER_FRAG, {}, { transparent: true, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -8 }), 6);

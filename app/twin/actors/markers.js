@@ -63,7 +63,7 @@ const ROOM_FRAG = /* glsl */ `
 uniform vec3 uColor; uniform vec2 uSize; uniform float uIn, uOpacity;
 varying vec2 vUv;
 void main() {
-  vec2 p = abs((vUv - 0.5) * (uSize + 0.6)), hs = uSize * 0.5 - 0.25, w2 = fwidth(p); float w = max(w2.x, w2.y), hw = max(0.014, w * 0.6), arm = 0.9;
+  vec2 p = abs((vUv - 0.5) * (uSize + 0.6)), hs = uSize * 0.5 - 0.25, w2 = fwidth(p); float w = max(w2.x, w2.y), hw = max(0.014, w * 0.6), arm = 0.6;
   float lx = (1.0 - smoothstep(hw - w * 0.5, hw + w * 0.5, abs(p.x - hs.x))) * step(hs.y - arm, p.y) * step(p.y, hs.y + hw);
   float ly = (1.0 - smoothstep(hw - w * 0.5, hw + w * 0.5, abs(p.y - hs.y))) * step(hs.x - arm, p.x) * step(p.x, hs.x + hw);
   float a = max(lx, ly) * 0.7 * uIn * uOpacity; if (a < 0.004) discard;

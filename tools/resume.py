@@ -52,7 +52,7 @@ def run(args, stdin, out):
     env = {"HOME": os.environ["HOME"], "USER": os.environ["USER"], "PATH": os.environ["PATH"], "SHELL": "/bin/zsh", "TERM": "xterm-256color",
            "LANG": "en_US.UTF-8", "TMPDIR": os.environ.get("TMPDIR", "/tmp")}
     with open(out + ".jsonl", "w") as o, open(out + ".err", "w") as e:
-        p = subprocess.run(["claude", "-p", *args, "--settings", '{"env":{"CLAUDE_CODE_EXPERIMENTAL_CODE_MODE":"1"}}',
+        p = subprocess.run(["claude", "-p", *args, "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}', "--settings", '{"env":{"CLAUDE_CODE_EXPERIMENTAL_CODE_MODE":"1"}}',
                             "--output-format", "stream-json", "--verbose"], input=stdin, text=True, stdout=o, stderr=e, env=env)
     return p.returncode
 

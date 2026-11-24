@@ -1,0 +1,84 @@
+// Demo mode: one film per instrument on the same 3-D set. Every field comes from solve.worker.js; nothing is painted in.
+import { ss, clamp, lerp, fmtInt } from './lib.js';
+import { createHero } from './hero3d.js';
+
+const e3 = (u) => { u = clamp(u, 0, 1); return u * u * u * (u * (u * 6 - 15) + 10); };
+const win = (t, a, b, c, d) => e3((t - a) / (b - a)) * (1 - e3((t - c) / (d - c)));
+
+export function createDemo(ctx, { getPile, getSeed, reduced }) {
+  const { h, icon, realityTag } = ctx.kit;
+  const cv = h('canvas.ds-hero-cv', { role: 'img', 'aria-label': 'A collapsed building cut open in 3-D, being searched by one instrument after another. Simulated.' });
+  const title = h('h1.ds-hero-h'), line = h('p.ds-hero-p'), cap = h('span.ds-hero-cap', { 'aria-live': 'polite' }), figs = h('div.ds-hero-figs'), cannot = h('p.ds-hero-not'), load = h('div.ds-hero-load', { role: 'status' }, h('span.spinner'), h('span', null, 'Building the collapse'));
+  const replay = h('button.btn.btn-primary', { type: 'button', onclick: () => go(cur, true) }, icon('reset', 16), h('span', null, 'Play again'));
+  const steps = h('nav.ds-steps', { 'aria-label': 'Instruments' }), prog = h('i.ds-steps-p');
+  const el = h('section.ds-hero.demo-only', { 'aria-label': 'Deep scan, film' }, cv, h('div.ds-hero-txt', null, h('div.ds-hero-tags', null, realityTag('concept'), realityTag('live-algo')), title, line, cannot, h('div.ds-hero-row', null, replay, cap)), figs, steps, load);
+  const D = { muon: [], gravity: [], gpr: [], das: [], seismic: [], echo: [] };
+  let hero = null, worker = null, cur = 'muon', t = 0, auto = true, shown = { a: -1, b: -1, id: '' }, capText = '', size = { w: 0, h: 0 }, mx = 0, my = 0, sx = 0, sy = 0, orbit = 0, drag = null, dead = false, stationed = false, fade = 0, figEls = [], figText = [], held = false;
+
+  const C = { wide: [[-4.4, 3.6, 25.2], [0.1, 0.35, -0.6]], wide2: [[4.2, 3.2, 24.2], [0.1, 0.3, -0.6]], A: [[-5.0, 1.7, 8.8], [-3.6, 1.05, -0.8]], A2: [[-3.1, 1.35, 7.4], [-3.75, 0.85, -0.8]], lowR: [[7.5, 2.4, 19], [1.2, 0.5, -0.5]], lowL: [[-8.5, 2.8, 19.5], [-0.8, 0.5, -0.5]] };
+  const pA = () => getPile().person.x - 12;
+  const STORY = {
+    muon: { name: 'Muons', dur: 31, h: 'Weighing the dark with cosmic rays', p: 'Muons rain through everything. Count where more get through, and the hollows appear.', not: 'Cannot see the person, only the space around them.',
+      cam: [[0, 'wide'], [8, 'wide2'], [16.5, 'wide'], [22.5, 'A'], [31, 'A2']],
+      cap: (T, m) => (T < 18 ? 'Seven detectors counting, ' + m.hours.toFixed(1) + ' simulated hours' : T < 22.5 ? (m.seen.length ? m.seen.length + ' of 4 voids stand out' : 'Nothing stands out yet') : 'Opened to show the simulated truth'),
+      figs: (T, m) => [[fmtInt(m.total), 'muons counted'], [m.hours.toFixed(1) + ' h', 'at each detector'], [m.seen.length + ' of 4', 'voids stand out']],
+      run(T) { const H = hero, n = D.muon.length - 1, u = Math.pow(clamp((T - 2) / 15, 0, 1), 0.8) * 11; keys('muon', Math.min(u, n)); H.TU.uAmt.value = e3(T / 1.6) * lerp(1, 0.12, e3((T - 18) / 5)); H.U.uX.value = e3((T - 1.2) / 4) * lerp(1, 0.12, e3((T - 19.5) / 4)); truth(e3((T - 18.5) / 4.5), 5.6); H.lamp.intensity = 5.5 * e3((T - 20) / 4); hits(T < 20 ? 1 : 0.3, T); H.U.uGain.value = 1.15; const k = D.muon[Math.floor(Math.min(u, n))], k2 = D.muon[Math.min(n, Math.ceil(u))]; return k && k2 ? { hours: lerp(k.hours, k2.hours, u % 1), total: lerp(k.total, k2.total, u % 1), seen: k.seen } : { hours: 0, total: 0, seen: [] }; } },
+    gravity: { name: 'Gravity', dur: 24, h: 'Feeling for missing mass', p: 'Two clouds of cold atoms fall, one metre apart. A hollow below changes how they fall.', not: 'Cannot pin depth, and small voids drown in clutter.',
+      cam: [[0, 'lowL'], [12, 'lowR'], [18, 'wide2'], [24, 'wide']],
+      cap: (T, m) => (T < 15 ? 'Walking the survey, station by station' : m.v ? Object.entries(m.v).filter((q) => q[0] !== 'person' && q[1].state === 'seen').length + ' of 4 voids clear the noise' : ''),
+      figs: (T, m) => [[(m.hours || 0).toFixed(1) + ' h', 'on site'], [(m.sigma || 20).toFixed(0) + ' E', 'sensor noise'], [m.v ? Object.entries(m.v).filter((q) => q[0] !== 'person' && q[1].state === 'seen').length + ' of 4' : '', 'voids found']],
+      run(T) { const H = hero, u = clamp((T - 1.5) / 12.5, 0, 1), n = D.gravity.length - 1, g = H.props.gravity, e = getPile().extent, x = lerp(e[0] - 1, e[1] + 1, u); keys('gravity', Math.min(u * 9, n)); H.U.uX.value = e3(T / 3) * 0.95; H.U.uGain.value = 1; g.visible = true; g.position.set(x - 12, Math.max(H.hAt(x, -0.35), 0) + 0.02, -0.4); const fall = (T * 0.9) % 1, f = 4 * fall * (1 - fall); g.userData.atoms.forEach((a, i) => { a.position.y = 0.68 + i * 0.72 + f * 0.5; a.scale.setScalar(0.8 + 0.5 * f); }); g.userData.laser.material.opacity = fall < 0.08 || Math.abs(fall - 0.5) < 0.05 ? 1 : 0.16;
+        const last = D.gravity[9]; if (last?.stations && !stationed) { H.stations(last.stations); stationed = true; } if (last?.stations) { H.gravPts.visible = H.gravStem.visible = true; H.gravPts.count = H.gravStem.count = Math.min(64, last.stations.filter((s) => s[0] <= x).length); } const k = D.gravity[n]; return k ? { hours: k.hours, sigma: k.sigma, v: u >= 1 ? k.verdicts : null } : {}; } },
+    gpr: { name: 'Radar', dur: 23, h: 'Collapsing the echoes', p: 'Every buried edge draws a curve. Migration folds each curve back onto what made it.', not: 'Cannot see far in wet rubble, or tell a body from any wet edge.',
+      cam: [[0, 'lowL'], [10, 'lowR'], [16, 'wide2'], [23, 'lowL']],
+      cap: (T, m) => (T < 10 ? 'Dragging the antenna over the heap' : T < 17 ? 'Migrating: aperture ' + (m.ap || 0).toFixed(1) + ' m' : 'Bright edges are roofs, slabs and clutter'),
+      figs: (T, m) => [[String(m.traces || ''), 'traces'], [(m.v || 0).toFixed(3), 'metres per nanosecond'], [(m.ap || 0).toFixed(1) + ' m', 'aperture']],
+      run(T) { const H = hero, u = clamp((T - 1) / 8.5, 0, 1), n = D.gpr.length - 1, g = H.props.gpr, e = getPile().extent, x = lerp(e[0] + 0.5, e[1] - 0.5, u), y = Math.max(0, H.hAt(x, -0.3)); const f = clamp((T - 10) / 6, 0, 1) * 8; keys('gpr', Math.min(f, n)); H.U.uX.value = e3(T / 2); H.U.uGain.value = 1.05; H.U.uClip.value = T < 9.6 ? x : 99; g.visible = true; g.position.set(x - 12, y, -0.3); g.rotation.z = Math.atan2(H.hAt(x + 0.4, -0.3) - H.hAt(x - 0.4, -0.3), 0.8) * 0.8; if (T < 10) for (let k = 0; k < 3; k++) { const q = ((T * 0.8 + k / 3) % 1); ring(k, x, y, q * 4.4, 0.75 * (1 - q) * (1 - q)); } const k = D.gpr[Math.floor(Math.min(f, n))]; return k ? { ap: k.ap, v: k.v, traces: k.traces } : {}; } },
+    das: { name: 'Fibre', dur: 24, h: 'A cable that hears a knock', p: 'Laser light in one glass fibre feels every metre shake. The first to shake points to the knock.', not: 'Cannot hear someone who makes no sound.',
+      cam: [[0, 'wide'], [11, 'lowL'], [16, 'A'], [24, 'A2']],
+      cap: (T, m) => (T < 12 ? 'A knock, slowed about 250 times' : m.M ? 'Placed ' + m.M.err.toFixed(1) + ' m from the true knock' : ''),
+      figs: (T, m) => (m.M ? [[m.M.n + '', 'channels heard it'], [m.side.toFixed(1) + ' m', 'off along the floor'], [m.M.err.toFixed(1) + ' m', 'off in all']] : []),
+      run(T) { const d = D.das[0], H = hero; if (!d) return {}; H.fibre(d.path); H.props.das.visible = true; knock(d, T, 2, 11); solved(d, T, 11.5); truth(e3((T - 14.5) / 4), 5.6); H.lamp.intensity = 5 * e3((T - 15.5) / 3); return { M: d.M, side: d.sideways }; } },
+    seismic: { name: 'Seismic', dur: 24, h: 'Eight ears on the rubble', p: 'The knock reaches each sensor thousandths of a second apart. One place fits every delay.', not: 'Cannot work unless the site goes quiet.',
+      cam: [[0, 'wide2'], [10, 'lowL'], [16, 'A'], [24, 'A2']],
+      cap: (T, m) => (T < 11 ? 'A knock, slowed about 250 times' : m.M ? 'Placed ' + m.M.err.toFixed(1) + ' m from the true knock' : ''),
+      figs: (T, m) => (m.M ? [['8', 'sensors'], [(m.M.dt * 1000).toFixed(1) + ' ms', 'delay error'], [m.M.err.toFixed(1) + ' m', 'off the true knock']] : []),
+      run(T) { const d = D.seismic[0], H = hero; if (!d) return {}; H.phones(d.geo); H.rays(d.geo, d.M); H.props.seismic.visible = true; knock(d, T, 2, 10); const now = H.U.uWave.value; H.props.seismic.userData.led.forEach((l, i) => { const a = H.U.uWaveOn.value > 0.1 ? now - d.geo[i][2] * 1000 : -1; const k = a < 0 ? 0.4 : 0.6 + 4 * Math.exp(-a * 0.5); l.scale.setScalar(a < 0 ? 1 : 1 + 0.6 * Math.exp(-a * 0.6)); l.material.color.setRGB(0.4 * k, 0.7 * k, k); }); const rv = H.props.seismic.userData.rays; rv.visible = T > 11 && T < 16.5; rv.children[0].material.opacity = win(T, 11, 12.5, 15, 16.5); solved(d, T, 11); truth(e3((T - 14.5) / 4), 5.6); H.lamp.intensity = 5 * e3((T - 15.5) / 3); return { M: d.M }; } },
+    echo: { name: 'Echo', dur: 21, h: 'Hearing the shape of a room', p: 'One chirp. Each wall answers after the time sound takes to get there and back.', not: 'Cannot start until a probe is already inside.',
+      cam: [[0, 'lowL'], [5, 'A'], [21, 'A2']],
+      cap: (T, m) => (T < 12 ? 'A chirp, slowed about 250 times' : m.M ? m.M.hit + ' of ' + m.M.n + ' walls placed' : ''),
+      figs: (T, m) => (m.M ? [[m.M.hit + ' of ' + m.M.n, 'walls placed'], [(m.M.iou * 100).toFixed(0) + ' %', 'shape overlap'], [m.M.extra + '', 'false walls']] : []),
+      run(T) { const d = D.echo[0], H = hero; if (!d) return {}; truth(e3((T - 0.5) / 4), 5.6); H.lamp.intensity = 3.2 * e3((T - 2) / 3); H.U.uEcho.value = 1; H.props.probe.visible = true; H.props.probe.position.set(d.src.x - 12, d.src.z, -0.12); const q = clamp((T - 5) / 6.5, 0, 1), rad = q * 8.6, a = win(T, 5, 5.2, 11, 12); ring(0, d.src.x, d.src.z, rad, a); d.imgs.slice(0, 6).forEach((p, i) => ring(i + 1, p.x, p.z, rad, a * 0.85)); if (d.outline.length < 12) { H.outline(d.outline); H.props.echo.visible = T > 11.5; const k = e3((T - 11.5) / 2.5); if (H.props.echo.userData.m) H.props.echo.userData.m.opacity = k; } return { M: d.M }; } },
+  };
+  const IDS = Object.keys(STORY);
+  // ---- shared beats ----
+  function keys(id, u) { const n = D[id].length; if (!n) return; u = clamp(u, 0, n - 1); const a = Math.floor(u), b = Math.min(n - 1, a + 1); if (shown.id !== id || shown.a !== a) { hero.field(0, D[id][a].field); shown.a = a; } if (shown.id !== id || shown.b !== b) { hero.field(1, D[id][b].field); shown.b = b; } shown.id = id; hero.U.uMix.value = ss(u - a); }
+  function truth(k, r) { hero.U.uTruth.value = k > 0 ? 1 : 0; hero.U.uOpen.value.set(pA() + 12 + 0.4, 1.2, k * (r + 1.5)); }
+  function ring(i, x, z, r, a) { hero.U.uRing.value[i].set(x, z, r, a); }
+  function hits(k, T) { hero.dets.children.forEach((g, i) => { const p = T * (5 + i * 0.37) + i * 1.7, f = Math.pow(1 - (p % 1), 3) * (Math.sin(Math.floor(p) * 12.9898 + i * 78.2) * 43758.5 % 1 > 0 ? 1 : 0.35), v = (0.35 + f) * k; g.userData.glow.value = v * 0.85; hero.detM[i].color.setRGB(0.35 * v, 0.8 * v, 1.9 * v); }); }
+  function knock(d, T, a, b) { if (shown.id !== cur) { hero.times(d.T); hero.field(0, d.field); hero.field(1, d.field); shown = { id: cur, a: 0, b: 0 }; } const per = 4.2, q = T < a ? -1 : ((T - a) % per) / per, rep = Math.floor((T - a) / per); hero.U.uWaveOn.value = T >= a && T < b ? ss((b - T) * 1.2) : 0; hero.U.uWave.value = Math.max(0, q) * 17; hero.arm.rotation.z = T >= a && T < b + 8 ? 0.55 * Math.max(0, 1 - Math.abs(q * per - 4.0) * 5) : 0; return rep; }
+  function solved(d, T, a) { const k = e3((T - a) / 2.5), g = hero.props.mark; hero.U.uX.value = Math.max(0.25, k * 0.95) * (1 - 0.75 * e3((T - a - 4) / 3)); hero.U.uGain.value = k; g.visible = k > 0.02; g.position.set(d.M.x - 12, d.M.z, 0.1); const s = lerp(2.4, 1, k); g.scale.setScalar(s * (1 - 0.35 * e3((T - a - 3) / 4))); g.userData.pulse.scale.setScalar(1 + ((T * 0.7) % 1) * 1.6); g.userData.pulse.material.opacity = (1 - ((T * 0.7) % 1)) * k; }
+  function reset() { const H = hero; for (const k in H.props) H.props[k].visible = false; H.gravPts.visible = H.gravStem.visible = false; H.U.uWaveOn.value = 0; H.U.uClip.value = 99; H.U.uEcho.value = 0; H.U.uX.value = 0; H.U.uGain.value = 1; H.TU.uAmt.value = 0; H.lamp.intensity = 0; H.arm.rotation.z = 0; truth(0, 1); for (const q of H.U.uRing.value) q.w = 0; hits(0.12, 0); }
+  const pP = [0, 0, 0], pL = [0, 0, 0];
+  function cam(T, s) { let i = 0; while (i < s.cam.length - 2 && T > s.cam[i + 1][0]) i++; const [ta, a] = s.cam[i], [tb, b] = s.cam[i + 1], u = e3((T - ta) / (tb - ta)), dx = pA() + 3.72; for (let k = 0; k < 3; k++) { pP[k] = lerp(C[a][0][k], C[b][0][k], u); pL[k] = lerp(C[a][1][k], C[b][1][k], u); } const fa = a[0] === 'A' ? 1 : 0, fb = b[0] === 'A' ? 1 : 0, f = lerp(fa, fb, u); pP[0] += dx * f; pL[0] += dx * f;
+    sx += (mx - sx) * 0.04; sy += (my - sy) * 0.04; const d = Math.hypot(pP[0] - pL[0], pP[2] - pL[2]), ang = Math.atan2(pP[0] - pL[0], pP[2] - pL[2]) + sx * 0.05 + orbit + Math.sin(T * 0.23) * 0.012; hero.camera.position.set(pL[0] + Math.sin(ang) * d, pP[1] + sy * -0.5 + Math.sin(T * 0.31) * 0.06, pL[2] + Math.cos(ang) * d); hero.camera.lookAt(pL[0], pL[1], pL[2]); }
+  function go(id, keep) { if (!STORY[id]) id = 'muon'; cur = id; t = 0; fade = 0; auto = !keep && auto; shown = { a: -1, b: -1, id: '' }; orbit = 0; worker?.postMessage({ want: id }); if (reduced()) t = STORY[id].dur - 0.5; text(); if (hero) reset(); }
+  function text() { const s = STORY[cur]; title.textContent = s.h; line.textContent = s.p; cannot.textContent = s.not; capText = ''; [...steps.querySelectorAll('button')].forEach((b) => b.setAttribute('aria-current', String(b.dataset.id === cur))); }
+  IDS.forEach((id) => steps.append(h('button', { type: 'button', 'data-id': id, onclick: () => { auto = false; go(id, true); } }, STORY[id].name))); steps.append(prog);
+  for (let i = 0; i < 3; i++) { const b = h('b.num'), s = h('span'); figEls.push([b, s]); figs.append(h('div', null, b, s)); }
+  function frame(dt) {
+    if (!hero) return; const s = STORY[cur], ready = D[cur].length > 0; hero.size(size.w, size.h);
+    if (!reduced()) { if (ready || t < 1.2) t += dt; if (!held && t > s.dur) { if (auto) { const i = IDS.indexOf(cur); go(IDS[(i + 1) % IDS.length]); return; } go(cur, true); return; } }
+    const T = Math.min(t, s.dur); if (!reduced()) hero.U.uTime.value += dt; fade = reduced() ? 1 : Math.min(1, fade + dt / 0.7); hero.grade.uFade.value = ss(fade) * (1 - ss((T - s.dur + 0.6) / 0.6) * (reduced() ? 0 : 1));
+    const m = s.run(T) || {}; cam(T, s); hero.render(dt);
+    prog.style.transform = 'scaleX(' + (T / s.dur).toFixed(3) + ')';
+    const c = ready ? s.cap(T, m) : D[cur].error ? 'This instrument failed: ' + D[cur].error : 'Solving the measurements'; if (c !== capText) { capText = c; cap.textContent = c; }
+    const f = ready ? s.figs(T, m) : []; for (let i = 0; i < 3; i++) { const q = f[i] || ['', '']; const k = q[0] + '|' + q[1]; if (figText[i] !== k) { figText[i] = k; figEls[i][0].textContent = q[0]; figEls[i][1].textContent = q[1]; } }
+  }
+  function solve() { for (const k of IDS) D[k] = []; stationed = false; worker?.terminate(); worker = new Worker(new URL('./solve.worker.js', import.meta.url), { type: 'module' }); worker.onerror = (e) => { console.error('[deepscan] solver', e.message); }; worker.onmessage = (e) => { const q = e.data; if (q.error) { D[q.id].error = q.error; console.error('[deepscan] solver ' + q.id, q.error); return; } D[q.id][q.n] = q; if (q.id === cur) shown.b = -1; }; worker.postMessage({ seed: getSeed(), want: cur }); }
+  cv.addEventListener('pointermove', (e) => { const r = cv.getBoundingClientRect(); mx = (e.clientX - r.left) / r.width * 2 - 1; my = (e.clientY - r.top) / r.height * 2 - 1; if (drag !== null) orbit = clamp(drag.o - (e.clientX - drag.x) * 0.0016, -0.32, 0.32); });
+  cv.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, o: orbit }; cv.setPointerCapture(e.pointerId); }); const up = () => { drag = null; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  const ro = new ResizeObserver(() => { const r = el.getBoundingClientRect(); size = { w: r.width, h: r.height }; }); ro.observe(el);
+  async function start() { if (hero || dead) return; dead = true; solve(); text(); try { await new Promise((q) => setTimeout(q, 30)); hero = await createHero(cv, getPile(), ctx.quality); reset(); el.classList.add('ready'); load.remove(); } catch (e) { load.replaceChildren(h('span', null, 'The 3-D view could not start on this machine. Advanced mode still works.')); console.error('[deepscan] hero', e); } }
+  return { el, start, frame, go, get cur() { return cur; }, _seek(id, T) { auto = false; go(id, true); t = T; held = true; }, _D: D, get hero() { return hero; } };
+}

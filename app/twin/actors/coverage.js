@@ -26,7 +26,7 @@ export default {
     const fogGeo = new THREE.InstancedBufferGeometry();
     fogGeo.setAttribute('position', new THREE.Float32BufferAttribute([B[0], 0, -B[1], B[2], 0, -B[1], B[0], 0, -B[3], B[2], 0, -B[3]], 3)); fogGeo.setIndex([0, 1, 2, 1, 3, 2]);
     const layers = t.quality === 'low' ? 1 : 3;                   // three thin sheets read as depth over the furniture
-    fogGeo.setAttribute('aSheet', new THREE.InstancedBufferAttribute(new Float32Array([0, 0.5, 0.34, 0.22, 0.85, 0.16].slice(0, layers * 2)), 2)); fogGeo.instanceCount = layers;
+    fogGeo.setAttribute('aSheet', new THREE.InstancedBufferAttribute(new Float32Array([0, 0.5, 0.34, 0.22, 0.85, 0.15].slice(0, layers * 2)), 2)); fogGeo.instanceCount = layers;
     const fogMat = decalMaterial(THREE, {
       uniforms: { uMap: { value: tex }, uB: { value: new THREE.Vector4(B[0], B[1], bw, bh) }, uTime: { value: 0 }, uScan: { value: pal.scan }, uWave: { value: waves.map((w) => w.u) }, uRect: { value: waves.map((w) => w.rect) }, uFade: { value: 1 } },
       vertexShader: 'attribute vec2 aSheet; varying vec2 vW; varying vec2 vS; varying vec3 vP; void main(){ vW = vec2(position.x, -position.z); vS = aSheet; vec4 w = modelMatrix * vec4(position.x, position.y + aSheet.x, position.z, 1.0); vP = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
@@ -42,8 +42,8 @@ export default {
           float un = 1.0 - smoothstep(0.12, 0.88, e);
           float gw = fwidth(vW.x) * 16.0, grain = mix(n2(vW * 16.0 + drift * 9.0), 0.5, smoothstep(0.35, 1.0, gw));
           float steep = smoothstep(0.1, 0.5, abs(normalize(cameraPosition - vP).y));
-          float a = un * vS.y * (0.72 + 0.4 * cloud + 0.16 * (grain - 0.5)) * (vS.x > 0.0 ? steep : 1.0);
-          vec3 col = vec3(0.034, 0.037, 0.042) * (0.7 + 0.7 * cloud);
+          float a = un * vS.y * (0.86 + 0.22 * cloud + 0.2 * (grain - 0.5)) * (vS.x > 0.0 ? steep : 1.0);
+          vec3 col = vec3(0.011, 0.0125, 0.0145) * (0.6 + 0.9 * cloud);
           if (vS.x == 0.0) {                                                       // the moment of clearing: one fine front, then nothing
             float w = fwidth(vW.x) + fwidth(vW.y), f = 0.0;
             for (int i = 0; i < ${WAVES}; i++) { vec4 v = uWave[i]; if (v.z < 0.0) continue;
@@ -107,7 +107,7 @@ export default {
     const aAttr = new THREE.BufferAttribute(tA, 1).setUsage(THREE.DynamicDrawUsage); textGeo.setAttribute('aA', aAttr);
     const textMat = decalMaterial(THREE, {
       uniforms: { uMap: { value: ct.texture }, uA: { value: 0 } },
-      vertexShader: 'attribute float aA; varying vec2 vUv; varying float vA; void main(){ vUv = uv; vA = aA; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      vertexShader: 'attribute float aA; varying vec2 vUv; varying float vA; void main(){ vUv = uv; vA = aA; vec4 m = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * m; vec4 q = projectionMatrix * vec4(m.xy, m.z + 0.45, 1.0); gl_Position.z = q.z / q.w * gl_Position.w; }',        // reads over the silt
       fragmentShader: 'uniform sampler2D uMap; uniform float uA; varying vec2 vUv; varying float vA; void main(){ vec4 c = texture2D(uMap, vUv); float a = c.a * vA * uA; if (a < 0.004) discard; gl_FragColor = vec4(c.rgb * 0.8, a); \n#include <colorspace_fragment>\n }',
     });
     const text = new THREE.Mesh(textGeo, textMat); text.position.y = t.groundY + Y.coverage + 0.02; text.renderOrder = 3; text.frustumCulled = false; text.raycast = () => {}; group.add(text);
@@ -124,20 +124,22 @@ export default {
       if (o.kind === 'clear' || o.kind === 'lead' || o.kind === 'person') { c.globalAlpha = 0.6; c.fillText('simulated', x0 + 4, y0 + 0.62 * PXM); }
       c.globalAlpha = 1; ct.texture.needsUpdate = true; o.pending = false;
     }
-    let advA = -1, layerOn = true, stale = false;
+    let advA = -1, layerOn = true, layerK = 1, stale = false;
 
     const watch = stateWatcher();
     return {
       update(state, dt, time) {
         const fresh = watch(state);
-        if (!layerOn) { if (fresh) { stale = true; for (const o of R) o.kind = ''; } return; }
+        layerK = t.reduced ? (layerOn ? 1 : 0) : clamp(layerK + (layerOn ? dt : -dt) / 0.45, 0, 1);
+        group.visible = layerK > 0; fogMat.uniforms.uFade.value = layerK * layerK * (3 - 2 * layerK);
+        if (!group.visible) { if (fresh) { stale = true; for (const o of R) o.kind = ''; } return; }
         acc += dt;
         if (fresh || stale) { acc = 0; stale = false; fogTick(state, true, 0); } else if (acc >= TICK) { fogTick(state, t.reduced, Math.min(acc, 0.1)); acc = 0; }
         for (const w of waves) if (w.u.z >= 0) { w.u.z += dt * FRONT; w.u.w = 1 - smoothstep(range * 0.6, range * 1.25, w.u.z); if (w.u.z > range * 1.3 || t.reduced) w.u.z = -1; }
         if (!t.reduced) fogMat.uniforms.uTime.value = time;
         // lettering
         const adv = t.ctx.mode !== 'demo' ? 1 : 0; advA = advA < 0 || t.reduced ? adv : clamp(advA + Math.sign(adv - advA) * dt / 0.4, 0, 1);
-        text.visible = advA > 0.003; textMat.uniforms.uA.value = advA * 0.6;
+        text.visible = advA > 0.003; textMat.uniforms.uA.value = advA * 0.6 * layerK;
         let dirty = fresh;
         for (const o of R) {
           const c = state.coverage[o.r.id]; let kind = c && words[c.status] ? c.status : 'unsearched', p = c ? c.residual : 0;

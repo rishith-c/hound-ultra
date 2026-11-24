@@ -44,62 +44,64 @@ function groundMaterial(env, macro) {
   const P = env.photos, mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, metalness: 0, vertexColors: true });
   const U = { tMud: { value: P.mud.map }, tMudN: { value: P.mud.normalMap }, tRub: { value: P.rubble.map }, tRubN: { value: P.rubble.normalMap }, tWet: { value: P.wet.map }, tWetN: { value: P.wet.normalMap }, tCliff: { value: P.cliff.map }, tForest: { value: P.forest.map }, uWetAvg: { value: P.wet.avg }, uCliffAvg: { value: P.cliff.avg }, uForAvg: { value: P.forest.avg }, tMacro: { value: macro.map }, tMacroR: { value: macro.roughnessMap }, tMask: { value: macro.mask },
     uMudAvg: { value: P.mud.avg }, uRubAvg: { value: P.rubble.avg }, uBox: { value: new THREE.Vector3(GROUND.x0, GROUND.y0, GROUND.size) }, uTime: { value: 0 }, uWet: { value: 1 } };
-  { const a = new Uint8Array(256 * 256), r = rng('gnoise'); for (let i = 0; i < a.length; i++) a[i] = r() * 255; const nt = new THREE.DataTexture(a, 256, 256, THREE.RedFormat); nt.wrapS = nt.wrapT = THREE.RepeatWrapping; nt.magFilter = nt.minFilter = THREE.LinearFilter; nt.unpackAlignment = 1; nt.needsUpdate = true; U.tNoise = { value: nt }; }
+  { const N = 512, a = new Uint8Array(N * N * 4), r = rng('gnoise'), lat = []; for (let ch = 0; ch < 4; ch++) for (let o = 0; o < 4; o++) lat.push(Float32Array.from({ length: (16 << o) * (16 << o) }, () => r()));
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) for (let ch = 0; ch < 4; ch++) { let s = 0, w = 0.53; for (let o = 0; o < 4; o++) { const n = 16 << o, fx = x / N * n, fy = y / N * n, i = Math.floor(fx), j = Math.floor(fy), u = fx - i, v = fy - j, uu = u * u * (3 - 2 * u), vv = v * v * (3 - 2 * v), L = lat[ch * 4 + o], i1 = (i + 1) % n, j1 = (j + 1) % n; s += w * ((L[j * n + i] * (1 - uu) + L[j * n + i1] * uu) * (1 - vv) + (L[j1 * n + i] * (1 - uu) + L[j1 * n + i1] * uu) * vv); w *= 0.5; } a[(y * N + x) * 4 + ch] = Math.min(255, s * 256); }
+    const nt = new THREE.DataTexture(a, N, N, THREE.RGBAFormat); nt.wrapS = nt.wrapT = THREE.RepeatWrapping; nt.magFilter = THREE.LinearFilter; nt.minFilter = THREE.LinearMipmapLinearFilter; nt.generateMipmaps = true; nt.needsUpdate = true; U.tNoise = { value: nt }; }
   mat.userData.u = U;
   mat.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP; varying vec3 vWN;').replace('#include <begin_vertex>', '#include <begin_vertex>\n vWP = (modelMatrix * vec4(position, 1.0)).xyz; vWN = normal;');
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
-        varying vec3 vWP; varying vec3 vWN; uniform sampler2D tMud, tMudN, tRub, tRubN, tWet, tWetN, tCliff, tForest, tMacro, tMacroR, tMask; uniform vec3 uMudAvg, uRubAvg, uWetAvg, uCliffAvg, uForAvg, uBox; uniform float uTime, uWet;
-        vec2 rot2(vec2 p, float a) { float c = cos(a), s = sin(a); return vec2(c * p.x - s * p.y, s * p.x + c * p.y); }
-        float gH(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-        uniform sampler2D tNoise; float gN(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return textureLod(tNoise, (i + f + 0.5) / 256.0, 0.0).r; }
-        float gF(vec2 p) { return gN(p) * 0.55 + gN(p * 2.13 + 7.1) * 0.29 + gN(p * 4.31 + 3.7) * 0.16; }
+        varying vec3 vWP; varying vec3 vWN; uniform sampler2D tMud, tMudN, tRub, tRubN, tWet, tWetN, tCliff, tForest, tMacro, tMacroR, tMask, tNoise; uniform vec3 uMudAvg, uRubAvg, uWetAvg, uCliffAvg, uForAvg, uBox; uniform float uTime, uWet;
+        mat2 gM(float a, float s) { float c = cos(a), k = sin(a); return mat2(c, k, -k, c) / s; }
         vec3 gNrm = vec3(0.0); float gWater = 0.0, gRough = 0.9;`)
       .replace('#include <color_fragment>', '')
       .replace('#include <map_fragment>', `
-        vec2 gp = vWP.xz; vec3 wn = normalize(vWN); float slope = 1.0 - wn.y;
-        vec2 muv = vec2((gp.x - uBox.x) / uBox.z, (-gp.y - uBox.y) / uBox.z); vec2 me = min(muv, 1.0 - muv); float inside = smoothstep(0.015, 0.13, min(me.x, me.y) + (gF(gp / 13.0) - 0.5) * 0.05);
-        vec3 macro = texture2D(tMacro, muv).rgb; float wetM = 1.0 - texture2D(tMacroR, muv).r; vec3 mask = texture2D(tMask, muv).rgb * inside;
-        float camD = length(vWP - cameraPosition);
-        // mud: two scales, rotated against each other, chosen by noise and by which of the two stands higher
-        vec2 u1 = gp / 4.3, u2 = rot2(gp, 0.9) / 9.7; u1 = rot2(gp, 0.5) / 5.6; vec4 n1 = texture2D(tWetN, u1), n2 = texture2D(tMudN, u2);
-        float pick = smoothstep(0.38, 0.62, gF(gp / 8.0) + (n2.a - n1.a) * 0.35);
-        vec3 mud = mix(texture2D(tWet, u1).rgb * uMudAvg / uWetAvg, texture2D(tMud, u2).rgb, pick); float hgt = mix(n1.a, n2.a, pick);
-        vec2 nx = mix(rot2(n1.rg * 2.0 - 1.0, -0.5), rot2(n2.rg * 2.0 - 1.0, -0.9), pick);
-        // stones and broken stuff come through in patches; gravel and road have their own surfaces
-        vec2 u3 = rot2(gp, 2.1) / 3.1; vec4 n3 = texture2D(tRubN, u3); float rub = smoothstep(0.56, 0.74, gF(gp / 5.5 + 31.0) + (n3.a - hgt) * 0.4) * (1.0 - mask.r) * 0.85; rub = max(rub, mask.g * 0.75);
-        vec2 u4 = rot2(gp, 0.35) / 3.6; vec4 n4 = texture2D(tRubN, u4 * 2.6); float road = smoothstep(0.35, 0.75, mask.r + (n4.a - hgt) * 0.3 - smoothstep(0.5, 0.75, gF(gp / 6.0 + 9.0)) * 0.55);
-        vec3 tone = mix(vColor.rgb, macro, inside);
-        vec3 c = tone * mix(mud / uMudAvg, texture2D(tRub, u3).rgb / uRubAvg, rub); c = mix(c, mud * vec3(1.15, 1.08, 1.0), 0.45 * inside);
-        c = mix(c, vec3(0.052, 0.054, 0.058) * (texture2D(tRub, u4 * 2.6).rgb / uRubAvg), road);
-        nx = mix(mix(nx, rot2(n3.rg * 2.0 - 1.0, -2.1), rub), rot2(n4.rg * 2.0 - 1.0, -0.35) * 0.35, road); float hh = mix(mix(hgt, n3.a, rub), n4.a, road);
-        // steep ground: rock sampled from the side so it does not smear
-        float steep = smoothstep(0.24, 0.5, slope + (gF(gp / 21.0) - 0.5) * 0.16) * (1.0 - inside);
-        vec2 sv = abs(wn.x) > abs(wn.z) ? vec2(vWP.z, vWP.y) : vec2(vWP.x, vWP.y); float fw = (1.0 - inside) * smoothstep(0.02, 0.07, slope); vec3 fo = mix(texture2D(tForest, sv / 34.0).rgb, texture2D(tForest, rot2(sv, 0.6) / 83.0).rgb, 0.45); fo.r = min(fo.r, fo.g * 0.95); fo.b = min(fo.b, fo.g * 0.8);
-        c = mix(c, fo * vec3(0.6, 0.62, 0.62), fw * smoothstep(0.43, 0.53, gF(gp / 70.0 + 1.3) * 0.6 + gF(gp / 260.0) * 0.4) * smoothstep(1500.0, 1150.0, vWP.y) * (1.0 - smoothstep(0.4, 0.62, slope)));
-        vec3 rk = texture2D(tCliff, sv / 17.0).rgb * 0.5 + texture2D(tCliff, sv / 61.0).rgb * 0.5; c = mix(c, rk * vec3(0.95, 0.9, 0.85), steep * 0.85);
-        // terraces: level strips with dark stone risers on the gentler slopes
-        float terr = (1.0 - inside) * smoothstep(0.02, 0.07, slope) * smoothstep(0.3, 0.16, slope) * smoothstep(0.46, 0.56, gF(gp / 120.0 + 5.0)) * smoothstep(1500.0, 500.0, camD);
-        float band = fract(vWP.y / 2.4 + (gF(gp / 30.0) - 0.5) * 0.4); c = mix(c, mix(vec3(0.045, 0.043, 0.04), c * vec3(1.05, 1.25, 0.85), smoothstep(0.12, 0.3, band)), terr * 0.75);
-        c *= 0.82 + 0.36 * gF(gp / 37.0 + 2.0);
-        // water: fills the low parts of the relief, only where the ground is level
-        float lw = gF(gp / 11.0 + 17.0) * 0.6 + gF(gp / 3.7 + 5.0) * 0.4, flat_ = smoothstep(0.03, 0.006, slope);
-        float lvl = wetM * 1.05 + (lw - 0.5) * 0.85 - (hh - 0.5) * 0.28 - 0.46 - rub * 0.1 - road * 0.02;
-        gWater = smoothstep(0.0, 0.11, lvl) * flat_ * inside * uWet; float damp = smoothstep(-0.34, 0.02, lvl) * uWet * mix(0.4, 1.0, inside);
-        c *= mix(1.0, 0.5, damp); gRough = mix(mix(0.93, 0.8, rub), 0.75, road) - hh * 0.06; gRough = mix(gRough, 0.46 + (1.0 - hh) * 0.16 + 0.22 * smoothstep(15.0, 110.0, camD), damp * 0.85);
-        c = mix(c, c * 0.35 + vec3(0.012, 0.0105, 0.0085), gWater); gRough = mix(gRough, 0.04, gWater);
-        vec2 rip = vec2(gN(gp * 5.0 + uTime * 0.6) - 0.5, gN(gp * 5.0 - uTime * 0.5 + 9.0) - 0.5) * 0.02;
-        nx = mix(nx * (1.0 + 0.4 * inside), rip, gWater) * (0.12 + 0.75 * smoothstep(95.0, 9.0, camD)); gNrm = normalize(vec3(wn.x + nx.x * wn.y, wn.y, wn.z + nx.y * wn.y));
-        // snow on the high ground
-        float snow = smoothstep(1250.0, 1700.0, vWP.y + (gF(gp / 90.0) - 0.5) * 500.0) * smoothstep(0.55, 0.2, slope); c = mix(c, vec3(0.72, 0.76, 0.82), snow);
+        vec2 gp = vWP.xz, dx = dFdx(gp), dy = dFdy(gp); vec3 wn = normalize(vWN); float slope = 1.0 - wn.y, camD = length(vWP - cameraPosition);
+        #define GT(t, M) textureGrad(t, (M) * gp, (M) * dx, (M) * dy)
+        // three looks into one noise picture give every blend its own field (R G B A are independent)
+        vec4 nMid = GT(tNoise, gM(0.0, 130.0)), nFine = GT(tNoise, gM(0.7, 58.0)), nBig = GT(tNoise, gM(0.3, 1150.0));
+        vec2 muv = vec2((gp.x - uBox.x) / uBox.z, (-gp.y - uBox.y) / uBox.z); vec2 me = min(muv, 1.0 - muv); float inside = smoothstep(0.015, 0.13, min(me.x, me.y) + (nMid.g - 0.5) * 0.05);
+        vec3 c = vColor.rgb; vec2 nx = vec2(0.0); float hh = 0.5, rub = 0.0, road = 0.0, damp = 0.0;
+        if (inside > 0.003) {
+          vec2 ddx = vec2(dx.x, -dx.y) / uBox.z, ddy = vec2(dy.x, -dy.y) / uBox.z;
+          vec3 macro = textureGrad(tMacro, muv, ddx, ddy).rgb, mask = textureGrad(tMask, muv, ddx, ddy).rgb * inside; float wetM = 1.0 - textureGrad(tMacroR, muv, ddx, ddy).r;
+          // mud: two scales, rotated against each other, chosen by noise and by which of the two stands higher
+          mat2 m1 = gM(0.5, 5.6), m2 = gM(0.9, 9.7); vec4 n1 = GT(tWetN, m1), n2 = GT(tMudN, m2);
+          float pick = smoothstep(0.38, 0.62, nMid.b + (n2.a - n1.a) * 0.35);
+          vec3 mud = mix(GT(tWet, m1).rgb * uMudAvg / uWetAvg, GT(tMud, m2).rgb, pick); float hgt = mix(n1.a, n2.a, pick);
+          nx = mix((n1.rg * 2.0 - 1.0) * mat2(0.878, 0.479, -0.479, 0.878), (n2.rg * 2.0 - 1.0) * mat2(0.622, 0.783, -0.783, 0.622), pick); hh = hgt;
+          vec3 tone = mix(vColor.rgb, macro, inside); c = tone * mud / uMudAvg;
+          float rubK = nMid.a + nFine.b * 0.25 - 0.12;
+          if (rubK > 0.42 || mask.g > 0.02) { mat2 m3 = gM(2.1, 3.1); vec4 n3 = GT(tRubN, m3); rub = max(smoothstep(0.56, 0.74, rubK + (n3.a - hgt) * 0.4) * (1.0 - mask.r) * 0.85, mask.g * 0.75); c = mix(c, tone * GT(tRub, m3).rgb / uRubAvg, rub); nx = mix(nx, (n3.rg * 2.0 - 1.0) * mat2(-0.505, 0.863, -0.863, -0.505), rub); hh = mix(hgt, n3.a, rub); }
+          c = mix(c, mud * vec3(1.15, 1.08, 1.0), 0.45 * inside);
+          if (mask.r > 0.05) { mat2 m4 = gM(0.35, 1.4); vec4 n4 = GT(tRubN, m4); road = smoothstep(0.35, 0.75, mask.r + (n4.a - hgt) * 0.3 - smoothstep(0.5, 0.75, nFine.a) * 0.55); c = mix(c, vec3(0.052, 0.053, 0.055) * GT(tRub, m4).rgb / uRubAvg, road); nx = mix(nx, (n4.rg * 2.0 - 1.0) * 0.35, road); hh = mix(hh, n4.a, road); }
+          // water fills the low parts of the relief, only where the ground is level
+          float flat_ = smoothstep(0.03, 0.006, slope), lvl = wetM * 1.05 + (nMid.r * 0.6 + nFine.r * 0.4 - 0.5) * 0.85 - (hh - 0.5) * 0.28 - 0.46 - rub * 0.1 - road * 0.02;
+          gWater = smoothstep(0.0, 0.11, lvl) * flat_ * inside * uWet; damp = smoothstep(-0.34, 0.02, lvl) * uWet * mix(0.4, 1.0, inside);
+        } else { c *= 0.75 + 0.5 * nFine.g; hh = nFine.r; }
+        c *= 0.82 + 0.36 * nBig.b;
+        if (inside < 0.98) {
+          // steep ground is painted from the side so nothing smears: forest, then rock
+          float out_ = 1.0 - inside, steep = smoothstep(0.24, 0.5, slope + (nMid.r - 0.5) * 0.16) * out_, fw = out_ * smoothstep(0.02, 0.07, slope) * smoothstep(0.41, 0.53, nBig.r * 0.7 + nMid.g * 0.3) * smoothstep(1500.0, 1150.0, vWP.y) * (1.0 - smoothstep(0.4, 0.62, slope));
+          bool sx = abs(wn.x) > abs(wn.z); vec2 sv = sx ? vec2(vWP.z, -vWP.y) : vec2(vWP.x, -vWP.y); vec3 wdx = dFdx(vWP), wdy = dFdy(vWP); vec2 sdx = sx ? vec2(wdx.z, -wdx.y) : vec2(wdx.x, -wdx.y), sdy = sx ? vec2(wdy.z, -wdy.y) : vec2(wdy.x, -wdy.y);
+          if (fw > 0.01) { vec3 fo = mix(textureGrad(tForest, sv / 34.0, sdx / 34.0, sdy / 34.0).rgb, textureGrad(tForest, sv.yx / 83.0, sdx.yx / 83.0, sdy.yx / 83.0).rgb, 0.45); fo.r = min(fo.r, fo.g * 0.95); fo.b = min(fo.b, fo.g * 0.8); c = mix(c, mix(vec3(dot(fo, vec3(0.333))), fo, 0.62) * vec3(0.46, 0.47, 0.48), fw); }
+          if (steep > 0.01) { vec3 rk = textureGrad(tCliff, sv / 17.0, sdx / 17.0, sdy / 17.0).rgb * 0.5 + textureGrad(tCliff, sv / 61.0, sdx / 61.0, sdy / 61.0).rgb * 0.5; c = mix(c, rk * vec3(0.9, 0.87, 0.84), steep * 0.85); }
+          float terr = out_ * smoothstep(0.02, 0.07, slope) * smoothstep(0.3, 0.16, slope) * smoothstep(0.46, 0.56, nBig.g) * smoothstep(1500.0, 500.0, camD) * (1.0 - fw);
+          float band = fract(vWP.y / 2.4 + (nMid.a - 0.5) * 0.4); c = mix(c, mix(vec3(0.045, 0.043, 0.04), c * vec3(1.05, 1.2, 0.88), smoothstep(0.12, 0.3, band)), terr * 0.75);
+          float snow = smoothstep(1250.0, 1700.0, vWP.y + (nBig.a - 0.5) * 500.0) * smoothstep(0.55, 0.2, slope); c = mix(c, vec3(0.72, 0.76, 0.82), snow);
+        }
+        c *= mix(1.0, 0.52, damp); gRough = mix(mix(0.93, 0.8, rub), 0.75, road) - hh * 0.06; gRough = mix(gRough, 0.6 + (1.0 - hh) * 0.14 + 0.14 * smoothstep(15.0, 110.0, camD), damp * 0.85);
+        nx *= 0.9;
+        if (gWater > 0.0) { c = mix(c, c * 0.4 + vec3(0.013, 0.011, 0.008), gWater); gRough = mix(gRough, 0.05, gWater); vec2 rip = (texture2D(tNoise, gp / 13.0 + uTime * 0.02).rg + texture2D(tNoise, gp.yx / 11.0 - uTime * 0.017).ba - 1.0) * 0.025; nx = mix(nx, rip, gWater); }
+        nx *= 0.12 + 0.75 * smoothstep(95.0, 9.0, camD); gNrm = normalize(vec3(wn.x + nx.x * wn.y, wn.y, wn.z + nx.y * wn.y));
         diffuseColor.rgb = c;`)
       .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = gRough;')
       .replace('#include <normal_fragment_maps>', 'normal = normalize((viewMatrix * vec4(gNrm, 0.0)).xyz);')
       .replace('#include <opaque_fragment>', '#include <opaque_fragment>\n gl_FragColor.a = 1.0 - gWater;');       // alpha carries "mirror-wet" to the reflection pass
   };
-  mat.customProgramCacheKey = () => 'twin-ground-3';
+  mat.customProgramCacheKey = () => 'twin-ground-4';
   return mat;
 }
 
@@ -158,7 +160,7 @@ export function buildTerrain(env, D) {
   const fol = foliageTexture();
   const card = (x, y, z, len, wid, yaw, droop, roll, u0, u1) => { const gg = new THREE.PlaneGeometry(len, wid).translate(len / 2, 0, 0), p = gg.attributes.position, uv = gg.attributes.uv; for (let i = 0; i < p.count; i++) { const k = p.getX(i) / len; p.setZ(i, 0); uv.setX(i, u0 + (u1 - u0) * uv.getX(i)); p.setY(i, p.getY(i) * (1 - 0.0 * k)); } gg.rotateX(-Math.PI / 2 + roll); for (let i = 0; i < p.count; i++) { const k = p.getX(i) / len; p.setY(i, p.getY(i) - k * k * len * 0.22); } gg.rotateZ(-droop).rotateY(yaw).translate(x, y, z); return gg; };
   const soften = (gg, cy) => { const p = gg.attributes.position, nrm = gg.attributes.normal; for (let i = 0; i < p.count; i++) { const v = new THREE.Vector3(p.getX(i), (p.getY(i) - cy) * 0.35 + 0.6, p.getZ(i)).normalize(); nrm.setXYZ(i, v.x, v.y, v.z); } return gg; };
-  const pine = (s) => { const parts = [], tiers = 8; for (let i = 0; i < tiers; i++) { const k = 1 - i / tiers, nb = i > 5 ? 3 : 5; for (let b = 0; b < nb; b++) { const len = (0.6 + 2.3 * Math.pow(k, 0.85) * s) * (0.7 + Q() * 0.5); parts.push(card(0, 1.6 + i * 1.2 + Q() * 0.9, 0, len, len * 0.62 + 0.3, b / nb * 6.283 + i * 1.3 + Q() * 0.4, 0.06 + 0.22 * k, (Q() - 0.5) * 0.7, 0, 0.5)); } } for (const a of [0, 1.57]) parts.push(card(0, 10.6, 0, 1.9, 1.0, a, -1.57, 0, 0, 0.5)); return soften(merge(parts, { keepUV: true, keepColor: false }), 5); };
+  const pine = (s) => { const parts = [], tiers = 8; for (let i = 0; i < tiers; i++) { const k = 1 - i / tiers, nb = i > 5 ? 4 : 6; for (let b = 0; b < nb; b++) { const len = (0.85 + 2.9 * Math.pow(k, 0.85) * s) * (0.7 + Q() * 0.5); parts.push(card(0, 1.6 + i * 1.2 + Q() * 0.9, 0, len, len * 0.62 + 0.3, b / nb * 6.283 + i * 1.3 + Q() * 0.4, 0.06 + 0.22 * k, (Q() - 0.5) * 0.7, 0, 0.5)); } } for (const a of [0, 1.57]) parts.push(card(0, 10.6, 0, 1.9, 1.0, a, -1.57, 0, 0, 0.5)); return soften(merge(parts, { keepUV: true, keepColor: false }), 5); };
   const bushG = () => { const parts = []; for (let i = 0; i < 20; i++) { const a = Q() * 6.283, y = 1.1 + Q() * 2.6, l = 1.5 + Q() * 0.9; parts.push(card(0, y, 0, l, l, a, (Q() - 0.6) * 0.9, (Q() - 0.5) * 2.2, 0.5, 1)); } return soften(merge(parts, { keepUV: true, keepColor: false }), 2); };
   const trunk = new THREE.CylinderGeometry(0.07, 0.24, 10.5, 5).translate(0, 5, 0), bush = bushG();
   const want = high ? 6200 : 1800; let made = 0;

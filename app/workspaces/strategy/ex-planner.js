@@ -18,7 +18,7 @@ export default async function (pane, ctx) {
   function think() { decision++; chosen = null; phase = 'grow'; ts = new TreeSearch(world, { B: ep.B, conf: ep.conf, t: ep.t, at: ep.at }, {}, (seed * 131 + 17 * decision) >>> 0); layoutKey = -1; say('Decision ' + decision + '. Trying every next stop against sampled worlds.'); }
   function act() {
     const a = ts.best(); chosen = a; hold = 0;
-    if (a.handoff || ep.t + lookCost(world, ep.at, a.stop) > RULES.budget) { phase = 'end'; epHandoff(ep); const r = epResult(ep); say('Hand over to the team after ' + fmtClock(ep.tSearch) + '. Found ' + r.found + ' of ' + r.people + (r.people === 1 ? ' person.' : ' people.')); log.unshift('Hand over at ' + fmtClock(ep.tSearch) + ': ' + r.found + ' of ' + r.people + ' found, ' + r.falseChases + ' false alarms chased'); }
+    if (a.handoff || ep.t + lookCost(world, ep.at, a.stop) > RULES.budget) { phase = 'end'; epHandoff(ep); const r = epResult(ep); say('Hand over to the team after ' + fmtClock(ep.tSearch) + '. ' + (r.people ? 'Found ' + r.found + ' of ' + r.people + (r.people === 1 ? ' person.' : ' people.') : 'No one was there.')); log.unshift('Hand over at ' + fmtClock(ep.tSearch) + ': ' + r.found + ' of ' + r.people + ' found, ' + r.falseChases + ' false alarms chased'); }
     else { phase = 'acted'; const obs = epLook(ep, a.stop); const w = obsWords(world, a.stop, obs); say('Go to ' + world.stops[a.stop].label.replace(/^./, (c) => c.toLowerCase()) + '. Heard: ' + w + '.'); log.unshift(fmtClock(ep.t) + ' ' + world.stops[a.stop].label + ': ' + w); }
     drawLog();
   }
@@ -31,6 +31,7 @@ export default async function (pane, ctx) {
   // ---------- layout ----------
   const left = h('div.strategy-col.left.adv-only'), right = h('div.strategy-col.right.adv-only'), cv = h('canvas.strategy-tree', { role: 'img', 'aria-label': 'The search tree for the current decision, and the floor plan it is planning over' });
   const overlay = demoOverlay(ctx.kit, { title: 'Thinking several stops ahead', sentence: 'Before each move the planner imagines hundreds of searches and follows the branch that ends best.', tags: ['live-algo', 'sim'], action: { label: 'Next world', icon: 'reset', run: () => { start(seed + 1); } } });
+  overlay.el.classList.add('demo-only');
   const main = h('div.strategy-main', null, h('div.strategy-treewrap', null, cv), overlay.el);
   pane.append(h('div.strategy-ex.wide-side', null, left, main, right));
   const say = (t) => overlay.caption(t);
@@ -58,7 +59,7 @@ export default async function (pane, ctx) {
     const now = performance.now(); if (!force && now - drawn < 220) return; drawn = now;
     const st = IDS.map(stats), n = Math.min(...st.map((s) => s.n));
     status.textContent = tErr || (pool ? n + ' of ' + N + ' worlds' : n ? n + ' worlds, seeds ' + FIRST + ' to ' + (FIRST + n - 1) + '.' : 'Not run yet.'); runBtn.textContent = pool ? 'Stop' : 'Run again';
-    tbl.replaceChildren(...IDS.map((id, i) => h('tr', null, h('td', null, h('span.strategy-key', { style: { '--c': tok(POLICIES[id].color) } }), POLICIES[id].label), h('td.num', null, pm(st[i].perMin, 3)), h('td.num', null, st[i].people ? fmtPct(st[i].found / st[i].people) : '–'), h('td.num', null, st[i].first.n > 1 ? Math.round(st[i].first.mean) + ' ± ' + Math.round(st[i].first.half) + ' s' : '–'), h('td.num', null, pm(st[i].fc, 2)))));
+    tbl.replaceChildren(...IDS.map((id, i) => h('tr', null, h('td', null, h('span.strategy-key', { style: { background: tok(POLICIES[id].color) } }), POLICIES[id].label), h('td.num', null, pm(st[i].perMin, 3)), h('td.num', null, st[i].people ? fmtPct(st[i].found / st[i].people) : '–'), h('td.num', null, st[i].first.n > 1 ? Math.round(st[i].first.mean) + ' ± ' + Math.round(st[i].first.half) + ' s' : '–'), h('td.num', null, pm(st[i].fc, 2)))));
     const sorted = {}; for (const id of IDS) sorted[id] = new Map(rows[id].map((r) => [r.seed, r.reward]));
     const pd = (a, b) => { const A = [], B = []; for (const [s, v] of sorted[a]) if (sorted[b].has(s)) { A.push(v); B.push(sorted[b].get(s)); } return paired(A, B); };
     const D = [['greedy', 'scripted'], ['tree', 'scripted'], ['tree', 'greedy']].map(([a, b]) => ({ a, b, d: pd(a, b) }));

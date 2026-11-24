@@ -103,13 +103,49 @@ export default {
       h('div.globe-scrub-row.globe-scrub-meta', null, plotTitle, h('div.grow'), legend),
       plot);
 
+    // ---------- Demo: the Earth, the week, three figures ----------
+    const D = { t: 0, i: 0, big: null, near: null, list: null, sorted: [], last: '' }, SPAN = 64, HOLD = 9;   // seconds for the week, then a held beat over Nepal
+    const demoFig = (label) => { const b = h('b', null, '–'), s = h('span', null, label); return { b, s, el: h('div.globe-fig', null, b, s) }; };
+    const figN = demoFig('earthquakes located'), figBig = demoFig('largest so far'), figNear = demoFig('nearest M4.5+ to Timure');
+    const demoNow = h('span.globe-demo-now');
+    const demoUi = h('div.globe-demo.demo-only', null,
+      h('section.globe-demo-title', null, h('div.row', null, realityTag('real-data')),
+        h('h1', null, 'A week of earthquakes.'),
+        h('p', null, 'Everything USGS located in seven days, replayed. Magnitude is energy, not damage. The search exercise itself is simulated.'),
+        h('div.row', null, h('button.btn.btn-primary.btn-lg', { type: 'button', onclick: () => ctx.shell.open('area') }, 'Go to the valley'), demoNow)),
+      h('div.globe-demo-figs', null, figN.el, figBig.el, figNear.el),
+      h('p.globe-demo-credit', null, 'USGS · NASA Blue Marble, Black Marble · Bird (2003)'));
+    const demoOn = () => ctx.mode === 'demo';
+    const put = (el, s) => { if (el.textContent !== s) el.textContent = s; };
+    function demoFrame(dt) {
+      const d = S.data;
+      if (!d || !d.quakes.length) { put(demoNow, S.error ? 'USGS could not be reached. Nothing is drawn.' : 'Asking USGS for the feed…'); return; }
+      if (!reduced) D.t += dt; else D.t = SPAN;
+      if (D.t > SPAN + HOLD) { D.t = 0; D.i = 0; D.big = D.near = null; }
+      const u = Math.min(1, D.t / SPAN), t = d.tMin + (d.tMax - d.tMin) * u, e = u * u * (3 - 2 * u);
+      scene.setTime(t, { winH: 5.5, tauH: spanH() * 0.1, playing: u < 1 }); scene.setSun(t);
+      scene.setDrift(-6 + 31 * e, 168 - 80 * e, 1 - 0.16 * e);
+      if (D.list !== d) { D.list = d; D.sorted = d.quakes.slice().sort((a, b) => a.time - b.time); D.i = 0; D.big = D.near = null; }
+      let changed = false;
+      while (D.i < D.sorted.length && D.sorted[D.i].time <= t) { const q = D.sorted[D.i++]; changed = true; if (!D.big || q.mag > D.big.mag) D.big = q; if (q.mag >= 4.5 && (!D.near || q.km < D.near.km)) D.near = q; }
+      if (changed) { put(figN.b, int(D.i)); if (D.big) { put(figBig.b, 'M ' + D.big.mag.toFixed(1)); put(figBig.s, D.big.place || 'place ' + NR); } put(figNear.b, D.near ? int(D.near.km) + ' km' : '–'); }
+      const line = utc(t) + (u >= 1 ? ', fetched ' + clock(d.fetchedAt, true) : ''); if (line !== D.last) { D.last = line; put(demoNow, line); }
+    }
+    function enterMode() {
+      hideTip(); scene.setWide(demoOn()); S.playing = false;
+      if (demoOn()) { if (S.feed !== 'week') switchFeed('week'); if (S.sel) select(null); if (S.minMag > -Infinity) setMinMag(-Infinity); D.t = 0; D.list = null; scene.face(-6, 168); }
+      else { scene.setDrift(null); syncPlay(); requestAnimationFrame(() => { bakePlot(); renderList(true); if (S.data) setTime(S.data.tMax); }); }
+      requestAnimationFrame(fitFrame);
+    }
+    for (const p of [header, listPanel, detailPanel, scrub]) p.classList.add('adv-only');
     const ui = h('div.globe-ui', null, header, listPanel, free, detailPanel, scrub);
-    root.append(stage, ui, tip);
+    root.append(stage, ui, demoUi, tip);
 
     // ---------- the 3-D scene ----------
     const scene = createScene(stage, {
       accent: cssVar('--accent'), backdrop: cssVar('--bg-0'), reduced: () => reduced,
       onFrame(dt) {
+        if (demoOn()) { demoFrame(dt); return; }
         if (!S.playing || !S.data) return;
         const rate = FEEDS[S.feed].spanMs / 40 * S.speed;                   // feed milliseconds per real second
         if (reduced) { stepAcc += dt; if (stepAcc < 0.6) return; setTime(S.t + rate * stepAcc); stepAcc = 0; } else setTime(S.t + rate * dt);
@@ -127,6 +163,7 @@ export default {
     const frameBox = { l: 0, t: 0, r: 0, b: 0 };
     const fitFrame = () => {
       const a = stage.getBoundingClientRect(), f = free.getBoundingClientRect();
+      if (demoOn() && a.width) { Object.assign(frameBox, { l: 12, t: 12, r: a.width - 12, b: a.height - 250 }); scene.setFrame(a.width * 0.615, a.height * 0.60, a.height * 1.36); return; }
       if (!f.width || !f.height) return;
       Object.assign(frameBox, { l: f.left - a.left, t: f.top - a.top, r: f.right - a.left, b: f.bottom - a.top });
       scene.setFrame((frameBox.l + frameBox.r) / 2, (frameBox.t + frameBox.b) / 2, Math.min(f.height, f.width * 1.3));
@@ -490,6 +527,7 @@ export default {
       scroller.scrollTop = 0; load();
     }
 
+    ctx.bus.on('mode', () => { if (S.shown) enterMode(); });
     const offEscape = ctx.bus.on('escape', () => { if (S.shown && S.sel) select(null); });
     root.__globe = { scene, state: S, select, setTime, load };   // a handle for the automated checks
     void offPrefs; void offEscape;
@@ -500,7 +538,7 @@ export default {
 
     return {
       onShow() {
-        S.shown = true; fitFrame(); bakePlot(); scene.start();
+        S.shown = true; enterMode(); fitFrame(); bakePlot(); scene.start();
         clearInterval(refreshTimer);
         refreshTimer = setInterval(() => { if (!S.loading && !S.playing) load(); }, 5 * 60e3);
         if (S.data && !S.loading && Date.now() - S.data.fetchedAt > 5 * 60e3) load();

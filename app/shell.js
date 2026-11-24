@@ -11,6 +11,7 @@ const { h, icon, realityTag, fmt } = kit;
 export const MANIFEST = [
   { id: 'area', title: 'Valley', group: 'Operate', icon: 'layers', reality: 'real-data', blurb: 'The real valley in 3-D: terrain, satellite imagery, the flood, and where the search is.' },
   { id: 'mission', title: 'Mission', group: 'Operate', icon: 'mission', reality: 'sim', blurb: 'Run the search in the 3-D twin, from drone survey to rescue.' },
+  { id: 'rover', title: 'Rover', group: 'Operate', icon: 'rover', reality: 'built', blurb: 'The rover we built, part by part, from our own CAD to the real photograph.' },
   { id: 'triage', title: 'Triage', group: 'Operate', icon: 'triage', reality: 'live-algo', blurb: 'Who to reach first, and where to break through.' },
   { id: 'swarm', title: 'Swarm', group: 'Operate', icon: 'swarm', reality: 'concept', blurb: 'Several rovers and drones sharing one search.' },
   { id: 'sense', title: 'Wi-Fi AI', group: 'Sense', icon: 'wifi', reality: 'live-ai', blurb: 'The neural network that senses people through walls, running live.' },
@@ -35,7 +36,7 @@ export const MANIFEST = [
 ];
 // Demo mode: the short, cinematic path through the product. Everything else is one click away in Advanced.
 export const CHAPTERS = [
-  { id: 'area', label: 'The problem', part: 'How HOUND finds people' }, { id: 'radio', label: 'The idea' }, { id: 'sense', label: 'The network' },
+  { id: 'area', label: 'The problem', part: 'How HOUND finds people' }, { id: 'radio', label: 'The idea' }, { id: 'forge', label: 'The training' }, { id: 'sense', label: 'The network' }, { id: 'rover', label: 'The rover' },
   { id: 'mission', label: 'The search' }, { id: 'fusion', label: 'The proof' }, { id: 'report', label: 'The rescue' },
   { id: 'aerial', label: 'Drone eyes', part: 'What comes next' }, { id: 'scan', label: 'Inside the rubble' }, { id: 'swarm', label: 'Many rovers' },
   { id: 'structure', label: 'The collapse' }, { id: 'horizon', label: 'The horizon' },

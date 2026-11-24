@@ -167,7 +167,7 @@ export default function create(env) {
       { who: 'Schneider, Geophysics 43 (1978).', what: 'Integral formulation for migration in two and three dimensions: the Kirchhoff summation used here.', url: 'https://doi.org/10.1190/1.1440828' },
       { who: 'Stolt, Geophysics 43 (1978).', what: 'Migration by Fourier transform, the fast frequency-domain form of the same idea.', url: 'https://doi.org/10.1190/1.1440826' },
     ],
-    _demo: () => ({ P, ant, sc, total, M, mask, maskList, migrate, NT, DT, focus, best, analyse, get migCv() { return migCv; }, runAll() { while (acq < ant.length) { shoot(acq); synth(acq, acq + 1); acq++; } analyse(); P.v = best; analyse(); P.ap = P.apMax; P.focusing = false; P.auto = true; dirtyImg = true; } }),
+    _demo: () => ({ P, ant, sc, total, M, mask, maskList, migrate, NT, DT, focus, best, analyse, get migCv() { return migCv; }, runAll() { if (acq >= ant.length) return; while (acq < ant.length) { shoot(acq); synth(acq, acq + 1); acq++; } analyse(); P.v = best; analyse(); P.ap = P.apMax; P.focusing = false; P.auto = true; dirtyImg = true; } }),
     setPile, controls, drawStage, drawReadout, tick, verdicts,
     stageTitle: () => (P.ap < 0.05 ? 'Raw echoes, drawn under the antenna' : 'Echoes focused by migration'), stageNote: () => acq < ant.length ? 'scanning the surface' : 'aperture ' + P.ap.toFixed(1) + ' m · speed ' + P.v.toFixed(3) + ' m/ns',
     readoutTitle: () => ['Every edge in the pile draws a hyperbola in the raw scan', 'B-scan: one column per antenna position, time running down. White and blue are the two polarities.'],

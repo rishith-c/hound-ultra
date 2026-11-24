@@ -4,7 +4,7 @@
 .strategy-head p { max-width: 104ch; }
 .strategy-tabs { background: var(--bg-1); padding: 0 12px; gap: 0; }
 .strategy-tabs button { height: 38px; padding: 0 14px 0 10px; gap: 8px; font-size: var(--fs-13); }
-.strategy-tab-n { display: inline-grid; place-items: center; width: 18px; height: 18px; border: 1px solid var(--line-2); border-radius: var(--r-1); font-size: 10.5px; color: var(--text-3); background: var(--bg-0); }
+.strategy-tab-n { display: inline-grid; place-items: center; width: 18px; height: 18px; border: 1px solid var(--line-2); border-radius: var(--r-1); font-size: 11px; color: var(--text-3); background: var(--bg-0); }
 .strategy-tabs button[aria-selected="true"] .strategy-tab-n { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); font-weight: 600; }
 .strategy-tabs button:focus-visible { outline: 2px solid var(--focus); outline-offset: -3px; border-radius: var(--r-2); }
 .strategy-stage { position: relative; flex: 1; min-height: 0; }
@@ -30,8 +30,8 @@
 .strategy-chart.short { height: 112px; }
 .strategy-fine { font: var(--type-caption); color: var(--text-3); line-height: 1.45; }
 .strategy-fine b { color: var(--text-2); font-weight: 600; }
-.strategy-assumed { font: 500 10.5px/1 var(--font); color: var(--sim); border: 1px dashed var(--sim-line); border-radius: var(--r-1); padding: 2px 4px; white-space: nowrap; vertical-align: 1px; }
-.strategy-measured { font: 500 10.5px/1 var(--font); color: var(--accent); border: 1px solid var(--accent-line); border-radius: var(--r-1); padding: 2px 4px; white-space: nowrap; vertical-align: 1px; }
+.strategy-assumed { font: 500 11px/1 var(--font); color: var(--sim); border: 1px dashed var(--sim-line); border-radius: var(--r-1); padding: 2px 4px; white-space: nowrap; vertical-align: 1px; }
+.strategy-measured { font: 500 11px/1 var(--font); color: var(--accent); border: 1px solid var(--accent-line); border-radius: var(--r-1); padding: 2px 4px; white-space: nowrap; vertical-align: 1px; }
 
 /* The brief */
 .strategy-brief-card { padding: 14px 14px 14px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 9px; background: linear-gradient(180deg, var(--bg-2), var(--bg-1)); }
@@ -90,7 +90,7 @@
 .strategy-hud.col { flex-direction: column; align-items: stretch; }
 .strategy-legend { padding: 8px 10px; border-radius: var(--r-2); font-size: var(--fs-11); color: var(--text-2); display: flex; flex-direction: column; gap: 5px; min-width: 196px; }
 .strategy-legend .ramp { height: 8px; border-radius: 1px; }
-.strategy-legend .scale { display: flex; justify-content: space-between; font: 400 10.5px/1 var(--mono); color: var(--text-3); }
+.strategy-legend .scale { display: flex; justify-content: space-between; font: 400 11px/1 var(--mono); color: var(--text-3); }
 .strategy-probe { padding: 8px 10px; border-radius: var(--r-2); font-size: var(--fs-12); color: var(--text-2); min-width: 220px; max-width: 280px; display: flex; flex-direction: column; gap: 3px; }
 .strategy-probe b { color: var(--text); font-weight: 600; }
 .strategy-probe .num { color: var(--text); }

@@ -134,6 +134,12 @@ function generate(t, data, path) {
       const k = (pj * W + pi) * 4; if (!data.top[k + 3]) continue;
       if (!d && !mark && rnd() < 0.06) continue;                                                        // a few pulses never come back
       const h = TOP - ((data.top[k] * 256 + data.top[k + 1]) / 65535) * RANGE, up = data.top[k + 2] / 255;
+      // rooftop edges: the sides of the stair heads, tanks and parapets
+      if (d && h > 3.3) for (let e = 0; e < 2; e++) {
+        const k2 = k + (e ? 4 : W * 4), h2 = data.top[k2 + 3] ? TOP - ((data.top[k2] * 256 + data.top[k2 + 1]) / 65535) * RANGE : h;
+        if (Math.abs(h2 - h) < 0.35 || Math.min(h, h2) < 3.2) continue;
+        for (let z = Math.min(h, h2) + 0.06; z < Math.max(h, h2); z += high ? 0.12 : 0.25) put(x + (e ? 0.06 : 0), z, yy + (e ? 0 : 0.06), path.at(i, x) + (Math.max(h, h2) - z) * 0.8, 0.46 + 0.18 * rnd(), x > B[0] - 0.6 && x < B[2] + 0.6 && yy > B[1] - 0.6 && yy < B[3] + 0.6, 0, false);
+      }
       put(x, h + 0.03 + (rnd() - 0.5) * 0.022, yy, path.at(i, x), 0.42 + 0.16 * rnd() - 0.22 * (1 - up), h > 3.3 && x > B[0] - 0.6 && x < B[2] + 0.6 && yy > B[1] - 0.6 && yy < B[3] + 0.6, (Math.floor((yy - GY0) * 5) * GW * 5 + Math.floor((x - GX0) * 5)) + 1, mark);
     }
   }
@@ -177,12 +183,12 @@ void main() {
   float age = uShow > 0.5 ? 1e4 : uHead - aS, r = aD.y;
   if (age < 0.0) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); gl_PointSize = 0.0; vCol = vec4(0.0); return; }
   float k = 1.0 - clamp(age / (uFresh * (0.55 + 0.75 * r)), 0.0, 1.0);          // 1 in the curtain, 0 once settled
-  float s = clamp(uSettle * mix(1.5, 4.0, aD.z) - r * 0.5, 0.0, 1.0); s = s * s * (3.0 - 2.0 * s);
+  float s = clamp(uSettle * mix(1.5, 2.4, aD.z) - r * 0.5, 0.0, 1.0); s = s * s * (3.0 - 2.0 * s);
   vec3 p = position;
   if (uShade > 0.5) {                                                           // the shade under the cloud: the world steps back so the points can speak
     vec4 m = modelViewMatrix * vec4(p, 1.0);
     gl_PointSize = clamp(1.45 * uPx / -m.z, 6.0 * uScale, 64.0 * uScale);
-    float ts = 1.0 - smoothstep(0.0, 1.0, uSettle * mix(1.0, 2.6, aD.z));
+    float ts = 1.0 - smoothstep(0.0, 1.0, uSettle * mix(1.0, 1.6, aD.z));
     vCol = vec4(0.012, 0.018, 0.026, 0.27 * ts * (1.0 - k));
     gl_Position = projectionMatrix * m;
     vec4 sq = projectionMatrix * vec4(m.xy, m.z + 0.25 + 0.002 * -m.z, 1.0); gl_Position.z = sq.z / sq.w * gl_Position.w; return;

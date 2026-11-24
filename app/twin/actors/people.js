@@ -80,16 +80,19 @@ void main() {
   float st = (b - a) / float(STEPS), j = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
   float un = 1.0 - uK, morph = smoothstep(0.0, 0.85, uK), lockK = smoothstep(0.55, 1.0, uK); vec3 sum = vec3(0.0); float tr = 1.0;
   vec3 drift = vec3(uSeed + sin(uTime * 0.21) * 0.9, cos(uTime * 0.17) * 0.5, sin(uTime * 0.13) * 0.8); bool got = false;
+  float tt = a + st * j;
   for (int i = 0; i < STEPS; i++) {
-    vec3 p = ro + rd * (a + st * (float(i) + j));
-    float e = (length((p - vec3(0.0, 0.86, 0.03)) / vec3(0.42, 0.86, 0.24)) - 1.0) * 0.24, d = uK < 0.03 ? e : mix(e, body(p), morph);
+    if (tt > b) break;
+    vec3 p = ro + rd * tt;
+    float e = (length((p - vec3(0.0, 0.86, 0.03)) / vec3(0.42, 0.86, 0.24)) - 1.0) * 0.24, bd = uK < 0.03 || e > 0.45 ? 0.5 : body(p), d = uK < 0.03 ? e : mix(e, bd, morph);
+    tt += st; if (d > 0.3) tt += (d - 0.26) * 0.8;
     if (d < 0.28) {
       float n = un > 0.01 ? noise(p * 5.5 + drift) * 0.6 + noise(p * 13.0 - drift * 1.7) * 0.4 : 0.5;
       d += un * (n - 0.42) * 0.62;
       float tick = un > 0.02 ? step(0.5 * un, hash(floor(p * 34.0) + floor(uTime * 9.0) * 0.37 + uSeed)) : 1.0;       // the estimate flickers until it is sure
       // the skin, once there is one: found between two steps, lit by its own warmth and the angle it is seen at
       if (!got && lockK > 0.01 && d < 0.0) {
-        got = true; vec3 h = p - rd * st * 0.5; for (int s = 0; s < 4; s++) { h += rd * body(h) * 0.8; }
+        got = true; vec3 h = p - rd * st * 0.5; for (int s = 0; s < 3; s++) { h += rd * body(h) * 0.85; }
         vec2 ee = vec2(0.006, -0.006);
         vec3 N = normalize(ee.xyy * body(h + ee.xyy) + ee.yyx * body(h + ee.yyx) + ee.yxy * body(h + ee.yxy) + ee.xxx * body(h + ee.xxx));
         float ndv = clamp(-dot(N, rd), 0.0, 1.0), rim = pow(1.0 - ndv, 2.5);
@@ -102,8 +105,10 @@ void main() {
         sum += tr * lockK * sk; tr *= 1.0 - 0.94 * lockK;
       }
       float heat = smoothstep(0.06, -0.06, d), halo = exp(-max(d, 0.0) * mix(9.0, 26.0, uK)) * mix(0.1, 0.05, uK);
-      float dens = (heat * mix(0.85, 5.0, uK) * (1.0 - lockK * 0.9) + halo) * mix(1.0, tick, un * 0.85);
-      vec3 col = mix(mix(vec3(0.62, 0.6, 0.58), uPerson, 0.3 + 0.25 * heat), uPerson, uK);
+      float dens = (heat * mix(0.6, 5.0, uK * uK) * (1.0 - lockK * 0.9) + halo) * mix(1.0, tick, un * 0.85);
+      vec3 col = mix(vec3(0.34, 0.2, 0.12), uPerson, max(uK, 0.25 * heat));
+      // inside the noise, the shape the evidence is starting to suggest
+      float hb = un > 0.02 && uK > 0.03 ? smoothstep(0.05, -0.04, bd + un * (n - 0.45) * 0.4) * tick : 0.0; dens += hb * 3.2 * uK; col = mix(col, uPerson * 1.05, hb);
       float k = 1.0 - exp(-dens * st * mix(1.6, 3.4, uK)); sum += tr * k * col * mix(0.55, 1.0, heat); tr *= 1.0 - k * 0.8;
       if (tr < 0.04) break;
     }
@@ -177,7 +182,7 @@ export default {
         uniforms: { uWarn: { value: pal.warn }, uPerson: { value: pal.person }, uOk: { value: pal.ok }, uHalf: { value: 1 }, uR: { value: 1 }, uP: { value: 0 }, uConf: { value: 0 }, uReach: { value: 0 }, uAlpha: { value: 0 }, uSel: { value: 0 }, uPulse: { value: 0 } } });
       const ring = new THREE.Mesh(quad, ringMat); ring.position.y = t.groundY + Y.ring; ring.renderOrder = 8; ring.raycast = none; group.add(ring);
       const fig = new THREE.Group(), pose = new THREE.Group(); fig.add(pose); group.add(fig);
-      const volMat = new THREE.ShaderMaterial({ defines: { STEPS: low ? 18 : 34 }, transparent: true, premultipliedAlpha: true, blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor, depthWrite: false, depthTest: false, side: THREE.BackSide, vertexShader: VOL_VERT, fragmentShader: VOL_FRAG,
+      const volMat = new THREE.ShaderMaterial({ defines: { STEPS: low ? 16 : 28 }, transparent: true, premultipliedAlpha: true, blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor, depthWrite: false, depthTest: false, side: THREE.BackSide, vertexShader: VOL_VERT, fragmentShader: VOL_FRAG,
         uniforms: { uWarn: { value: pal.warn }, uPerson: { value: pal.person }, uHot: { value: hot }, uK: { value: 0 }, uAlpha: { value: 0 }, uTime: { value: 0 }, uSeed: { value: (hashStr(id) % 97) * 0.37 }, uBreath: { value: 0 }, uCalm: { value: 0 }, uFlash: { value: 0 }, uLie: { value: 1 }, uBox: { value: BOX } } });
       const vol = new THREE.Mesh(volGeo, volMat); vol.renderOrder = 24; vol.raycast = none; pose.add(vol);
       const crossMat = decalMaterial(THREE, { vertexShader: FLAT_VERT, fragmentShader: FLAT_FRAG, uniforms: { uColor: { value: pal.dim }, uAlpha: { value: 0 } } });
@@ -252,7 +257,7 @@ export default {
         const st = d.status, conf = st === 'confirmed', rej = st === 'rejected';
         const sv = d.survivorId ? state.survivors[d.survivorId] : null;
         const sigma = clamp(d.posSigma || 1, 0.3, 8), tf = conf ? 1 : 0, tc = rej ? 1 : 0, tr = sv && sv.status === 'reached' ? 1 : 0;
-        const res = conf ? 1 : rej ? 0 : 0.06 + 0.6 * smoothstep(0.35, 0.9, d.p);      // how much of a body the probability allows
+        const res = conf ? 1 : rej ? 0 : 0.06 + 0.62 * smoothstep(0.3, 0.8, d.p);      // how much of a body the probability allows
         if (born || fresh) { v.x = d.pos[0]; v.y = d.pos[1]; v.sigma = sigma; v.appear = fresh || rej || reduced ? 1 : 0; v.pulse = 0; v.kFig = tf; v.kCross = tc; v.reach = tr; v.kRes = fresh || reduced ? res : 0; v.kSh = rej ? 0 : 1; }
         else {
           const f = reduced ? 1e3 : 1;

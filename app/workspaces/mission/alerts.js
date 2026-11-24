@@ -29,7 +29,7 @@ export function createAlerts(app) {
     const S = sim.state, d = S.detections.find((q) => q.id === ev.det); if (!d) return;
     let card;
     const where = whereOf(d);
-    const planBtn = h('button.btn', { hidden: S.phase === 'rescue' || S.phase === 'complete', onclick: () => { close(card); app.planFromAlert(); } }, 'Plan rescue');
+    const planBtn = h('button.btn', { 'data-plan': '', hidden: S.phase === 'rescue' || S.phase === 'complete', onclick: () => { close(card); app.planFromAlert(); } }, 'Plan rescue');
     card = h('div.mission-card.person.glass', { role: 'alertdialog', 'aria-label': 'Person found' },
       h('div.mission-card-top', null, h('i.mission-beacon'), h('span', null, 'Person found'), h('span.grow'), h('span.num.dim', null, kit.fmt.clock(ev.t)), x(() => card)),
       h('div.mission-card-main', null, h('b.num', null, (d.p * 100).toFixed(0) + ' %'), h('div', null, h('h2', null, 'Person found in ' + where + '.'), h('p', null, (d.p * 100).toFixed(0) + ' % confidence. ' + agreement(d)))),
@@ -43,6 +43,7 @@ export function createAlerts(app) {
       h('p', null, text), h('div.mission-card-life', null, h('i')));
     add(card, ms);
   }
+  ctx.bus.on('phase', ({ to }) => { if (to === 'rescue' || to === 'complete') for (const b of el.querySelectorAll('[data-plan]')) b.hidden = true; });
   return {
     el, small,
     onEvent(ev) {

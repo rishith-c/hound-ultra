@@ -68,7 +68,7 @@ void main() {
   float c = 0.5 + 0.5 * cos(6.2831853 * (d3 / 0.5 - uPhase));
   float wave = pow(clamp(c, 0.0, 1.0) + 1e-5, 12.0) * exp(-d3 / 3.2) * smoothstep(0.2, 0.05, fwidth(d3));
   float front = gs((d3 - uFront) * 5.0) * smoothstep(uRange + 0.4, uRange * 0.5, uFront);
-  float a = (wave * 0.3 + front * 0.34) * smoothstep(uRange, uRange * 0.6, d3); if (a < 0.003) discard;
+  float a = (wave * 0.15 + front * 0.3) * smoothstep(uRange, uRange * 0.6, d3); if (a < 0.003) discard;
   gl_FragColor = vec4(uColor * 0.85, clamp(a, 0.0, 0.6) * uVis);
 }`;
 

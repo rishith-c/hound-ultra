@@ -301,7 +301,7 @@ export function createMap3D(host, ctx) {
   composer.addPass(grade);
 
   // ---- frame ----
-  const proj = new THREE.Vector3(); let W = 0, H = 0, acc = 0, cnt = 0, needShadow = true, onFrame = null;
+  const proj = new THREE.Vector3(); let W = 0, H = 0, acc = 0, cnt = 0, needShadow = true, slow = 0, inOnce = false, onFrame = null;
   function resize() { const r = host.getBoundingClientRect(); if (!r.width || !r.height) return; W = r.width; H = r.height; renderer.setPixelRatio(pr); renderer.setSize(W, H, false); composer.setPixelRatio(pr); composer.setSize(W, H); bloom.setSize(W * pr * 0.5, H * pr * 0.5); camera.aspect = W / H; camera.updateProjectionMatrix(); applyPad(); if (!loop.running) renderOnce(); }
   function applyPad() { if (framePad && W) camera.setViewOffset(W, H, -framePad * W, framePad * 0.55 * H, W, H); else camera.clearViewOffset(); }
   const ro = new ResizeObserver(() => resize()); ro.observe(host);
@@ -324,10 +324,11 @@ export function createMap3D(host, ctx) {
   function frame(dt, time) {
     if (onFrame) onFrame(dt, time);
     update(dt, time); draw();
-    acc += dt; if (++cnt === 40) { const ms = (acc / cnt) * 1000; acc = 0; cnt = 0; if (ms > 19.5 && pr > 0.8) { pr = Math.max(0.8, pr - 0.15); resize(); } }
+    acc += dt; if (++cnt === 40) { const ms = (acc / cnt) * 1000; acc = 0; cnt = 0; slow = ms > 20 ? slow + 1 : 0; if (slow > 2 && pr > 1) { pr = Math.max(1, pr - 0.2); slow = 0; resize(); } }
   }
   const loop = makeLoop(frame);
-  function renderOnce() { update(1, 0); draw(); }
+  function renderOnce() { if (inOnce) return; inOnce = true; update(1, 0); draw(); inOnce = false; }
+  controls.addEventListener('change', () => { if (!loop.running) renderOnce(); });
   return { GW, GH, RES, N, stage, setField, setCut, setPod, setMode, setMarkers, setView, setContours, shot, loop,
     setDim(k) { U.uDim.value = k; }, setFramePad(f) { framePad = f; applyPad(); }, set onFrame(f) { onFrame = f; }, onPick(fn) { onPick = fn; },
     freeCamera() { film = false; }, project(pos, y, out) { proj.set(pos[0], y, -pos[1]).project(camera); out[0] = (proj.x * 0.5 + 0.5) * W; out[1] = (-proj.y * 0.5 + 0.5) * H; return proj.z < 1; },

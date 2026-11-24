@@ -153,14 +153,15 @@ function startRidge() {
     const n = rows.length, m = rows[0].length, top = 120, gap = (H - top - 60) / n, head = u * 1.08 * m;
     for (let i = 0; i < n; i++) {
       const y = top + i * gap, z = i / (n - 1), inset = (1 - z) * W * 0.16, span = W - inset * 1.2, A = 8 + z * 10;
-      c.beginPath();
+      const path = new Path2D();
       for (let j = 0; j < m; j++) {
         const v = j <= head ? rows[i][j] : prev ? prev[i][j] : 0, win = Math.sin(Math.PI * j / (m - 1));
         const px = inset + (j / (m - 1)) * span, py = y - Math.max(-0.6, Math.min(2.6, v)) * A * (0.35 + 0.65 * win);
-        j ? c.lineTo(px, py) : c.moveTo(px, py);
+        j ? path.lineTo(px, py) : path.moveTo(px, py);
       }
-      c.strokeStyle = `rgba(${Math.round(150 + 100 * z)},${Math.round(190 - 30 * z)},${Math.round(235 - 110 * z)},${0.10 + 0.42 * z})`; c.lineWidth = 1;
-      c.lineTo(inset + span, y + 24); c.lineTo(inset, y + 24); c.closePath(); c.fillStyle = '#06080a'; c.fill(); c.stroke();
+      c.strokeStyle = `rgba(${Math.round(150 + 100 * z)},${Math.round(190 - 30 * z)},${Math.round(235 - 110 * z)},${0.16 + 0.5 * z})`; c.lineWidth = 1;
+      const ridgeLine = new Path2D(path); path.lineTo(inset + span, y + 24); path.lineTo(inset, y + 24); path.closePath();
+      c.fillStyle = '#06080a'; c.fill(path); c.stroke(ridgeLine);
     }
   }
   new ResizeObserver(size).observe(cv);

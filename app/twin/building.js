@@ -131,8 +131,8 @@ export function build(env) {
       sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vRW; uniform vec2 uC; uniform float uR, uS, uRimK; ' + NOISE)
         .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n' + (kind === 'roof'
           ? 'float rvD = uS - ((vRW.x - 44.0) / 40.0 * 0.8 + (-vRW.z - 30.0) / 28.0 * 0.2) - (bn(vRW.xz * 0.9) - 0.5) * 0.10 - (bn(vRW.xz * 5.0) - 0.5) * 0.025; if (rvD < 0.0) discard; rvD *= 40.0;'
-          : 'float rvD = length(vRW.xz - uC) - uR + (bn(vec2(vRW.x + vRW.z, vRW.y) * 2.2) - 0.5) * 0.5 - vRW.y * 0.12; if (uR > 0.01 && rvD < 0.0) discard; if (uR < 0.01) rvD = 9.0;'))
-        .replace('#include <opaque_fragment>', 'outgoingLight += vec3(0.55, 0.8, 1.0) * (exp(-rvD * 16.0) * 2.2 + exp(-rvD * 3.0) * 0.18) * uRimK;\n#include <opaque_fragment>'); };
+          : 'float rvD = length(vRW.xz - uC) - uR + (bn(vec2(vRW.x + vRW.z, vRW.y) * 2.2) - 0.5) * 0.22 - vRW.y * 0.12; if (uR > 0.01 && rvD < 0.0) discard; if (uR < 0.01) rvD = 9.0;'))
+        .replace('#include <opaque_fragment>', 'outgoingLight += vec3(0.55, 0.8, 1.0) * (exp(-rvD * 34.0) * 1.5 + exp(-rvD * 6.0) * 0.07) * uRimK;\n#include <opaque_fragment>'); };
     m.customProgramCacheKey = () => 'rv-' + kind + (pk ? pk.call(m) : ''); m.side = THREE.DoubleSide; return m;
   }
   const depthRoof = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, side: THREE.DoubleSide });

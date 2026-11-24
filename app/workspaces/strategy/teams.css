@@ -25,9 +25,11 @@
 .strategy-teams-key[data-team="1"] { border-top: 2px dashed var(--ok); }
 .strategy-teams-key[data-team="2"] { border-top: 2px dotted var(--warn); }
 
-.strategy-teams-band { display: grid; grid-template-columns: 208px minmax(0, 1fr); border-top: 1px solid var(--line); background: var(--bg-1); flex: none; }
-.strategy-teams-band > section { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; min-width: 0; }
-.strategy-teams-band > section + section { border-left: 1px solid var(--line); }
+.strategy-teams-wl { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px 12px; border-top: 1px solid var(--line); background: var(--bg-1); flex: none; }
+.strategy-teams-wlbody { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 16px; align-items: center; }
+.strategy-teams-rd { margin: 0; display: grid; grid-template-columns: 1fr; gap: 1px; font-size: var(--fs-11); color: var(--text-3); }
+.strategy-teams-rd dd { margin: 0 0 6px; color: var(--text); font: var(--type-data); }
+.strategy-teams-q { display: grid; grid-template-columns: 184px minmax(0, 1fr); gap: 12px; align-items: start; }
 .strategy-teams-qcv { display: block; width: 184px; height: 184px; }
 .strategy-teams-wlhead { display: flex; flex-direction: column; gap: 6px; }
 .strategy-teams-claim { padding: 5px 9px; font-size: var(--fs-12); }
@@ -53,6 +55,15 @@
 .strategy-teams-tests .is-wait em { color: var(--text-3); }
 
 @media (max-width: 1500px) {
-  .strategy-teams-band { grid-template-columns: 188px minmax(0, 1fr); }
+  .strategy-teams-q { grid-template-columns: 164px minmax(0, 1fr); }
   .strategy-teams-qcv { width: 164px; height: 164px; }
 }
+
+:root[data-mode="demo"] .strategy-teams-map { position: absolute; inset: 60px 24px 12px 25%; background: transparent; }
+:root[data-mode="demo"] .strategy-teams-main { background: radial-gradient(ellipse 80% 90% at 62% 45%, var(--bg-2), var(--bg-0) 78%); }
+:root[data-mode="demo"] .strategy-teams-tags { display: none; }
+
+.strategy-teams-sum > span + span { margin-left: 12px; }
+.strategy-teams-table th, .strategy-teams-table td { padding-left: 3px; padding-right: 3px; }
+.strategy-teams-table td.num, .strategy-teams-table th { font-size: var(--fs-11); letter-spacing: -0.02em; }
+.strategy-teams-table td:first-child { max-width: 84px; overflow-wrap: anywhere; }

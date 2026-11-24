@@ -4,7 +4,11 @@
 import * as THREE from 'three';
 import { blueprint } from './physics.js';
 
-const HINT = { seed: 6, scenario: 'vshape', tie: 0.25, hint: { box: { c: [4.2, 0.21, -3.15], h: [0.85, 0.19, 0.24], yaw: Math.PI / 2 }, jack: [3.52, -1.8], shore: [3.8, -3.1] } };
+// Seeds whose pile really does this, found by search. The first is tried first; if a browser's arithmetic settles the pile
+// differently and no such lift exists, the next one is simulated instead.
+const HINTS = [
+  { seed: 1, scenario: 'vshape', tie: 0.25, hint: { box: { c: [-3.8, 0.21, 3.15], h: [0.85, 0.19, 0.24], yaw: Math.PI / 2 }, jack: [-3.31, 1.76], shore: [-3.36, 2.62] } },
+  { seed: 2, scenario: 'vshape', tie: 0.25, hint: null }, { seed: 5, scenario: 'vshape', tie: 0.25, hint: null } ];
 const G = { COL: 1, A: 2, B: 3 };
 const cm = (m) => Math.round(m * 100), kN = (f) => (f / 1000).toFixed(f < 9950 ? 1 : 0);
 const ease = (u) => u * u * (3 - 2 * u), clamp = (x) => Math.max(0, Math.min(1, x));
@@ -13,7 +17,7 @@ export function createFilm({ ctx, view, host }) {
   const { h, icon, realityTag, reducedMotion } = ctx.kit;
   const D = { pieces: null, n: 0, chunks: [], frames: 0, done: false, rest: null, lift: null, shake: null, voids: null, vine: null, tried: 0, shakeK: 0, error: '' };
   const CH = [['lift', 'Lift'], ['shake', 'Aftershock'], ['shore', 'Shore'], ['voids', 'Voids'], ['vine', 'Vine robot']];
-  let chap = 'lift', beats = [], bi = 0, bt = 0, running = false, worker = null, poses = null, curClock = { [G.COL]: -100, [G.A]: -100, [G.B]: -100 }, lastUser = -1e9, held = false;
+  let take = 0, chap = 'lift', beats = [], bi = 0, bt = 0, running = false, worker = null, poses = null, curClock = { [G.COL]: -100, [G.A]: -100, [G.B]: -100 }, lastUser = -1e9, held = false;
 
   // ---------------- overlay
   const fig = () => { const v = h('b'), u = h('small'), l = h('span'); return { el: h('div.structure-fig', null, h('div', null, v, u), l), v, u, l, key: '' }; };
@@ -35,7 +39,7 @@ export function createFilm({ ctx, view, host }) {
   function boot() {
     if (worker) return;
     { // the bay stands on screen before the engine has arrived
-      const pl = blueprint(HINT); D.pieces = pl.pieces; D.n = pl.pieces.length; D.loose = pl.pieces.filter((p) => !p.fixed).length; D.mass = pl.massTotal; D.poses0 = new Float32Array(D.n * 7);
+      const pl = blueprint(HINTS[take]); D.pieces = pl.pieces; D.n = pl.pieces.length; D.loose = pl.pieces.filter((p) => !p.fixed).length; D.mass = pl.massTotal; D.poses0 = new Float32Array(D.n * 7);
       pl.pieces.forEach((p, i) => { D.poses0.set(p.p, i * 7); D.poses0.set(p.q || [0, 0, 0, 1], i * 7 + 3); }); poses = new Float32Array((D.n + 1) * 7); poses.set(D.poses0);
     }
     worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
@@ -49,9 +53,13 @@ export function createFilm({ ctx, view, host }) {
       else if (m.t === 'shake') D.shake = m;
       else if (m.t === 'voids') { D.voids = m; buildVoids(m); }
       else if (m.t === 'vine') D.vine = m;
-      else if (m.t === 'error') { D.error = m.message; console.warn('[structure]', m.message); }
+      else if (m.t === 'error') retry(m.message);
     };
-    worker.postMessage(HINT);
+    worker.postMessage(HINTS[take]);
+  }
+  function retry(message) {
+    worker.terminate(); worker = null; if (D.lift || ++take >= HINTS.length) { D.error = message; return; }
+    Object.assign(D, { chunks: [], frames: 0, done: false, rest: null, crush: null, dustLog: null, tried: 0 }); crushN = 0; beats = []; boot(); if (running) enter();
   }
   function prepLift(m) {
     for (const r of [m.a, m.b]) { r.k = r.tr.edges.length / (Math.ceil(r.total / 3) * r.tr.K * 6); }
@@ -91,7 +99,7 @@ export function createFilm({ ctx, view, host }) {
   function posesX(r, f) { if (r.n > D.n) { const o = D.n * 7, s = Math.max(0, Math.min(r.total - 1, Math.floor(f))) * r.n * 7 + o; for (let k = 0; k < 7; k++) poses[o + k] = r.frames[s + k]; } return poses; }
 
   // ---------------- camera: slow, critically damped, hands over while the visitor drags
-  const CAM = { wide: [[15.6, 4.6, -15.2], [-0.2, 2.1, -0.6]], fall: [[14.2, 2.3, -11.6], [0, 2.1, -0.6]], mid: [[12.6, 3.0, -9.4], [1.6, 1.3, -1.6]], pocket: [[8.6, 1.15, -4.7], [3.6, 0.42, -2.7]], jack: [[8.1, 1.0, -3.0], [3.5, 0.45, -2.3]], hold: [[8.3, 1.35, -4.1], [3.5, 0.42, -2.45]], high: [[12.6, 7.4, -11.2], [0.6, 0.7, -0.6]] };
+  const CAM = { wide: [[-15.6, 4.6, 15.2], [0.2, 2.1, 0.6]], fall: [[-14.2, 2.3, 11.6], [0, 2.1, 0.6]], mid: [[-12.6, 3.0, 9.4], [-1.6, 1.3, 1.6]], pocket: [[-8.6, 1.15, 4.7], [-3.6, 0.42, 2.7]], jack: [[-8.1, 1.0, 3.0], [-3.5, 0.45, 2.3]], hold: [[-8.3, 1.35, 4.1], [-3.5, 0.42, 2.45]], high: [[-12.6, 7.4, 11.2], [-0.6, 0.7, 0.6]] };
   const cp = new THREE.Vector3(...CAM.wide[0]), ct = new THREE.Vector3(...CAM.wide[1]), vp = new THREE.Vector3(), vt = new THREE.Vector3(), gp = new THREE.Vector3(), gt = new THREE.Vector3(), acc = new THREE.Vector3(); let camW = 1.0, drift = 0, shakeA = 0;
   function camTo(name, rate) { gp.set(...CAM[name][0]); gt.set(...CAM[name][1]); camW = rate || 0.9; }
   function camStep(dt, time) {
@@ -120,11 +128,11 @@ export function createFilm({ ctx, view, host }) {
       { id: 'stand', dur: 1.1, cam: 'wide', rate: 0.8, in() { reset(); camTo('wide', 0.8); }, run() { showCollapse(0); clock(G.COL, -1); say('A two-storey bay. Its middle columns are about to burst.'); figs([]); } },
       { id: 'fall', dur: 7.2, cam: 'fall', rate: 0.42, gate: () => D.frames > 60, run(u, t) { const f = fallMap(t); showCollapse(Math.min(f, D.frames - 2)); shakeA = 0.018 * Math.exp(-Math.pow((f - 75) / 46, 2)); say('Rigid-body physics decides where all ' + D.loose + ' loose pieces land.'); figs([[(D.mass / 1000).toFixed(0), 't', 'falling, simulated']]); } },
       { id: 'find', dur: 5.4, cam: 'pocket', rate: 0.62, gate: () => !!L(), wait: () => D.tried ? 'Testing lifts in copies of the pile: ' + D.tried + ' so far.' : 'Reading the pile.', run(u, t) { showCollapse(D.frames + 60); shakeA = 0; view.setPerson(L().box, ease(clamp((t - 1.2) / 1.8)) * 0.9); say('One pocket stays open, with a person in it.'); figs(t > 1.6 ? [headFig(A().head0)] : []); } },
-      { id: 'jack', dur: 2.6, cam: 'jack', rate: 0.75, run(u, t) { view.setPerson(L().box, 0.55); const e = ease(clamp(t / 1.5)); view.buildJackOnce(L().site); view.jack.position.x = L().site.x + (1 - e) * 2.2; view.jack.position.z = L().site.z - (1 - e) * 0.6; showRun(A(), 0); say('A jack goes under plank ' + L().piece + '. Lift it 34 cm, in a copy.'); figs([headFig(A().head0)]); } },
+      { id: 'jack', dur: 2.6, cam: 'jack', rate: 0.75, run(u, t) { view.setPerson(L().box, 0.55); const e = ease(clamp(t / 1.5)); view.buildJackOnce(L().site); view.jack.position.x = L().site.x - (1 - e) * 2.2; view.jack.position.z = L().site.z + (1 - e) * 0.6; showRun(A(), 0); say('A jack goes under plank ' + L().piece + '. Lift it 34 cm, in a copy.'); figs([headFig(A().head0)]); } },
       { id: 'liftA', dur: 9.2, cam: 'jack', rate: 0.6, run(u, t) { const m = L(), f = slipMap(t, m); showRun(A(), f); clock(G.A, f / 60); const v = runFrame(A(), f, clamp(t / 0.6)); glow(refA(), clamp((f - m.slip) / 14)); view.setPerson(m.box, 0.55); say(f < m.slip + 6 ? 'The load leaves the ground and goes into the jack.' : 'The slab over the person slips.'); figs([headFig(v.head), [kN(v.force), 'kN', 'on the jack']]); } },
       { id: 'shut', dur: 2.6, cam: 'hold', rate: 0.7, run(u, t) { const m = L(); showRun(A(), m.shut + 30); clock(G.A, (m.shut + 30) / 60 + t * 0.2); runFrame(A(), m.shut + 30, 1 - u * 0.7); glow(refA(), 1); view.setPerson(m.box, 0.6); say('The pocket shuts. ' + A().moved.length + ' pieces moved.'); figs([headFig(A().worst, 'bad'), [String(A().moved.length), '', 'pieces moved']]); } },
       { id: 'rewind', dur: 2.5, cam: 'jack', rate: 0.8, run(u) { const m = L(), f = (m.shut + 30) * (1 - ease(u)); showRun(A(), f); clock(G.A, f / 60); glow(refA(), 1 - u); runFrame(A(), f, 0.3 * (1 - u)); view.post.uni.fin.uRew.value = Math.sin(Math.PI * u); say('It was a copy. Rewind.'); figs([headFig(A().tr.head[Math.min(A().tr.head.length - 1, Math.floor(f / 3))])]); }, out() { view.post.uni.fin.uRew.value = 0; clock(G.A, -100); } },
-      { id: 'shore', dur: 3.6, cam: 'pocket', rate: 0.7, run(u, t) { const m = L(); showRun(A(), 0); glow(refA(), 0); addShorePiece(); view.placeAnim(D.n, m.shore, clamp(t / 2.5), [2.6, -1.2]); view.setPerson(m.box, 0.6); view.drawLoad(A().tr.edges, 0, 0, poses, 0); say('Add one timber shore beside the person.'); figs([headFig(A().head0)]); } },
+      { id: 'shore', dur: 3.6, cam: 'pocket', rate: 0.7, run(u, t) { const m = L(); showRun(A(), 0); glow(refA(), 0); addShorePiece(); view.placeAnim(D.n, m.shore, clamp(t / 2.5), [-2.6, 1.2]); view.setPerson(m.box, 0.6); view.drawLoad(A().tr.edges, 0, 0, poses, 0); say('Add one timber shore beside the person.'); figs([headFig(A().head0)]); } },
       { id: 'liftB', dur: 5.4, cam: 'jack', rate: 0.6, run(u, t) { const m = L(), f = Math.min(B().total - 2, t * 60 * 1.02); showRun(B(), f); clock(G.B, f / 60); shorePose(1); const v = runFrame(B(), f, clamp(t / 0.6)); glow(B().frames, 1); view.setPerson(m.box, 0.65); say('Same jack, same plank, same lift.'); figs([headFig(v.head), [kN(v.force), 'kN', 'on the jack'], [kN(v.shore), 'kN', 'on the shore']]); } },
       { id: 'answer', dur: 6.5, cam: 'hold', rate: 0.55, hold: true, run(u, t) { const m = L(), f = B().total - 2; showRun(B(), f); clock(G.B, f / 60 + t * 0.3); shorePose(1); runFrame(B(), f, 0.85); glow(B().frames, 1); view.setPerson(m.box, 0.8); say('It holds. The pocket stays open.'); figs([headFig(m.bLow, 'ok'), [kN(m.peakShore), 'kN', 'on a shore rated for ' + kN(m.b.shores[0].rated), 'ok'], [String(m.tried), '', 'lifts tested to find it']]); } },
       { id: 'unfall', dur: 4.2, cam: 'wide', rate: 0.95, run(u, t) { const m = L(); view.setPerson(m.box, 0.5 * (1 - clamp(t / 0.5))); if (t > 0.4) { view.jack.visible = false; hideShore(); view.setPerson(null); } view.drawLoad(A().tr.edges, 0, 0, poses, 0); glow(poses, 0); const f = (D.frames + 10) * (1 - ease(clamp((t - 0.5) / 3.5))); showCollapse(t < 0.4 ? D.frames + 60 : f); clock(G.B, -100); view.post.uni.fin.uRew.value = Math.sin(Math.PI * clamp((t - 0.3) / 3.9)) * 0.8; say('Again, from the start.'); figs([]); }, out() { view.post.uni.fin.uRew.value = 0; } },
@@ -139,7 +147,7 @@ export function createFilm({ ctx, view, host }) {
   function shakeBeats(k) {
     const S = () => D.shake, r = () => S().recs[k], lost = () => S().trials[k].filter((t) => t.lost).length;
     return [
-      { id: 'a', dur: 2.2, cam: 'mid', rate: 0.8, gate: () => !!S(), wait: () => 'Shaking copies of the pile: ' + Math.round(D.shakeK * 100) + ' %.', in() { reset(); if (k) settled(true); }, run(u, t) { settled(!!k); view.setPerson(L().box, 0.6); if (k) view.placeAnim(D.n, L().shore, clamp(t / 1.7), [2.6, -1.2]); say(k ? 'One shore. The same ' + S().n + ' tremors.' : 'An aftershock: ' + S().pga.toFixed(2) + ' g, assumed. ' + S().n + ' copies, ' + S().n + ' different tremors.'); figs([]); } },
+      { id: 'a', dur: 2.2, cam: 'mid', rate: 0.8, gate: () => !!S(), wait: () => 'Shaking copies of the pile: ' + Math.round(D.shakeK * 100) + ' %.', in() { reset(); if (k) settled(true); }, run(u, t) { settled(!!k); view.setPerson(L().box, 0.6); if (k) view.placeAnim(D.n, L().shore, clamp(t / 1.7), [-2.6, 1.2]); say(k ? 'One shore. The same ' + S().n + ' tremors.' : 'An aftershock: ' + S().pga.toFixed(2) + ' g, assumed. ' + S().n + ' copies, ' + S().n + ' different tremors.'); figs([]); } },
       { id: 'b', dur: 7.2, cam: k ? 'pocket' : 'mid', rate: 0.5, run(u, t) { const q = r(), f = Math.min(q.total - 2, t * 60 * 0.85); mix(q.frames, Math.floor(f) * q.n * 7, q.frames, Math.min(q.total - 1, Math.floor(f) + 1) * q.n * 7, f % 1, D.n, poses); place(); if (k) shorePose(1); const i = Math.min(q.acc.length - 2, Math.floor(f) * 2); shakeA = Math.hypot(q.acc[i], q.acc[i + 1]) * 0.006; glow(q.frames, 1); view.setPerson(L().box, 0.6); say(k ? 'One shore. The same ' + S().n + ' tremors.' : 'This is copy ' + S().pick + ' of ' + S().n + '.'); figs([]); } },
       { id: 'c', dur: 5.5, cam: 'hold', rate: 0.55, hold: true, run(u, t) { const q = r(); mix(q.frames, (q.total - 1) * q.n * 7, q.frames, (q.total - 1) * q.n * 7, 0, D.n, poses); place(); if (k) shorePose(1); shakeA = 0; glow(q.frames, 1); view.setPerson(L().box, 0.7); say(k ? 'With one shore the pocket is lost in ' + lost() + ' of ' + S().n + ' tremors.' : 'The pocket is lost in ' + lost() + ' of ' + S().n + ' tremors.'); figs([[lost() + ' of ' + S().n, '', k ? 'pockets lost, one shore' : 'pockets lost, no shore', lost() ? 'bad' : 'ok'], k ? [S().trials[0].filter((t2) => t2.lost).length + ' of ' + S().n, '', 'without the shore'] : null].filter(Boolean)); }, out() { glow(poses, 0); } },
     ];

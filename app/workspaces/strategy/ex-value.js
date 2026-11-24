@@ -7,12 +7,12 @@ const FIRST = 60001;
 const HALF = { f: 0.0555, fFan: 0.0395, fNoFan: 0.065 };
 export const CASES = [
   { id: 'base', label: 'As modelled', note: 'All four sensors', s: {} },
-  { id: 'noth', label: 'No thermal camera', note: 'What thermal adds', s: { thermal: { on: false } } },
-  { id: 'noradar', label: 'No radar', note: 'Both radars off', s: { radar: { on: false }, micro: { on: false } } },
-  { id: 'wide', label: 'Double Wi-Fi range', note: '13 m, still one wall', s: { csi: { range: 13 } } },
-  { id: 'two', label: 'Wi-Fi through two walls', note: 'Same rates behind the second', s: { csi: { maxWalls: 2 } } },
+  { id: 'noth', label: 'No thermal camera', note: 'Thermal rates assumed', s: { thermal: { on: false } } },
+  { id: 'noradar', label: 'No radar', note: 'Radar rates assumed', s: { radar: { on: false }, micro: { on: false } } },
+  { id: 'wide', label: 'Double Wi-Fi range', note: '13 m, one wall', s: { csi: { range: 13 } } },
+  { id: 'two', label: 'Wi-Fi through two walls', note: 'Rates behind it assumed', s: { csi: { maxWalls: 2 } } },
   { id: 'half', label: 'Half the Wi-Fi false alarms', note: '11.1 % to 5.6 %', s: { csi: HALF } },
-  { id: 'still', label: 'Twice the still detection', note: 'Wi-Fi on still people, 21 % to 43 %', s: { csi: { dStill: 0.428, depth: [[1.4, 0.57], [2.3, 0.38], [1e9, 0.334]] } } },
+  { id: 'still', label: 'Twice the still detection', note: '21 % to 43 %', s: { csi: { dStill: 0.428, depth: [[1.4, 0.57], [2.3, 0.38], [1e9, 0.334]] } } },
 ];
 
 export default async function (pane, ctx) {
@@ -22,6 +22,7 @@ export default async function (pane, ctx) {
   const M = { hour: ['people found per hour', 2], found: ['people found per world', 3], false: ['false alarms chased per world', 3] };
   const left = h('div.strategy-col.left.adv-only'), right = h('div.strategy-col.right.adv-only'), cv = h('canvas.strategy-tree', { role: 'img', 'aria-label': 'Change in the chosen measure for each sensor change, narrowing as more worlds are run' });
   const overlay = demoOverlay(ctx.kit, { title: 'What a better sensor is worth', sentence: 'The same simulated buildings, searched again with one sensor changed.', tags: ['live-algo', 'sim'], action: { label: 'Measure again', icon: 'reset', run: () => run() } });
+  overlay.el.classList.add('demo-only');
   pane.append(h('div.strategy-ex.wide-side', null, left, h('div.strategy-main', null, h('div.strategy-treewrap', null, cv), overlay.el), right));
   const seg = h('div.btn-group', { role: 'group', 'aria-label': 'Measure' }, ...[['hour', 'Per hour'], ['found', 'Found'], ['false', 'False alarms']].map(([id, t]) => h('button.btn.btn-sm', { type: 'button', 'aria-pressed': String(id === metric), onclick: (e) => { metric = id; for (const b of seg.children) b.setAttribute('aria-pressed', String(b === e.currentTarget)); hist.clear(); rebuild(); draw(true); } }, t)));
   const status = h('p', { 'aria-live': 'polite' }), runBtn = h('button.btn.btn-sm', { type: 'button', onclick: () => (pool ? stop() : run()) }, 'Measure again'), body = h('tbody'), point = h('p.strategy-point', null, 'Measuring.');

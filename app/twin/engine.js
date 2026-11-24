@@ -73,7 +73,7 @@ export async function createEngine(host, ctx, opts = {}) {
 
   // ---- build the world, a part at a time so the page stays alive ----
   onProgress(0.05, 'Painting the ground'); await nextFrame();
-  const [D, photos] = await Promise.all([loadTerrain(), loadPhotos(quality, Math.min(8, renderer.capabilities.getMaxAnisotropy()))]);
+  const [D, photos] = await Promise.all([loadTerrain(), loadPhotos(quality, Math.min(4, renderer.capabilities.getMaxAnisotropy()))]);
   env.photos = photos; env.mats = createMaterials(tex, photos);
   onProgress(0.15, 'Raising the valley'); await nextFrame();
   const environment = buildEnvironment(env, D); env.environment = environment; t.heightAt = environment.heightAt; cams.setGround(environment.heightAt);
@@ -100,6 +100,10 @@ export async function createEngine(host, ctx, opts = {}) {
     try { a.inst[fn](...args); a.errors = 0; }
     catch (e) { if (++a.errors === 1) console.warn('[twin] actor "' + a.def.id + '" threw in ' + fn + '():', e); if (a.errors > 30) { a.dead = true; console.warn('[twin] actor "' + a.def.id + '" keeps failing and has been switched off.'); } }
   };
+
+  // Switching a light off changes how many lights every material is compiled for, which would stall the picture. So a
+  // light that an actor hides stays in the scene at zero brightness instead.
+  scene.traverse((l) => { if (!l.isLight) return; let vis = l.visible, k = l.intensity; Object.defineProperty(l, 'visible', { configurable: true, get: () => true, set: (v) => { vis = v; } }); Object.defineProperty(l, 'intensity', { configurable: true, get: () => (vis ? k : 0), set: (v) => { k = v; } }); });
 
   // ---- layers ----
   let roofManual = false, phase = '';
@@ -173,7 +177,7 @@ export async function createEngine(host, ctx, opts = {}) {
     if (disposed) return; if (!once) raf = requestAnimationFrame(frame);
     if (lost || !host.isConnected || host.clientWidth < 2 || host.clientHeight < 2) { last = nowMs; return; }
     const raw = last ? (nowMs - last) / 1000 : 0.016; last = nowMs; const dt = Math.min(0.1, Math.max(0, raw)); time += dt; frames++;
-    if (!once) { ms += (raw * 1000 - ms) * 0.05; if (ms > 24 && frames > 120) { if (++slow > 150 && pr > 1) { pr = Math.max(1, pr - 0.25); slow = 0; stats.pr = pr; } } else slow = Math.max(0, slow - 2); }
+    if (!once) { ms += (raw * 1000 - ms) * 0.05; if (ms > 19.5 && frames > 120) { if (++slow > 70 && pr > 0.75) { pr = Math.max(0.75, pr - 0.125); slow = 0; stats.pr = pr; } } else slow = Math.max(0, slow - 2); }
     resize();
     const S = ctx.sim ? ctx.sim.state : null, animate = !t.reduced;
     if (S && !roofManual) { const want = S.phase === 'standby' || S.phase === 'aerial'; if (layerState.roof !== want) { layerState.roof = want; sync(); tell(); } }

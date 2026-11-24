@@ -4,12 +4,12 @@ import * as lab from './lab.js';
 
 const EXHIBITS = [
   { id: 'twin', file: './twin.js', short: 'Radio digital twin', line: ['Radio digital twin',''] },
-  { id: 'person', file: './person.js', short: 'A person in the channel', line: ['A breath moves the wave by millimetres','HOUND hears through the partition; its trained network reads ten seconds of 51 subcarriers.'] },
-  { id: 'fresnel', file: './fresnel.js', short: 'Fresnel dither', line: ['Three centimetres decide everything','Breathing shows in the bright bands and vanishes in the dark ones, so the rover nudges and listens again.'] },
+  { id: 'person', file: './person.js', short: 'A person in the channel', line: ['A breath moves the chest by millimetres','The network reads ten seconds of 51 simulated subcarriers, through a partition.'] },
+  { id: 'fresnel', file: './fresnel.js', short: 'Fresnel dither', line: ['Three centimetres can decide it','Breathing shows in the bright bands and vanishes in the dark ones, so the rover nudges and listens again.'] },
   { id: 'sar', file: './sar.js', short: 'Synthetic aperture', line: ['A driving rover is one long antenna','Every position adds another ring of possibility. Where the rings agree, something is there.'] },
   { id: 'sparse', file: './sparse.js', short: 'Too few measurements', line: ['Keep one sample in five','The same 256 samples, twice: smeared back on the left, solved for the emptiest room on the right.'] },
   { id: 'ris', file: './ris.js', short: 'Steering through gaps', line: ['Bend the signal through the gap','A panel dropped by the drone delays each reflection until they meet at the rover.'] },
-  { id: 'bf', file: './bf.js', short: 'Every router is a sensor', line: ['Every router is already a radar','IEEE 802.11bf lets Wi-Fi devices ask each other to measure the room.'] },
+  { id: 'bf', file: './bf.js', short: 'Every router is a sensor', line: ['Every router could listen','IEEE 802.11bf lets Wi-Fi devices ask each other to measure the room.'] },
 ];
 
 export default {

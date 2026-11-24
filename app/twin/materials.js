@@ -54,7 +54,7 @@ export function createMaterials(tex, photos = null) {
     screen: S({ color: 0x05080b, emissive: 0x7fb6ff, emissiveIntensity: 0.9, roughness: 0.3 }),
   };
   if (photos) {                                                                  // photographed surfaces over the painted ones
-    for (const k of ['plaster', 'plasterA', 'plasterC', 'inner']) photoTri(m[k], photos.plaster, { scale: 2.7, k: 0.72, bump: 0.8, key: 'plaster' });
+    for (const k of ['plaster', 'plasterA', 'plasterC', 'inner']) photoTri(m[k], photos.plaster, { scale: 2.7, k: 0.78, bump: 0.8, sat: 0.12, key: 'plaster' });
     photoTri(m.concrete, photos.concrete, { scale: 3.1, k: 0.85, bump: 0.7, key: 'conc' });
     // flat roofs hold shallow rainwater: low, noisy patches go smooth and mirror the sky
     photoTri(m.concreteDark, photos.concrete, { scale: 4.3, k: 0.95, bump: 0.8, key: 'concw', extra: ' float rpN = sin(vPW.x * 0.31 + sin(vPW.z * 0.23) * 2.0) * sin(vPW.z * 0.37 + sin(vPW.x * 0.19) * 2.0) + (pC.g - 1.0) * 0.25; float rpW = smoothstep(0.3, 0.42, rpN) * step(0.9, pN.y); diffuseColor.rgb *= mix(1.0, 0.42, rpW);', rough: ' roughnessFactor = mix(roughnessFactor, 0.07, rpW);', wet: 'rpW' });

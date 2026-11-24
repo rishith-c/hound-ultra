@@ -495,7 +495,7 @@ export function createView(host, { colors, reduced = false } = {}) {
   }
   let maxed = 0, grainCap = 8;
   function setGrains() { // more grains the closer the camera is; one per point from far away
-    if (!points) return; const d = camera.position.distanceTo(controls.target), n = Math.min(grainCap, E.uFilm.value < 0.5 ? 1 : d < 10 ? 8 : d < 14 ? 6 : d < 30 ? 5 : d < 60 ? 3 : 2);
+    if (!points) return; const d = camera.position.distanceTo(controls.target), n = Math.min(grainCap, d < 10 ? 8 : d < 14 ? 6 : d < 30 ? 5 : d < 60 ? 3 : 2);
     if (points.geometry.instanceCount !== n) { points.geometry.instanceCount = n; U.uGrain.value = n; U.uGrainPx.value = [1, 1, 0.82, 0.70, 0.62, 0.56, 0.52, 0.5, 0.48][n]; }
   }
   const moteU = { uT: { value: 0 }, uScale: { value: 1000 }, uC: { value: new THREE.Vector3() }, uR: { value: 26 }, uColor: { value: new THREE.Color(0.85, 0.9, 1) } };
@@ -530,7 +530,7 @@ export function createView(host, { colors, reduced = false } = {}) {
     if (!idle && !reduced && now - lastInput > 14000 && !fly && tool === 'orbit' && !section.dragging) idle = true;
     controls.autoRotate = idle && !reduced && !fly && autoOrbit;
     if (story && !story.paused) { story.camera(camera, controls.target); camera.lookAt(controls.target); } else controls.update(dt);
-    clockS += dt; E.uTimeS.value = clockS; setGrains(); U.uMaxPx.value = (story ? 8 : 18) * pr; U_T.value = moteU.uT.value = clockS;
+    clockS += dt; E.uTimeS.value = clockS; setGrains(); U.uMaxPx.value = (story ? 8 : E.uFilm.value > 0.5 ? 10 : 9) * pr; U_T.value = moteU.uT.value = clockS;
     emit('frame', dt);
     if (section.on) updateSection();
     if (tool === 'measure' && hoverXY) { const i = pick(hoverXY[0], hoverXY[1]); hoverXY = null; measure.hover = i >= 0 ? P3(i) : null; drawMeasure(); }
@@ -555,7 +555,7 @@ export function createView(host, { colors, reduced = false } = {}) {
     setClassColors(list) { list.forEach((c, i) => U.uCls.value[i].set(c)); },
     setPointSize(v) { U.uSize.value = v; }, get pointSize() { return U.uSize.value; },
     setShading(v) { E.uStrength.value = v; }, get shading() { return E.uStrength.value; }, setAutoOrbit(v) { autoOrbit = v; }, setHeightRange(h1) { U.uH1.value = h1; }, get heightMax() { return U.uH1.value; },
-    setLayer(name, on) { if (groups[name]) groups[name].visible = on; for (const t of tags.values()) if (t.group === name) t.hidden = !on; },
+    setLayer(name, on) { if (groups[name]) groups[name].visible = on; for (const [k, t] of tags) if (t.group === name) t.hidden = !on || (k === 'drone' && replayT == null); },
     start() { if (running) return; running = true; lastT = performance.now(); lastInput = lastT; resize(); raf = requestAnimationFrame(frame); },
     stop() { running = false; cancelAnimationFrame(raf); },
     renderOnce, resize,

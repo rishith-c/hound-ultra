@@ -4,6 +4,7 @@
 import { dist, pointInPoly, distToSeg, segIntersect } from '../../core/geometry.js';
 import world from '../../core/world.js';
 
+export const inside = pointInPoly;
 const { WALLS, HAZARDS, OBSTACLES, DOORS, UNITS, roomAt, roomById, wallsCrossed } = world;
 
 export const TEAM_SPEED = UNITS.find((u) => u.kind === 'team').speed; // m/s, from the scenario

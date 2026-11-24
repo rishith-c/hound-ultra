@@ -154,3 +154,7 @@
 @media (prefers-reduced-motion: reduce) { .swarm-dcap { transition: none; } }
 .swarm-demo::after { content: ""; position: absolute; right: 0; bottom: 0; width: 38%; height: 26%; background: radial-gradient(110% 130% at 100% 100%, rgba(4, 6, 9, 0.85) 0%, rgba(4, 6, 9, 0.5) 45%, transparent 72%); }
 .swarm-dfig, .swarm-dtitle { z-index: 1; }
+.swarm-legend { width: max-content; }
+.swarm-stage.race .swarm-badge { top: auto; bottom: 52px; }
+.swarm-stage.race .swarm-caption { bottom: auto; top: 54px; }
+.swarm-kpi th { font-size: var(--fs-11); } .swarm-kpi th.live::before { margin-right: 4px; }

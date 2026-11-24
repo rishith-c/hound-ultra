@@ -86,17 +86,17 @@ export default {
     ];
     const toolSeg = h('div.aerial-toolseg', { role: 'tablist', 'aria-label': 'Method' }, ...TOOLS.map((t) => h('button', { role: 'tab', id: 'aerial-tab-' + t.id, 'aria-selected': 'false', onclick: () => setTool(t.id) }, h('b', null, t.label), h('span', null, t.sub), realityTag(t.reality))));
     const viewHost = h('div.aerial-view');
-    const hudMeta = h('div.aerial-hud.aerial-hud-meta.glass');
+    const hudMeta = h('div.aerial-hud-meta');
     const hudCoord = h('div.aerial-hud.aerial-hud-coord.glass.num', { 'aria-hidden': 'true' });
     const hudScale = h('div.aerial-hud.aerial-hud-scale', { 'aria-hidden': 'true' }, h('i'), h('span.num'));
     const hudRun = h('div.aerial-hud.aerial-hud-run.glass', { role: 'status', hidden: true });
-    const hudZoom = h('div.aerial-hud.aerial-hud-zoom.glass', null,
+    const hudZoom = h('div.aerial-hud-zoom', null,
       h('button.btn.btn-ghost.btn-sm.btn-icon', { 'aria-label': 'Zoom in', title: 'Zoom in (+)', onclick: () => viewer.zoom(1.5) }, '+'),
       h('button.btn.btn-ghost.btn-sm.btn-icon', { 'aria-label': 'Zoom out', title: 'Zoom out (-)', onclick: () => viewer.zoom(1 / 1.5) }, '−'),
       h('button.btn.btn-ghost.btn-sm', { 'aria-label': 'Fit the frame to the view', title: 'Fit (0)', onclick: () => viewer.flyTo('fit') }, 'Fit'));
     const cover = h('div.aerial-cover', { hidden: true });
     const dropHint = h('div.aerial-drop', { hidden: true }, icon('upload', 28), h('b', null, 'Drop an aerial photo'), h('span', null, 'It stays on this computer. All three methods will run on it.'));
-    viewHost.append(hudMeta, hudZoom, hudCoord, hudScale, hudRun, cover, dropHint);
+    const hudBar = h('div.aerial-hudbar', null, hudMeta, hudZoom); viewHost.append(hudBar, hudCoord, hudScale, hudRun, cover, dropHint);
     const stage = h('section.aerial-stage', { 'aria-label': 'Frame viewer' }, toolSeg, viewHost);
     const side = h('aside.aerial-side', { 'aria-label': 'Method controls and results' });
     const scorePanel = h('section.aerial-card.aerial-score', { 'aria-label': 'Measured on the synthetic test set' });
@@ -816,10 +816,10 @@ export default {
       for (const mode of ['global', 'local']) rows.push(mkRow('rx-' + mode, 'Colour anomaly', mode === 'global' ? 'whole-frame model' : 'local window', rx ? rx.res[mode][ti].hit : null, rx ? rx.res[mode][ti].falseC / rx.frames : 0, rx ? sec(rx.ms[mode] / 1000) : '', b.rxState === 'error' ? 'Could not run: ' + b.rxError : 'Measuring… ' + (b.rxProgress || '')));
       const dt = b.det;
       const detBtn = h('button.btn.btn-sm', { disabled: b.detState === 'running', title: 'Runs the network on all 12 test frames: a minute or two.', onclick: runDetBench }, b.detState === 'running' ? 'Scoring ' + (b.detProgress || '') : dt ? 'Score the detector live' : 'Score the detector (a few minutes)');
-      for (const which of ['whole', 'tiled']) rows.push(mkRow('det-' + which, 'Neural detector', which === 'whole' ? 'whole frame' : 'tiled, 448 px', dt ? dt[which].hit : null, dt ? dt[which].falseC / dt.frames : 0, dt ? sec(dt[which].ms / dt.frames / 1000) : '', which === 'whole' ? h('span', null, 'Not scored in this session. ', detBtn) : b.detState === 'running' ? 'Running…' : 'Same button.'));
-      const head = h('div.aerial-card-head', null, h('h3', null, 'Measured here: ' + all + ' drawn figures in ' + BENCH.seeds.length + ' synthetic frames'), realityTag('live-algo'), h('span.tag.tag-sim', { title: 'The frames are drawn by this page. These are not results on real people or real photographs.' }, 'Synthetic test set'),
+      for (const which of ['whole', 'tiled']) rows.push(mkRow('det-' + which, 'Neural detector', which === 'whole' ? 'whole frame' : 'plus 448 px tiles', dt ? dt[which].hit : null, dt ? dt[which].falseC / dt.frames : 0, dt ? sec(dt[which].ms / dt.frames / 1000) : '', which === 'whole' ? h('span', null, 'Not scored yet. ', detBtn) : b.detState === 'running' ? 'Running…' : 'Same button.'));
+      const head = h('div.aerial-card-head', null, h('h3', { title: all + ' drawn figures in ' + BENCH.seeds.length + ' synthetic frames. Found means: one of the method\'s boxes overlaps the figure.' }, 'Measured: ' + all + ' drawn figures'), realityTag('live-algo'), h('span.tag.tag-sim', { title: 'The frames are drawn by this page. These are not results on real people or real photographs.' }, 'Synthetic test set'),
         h('div.grow'), dt ? detBtn : null, h('button.btn.btn-sm.btn-ghost', { disabled: b.rxState === 'running', onclick: runBench }, icon('reset'), 'Measure again'));
-      const table = h('table.aerial-table', null, h('thead', null, h('tr', null, h('th', null, 'Method'), ...DIFFS.map((d) => h('th', { title: d.hint }, d.label)), h('th', null, 'All'), h('th', { title: 'Candidates per frame, among the top ' + BENCH.topK + ', that are neither a figure nor a known bright object.' }, 'False leads / frame'), h('th', null, 'Time / frame'))), h('tbody', null, ...rows));
+      const table = h('table.aerial-table', null, h('thead', null, h('tr', null, h('th', null, 'Method'), ...DIFFS.map((d, i) => h('th', { title: d.hint }, ['Bright', 'Shadow', 'Covered', 'Earth-tone'][i])), h('th', null, 'All'), h('th', { title: 'Candidates per frame, among the top ' + BENCH.topK + ', that are neither a figure nor a known bright object.' }, 'False / frame'), h('th', null, 'Time'))), h('tbody', null, ...rows));
       // the misses of the selected row
       let missBox = h('div.aerial-miss');
       const [kind, which] = b.row.split('-');

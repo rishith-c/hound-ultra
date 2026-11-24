@@ -147,7 +147,7 @@ class View {
     const mat = (depthFunc, gain) => new THREE.ShaderMaterial({ vertexShader: MT.THREAD_VERT, fragmentShader: MT.THREAD_FRAG, uniforms: { ...this.tU, uGain: { value: gain } }, transparent: true, depthWrite: false, depthFunc, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
     for (const [f, k] of [[THREE.LessEqualDepth, 1], [THREE.GreaterDepth, 0.3]]) { const m = new THREE.Mesh(g, mat(f, k)); m.frustumCulled = false; m.renderOrder = 6; this.scene.add(m); (this.threadMeshes ||= []).push(m); }
   }
-  thread(key) { let t = this.threads.get(key); if (!t) { t = this.threadPool.pop() || { a: new THREE.Vector3(), b: new THREE.Vector3(), c: new THREE.Color() }; Object.assign(t, { key, age: 0, sag: 0, sagV: 0, grow: 0, alpha: 0, want: 1, dying: 0, fall: 0, kind: 'link', dly: 0, hold: 0, aId: '', bId: '', rest: 1, q: 1, rev: 0 }); this.threads.set(key, t); } return t; }
+  thread(key) { let t = this.threads.get(key); if (!t) { t = this.threadPool.pop() || { a: new THREE.Vector3(), b: new THREE.Vector3(), c: new THREE.Color() }; Object.assign(t, { key, age: 0, sag: 0, sagV: 0, grow: 0, alpha: 0, want: 1, dying: 0, fall: 0, kind: 'link', dly: 0, hold: 0, aId: '', bId: '', rest: 1, q: 1, rev: 0, len: 0, snap: false }); this.threads.set(key, t); } return t; }
   buildTrails() {
     const C = this.sh.C, g = new THREE.InstancedBufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array([0, 1, 0, 0, -1, 0, 1, 1, 0, 1, -1, 0]), 3)); g.setIndex([0, 1, 2, 2, 1, 3]);
     this.sg = new THREE.InstancedBufferAttribute(new Float32Array(SEGS * 4), 4).setUsage(THREE.DynamicDrawUsage); this.sm = new THREE.InstancedBufferAttribute(new Float32Array(SEGS * 2), 2).setUsage(THREE.DynamicDrawUsage); g.setAttribute('iSeg', this.sg); g.setAttribute('iMeta', this.sm); g.instanceCount = 0; this.trailGeo = g; g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e4); this.segN = 0;
@@ -178,8 +178,9 @@ class View {
     for (const l of this.order) {
       let ok = !!l.w && !l.off; if (ok) { v.copy(l.w).project(cam); ok = v.z < 1 && Math.abs(v.x) < 1.02 && Math.abs(v.y) < 1.02; }
       if (l.vis !== ok) { l.vis = ok; l.el.style.display = ok ? '' : 'none'; } if (!ok) continue;
-      const x = (v.x * 0.5 + 0.5) * rect.w, y0 = (-v.y * 0.5 + 0.5) * rect.h, wpx = l.text.length * 6.4 + 16, hpx = 20; let y = y0 - 8, lift = 0;
-      for (let t = 0; t < 5; t++) { let hit = false; for (let q = 0; q < np; q++) if (Math.abs(pl[q].x - x) < (pl[q].w + wpx) / 2 && Math.abs(pl[q].y - y) < hpx) { hit = true; break; } if (!hit) break; y -= hpx + 1; lift += hpx + 1; }
+      const x = (v.x * 0.5 + 0.5) * rect.w, y0 = (-v.y * 0.5 + 0.5) * rect.h, wpx = l.text.length * 6.4 + 16, hpx = 20; let y = y0 - 8, lift = 0, hit = false;
+      for (let t = 0; t < 4; t++) { hit = false; for (let q = 0; q < np; q++) if (Math.abs(pl[q].x - x) < (pl[q].w + wpx) / 2 && Math.abs(pl[q].y - y) < hpx) { hit = true; break; } if (!hit) break; y -= hpx + 1; lift += hpx + 1; }
+      if (hit) { l.vis = false; l.el.style.display = 'none'; continue; }
       const p = (pl[np++] ||= { x: 0, y: 0, w: 0 }); p.x = x; p.y = y; p.w = wpx;
       l.el.style.transform = 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0) translate(-50%,-100%)'; if (l.lift !== lift) { l.lift = lift; l.el.style.setProperty('--lift', lift + 8 + 'px'); }
     }
@@ -284,7 +285,7 @@ class View {
       const moved = Math.hypot(o.x - o.lx, o.y - o.ly); if (moved > 0.35) { if (moved < 14) this.addSeg(o.lx, o.ly, o.x, o.y, r.kind === 'drone' ? 1 : 0); o.lx = o.x; o.ly = o.y; }
       if (sh.layers.goals && !sh.cinema && r.goal && !r.goal.home && (r.mode === 'explore' || r.mode === 'lead') && gi < MAXR) { const j = gi * 6; gp[j] = o.x; gp[j + 1] = r.kind === 'drone' ? o.alt : 0.5; gp[j + 2] = -o.y; gp[j + 3] = r.goal.x; gp[j + 4] = 0.3; gp[j + 5] = -r.goal.y; this._m.compose(this._p.set(r.goal.x, 0.1, -r.goal.y), this._q.identity(), this._s.setScalar(scale * 0.5)); this.goalMarks.setMatrixAt(gi, this._m); gi++; }
       if (o.mode !== r.mode || o.sel !== (this.selected === r.id) || o.lead !== r.lead) { o.mode = r.mode; o.sel = this.selected === r.id; o.lead = r.lead; const mt = MODE[r.mode] || ''; this.label(r.id, r.id + (mt ? ' · ' + mt : ''), 'swarm-l-robot' + (o.sel ? ' sel' : '') + (r.mode === 'regroup' || r.mode === 'dead' ? ' bad' : r.mode === 'lead' || r.mode === 'listen' ? ' warn' : '') + (r.mode === 'done' ? ' off' : '')); }
-      const l = this.labels.get(r.id); l.off = sh.cinema && this.selected !== r.id; this.at(l, o.x, (r.kind === 'drone' ? o.alt : 0) + 0.8 * scale, -o.y);
+      const l = this.labels.get(r.id); l.off = (sh.cinema || off || r.mode === 'swap') && this.selected !== r.id; this.at(l, o.x, (r.kind === 'drone' ? o.alt : 0) + 0.8 * scale, -o.y);
     }
     this.goalLines.geometry.setDrawRange(0, gi * 2); this.goalLines.geometry.attributes.position.needsUpdate = true; this.goalMarks.count = gi; this.goalMarks.instanceMatrix.needsUpdate = true; this.goalLines.visible = this.goalMarks.visible = sh.layers.goals && !sh.cinema;
 
@@ -330,7 +331,7 @@ class View {
     }
     const bl = this.labels.get('BASE'); bl.off = sh.cinema; this.baseRing.visible = !sh.cinema; this.at(bl, this.world.base[0], 6.5, -this.world.base[1]);
     this.truthMarks.visible = sh.layers.truth; this.U.uTruth.value.copy(sh.layers.truth ? C.sim : C.black);
-    this.trU.uOn.value = sh.layers.trails ? 1 : 0; this.U.uBoost.value = sh.cinema ? 0.8 : 1.5; this.hemi.intensity = sh.cinema ? 0.95 : 1.4; this.moon.intensity = sh.cinema ? 1.7 : 2.4; this.fogU.uDens.value = sh.cinema ? 0.17 : 0.06;
+    this.trU.uOn.value = sh.layers.trails ? 1 : 0; this.U.uBoost.value = sh.cinema ? 0.8 : 1.5; this.hemi.intensity = sh.cinema ? 0.95 : 1.9; this.moon.intensity = sh.cinema ? 1.7 : 2.4; this.fogU.uDens.value = sh.cinema ? 0.17 : 0.06;
   }
   robotPos(id, out) { const o = this.robots.get(id); return o ? out.set(o.x, o.kind === 'drone' ? o.alt * 0.3 : 0.3, -o.y) : null; }
   dispose() {
@@ -405,7 +406,7 @@ export function createScene(host, { kit, onPick }) {
     renderer.setRenderTarget(target); if (target) { target.scissorTest = false; target.viewport.set(0, 0, target.width, target.height); renderer.setRenderTarget(target); } else { renderer.setScissorTest(false); renderer.setViewport(0, 0, size.w, size.h); }
     renderer.setClearColor(C.bg0, 1); renderer.clear();
     for (let i = 0; i < views.length; i++) {
-      const v = views[i], r = rs[i]; camera.aspect = r.w / r.h; camera.updateProjectionMatrix(); v.tU.uRes.value.set(r.w, r.h); v.tU.uPx.value = 4.2;
+      const v = views[i], r = rs[i]; camera.aspect = r.w / r.h; camera.updateProjectionMatrix(); v.tU.uRes.value.set(r.w, r.h); v.tU.uPx.value = sh.cinema ? 4.2 : 3.2;
       if (target) { target.viewport.set(r.x * pr, 0, r.w * pr, r.h * pr); target.scissor.set(r.x * pr, 0, r.w * pr, r.h * pr); target.scissorTest = views.length > 1; renderer.setRenderTarget(target); } else { renderer.setViewport(r.x, 0, r.w, r.h); renderer.setScissor(r.x, 0, r.w, r.h); renderer.setScissorTest(true); }
       renderer.shadowMap.needsUpdate = (frameNo + i) % 3 === 0 || v.moon.shadow.map === null; renderer.render(v.scene, camera);
     }
@@ -414,7 +415,7 @@ export function createScene(host, { kit, onPick }) {
   function buildComposer() {
     try {
       const rt = new THREE.WebGLRenderTarget(size.w * pr, size.h * pr, { type: THREE.HalfFloatType, samples: 4 });
-      composer = new EffectComposer(renderer, rt); composer.setPixelRatio(pr); composer.setSize(size.w, size.h); composer.addPass(new ViewsPass(drawViews));
+      composer = new EffectComposer(renderer, rt); composer.setPixelRatio(pr); composer.setSize(size.w, size.h); composer.addPass(new ViewsPass(drawViews)); composer.addPass(new ShaderPass(MT.CLEAN));
       bloom = new UnrealBloomPass(new THREE.Vector2(size.w, size.h), 0.5, 0.62, 0.85); composer.addPass(bloom); final = new ShaderPass(MT.FINAL); composer.addPass(final);
     } catch (e) { console.warn('[swarm] post-processing unavailable, drawing without it', e); composer = null; renderer.toneMapping = THREE.ACESFilmicToneMapping; }
   }
@@ -437,7 +438,7 @@ export function createScene(host, { kit, onPick }) {
     else { if (goal.active) { const k = 1 - Math.exp(-dt * 2.6); camera.position.lerp(goal.pos, k); controls.target.lerp(goal.target, k); if (camera.position.distanceTo(goal.pos) < 0.05) goal.active = false; } else if (mode === 'overview' && !sh.reduced && clock - lastTouch > 8) { off.copy(camera.position).sub(controls.target).applyAxisAngle(THREE.Object3D.DEFAULT_UP, Math.sin(clock * 0.07) * 0.00045); camera.position.copy(controls.target).add(off); } controls.update(); }
     camera.updateMatrixWorld();
     for (const v of views) { v.update(dt, speed); v.flushLight(renderer); }
-    fade += (fadeTo - fade) * (1 - Math.exp(-dt * 4)); if (final) { final.uniforms.uTime.value = clock % 10; final.uniforms.uFade.value = fade; final.uniforms.uExp.value = sh.cinema ? 1.3 : 1.45; final.uniforms.uVig.value = sh.cinema ? 1 : 0.45; bloom.strength = sh.cinema ? 0.5 : 0.36; }
+    fade += (fadeTo - fade) * (1 - Math.exp(-dt * 4)); if (final) { final.uniforms.uTime.value = clock % 10; final.uniforms.uFade.value = fade; final.uniforms.uExp.value = sh.cinema ? 1.3 : 1.65; final.uniforms.uVig.value = sh.cinema ? 1 : 0.45; bloom.strength = sh.cinema ? 0.5 : 0.36; }
     if (composer) composer.render(dt); else drawViews(null);
     for (let i = 0; i < views.length; i++) { camera.aspect = rs[i].w / rs[i].h; camera.updateProjectionMatrix(); views[i].placeLabels(rs[i]); }
   }
@@ -451,7 +452,7 @@ export function createScene(host, { kit, onPick }) {
   return {
     canvas, setSwarms, frame, resize, setCamera, film, cameraMode: () => mode, rects, snap, pixelRatio: () => pr,
     setCinema(on) { sh.cinema = on; }, setFade(v, now) { fadeTo = v; if (now) fade = v; }, touched: () => clock - lastTouch < 6,
-    setLayer(name, on) { sh.layers[name] = on; }, layers: () => ({ ...sh.layers }), select(id) { for (const v of views) v.selected = id; }, hasBloom: () => !!composer,
+    setLayer(name, on) { sh.layers[name] = on; }, layers: () => ({ ...sh.layers }), select(id) { for (const v of views) v.selected = id; }, hasBloom: () => !!composer, parts: () => ({ renderer, composer, bloom, views, final }),
     dispose() { disposed = true; ro.disconnect(); for (const v of views) v.dispose(); views = []; controls.dispose(); composer?.dispose?.(); renderer.dispose(); canvas.remove(); },
   };
 }

@@ -70,7 +70,7 @@ export default {
     const sw = (c, cls = '') => h('i' + (cls ? '.' + cls : ''), { style: { background: c, color: c } });
     const lg = (cls, c, text) => h('span', null, h('i' + (cls ? '.' + cls : ''), { style: '--c:' + c }), text);
     const legend = h('div.swarm-legend.glass.legend.adv-only', null, lg('line', 'var(--text)', 'Frontier: where the known map ends'), lg('hollow', 'var(--accent)', 'Robot'), lg('line', 'var(--accent-2)', 'Radio link (amber: weak)'),
-      lg('', 'var(--warn)', 'Lead: possible person'), lg('', 'var(--person)', 'Person confirmed'), h('span.dim', null, 'Walls are cut at 1.7 m; building heights are drawn, not measured'));
+      lg('', 'var(--warn)', 'Lead: possible person'), lg('', 'var(--person)', 'Person confirmed'), h('span.dim', null, 'Walls cut at 1.7 m'));
     // ---------- demo overlay ----------
     const dCap = h('p.swarm-dcap', { role: 'status' }), dFig = ['mapped', 'search time', 'searching'].map((t) => { const b = h('b.num', null, '–'); return { el: h('div', null, b, h('span', null, t)), b }; });
     const btnDemo = h('button.btn.btn-primary', { title: 'Kills the beacon that carries the most machines. You can also click any beacon.', onclick: () => failRelay('busiest') }, icon('alert', 14), 'Fail a beacon');
@@ -141,7 +141,7 @@ export default {
       scene?.setSwarms(runs.map((r) => r.swarm)); applyCam();
       const mix = fleetMix(cfg.n); nVal.textContent = String(cfg.n); nMix.textContent = mix.rovers + ' rover' + (mix.rovers === 1 ? '' : 's') + (mix.drones ? ' + ' + mix.drones + ' drone' + (mix.drones === 1 ? '' : 's') : '');
       nMinus.disabled = cfg.n <= 2; nPlus.disabled = cfg.n >= 12; selLayout.value = cfg.layout; inSeed.value = cfg.seed; selCharge.value = String(cfg.charge);
-      fieldB.hidden = !cfg.race; fleetAB.hidden = !cfg.race; divider.hidden = !cfg.race; badges[1].hidden = !cfg.race; segStrat.redraw(); segMode.redraw();
+      fieldB.hidden = !cfg.race; fleetAB.hidden = !cfg.race; divider.hidden = !cfg.race; stage.classList.toggle('race', cfg.race); badges[1].hidden = !cfg.race; segStrat.redraw(); segMode.redraw();
       fleetBody.replaceChildren(); fleetRows.clear(); record(); refreshAll(true);
     }
     function applyCam() { if (!scene) return; scene.setCinema(demo); if (demo && !ctx.kit.reducedMotion()) scene.setCamera('film'); else scene.setCamera(demo ? 'overview' : camMode, selRobot); scene.select(!demo && camMode === 'follow' ? selRobot : null); }
@@ -159,7 +159,7 @@ export default {
 
     function tick(now) {
       raf = requestAnimationFrame(tick);
-      const dt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now; let speed = 0;
+      const dt = Math.max(0, Math.min(0.05, (now - last) / 1000 || 0.016)); last = now; let speed = 0;
       if (playing && !(demo && paused)) {
         if (demo && scene && !ctx.kit.reducedMotion()) { if (!director) makeDirector(); speed = director.update(dt); } else speed = demo ? 6 : cfg.speed;
         let adv = dt * speed; if (runs.length > 1) for (const r of runs) if (!r.swarm.state.done) adv = Math.min(adv, Math.max(0, r.swarm.buffered()));   // keep a race in step
@@ -202,7 +202,7 @@ export default {
     ];
     function drawKpi() {
       const H = hist(), liveSet = new Set(runs.map((r) => r.strategy));
-      const rows = [h('tr', null, h('th', { title: world.name + ', seed ' + cfg.seed + ', ' + cfg.n + ' robots' }, world.name + ', seed ' + cfg.seed), ...ORDER.map((s) => h('th' + (liveSet.has(s) ? '.live' : ''), { title: STRATEGIES[s].does }, STRATEGIES[s].short)))];
+      const rows = [h('tr', null, h('th', { title: world.name + ', seed ' + cfg.seed + ', ' + cfg.n + ' robots' }, 'Seed ' + cfg.seed), ...ORDER.map((s) => h('th' + (liveSet.has(s) ? '.live' : ''), { title: STRATEGIES[s].does }, STRATEGIES[s].short)))];
       for (const [label, fmtv, score, tip] of KPI) {
         const vals = ORDER.map((s) => (H[s] && score ? score(H[s].sum) : null)), have = vals.filter((v) => v != null), best = have.length > 1 ? Math.min(...have) : null;
         rows.push(h('tr', null, h('td', { title: tip || null }, label), ...ORDER.map((s, i) => (H[s] ? h('td' + (best != null && vals[i] === best ? '.best' : H[s].sum.tExplored == null ? '.part' : ''), null, fmtv(H[s].sum)) : h('td.none', { title: 'Not measured yet' }, '–')))));
@@ -401,8 +401,8 @@ export default {
     function openModel() {
       const P = PARAMS, prev = document.activeElement;
       const rows = [
-        ['Site', 'Generated from the seed on a 240 × 180 grid of 0.5 m cells (120 m × 90 m). Block B uses the wall plan of the main exercise.', 'Simulated'],
-        ['Frontier exploration', 'Frontier cells are found on the shared occupancy grid, grouped into clusters of up to 22 cells, and costed by shortest path over known free cells.', 'Live algorithm'],
+        ['Site', 'Generated from the seed on a 240 × 180 grid of 0.5 m cells (120 m × 90 m). Block B uses the wall plan of the main exercise. Building outlines, heights and the city around the site are scenery: the robots never read them.', 'Simulated'],
+        ['Frontier exploration', 'Frontier cells are found on the shared occupancy grid, grouped into clusters of up to 22 cells, and costed by shortest path over known free cells. Rovers then drive straight to the furthest clear point of the path.', 'Live algorithm'],
         ['Assignment', 'Nearest frontier (no coordination), greedy auction with a spreading penalty, and the Hungarian method (Kuhn–Munkres) solved at every replan.', 'Live algorithm'],
         ['Coverage score', 'Share of the floor a rover could ever reach that the fleet has seen as free. Scored against the hidden map; the robots never read it.', 'Measured'],
         ['Rover', P.rover.speed + ' m/s (HOUND-01\'s speed), ' + P.rover.capWh + ' Wh pack (3S 2200 mAh, as built).', 'Real values'],
@@ -410,7 +410,7 @@ export default {
         ['Rover power draw', P.rover.hotelW + ' W standing, ' + (P.rover.hotelW + P.rover.driveW) + ' W driving.', 'Assumed'],
         ['Drone', P.drone.speed + ' m/s at ' + P.drone.alt + ' m, sees open ground and roofs within ' + P.drone.footprint + ' m, ' + P.drone.capWh + ' Wh at ' + P.drone.flyW + ' W. No drone exists.', 'Concept, assumed'],
         ['Radio', 'Log-distance path loss: ' + P.radio.p1m + ' dBm at 1 m, exponent ' + P.radio.exponent + ', minus ' + P.radio.loss[1] + ' dB per concrete wall, ' + P.radio.loss[2] + ' dB per drywall, ' + P.radio.loss[3] + ' dB per rubble pile. Usable above ' + P.radio.rxMin + ' dBm.', 'Assumed'],
-        ['Relay beacons', 'A robot drops one when its best link falls under ' + P.radio.drop + ' dBm. Rovers carry ' + P.rover.relays + ', drones ' + P.drone.relays + '. Robots attach to the backbone; they do not relay for each other.', 'Concept, live algorithm'],
+        ['Relay beacons', 'A robot drops one when its best link falls under ' + P.radio.drop + ' dBm. Rovers carry ' + P.rover.relays + ', drones ' + P.drone.relays + '. A drone sets its beacon on a roof or another high point, so that beacon\'s links are traced from the air. Robots attach to the backbone; they do not relay for each other.', 'Concept, live algorithm'],
         ['Battery scheduler', 'Return when charge left is under ' + P.energy.margin + ' × the trip home plus ' + P.energy.reserve * 100 + ' %. At most a third of the fleet may be away for a swap at once.', 'Live algorithm'],
         ['Leads while driving', 'Radar picks up a moving target within ' + P.cue.radarRange + ' m through at most one wall; the thermal camera needs line of sight within ' + P.cue.thermalRange + ' m. A still person behind a wall is not picked up while driving.', 'Simulated, assumed rates'],
         ['Second look', 'Two 10 s Wi-Fi windows, radar and thermal from a new position, fused with Bayes\' rule. The Wi-Fi network answers with its measured rates: 86.9 % for a moving person, 21.4 % for a still one, 11.1 % false alarms.', 'Measured in simulation'],

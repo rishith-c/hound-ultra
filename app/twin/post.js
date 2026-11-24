@@ -57,7 +57,7 @@ const FINAL = `
     vec3 c = texture2D(tDiffuse, vUv).rgb; vec4 bl = texture2D(tBlur, vUv); c = mix(c, bl.rgb, smoothstep(0.04, 0.5, bl.a) * uDof);
     vec2 q = vUv - 0.5; q.x *= mix(1.0, uRes.x / uRes.y, 0.35); c *= mix(1.0, smoothstep(0.98, 0.25, length(q)), uVignette);
     c = ACESFilmicToneMapping(c); float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
-    c = mix(vec3(l), c, 1.1); c += vec3(-0.010, 0.0, 0.016) * (1.0 - smoothstep(0.0, 0.45, l)) + vec3(0.012, 0.004, -0.010) * smoothstep(0.45, 0.95, l); c = (c - 0.5) * 1.04 + 0.5;
+    c = mix(vec3(l), c, 0.98); c += vec3(-0.004, 0.0, 0.007) * (1.0 - smoothstep(0.0, 0.45, l)) + vec3(0.012, 0.004, -0.010) * smoothstep(0.45, 0.95, l); c = (c - 0.5) * 1.04 + 0.5;
     c = sRGBTransferOETF(vec4(max(c, 0.0), 1.0)).rgb; c += (hash(gl_FragCoord.xy + fract(uTime) * vec2(311.7, 173.3)) - 0.5) * uGrain * (1.0 - 0.6 * l);
     gl_FragColor = vec4(c, 1.0);
   }`;

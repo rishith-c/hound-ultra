@@ -143,7 +143,7 @@ export async function createAnatomy(host, ctx, { onStage = () => {}, onHover = (
     canvasHost.append(dom);
     const scene = new THREE.Scene(); const bg = new THREE.Color(tok('--bg-0') || '#07090c'); scene.background = bg; scene.fog = new THREE.Fog(bg, 34, 80);
     const camera = new THREE.PerspectiveCamera(28, 2, 0.1, 200);
-    const controls = new OrbitControls(camera, dom); controls.enableDamping = true; controls.dampingFactor = 0.08; controls.minDistance = 6; controls.maxDistance = 60; controls.maxPolarAngle = Math.PI * 0.49; controls.zoomSpeed = 0.7;
+    const controls = new OrbitControls(camera, dom); controls.minAzimuthAngle = -1.05; controls.maxAzimuthAngle = 0.65; controls.enableDamping = true; controls.dampingFactor = 0.08; controls.minDistance = 6; controls.maxDistance = 60; controls.maxPolarAngle = Math.PI * 0.49; controls.zoomSpeed = 0.7;
     let userAt = -1e9; controls.addEventListener('start', () => { userAt = performance.now(); });
     scene.add(new THREE.HemisphereLight(0xc9dcff, 0x0a0c10, 0.5));
     const key = new THREE.DirectionalLight(0xffffff, 1.5); key.position.set(-9, 16, 3); key.castShadow = true; key.shadow.mapSize.set(2048, 2048);

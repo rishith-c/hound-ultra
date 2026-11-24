@@ -140,7 +140,7 @@ export function personGeo() {
 }
 
 // ------------------------------------------------------------ sky, sun and surroundings
-export const SUN_DIR = new THREE.Vector3(-0.86, 0.265, 0.44).normalize();
+export const SUN_DIR = new THREE.Vector3(0.86, 0.265, -0.44).normalize();
 const SKY = `
 vec3 skyCol(vec3 d, vec3 sun){ float h = max(d.y, 0.0), m = max(dot(d, sun), 0.0);
   vec3 zen = vec3(0.045, 0.085, 0.16), mid = vec3(0.21, 0.235, 0.285), hor = vec3(0.86, 0.47, 0.215);
@@ -174,7 +174,7 @@ export function makeSurroundings(T) {
   while (k < nb) { const a = r() * 6.283, d = 34 + r() * 110; p.set(Math.cos(a) * d, 0, Math.sin(a) * d); const hgt = 7 + r() * 13 + (d > 80 ? r() * 18 : 0); s.set(9 + r() * 13, hgt, 9 + r() * 12); if (p.x * SUN_DIR.x + p.z * SUN_DIR.z > d * 0.93 && d < 90) continue; p.y = hgt / 2 - 0.2; q.setFromAxisAngle(up, Math.round(r() * 4) * 0.3926 + (r() - 0.5) * 0.1); m4.compose(p, q, s); city.setMatrixAt(k++, m4); }
   city.receiveShadow = false; g.add(city);
   // utility poles and sagging wire
-  const dark = new THREE.MeshStandardMaterial({ color: 0x15130f, roughness: 0.95 }), wires = []; const poles = [[-17, 15], [-21, -4], [-25, -24], [-13, 34]];
+  const dark = new THREE.MeshStandardMaterial({ color: 0x15130f, roughness: 0.95 }), wires = []; const poles = [[17, -15], [21, 4], [25, 24], [13, -34]];
   poles.sort((a, b) => a[1] - b[1]).forEach(([x, z], i, A) => { const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.15, 8.6, 8), dark); pole.position.set(x, 4.3, z); pole.rotation.z = (r() - 0.5) * 0.1; const arm = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 2.2), dark); arm.position.set(x, 8, z); arm.rotation.y = 1.45; g.add(pole, arm);
     if (i) { const [x0, z0] = A[i - 1]; for (const o of [-0.9, 0, 0.9]) { const c = new THREE.CatmullRomCurve3([new THREE.Vector3(x0 + o, 8.05, z0), new THREE.Vector3((x0 + x) / 2 + o, 7.1, (z0 + z) / 2), new THREE.Vector3(x + o, 8.05, z)]); wires.push(new THREE.TubeGeometry(c, 24, 0.018, 4)); } } });
   if (wires.length) g.add(new THREE.Mesh(mergeGeometries(wires), dark));
@@ -194,7 +194,7 @@ export function makeDust(N = 5200, groups = 4) {
       float unpackD(vec4 v){ return dot(v, vec4(1.0, 1.0/256.0, 1.0/65536.0, 1.0/16777216.0)) ; }
       void main(){ int gi = int(aT.w); float ck = uClock[0]; ${Array.from({ length: groups - 1 }, (_, i) => `if (gi == ${i + 1}) ck = uClock[${i + 1}];`).join(' ')}
         float t = ck - aT.x, a = t / aT.y; vA = a; if (t < 0.0 || a >= 1.0 || aT.x < -900.0) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); gl_PointSize = 0.0; return; }
-        float k = 1.55, e = (1.0 - exp(-k * t)) / k; vec3 p = position + aVel * e; p.y += 0.045 * t * t * (1.0 - a * 0.6) + 0.02; p.x += 0.10 * t; p.y = max(p.y, 0.05); p += 0.10 * sin(vec3(1.7, 1.1, 1.3) * t + position.zxy * 5.0) * min(1.0, t);
+        float k = 1.55, e = (1.0 - exp(-k * t)) / k; vec3 p = position + aVel * e; p.y += 0.045 * t * t * (1.0 - a * 0.6) + 0.02; p.x -= 0.10 * t; p.y = max(p.y, 0.05); p += 0.10 * sin(vec3(1.7, 1.1, 1.3) * t + position.zxy * 5.0) * min(1.0, t);
         vec4 wp = vec4(p, 1.0), mv = viewMatrix * wp; vZ = -mv.z; vec4 sc = uSM * wp; vec3 sp = sc.xyz / sc.w; vL = 1.0; if (sp.x > 0.0 && sp.x < 1.0 && sp.y > 0.0 && sp.y < 1.0 && sp.z < 1.0) { vL = 0.0; for (int i = 0; i < 4; i++) { vec2 o = (vec2(i == 0 || i == 2 ? -1.0 : 1.0, i < 2 ? -1.0 : 1.0)) * 0.009; vL += step(sp.z - 0.004, unpackRGBAToDepth(textureLod(tShadow, sp.xy + o, 0.0))) * 0.25; } }
         vec3 vd = normalize(cameraPosition - p); float c = dot(-vd, uSunDir); vF = 0.35 + 1.9 * pow(max(c, 0.0), 4.0) + 0.35 * c * c; vRot = position.x * 13.0 + position.z * 7.0 + t * 0.12;
         gl_PointSize = min(260.0, aT.z * (0.45 + 2.1 * (1.0 - exp(-1.2 * t))) * uScale / vZ); gl_Position = projectionMatrix * mv; }`.replace('float unpackD', '#include <packing>\nfloat unpackD'),

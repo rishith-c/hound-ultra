@@ -88,6 +88,7 @@ function buildAirframe(THREE, low) {
     add(MAT.bell, cyl(0.013, 0.0222, 0.005, tx, ARM_Y + 0.038, tz, 36));
     for (let k = 0; k < 6; k++) add(MAT.seam, new THREE.BoxGeometry(0.0075, 0.0008, 0.0026).translate(0.0155, 0, 0).rotateY((k / 6) * Math.PI * 2).translate(tx, ARM_Y + 0.0396, tz));
     add(MAT.steel, cyl(0.0026, 0.0026, 0.022, tx, ARM_Y + 0.05, tz, 10));
+    add(MAT.trim, cyl(0.0085, 0.0105, 0.0105, tx, PROP_Y, tz, 18)); add(MAT.alu, cyl(0.004, 0.0055, 0.006, tx, PROP_Y + 0.008, tz, 6));                                               // prop hub
     add(MAT.window, cyl(0.0052, 0.0044, 0.006, tx, ARM_Y - 0.009, tz, 14));                                                                                                       // light housing
   }
   // skids
@@ -122,10 +123,7 @@ function bladeGeometry(THREE) {
   }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx);
   const flat = g.toNonIndexed(); g.dispose(); flat.computeVertexNormals();
-  const hub = new THREE.CylinderGeometry(0.0085, 0.011, 0.011, 18).toNonIndexed(); hub.deleteAttribute('uv');
-  const nut = new THREE.CylinderGeometry(0.004, 0.0055, 0.006, 6).translate(0, 0.008, 0).toNonIndexed(); nut.deleteAttribute('uv');
-  const out = mergeGeometries([flat, hub, nut]); flat.dispose(); hub.dispose(); nut.dispose();
-  return out;
+  return flat;
 }
 
 // One material for the whole airframe: colour, roughness, metalness and carbon weave come from the vertices.
@@ -204,7 +202,7 @@ export default {
         '  float r = vUv.y, dir = mod(vI, 2.0) * 2.0 - 1.0;',
         '  float prof = smoothstep(0.04, 0.22, r) * (1.0 - smoothstep(0.86, 1.0, r));',
         '  float g = abs(cos(vUv.x * 6.2831853 + dir * uPhase + vI * 1.3)); g *= g; g *= g; g *= g; g *= g;',   // the two blades, blurred
-        '  float a = uSpin * prof * (0.17 + 0.3 * g);',
+        '  float a = uSpin * prof * (0.18 + 0.4 * g);',
         '  gl_FragColor = vec4(mix(vec3(0.05, 0.055, 0.06), vec3(0.17, 0.18, 0.2), g * r), a);',
         '  #include <colorspace_fragment>',
         '}'].join('\n'),

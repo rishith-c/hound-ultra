@@ -4,6 +4,7 @@
 import { buildPile, drawPile, drawScale, voidLabels, WORLD } from './model.js';
 import * as L from './lib.js';
 import { createCompare } from './compare.js';
+import { createDemo } from './demo.js';
 
 const LENSES = [
   { id: 'muon', n: '1', name: 'Cosmic-ray muons', what: 'weighs matter along a line' },
@@ -85,8 +86,10 @@ export default {
     const body = h('div.ds-body', null, h('div.ds-main', null, stageWrap, readWrap), side);
     const compare = createCompare(env, { LENSES, exhibits, ensure, open: (id) => show(id) });
     compare.el.hidden = true;
-    root.append(head, tabs, body, compare.el);
-    root.__ds = { exhibits, st, env, show: (id) => show(id) };
+    const demo = createDemo(ctx, { getPile: () => pile, getSeed: () => st.seed, reduced: () => ctx.kit.reducedMotion() });
+    for (const e of [head, tabs, body, compare.el]) e.classList.add('adv-only');
+    root.append(demo.el, head, tabs, body, compare.el);
+    root.__ds = { exhibits, st, env, demo, show: (id) => show(id) };
 
     // ---- side panel ----
     const sideParts = new Map();
@@ -131,10 +134,12 @@ export default {
     ro.observe(stageCv); ro.observe(readCv);
     const begin = (cv) => { const z = sizes.get(cv); if (!z) return null; const c = cv.getContext('2d'); c.setTransform(z.dpr, 0, 0, z.dpr, 0, 0); c.clearRect(0, 0, z.w, z.h); return { c, w: z.w, h: z.h }; };
 
+    const demoSeed = st.seed; // the film set is built once, for the pile the page opened with
     let raf = 0, last = 0, lastS = null;
     function frame(now) {
       raf = requestAnimationFrame(frame);
       const dt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now;
+      if (ctx.mode !== 'advanced') { if (demoSeed !== st.seed) newPile(demoSeed); demo.start(); demo.frame(dt); return; }
       if (st.lens === 'compare') { compare.frame(dt); return; }
       const ex = cur(); if (!ex) return;
       try {
@@ -173,7 +178,7 @@ export default {
       for (const ex of exhibits.values()) ex.stale = true;
       compare.dirty(); env.refresh();
     }
-    const offs = [ctx.bus.on('prefs', () => { L.dropTokens(); compare.dirty(); env.refresh(); })];
+    const offs = [ctx.bus.on('mode', () => { L.dropTokens(); env.refresh(); }), ctx.bus.on('prefs', () => { L.dropTokens(); compare.dirty(); env.refresh(); })];
     show(ctx.params?.lens || 'muon');
 
     return {

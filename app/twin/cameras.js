@@ -62,7 +62,7 @@ export function createCameras({ camera, dom, ctx, world, reduced = () => false, 
     team(S, tau, k) { const m = unit(S, 'TEAM-1'), i = inB(m.pos); u3(D.target, m.pos, 0.9); D.yaw = (i ? 0.3 : yawBehind(m.heading || 0) + 0.7) + Math.sin(tau * 0.08) * 0.15 * k; D.pitch = i ? 0.6 : 0.16; D.dist = i ? 13 : 9; D.fov = 34; },
     done(S, tau, k) { D.target.copy(siteC).setY(13); D.yaw = -0.1 - tau * 0.008 * k; D.pitch = 0.07; D.dist = 78; D.fov = 42; },
   };
-  const DOF = { establish: 0, survey: 0, drone: 0.5, track: 0.85, inside: 0.35, listen: 0.7, find: 0.8, route: 0, team: 0.5, done: 0 };
+  const DOF = { establish: 0, survey: 0, drone: 0.5, track: 0.6, inside: 0.25, listen: 0.5, find: 0.55, route: 0, team: 0.5, done: 0 };
   function pickShot(S) {
     const r = unit(S, 'HOUND-01'), d = unit(S, 'DRONE-01');
     if (find && now < find.until) return 'find';

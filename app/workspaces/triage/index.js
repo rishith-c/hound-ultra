@@ -3,6 +3,7 @@
 import { createPlan } from './plan.js';
 import * as M from './model.js';
 import world from '../../core/world.js';
+import { createHero } from './hero.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 function s(tag, attrs, ...kids) {
@@ -36,7 +37,7 @@ export default {
     const sendNote = h('p.triage-sendnote');
     const holdBox = h('label.check.triage-hold', { title: 'When the search ends, the mission waits for you instead of planning by itself.' },
       h('input', { type: 'checkbox', onchange: (e) => setHold(e.target.checked) }), h('span', null, 'Hold the mission at planning for my order'));
-    const head = h('header.ws-head.triage-head', null,
+    const head = h('header.ws-head.triage-head.adv-only', null,
       h('div.triage-headline', null,
         h('div.row', null, h('h1', null, 'Triage'), realityTag('live-algo'), h('span.triage-aid', { role: 'note' }, icon('info', 14), 'Planning aid. Not a medical assessment.')),
         h('p', null, 'Who to reach first and how to get to them, from what the sensors found. The score is a transparent sum you can change; the order is yours to overrule.')),
@@ -64,7 +65,9 @@ export default {
     const modelPanel = h('section.triage-panel', { 'aria-label': 'Priority model' });
     const teamPanel = h('section.triage-panel', { 'aria-label': 'Resource sketch' });
     const side = h('aside.triage-side', null, modelPanel, teamPanel);
-    root.append(head, h('div.triage-body', null, board, centre, side), live);
+    root.append(head, h('div.triage-body.adv-only', null, board, centre, side), live);
+    const hero = createHero(root, ctx);
+    const demo = () => ctx.mode === 'demo';
 
     const plan = createPlan(canvas, { scene, onPick: (id) => { if (id) pick(id); }, view });
 
@@ -449,12 +452,14 @@ export default {
     bus.on('phase', ({ to }) => { if (to === 'plan' && holdAtPlan && sim.state.autoplay) { sim.command('setAutoplay', { on: false }); heldAutoplay = true; ctx.shell.toast('The mission is holding at the planning step. Set the order in Triage, then send it to the route planner.', { level: 'info', ms: 7000 }); } if (visible) refresh(true); });
     bus.on('select', (sel) => { if (!sel) return; const id = sel.type === 'detection' ? sel.id : sel.type === 'survivor' ? sim.state.survivors[sel.id]?.detId : null; if (id && id !== selected) { selected = id; if (visible) refresh(true); } });
     bus.on('prefs', () => { plan.retheme(); });
+    bus.on('mode', () => { if (visible) api.onShow(); });
 
     refresh(false);
-    return {
-      onShow() { visible = true; refresh(false); if (!reducedMotion()) plan.start(); },
-      onHide() { visible = false; plan.stop(); },
+    const api = {
+      onShow() { visible = true; if (demo()) { plan.stop(); hero.show(); return; } hero.hide(); refresh(false); if (!reducedMotion()) plan.start(); },
+      onHide() { visible = false; plan.stop(); hero.hide(); },
       onParams(p) { if (p?.select) { selected = p.select; refresh(true); } },
     };
+    return api;
   },
 };

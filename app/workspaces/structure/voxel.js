@@ -215,10 +215,10 @@ export function findVoids(g, { minRadius = 0.2, minPersist = 0.1, minVolume = 0.
 // FEMA's four textbook patterns are read from where the floor planks ended up: how far they dropped, how steeply they lie,
 // which way they dip, and whether a level plank has lost the support under one end.
 export const PATTERNS = {
-  pancake: { label: 'Pancake', voids: 'Small voids between the stacked floors, where contents and broken columns hold them apart.', fema: 'Shoring is usually needed under the floors; victims may be found under the floors.' },
-  leanto: { label: 'Lean-to', voids: 'One large triangular void under the leaning floor, against the side that is still standing.', fema: 'Victims may be found under the suspended floor and on top of it at its low end.' },
-  vshape: { label: 'V-shape', voids: 'Two triangular voids, one under each half of the floor, against the outer walls.', fema: 'Victims may be found under the two suspended floor pieces and on the floor in the middle of the V.' },
-  cantilever: { label: 'Cantilever', voids: 'Voids under the hanging floor, as in a pancake. The unsupported end overhead is the hazard.', fema: 'Similar to the pancake pattern; victims may be found as in a pancake condition.' },
+  pancake: { label: 'Pancake', voids: 'Small voids between the stacked floors, where contents and broken columns hold them apart.', fema: 'Victims might be found under the floors. Voids are formed by building contents and debris wedged between floors' },
+  leanto: { label: 'Lean-to', voids: 'One large triangular void under the leaning floor, against the side that is still standing.', fema: 'Victims might be found under the suspended floor and on top of this floor at the lowest end' },
+  vshape: { label: 'V-shape', voids: 'Two triangular voids, one under each half of the floor, against the outer walls.', fema: 'Victims might be found under the two suspended floor pieces and on top of the floor in the middle of the V.' },
+  cantilever: { label: 'Cantilever', voids: 'Voids under the hanging floor, as in a pancake. The unsupported end overhead is the hazard.', fema: 'this type is similar to the pancake pattern with the added problem of some of the floor planes extending, unsupported from the debris pile.' },
 };
 export function classify(pile, poses, g) {
   const planks = [];

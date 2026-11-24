@@ -17,7 +17,7 @@ export function createView(host, ctx, hooks = {}) {
   const scene = new THREE.Scene();
   const TX = L3.textures(), sky = L3.makeSky(); scene.add(sky);
   { const pm = new THREE.PMREMGenerator(renderer), es = new THREE.Scene(), s2 = L3.makeSky(); s2.material.uniforms.uGain.value = 1.0; es.add(s2); scene.environment = pm.fromScene(es, 0.02).texture; scene.environmentIntensity = 0.95; pm.dispose(); }
-  const camera = new THREE.PerspectiveCamera(34, 1, 0.15, 500); camera.position.set(17, 6.4, -13);
+  const camera = new THREE.PerspectiveCamera(34, 1, 0.15, 500); camera.position.set(-17, 6.4, 13);
   const controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true; controls.dampingFactor = 0.07; controls.target.set(0, 2.2, 0); controls.minDistance = 2.5; controls.maxDistance = 46; controls.maxPolarAngle = Math.PI / 2 - 0.03;
   controls.autoRotate = !reducedMotion(); controls.autoRotateSpeed = 0.35;
   let userMoved = false; controls.addEventListener('start', () => { userMoved = true; controls.autoRotate = false; hooks.onCamera?.(); });
@@ -25,7 +25,7 @@ export function createView(host, ctx, hooks = {}) {
   const hemi = new THREE.HemisphereLight(0x9aa6b8, 0x4a3b2c, 0.5); scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xffb877, 6.4); sun.position.copy(L3.SUN_DIR).multiplyScalar(46); sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096);
   Object.assign(sun.shadow.camera, { left: -13, right: 13, top: 10.5, bottom: -9, near: 8, far: 90 }); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03; sun.shadow.radius = 3.2; scene.add(sun, sun.target); sun.target.position.set(0, 1, 0);
-  const fill = new THREE.DirectionalLight(0xb9c6da, 0.55); fill.position.set(16, 11, -14); scene.add(fill);
+  const fill = new THREE.DirectionalLight(0xb9c6da, 0.55); fill.position.set(-16, 11, 14); scene.add(fill);
   const world = L3.makeSurroundings(TX), ground = world.ground; scene.add(world.group);
   // survey grid (Advanced only)
   const survey = new THREE.Group(); survey.visible = false; scene.add(survey);
@@ -224,7 +224,7 @@ export function createView(host, ctx, hooks = {}) {
     const bh = gap - cribH, b0 = cribH; M(new THREE.BoxGeometry(0.34, 0.03, 0.34), steelDark, b0 + 0.015); const red = new THREE.MeshStandardMaterial({ color: 0x7c1f14, roughness: 0.42, metalness: 0.35 }); jBodyTop = b0 + bh * 0.66; M(new THREE.CylinderGeometry(0.1, 0.115, bh * 0.63, 28), red, b0 + 0.03 + bh * 0.315); M(new THREE.CylinderGeometry(0.106, 0.106, 0.03, 28), steelDark, jBodyTop); M(new THREE.TorusGeometry(0.104, 0.008, 8, 28).rotateX(Math.PI / 2), steel, b0 + bh * 0.3); M(new THREE.CylinderGeometry(0.02, 0.02, 0.1, 10).rotateZ(Math.PI / 2), steel, b0 + 0.09, 0.14);
     jPiston = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.062, 1, 24), steel); jPiston.castShadow = true; jack.add(jPiston);
     const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.12, 0.045, 24), steelDark); plate.castShadow = true; const knurl = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.115, 0.02, 24), steel); knurl.position.y = 0.03; jHead.add(plate, knurl); jack.add(jHead);
-    const hose = new THREE.CatmullRomCurve3([new THREE.Vector3(0.18, b0 + 0.09, 0), new THREE.Vector3(0.45, b0 * 0.4 + 0.08, -0.12), new THREE.Vector3(0.95, 0.03, -0.5), new THREE.Vector3(1.9, 0.03, -0.7), new THREE.Vector3(2.9, 0.03, -1.8), new THREE.Vector3(4.6, 0.03, -2.1)]); const hm = new THREE.Mesh(new THREE.TubeGeometry(hose, 60, 0.018, 8), rubber); hm.castShadow = true; hm.rotation.y = 0; jack.add(hm);
+    const hose = new THREE.CatmullRomCurve3([new THREE.Vector3(0.18, b0 + 0.09, 0), new THREE.Vector3(-0.35, b0 * 0.4 + 0.08, 0.2), new THREE.Vector3(-0.95, 0.03, 0.5), new THREE.Vector3(-1.9, 0.03, 0.7), new THREE.Vector3(-2.9, 0.03, 1.8), new THREE.Vector3(-4.6, 0.03, 2.1)]); const hm = new THREE.Mesh(new THREE.TubeGeometry(hose, 60, 0.018, 8), rubber); hm.castShadow = true; hm.rotation.y = 0; jack.add(hm);
     jack.position.set(s.x, s.bottom, s.z); jack.visible = true; setJackY(s.top - 0.034, s);
   }
   function buildJackOnce(s) { if (!s) return; if (jack.userData.key !== s.x + ':' + s.z) { jack.userData.key = s.x + ':' + s.z; buildJack(s); } jack.visible = true; jack.position.set(s.x, s.bottom, s.z); }
@@ -246,7 +246,7 @@ export function createView(host, ctx, hooks = {}) {
 
   // ---- camera moves
   let tween = null;
-  const VIEWS = { orbit: { pos: [17, 7.2, -13.5], tgt: [0, 2, 0] }, top: { pos: [0.01, 27, 0.02], tgt: [0, 0, 0] }, side: { pos: [25, 3.6, 0.01], tgt: [0, 2.6, 0] }, front: { pos: [0.01, 3.6, 25], tgt: [0, 2.6, 0] } };
+  const VIEWS = { orbit: { pos: [-17, 7.2, 13.5], tgt: [0, 2, 0] }, top: { pos: [0.01, 27, 0.02], tgt: [0, 0, 0] }, side: { pos: [25, 3.6, 0.01], tgt: [0, 2.6, 0] }, front: { pos: [0.01, 3.6, 25], tgt: [0, 2.6, 0] } };
   function flyTo(pos, tgt, ms = 800) { if (reducedMotion()) { camera.position.set(...pos); controls.target.set(...tgt); return; } tween = { p0: camera.position.clone(), t0: controls.target.clone(), p1: new THREE.Vector3(...pos), t1: new THREE.Vector3(...tgt), t: 0, ms }; controls.autoRotate = false; }
   function setCamera(name) { const v = VIEWS[name] || VIEWS.orbit; flyTo(v.pos, v.tgt); }
   function focus(p, dist = 7) { const dir = camera.position.clone().sub(controls.target).normalize(); flyTo([p[0] + dir.x * dist, Math.max(1.2, p[1] + dir.y * dist), p[2] + dir.z * dist], p, 700); }

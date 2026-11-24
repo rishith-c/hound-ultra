@@ -2,7 +2,7 @@
 // The multiple travelling-repairman problem on the real planned paths of the site, solved three ways
 // (teams-solvers.js): exactly, by simulated annealing, and by a classical simulation of quantum annealing.
 // Live algorithm on simulated input. The drill is simulated; the teams are a concept (only one rover exists).
-import { exhibitBrief, createChart, makeLoop, tok, rgba, heat } from './common.js';
+import { exhibitBrief, demoOverlay, createChart, makeLoop, tok, rgba, heat } from './common.js';
 import * as S from './teams-solvers.js';
 import { mulberry32, pathLength, pointInPoly } from '../../core/geometry.js';
 
@@ -105,18 +105,20 @@ export default async function (pane, ctx) {
   const mapTags = h('div.strategy-teams-tags');
   const mapEmpty = h('div.strategy-teams-wait', { hidden: true });
   const map = canvas('strategy-teams-mapcv', 'Top-down plan of the site with each team\'s route', drawMap);
-  const legend = h('div.strategy-teams-legend', { 'aria-label': 'Routes, team by team' });
+  const legend = h('div.strategy-teams-legend.adv-only', { 'aria-label': 'Routes, team by team' });
   const qCap = h('p.strategy-fine');
   const qcv = canvas('strategy-teams-qcv', 'Heat-map of the QUBO matrix', drawQ);
   const wlcv = canvas('strategy-teams-wlcv', 'Trotter replicas: one row per replica, one column per bit', drawWL);
   const rdGamma = h('b.num', null, 'n/a'), rdJ = h('b.num', null, 'n/a'), rdAgree = h('b.num', null, 'n/a');
   const wlTitle = h('p.strategy-point', null, 'As the transverse field falls, the coupling grows and ' + M_REPLICAS + ' replicas lock together');
 
-  const main = h('div.strategy-main', null,
-    h('div.strategy-teams-bar', null, viewSeg, summary),
+  const overlay = demoOverlay(ctx.kit, { title: 'Who goes to whom', sentence: 'Several teams, many people: each order of visits is scored by how long everyone waits.', tags: ['live-algo', 'concept'], action: { label: 'Solve again', icon: 'reset', run: () => { if (!run) startRun(); } } });
+  overlay.el.classList.add('demo-only');
+  const main = h('div.strategy-main.strategy-teams-main', null,
+    h('div.strategy-teams-bar.adv-only', null, viewSeg, summary),
     h('div.strategy-teams-map', null, map.el, mapTags, mapEmpty),
     legend,
-    h('section.strategy-teams-wl', { 'aria-label': 'Simulated quantum annealing, live' },
+    h('section.strategy-teams-wl.adv-only', { 'aria-label': 'Simulated quantum annealing, live' },
       h('div.strategy-teams-wlhead', null, wlTitle,
         h('div.note.strategy-teams-claim', null, icon('info', 14), h('span', null, h('b', null, 'A classical simulation of quantum annealing.'), ' No quantum hardware is used or claimed.'))),
       h('div.strategy-teams-wlbody', null, wlcv.el,
@@ -148,6 +150,7 @@ export default async function (pane, ctx) {
       h('div.strategy-teams-q', null, qcv.el, qCap),
       h('p.strategy-point', null, 'Self-test: the binary form gives the same answers as the routes'), testList));
 
+  main.append(overlay.el);
   pane.append(h('div.strategy-ex.wide-side', null, left, main, right));
 
   // ------------------------------------------------------------------ scenario
@@ -411,6 +414,7 @@ export default async function (pane, ctx) {
       if (sc && sc.forced) text += ' ' + sc.forced + ' leg' + (sc.forced > 1 ? 's end' : ' ends') + ' at a blockage: a team would have to break through.';
     }
     if (statusText.textContent !== text) statusText.textContent = text;
+    overlay.caption(planning ? 'Planning the walking routes.' : run ? (run.phase === 'enum' ? 'Counting every possible plan.' : METHOD[run.phase].label + (run.phase === 'sqa' ? ', a classical simulation, ' : ', ') + 'run ' + (run.r + 1) + ' of ' + run.R + '.') : res && res.ex && sc ? 'Best plan: average wait ' + mmss(res.ex.cost / sc.prob.N) + '. Proven by exact search.' : '');
     statusBar.hidden = frac == null;
     if (frac != null) statusBar.firstChild.style.width = (Math.min(1, frac) * 100).toFixed(1) + '%';
   }
@@ -450,7 +454,7 @@ export default async function (pane, ctx) {
     if (!res) { tbody.replaceChildren(h('tr', null, h('td', { colSpan: 6 }, planning ? 'Planning the routes first…' : 'Nothing solved yet.'))); verdict.textContent = ''; tableFine.textContent = ''; return; }
     const opt = res.ex.cost;
     const row = (m) => {
-      const key = h('span.strategy-key', { style: { '--c': 'var(' + METHOD[m].c + ')' } });
+      const key = h('span.strategy-key', { style: { background: 'var(' + METHOD[m].c + ')' } });
       if (m === 'exact') return h('tr', null, h('td', null, key, METHOD.exact.long), h('td.num', null, mmss(opt)), h('td.num', null, h('small', null, 'reference')), h('td.num', null, h('small', null, 'by design')), h('td.num', null, h('small', null, 'proven')), h('td.num', null, msText(res.ex.ms)));
       const s = res[m];
       if (!s || !s.runs.length) return h('tr', null, h('td', null, key, METHOD[m].long), h('td.num.flat', { colSpan: 5 }, h('small', null, run ? (run.phase === m ? 'first run in progress…' : 'waiting its turn') : 'not run yet')));

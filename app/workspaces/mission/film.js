@@ -83,7 +83,7 @@ export function createFilm(app) {
     const r = S.units['HOUND-01'], L = S.sensors.listen, route = S.routes.rescue;
     if (S.hold) return { key: 'hold', head: 'All stop', line: 'Every unit is holding where it is. Press Resume to continue.', tags: ['sim'], inst: null };
     if (beat?.kind === 'find') { const d = detOf(beat.det), team = d?.evidence.some((e) => e.sensor === 'human'); return { key: 'find' + beat.det, head: 'Person found, ' + (d?.room ? 'room ' + d.room : 'outdoors'), line: team ? 'The drone saw a shape. The rescue team confirmed it on site.' : 'No single sensor decided this. Each one moved the odds.', tags: ['sim'], inst: null }; }
-    if (beat?.kind === 'closed') { const d = detOf(beat.det); return { key: 'closed' + beat.det, head: d?.kind === 'machine' ? 'Not a person. A machine.' : d?.kind === 'hot object' ? 'Not a person. A hot pipe.' : 'Not a person', line: d ? d.reason : '', tags: ['sim'], inst: 'odds', det: d }; }
+    if (beat?.kind === 'closed') { const d = detOf(beat.det); return { key: 'closed' + beat.det, head: d?.kind === 'machine' ? 'Too steady to be a person' : d?.kind === 'hot object' ? 'Too hot to be a person' : d?.kind === 'dismissed' ? 'Dismissed by the operator' : 'An alarm nothing else supports', line: d ? d.reason : '', tags: ['sim'], inst: 'odds', det: d }; }
     if (route && beat?.kind === 'route') return { key: 'plan', head: 'The way in', line: wayIn(route), tags: ['sim', 'live-algo'], inst: 'route' };
     switch (S.phase) {
       case 'standby': return { key: 'standby', head: 'A building has come down', line: 'A scout drone maps the valley first.', tags: ['sim'], inst: null };

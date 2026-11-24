@@ -17,22 +17,23 @@ self.onmessage = async (ev) => {
     const pile = P.buildPile({ seed, scenario, tie });
     post({ t: 'pieces', pieces: pile.pieces.map((p) => ({ idx: p.idx, kind: p.kind, sub: p.sub, id: p.id, name: p.name, boxes: p.boxes, fixed: p.fixed, mass: p.mass, broken: p.broken, level: p.level, home: p.home, p: p.p, radius: p.radius, alive: true })), poses: P.readPoses(pile), loose: pile.pieces.filter((p) => !p.fixed).length, mass: pile.massTotal });
     const c = await run(ST.collapse(pile, (m) => post({ t: 'chunk', ...m }, [m.buf.buffer]), { chunk: 30 }));
-    const box = hint.box; const snap = P.snapshot(pile); let sp = [{ box }];
-    { const m = P.protectedMetrics(pile, pile.world, box); if (m.intrusion > 0 || m.open > 0.5) sp = ST.spaces(pile, 5); }
+    const snap = P.snapshot(pile); let sp = null;
+    if (hint) { const m = P.protectedMetrics(pile, pile.world, hint.box); if (m.intrusion === 0 && m.open < 0.5) sp = [{ box: hint.box }]; }
+    sp = sp || ST.spaces(pile, 5); const near = hint || { jack: [99, 99], shore: [0, 0] };
     post({ t: 'rest', rest: c.rest, frames: c.frames, boxes: sp.map((s) => s.box) });
     // the lift: try the remembered site first, then search
     let found = null, tried = 0; const t0 = performance.now();
     outer: for (const s of sp) {
-      const sites = ST.jackSites(pile, c.rest, s.box).map((q) => ({ ...q, d: Math.hypot(q.x - s.box.c[0], q.z - s.box.c[2]), h: Math.hypot(q.x - hint.jack[0], q.z - hint.jack[1]) })).sort((a, b) => (a.h < 0.3 ? a.h - 10 : a.d) - (b.h < 0.3 ? b.h - 10 : b.d)).slice(0, 60);
+      const sites = ST.jackSites(pile, c.rest, s.box).map((q) => ({ ...q, d: Math.hypot(q.x - s.box.c[0], q.z - s.box.c[2]), h: Math.hypot(q.x - near.jack[0], q.z - near.jack[1]) })).sort((a, b) => (a.h < 0.3 ? a.h - 10 : a.d) - (b.h < 0.3 ? b.h - 10 : b.d)).slice(0, 60);
       for (const site of sites) {
         const a = await run(ST.jackRun(pile, snap, site, s.box)); tried++; if (tried % 2 === 0) post({ t: 'search', tried });
         if (!ST.ruined(a)) continue;
-        for (const shore of ST.shoreSites(pile, s.box, site).sort((x, y) => Math.hypot(x.x - hint.shore[0], x.z - hint.shore[1]) - Math.hypot(y.x - hint.shore[0], y.z - hint.shore[1]))) { const b = await run(ST.jackRun(pile, snap, site, s.box, { shores: [shore] })); tried++; if (ST.kept(b)) { found = { box: s.box, site, shore }; break outer; } }
+        for (const shore of ST.shoreSites(pile, s.box, site).sort((x, y) => Math.hypot(x.x - near.shore[0], x.z - near.shore[1]) - Math.hypot(y.x - near.shore[0], y.z - near.shore[1]))) { const b = await run(ST.jackRun(pile, snap, site, s.box, { shores: [shore] })); tried++; if (ST.kept(b)) { found = { box: s.box, site, shore }; break outer; } }
       }
     }
     if (!found) { post({ t: 'error', message: 'No lift on this pile both disturbs the pocket and is saved by one shore.' }); return; }
     const a = await run(ST.jackRun(pile, snap, found.site, found.box, { rec: true })), b = await run(ST.jackRun(pile, snap, found.site, found.box, { shores: [found.shore], rec: true }));
-    post({ t: 'lift', box: found.box, site: found.site, shore: found.shore, a, b, tried, ms: performance.now() - t0, piece: pile.pieces[found.site.idx].id }, [a.frames.buffer, b.frames.buffer]);
+    post({ t: 'lift', box: found.box, site: found.site, shore: found.shore, a, b, tried, ms: performance.now() - t0, piece: pile.pieces[found.site.idx].id, seed }, [a.frames.buffer, b.frames.buffer]);
     // aftershocks: the same seeded tremors on the pile as it is and on the pile with the shore
     const N = 16, pga = 0.35, f = P.fork(pile, snap); P.addShore(f, found.shore, 'post'); const snapS = P.snapshot(f);
     const out = []; const base = P.protectedMetrics(pile, pile.world, found.box);
