@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HOUND Live</title>
+<link rel="icon" href="../assets/img/icon.svg">
+<link rel="stylesheet" href="../app/ui/tokens.css"><link rel="stylesheet" href="../app/ui/base.css"><link rel="stylesheet" href="live.css">
+</head><body>
+<header id="bar">
+  <a class="mark" href="../app/?mode=advanced"><i></i><b></b><em>Live</em></a>
+  <span class="chip" id="link"><i></i><span>Looking for the robot</span></span>
+  <span class="read">Link <b id="ms" class="num">–</b></span><span class="read">Battery <b id="bat" class="num">–</b></span><span class="read">Wi-Fi <b id="pps" class="num">–</b></span>
+  <span class="grow"></span>
+  <span class="read" id="clock"></span>
+  <button class="btn" id="side" type="button" aria-pressed="true">Show me</button>
+  <button class="btn btn-danger" id="stop" type="button">All stop</button>
+</header>
+<main data-me="true">
+  <section id="me" aria-label="This side of the wall">
+    <video id="vid" autoplay playsinline muted></video>
+    <p class="cap"><b>This side</b><span>a person, filmed by the laptop</span></p>
+  </section>
+  <div id="wall" aria-hidden="true"><span>wall</span></div>
+  <section id="hound" aria-label="The robot's side">
+    <div id="answer" data-state="wait">
+      <div class="say"><b id="word">Listening</b><span id="more">ten seconds of Wi-Fi, then the network answers</span></div>
+      <div class="p"><div class="track"><i id="fill"></i><u id="thr"></u></div><div class="scale"><span>0 no one</span><span id="pv" class="num">–</span><span>person 1</span></div></div>
+    </div>
+    <div class="cell cam"><header><h3>Robot camera</h3><span id="camfps" class="num"></span></header><div class="box"><img id="cam" alt=""><p id="camno">no picture yet</p></div></div>
+    <div class="cell csi"><header><h3>Wi-Fi, 51 channels</h3><span id="csino" class="num"></span></header><div class="box"><canvas id="csi"></canvas></div></div>
+    <div class="cell rad"><header><h3>Radar</h3><span id="rtxt" class="num"></span></header><div class="box"><canvas id="rad"></canvas></div></div>
+    <div class="cell heat"><header><h3>Body heat</h3><span id="htxt" class="num"></span></header><div class="box"><canvas id="heat"></canvas></div></div>
+  </section>
+  <section id="trace" aria-label="The last minute"><canvas id="tr"></canvas></section>
+</main>
+<footer><span id="say">W A S D drive, Q E turn, space stops. The network only listens while the robot stands still.</span><span class="grow"></span><span>Every reading here is measured by the robot now.</span></footer>
+<script type="module" src="live.js"></script>
+</body></html>

@@ -5,7 +5,7 @@
 
 The page's clock is replaced: after a shot has settled, time only moves when a frame has been saved. requestAnimationFrame,
 timers, performance.now, Date and CSS / Web animations all follow that clock. Each shot becomes one H.264 file.
-A shot: {"name", "url", "settle": s, "before": "js", "seconds": s, "do": [[t, "js"], ...], "hide": "css", "size": [w, h, dpr], "skip": s played but not saved}
+A shot: {"name", "url", "settle": s, "before": "js", "seconds": s, "do": [[t, "js"], ...], "hide": "css", "cursor": true, "size": [w, h, dpr], "skip": s played but not saved}
 Default 1440 x 810 at 1.3333, which saves 1920 x 1080 with the type a third larger.
 """
 import argparse, base64, json, os, shutil, subprocess, sys, tempfile, time, urllib.request
@@ -35,6 +35,27 @@ CLOCK = r"""(() => {
       const want = s.c + (vt - s.at) * s.r, end = a.effect && a.effect.getComputedTiming().endTime; try { if (isFinite(end) && want >= end) { seen.delete(a); a.finish(); } else a.currentTime = want; } catch (e) { /* removed */ } } }
   window.__film = { freeze() { vt = now0(); animations(); return vt; }, step(ms) { vt += ms; due(); frames(); animations(); return vt; } };
 })();"""
+
+
+# A drawn pointer for console shots: __cur.go('Find people', 700) travels to a control by its text (or [x, y], or 'css:...') and presses it.
+CURSOR = r"""(() => {
+  const c = document.createElement('div'); c.style.cssText = 'position:fixed;left:0;top:0;z-index:2147483647;pointer-events:none;width:24px;height:24px;filter:drop-shadow(0 2px 5px rgba(0,0,0,.6))';
+  c.innerHTML = '<svg width="24" height="24" viewBox="0 0 26 26"><path d="M4 2.5 L4 21.2 L8.8 16.9 L11.9 23.9 L15 22.5 L11.9 15.8 L18.4 15.3 Z" fill="#fff" stroke="#0a0d11" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+  document.documentElement.append(c);
+  let x = 800, y = 430; const put = (k = 1) => { c.style.transform = `translate(${x - 4}px,${y - 2.5}px) scale(${k})`; }; put();
+  const ease = (p) => p * p * p * (p * (p * 6 - 15) + 10), vis = (e) => e.getClientRects().length && e.getBoundingClientRect().width > 4;
+  const find = (q) => { if (Array.isArray(q)) return [q[0], q[1], null];
+    const el = q.startsWith('css:') ? document.querySelector(q.slice(4)) : [...document.querySelectorAll('button,a,[role=tab],[role=button],label,summary,input')].filter((e) => vis(e) && (e.textContent.trim() || e.getAttribute('aria-label') || '').startsWith(q)).sort((a, b) => a.textContent.length - b.textContent.length)[0];
+    if (!el) { console.error('cursor: no ' + q); return null; } const r = el.getBoundingClientRect(); return [r.x + r.width * 0.5, r.y + r.height * 0.55, el]; };
+  const press = (el) => { const t0 = performance.now(), ring = document.createElement('div'); ring.style.cssText = `position:fixed;left:${x - 22}px;top:${y - 22}px;width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(255,255,255,.85);z-index:2147483646;pointer-events:none;opacity:0`; document.documentElement.append(ring);
+    const f = () => { const p = (performance.now() - t0) / 420; put(p < 0.35 ? 1 - 0.2 * Math.sin(Math.PI * p / 0.35) : 1); ring.style.transform = `scale(${0.3 + 0.7 * ease(Math.min(1, p))})`; ring.style.opacity = String(Math.max(0, 0.9 * (1 - p))); if (p < 1) requestAnimationFrame(f); else ring.remove(); }; f();
+    if (el) { const o = { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 1, button: 0 }; el.dispatchEvent(new PointerEvent('pointerdown', o)); el.dispatchEvent(new PointerEvent('pointerup', o)); el.click(); } };
+  const to = (q, ms, then) => { const f = find(q); if (!f) return 0; const x0 = x, y0 = y, t0 = performance.now(), arc = Math.min(36, Math.hypot(f[0] - x0, f[1] - y0) * 0.07);
+    const g = () => { const p = Math.min(1, (performance.now() - t0) / ms), e = ease(p); x = x0 + (f[0] - x0) * e; y = y0 + (f[1] - y0) * e - Math.sin(Math.PI * e) * arc; put(); if (p < 1) requestAnimationFrame(g); else if (then) then(f[2]); }; g(); return 1; };
+  window.__cur = { at(a, b) { x = a; y = b; put(); return 1; }, move: (q, ms = 700) => to(q, ms, null), go: (q, ms = 700) => to(q, ms, press),
+    slide: (q, v0, v1, ms, lead = 500) => { const f = find(q); if (!f) return 0; const el = f[2], r = el.getBoundingClientRect(), lo = +el.min || 0, hi = +el.max || 100, px = (v) => r.x + 8 + (r.width - 16) * v;
+      return to([px(v0), r.y + r.height / 2], lead, () => { const t0 = performance.now(), g = () => { const p = Math.min(1, (performance.now() - t0) / ms), v = v0 + (v1 - v0) * ease(p); el.value = lo + (hi - lo) * v; el.dispatchEvent(new Event('input', { bubbles: true })); x = px(v); y = r.y + r.height / 2; put(0.9); if (p < 1) requestAnimationFrame(g); else { el.dispatchEvent(new Event('change', { bubbles: true })); put(); } }; g(); }); } };
+})()"""
 
 
 def chrome(a, size):
@@ -86,6 +107,8 @@ def record(a, shot, base):
         page.pump(shot.get("settle", 4))
         if shot.get("hide"):
             page.eval("(() => { const s = document.createElement('style'); s.textContent = " + json.dumps(shot["hide"]) + "; document.head.append(s); return 1; })()")
+        if shot.get("cursor"):
+            page.eval(CURSOR)
         if shot.get("before"):
             r = page.eval(shot["before"])
             if isinstance(r, dict) and "__error__" in r:

@@ -1,0 +1,769 @@
+[
+ {
+  "name": "t_m1",
+  "url": "/app/?mode=advanced&intro=0#/mission",
+  "settle": 10,
+  "seconds": 16,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(396),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 2.6,
+  "do": [
+   [
+    1.5,
+    "__cur.move([1100, 300],700)"
+   ],
+   [
+    5.2,
+    "__cur.move([1330, 250],900)"
+   ],
+   [
+    8,
+    "__cur.move([1330, 600],900)"
+   ],
+   [
+    11,
+    "__cur.move([760, 60],900)"
+   ],
+   [
+    13.5,
+    "__cur.move([700, 700],900)"
+   ]
+  ]
+ },
+ {
+  "name": "t_m2a",
+  "url": "/app/?mode=advanced&intro=0#/mission",
+  "settle": 10,
+  "seconds": 11,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(234),HOUND.sim.setSpeed(2.6),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 2.6,
+  "do": [
+   [
+    0.5,
+    "__cur.go(\"Follow\",650)"
+   ]
+  ]
+ },
+ {
+  "name": "t_m2b",
+  "url": "/app/?mode=advanced&intro=0#/mission",
+  "settle": 10,
+  "seconds": 9,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(413),HOUND.sim.setSpeed(2),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 2.6,
+  "do": [
+   [
+    1.2,
+    "__cur.move([1000, 420],700)"
+   ],
+   [
+    4.6,
+    "__cur.move([640, 330],700)"
+   ]
+  ]
+ },
+ {
+  "name": "t_m3",
+  "url": "/app/?mode=advanced&intro=0#/mission",
+  "settle": 10,
+  "seconds": 12,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(470),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 2.6,
+  "do": [
+   [
+    0.1,
+    "__cur.go('Manual',500)"
+   ],
+   [
+    4.2,
+    "__cur.go('Plan the rescue route',800)"
+   ],
+   [
+    7.4,
+    "__cur.go('Approve',900)"
+   ]
+  ]
+ },
+ {
+  "name": "t_rover",
+  "url": "/app/?mode=advanced&intro=0#/mission",
+  "settle": 10,
+  "seconds": 13.5,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(398),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 2.6,
+  "do": [
+   [
+    0.4,
+    "__cur.go(\"Rover\",700)"
+   ],
+   [
+    2.6,
+    "__cur.slide('css:main input[type=range]',0,1,2400,700)"
+   ],
+   [
+    6.4,
+    "__cur.go(\"X-ray\",700)"
+   ],
+   [
+    8.4,
+    "__cur.go(\"Drive\",600)"
+   ],
+   [
+    9.6,
+    "(()=>{for(const t of [document.activeElement||document.body,window])t.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowUp',code:'ArrowUp',bubbles:true}));return 1})()"
+   ],
+   [
+    10.9,
+    "(()=>{for(const t of [document.activeElement||document.body,window])t.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowUp',code:'ArrowUp',bubbles:true}));return 1})()"
+   ],
+   [
+    11.0,
+    "(()=>{for(const t of [document.activeElement||document.body,window])t.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',code:'ArrowRight',bubbles:true}));return 1})()"
+   ],
+   [
+    13.0,
+    "(()=>{for(const t of [document.activeElement||document.body,window])t.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowRight',code:'ArrowRight',bubbles:true}));return 1})()"
+   ]
+  ]
+ },
+ {
+  "name": "t_sense",
+  "url": "/app/?mode=advanced&intro=0#/rover",
+  "settle": 10,
+  "seconds": 10,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(398),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 0.4,
+  "do": [
+   [
+    0.4,
+    "__cur.go(\"Wi-Fi AI\",700)"
+   ],
+   [
+    2.6,
+    "__cur.go(\"Run all 30\",800)"
+   ],
+   [
+    6.0,
+    "__cur.move([1250, 160],900)"
+   ]
+  ]
+ },
+ {
+  "name": "t_forge",
+  "url": "/app/?mode=advanced&intro=0#/sense",
+  "settle": 10,
+  "seconds": 11,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(398),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 0.4,
+  "do": [
+   [
+    0.4,
+    "__cur.go(\"Model forge\",700)"
+   ],
+   [
+    2.4,
+    "__cur.go(\"Train from random\",800)"
+   ],
+   [
+    5.0,
+    "__cur.move([760, 470],900)"
+   ]
+  ]
+ },
+ {
+  "name": "t_fusion",
+  "url": "/app/?mode=advanced&intro=0#/sense",
+  "settle": 10,
+  "seconds": 11,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(424),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 0.4,
+  "do": [
+   [
+    0.4,
+    "__cur.go(\"Fusion\",700)"
+   ],
+   [
+    2.4,
+    "__cur.go(\"D5\",800)"
+   ],
+   [
+    4.6,
+    "__cur.move([640, 330],900)"
+   ],
+   [
+    7.5,
+    "__cur.move([330, 690],900)"
+   ]
+  ]
+ },
+ {
+  "name": "t_aer1",
+  "url": "/app/?mode=advanced&intro=0#/fusion",
+  "settle": 10,
+  "seconds": 30,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(424),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 0.4,
+  "do": [
+   [
+    0.3,
+    "__cur.go(\"Drone imagery\",600)"
+   ],
+   [
+    1.2,
+    "window.HOUND_AERIAL&&HOUND_AERIAL.startFly&&HOUND_AERIAL.startFly(true);1"
+   ],
+   [
+    3.0,
+    "__cur.move([1480, 760],900)"
+   ]
+  ]
+ },
+ {
+  "name": "t_aer2",
+  "url": "/app/?mode=advanced&intro=0#/aerial",
+  "settle": 10,
+  "seconds": 16,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(424),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 0.4,
+  "do": [
+   [
+    0.4,
+    "__cur.go(\"Find people\",700)"
+   ],
+   [
+    3.0,
+    "__cur.move([760, 430],900)"
+   ],
+   [
+    5.0,
+    "__cur.go(\"Colour anomaly\",800)"
+   ],
+   [
+    7.6,
+    "__cur.move([760, 430],900)"
+   ],
+   [
+    9.8,
+    "__cur.go(\"Before / after\",800)"
+   ],
+   [
+    12,
+    "__cur.move([800, 430],900)"
+   ]
+  ]
+ },
+ {
+  "name": "t_scan",
+  "url": "/app/?mode=advanced&intro=0#/aerial",
+  "settle": 10,
+  "seconds": 10,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(424),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 0.4,
+  "do": [
+   [
+    0.3,
+    "__cur.go(\"3-D scan\",600)"
+   ],
+   [
+    2.6,
+    "__cur.go(\"3Find voids\",800)"
+   ],
+   [
+    5,
+    "__cur.move([760, 420],900)"
+   ]
+  ]
+ },
+ {
+  "name": "t_radio",
+  "url": "/app/?mode=advanced&intro=0#/mission",
+  "settle": 10,
+  "seconds": 8,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(424),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 0.4,
+  "do": [
+   [
+    0.3,
+    "__cur.go(\"Radio twin\",600)"
+   ],
+   [
+    2.5,
+    "__cur.move([900, 420],900)"
+   ]
+  ]
+ },
+ {
+  "name": "t_deep",
+  "url": "/app/?mode=advanced&intro=0#/radio",
+  "settle": 10,
+  "seconds": 8,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(424),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 0.4,
+  "do": [
+   [
+    0.3,
+    "__cur.go(\"Deep scan\",600)"
+   ],
+   [
+    2.2,
+    "__cur.go(\"Run the exposure\",800)"
+   ],
+   [
+    4.6,
+    "__cur.move([800, 300],900)"
+   ]
+  ]
+ },
+ {
+  "name": "t_signals",
+  "url": "/app/?mode=advanced&intro=0#/deepscan",
+  "settle": 10,
+  "seconds": 8,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(424),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 0.4,
+  "do": [
+   [
+    0.3,
+    "__cur.go(\"Signals\",600)"
+   ],
+   [
+    2.4,
+    "__cur.move([820, 300],900)"
+   ]
+  ]
+ },
+ {
+  "name": "t_swarm",
+  "url": "/app/?mode=advanced&intro=0#/mission",
+  "settle": 10,
+  "seconds": 12,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(424),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 0.4,
+  "do": [
+   [
+    0.3,
+    "__cur.go(\"Swarm\",600)"
+   ],
+   [
+    4.0,
+    "__cur.go(\"Fail the busiest\",900)"
+   ],
+   [
+    6.5,
+    "__cur.move([700, 380],800)"
+   ]
+  ]
+ },
+ {
+  "name": "t_struct",
+  "url": "/app/?mode=advanced&intro=0#/swarm",
+  "settle": 10,
+  "seconds": 9,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(424),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 0.4,
+  "do": [
+   [
+    0.3,
+    "__cur.go(\"Structure\",600)"
+   ],
+   [
+    1.8,
+    "__cur.go(\"Rebuild the bay\",700)"
+   ],
+   [
+    4,
+    "__cur.move([620, 420],800)"
+   ]
+  ]
+ },
+ {
+  "name": "t_time",
+  "url": "/app/?mode=advanced&intro=0#/mission",
+  "settle": 10,
+  "seconds": 7,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(700),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 0.4,
+  "do": [
+   [
+    0.3,
+    "__cur.go(\"Timelines\",600)"
+   ],
+   [
+    2.4,
+    "__cur.go(\"Fork here\",900)"
+   ]
+  ]
+ },
+ {
+  "name": "t_globe",
+  "url": "/app/?mode=advanced&intro=0#/mission",
+  "settle": 10,
+  "seconds": 7,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(424),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 0.4,
+  "do": [
+   [
+    0.3,
+    "__cur.go(\"Live quakes\",600)"
+   ],
+   [
+    2.0,
+    "__cur.go(\"Replay the week\",700)"
+   ]
+  ]
+ },
+ {
+  "name": "t_copilot",
+  "url": "/app/?mode=advanced&intro=0#/mission",
+  "settle": 10,
+  "seconds": 8,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(424),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 0.4,
+  "do": [
+   [
+    0.3,
+    "__cur.go(\"Copilot\",600)"
+   ],
+   [
+    2.0,
+    "__cur.go(\"What is the status\",800)"
+   ]
+  ]
+ },
+ {
+  "name": "t_status",
+  "url": "/app/?mode=advanced&intro=0#/mission",
+  "settle": 10,
+  "seconds": 9,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(424),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 0.4,
+  "do": [
+   [
+    0.3,
+    "__cur.go(\"System check\",600)"
+   ],
+   [
+    2.4,
+    "__cur.move([620, 420],800)"
+   ]
+  ]
+ },
+ {
+  "name": "t_strategy",
+  "url": "/app/?mode=advanced&intro=0#/mission",
+  "settle": 10,
+  "seconds": 7,
+  "size": [
+   1536,
+   800,
+   2.5
+  ],
+  "cursor": true,
+  "before": "(HOUND.sim.seek(424),HOUND.sim.setSpeed(1),HOUND.sim.play&&HOUND.sim.play(),1)",
+  "after": 0.4,
+  "do": [
+   [
+    0.3,
+    "__cur.go(\"Search strategy\",600)"
+   ],
+   [
+    2.4,
+    "__cur.move([900, 380],900)"
+   ]
+  ]
+ },
+ {
+  "name": "v_valley",
+  "url": "/app/?mode=demo&intro=0&paused#/area",
+  "settle": 5,
+  "seconds": 15.5,
+  "size": [
+   1440,
+   810,
+   2.6667
+  ],
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "v_vclean",
+  "url": "/app/?mode=demo&intro=0&paused#/area",
+  "settle": 5,
+  "seconds": 17,
+  "size": [
+   1440,
+   810,
+   2.6667
+  ],
+  "hide": "#dock,.top,#top,header{opacity:0!important}.area-demo-title,.area-demo-figs,.area-demo-mark,.area-demo-shade{opacity:0!important}"
+ },
+ {
+  "name": "v_fpv",
+  "url": "/app/twin/test.html?bare&mode=demo&t=163&cam=fpv&speed=4&off=labels,hazards,coverage",
+  "settle": 10,
+  "seconds": 12,
+  "size": [
+   1920,
+   1080,
+   2
+  ]
+ },
+ {
+  "name": "v_track",
+  "url": "/app/twin/test.html?bare&mode=demo&t=100&cam=cinematic&speed=3&off=labels,hazards,coverage",
+  "settle": 10,
+  "seconds": 12,
+  "size": [
+   1920,
+   1080,
+   2
+  ]
+ },
+ {
+  "name": "v_radio",
+  "url": "/app/?mode=demo&intro=0&paused#/radio",
+  "settle": 5,
+  "seconds": 13,
+  "size": [
+   1440,
+   810,
+   2.6667
+  ],
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "v_forge",
+  "url": "/app/?mode=demo&intro=0&paused#/forge",
+  "settle": 5,
+  "seconds": 17,
+  "skip": 5,
+  "size": [
+   1440,
+   810,
+   2.6667
+  ],
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "v_net",
+  "url": "/tools/film/netflat.html",
+  "settle": 3,
+  "seconds": 20,
+  "size": [
+   1920,
+   1080,
+   2
+  ],
+  "before": "JSON.stringify(NETFLAT.start())"
+ },
+ {
+  "name": "v_scan",
+  "url": "/app/?mode=demo&intro=0&paused#/scan",
+  "settle": 6,
+  "seconds": 24,
+  "size": [
+   1440,
+   810,
+   2.6667
+  ],
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "v_broken",
+  "url": "/app/?mode=demo&intro=0&paused#/status",
+  "settle": 5,
+  "seconds": 22,
+  "after": 7,
+  "size": [
+   1440,
+   810,
+   2.6667
+  ],
+  "hide": "#dock{opacity:0!important}",
+  "before": "(()=>{const b=[...document.querySelectorAll('button')].find(x=>x.offsetParent&&x.textContent.trim()===\"Broken on purpose\");if(b)b.click();return !!b})()"
+ },
+ {
+  "name": "v_drone",
+  "url": "/app/?mode=demo&intro=0&paused#/aerial",
+  "settle": 8,
+  "seconds": 26,
+  "size": [
+   1440,
+   810,
+   2.6667
+  ],
+  "hide": "#dock{opacity:0!important}",
+  "before": "HOUND_AERIAL.startFly(true);(()=>{const cs=[...document.querySelectorAll('canvas')];let m=0;for(const c of cs){const r=c.getBoundingClientRect();m=Math.max(m,r.width*r.height)}for(const c of cs){const r=c.getBoundingClientRect();if(r.width*r.height>m*.6)c.classList.add('__big')}const s=document.createElement('style');s.textContent='body *{visibility:hidden!important} canvas.__big{visibility:visible!important}';document.head.append(s);return m})()",
+  "after": 0.05
+ },
+ {
+  "name": "v_struct",
+  "url": "/app/?mode=demo&intro=0&paused#/structure",
+  "settle": 6,
+  "seconds": 18,
+  "size": [
+   1440,
+   810,
+   2.6667
+  ],
+  "before": "(()=>{const cs=[...document.querySelectorAll('canvas')];let m=0;for(const c of cs){const r=c.getBoundingClientRect();m=Math.max(m,r.width*r.height)}for(const c of cs){const r=c.getBoundingClientRect();if(r.width*r.height>m*.6)c.classList.add('__big')}const s=document.createElement('style');s.textContent='body *{visibility:hidden!important} canvas.__big{visibility:visible!important}';document.head.append(s);return m})()"
+ },
+ {
+  "name": "v_hz1",
+  "url": "/app/?mode=demo&intro=0&paused#/horizon",
+  "settle": 5,
+  "seconds": 30,
+  "skip": 16,
+  "size": [
+   1440,
+   810,
+   2.6667
+  ],
+  "hide": "#dock{opacity:0!important}"
+ },
+ {
+  "name": "v_hz2",
+  "url": "/app/?mode=demo&intro=0&paused#/horizon",
+  "settle": 5,
+  "seconds": 53,
+  "skip": 48.5,
+  "size": [
+   1440,
+   810,
+   2.6667
+  ],
+  "hide": "#dock{opacity:0!important}",
+  "before": "1"
+ },
+ {
+  "name": "v_land",
+  "url": "/",
+  "settle": 1.7,
+  "seconds": 7,
+  "size": [
+   1440,
+   810,
+   2.6667
+  ],
+  "hide": ".hero-live,.live-card,#hero-live,[data-hero-live]{visibility:hidden!important} html{scroll-behavior:auto!important}",
+  "before": "(()=>{const t0=performance.now();(function f(){scrollTo(0,20*(performance.now()-t0)/1000);requestAnimationFrame(f)})();return 1})()"
+ }
+]
