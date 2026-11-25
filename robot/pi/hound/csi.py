@@ -11,6 +11,7 @@ PAIRS = 64
 USED = np.array([i for i in range(2, 27)] + [i for i in range(38, 64)])      # the LLTF data subcarriers +2..+26 and -26..-1, in the radio's own order; +1 is left out because the radio may mark it invalid
 SECONDS, BINS = 10.0, 200
 MIN_RATE, MAX_HOLES, MIN_LEVEL, AGC_JUMP = 40.0, .35, 2.0, .04
+ODD, MAX_ODD = .35, .25
 
 def parse(d):
     """One UDP packet -> dict, or None when it is not one of ours."""
@@ -30,6 +31,10 @@ def level(t, a):
     """Take out the receiver's own gain jumps. A body changes the shared level smoothly; the automatic gain jumps between one packet and the next. Only jumps are removed, or the person would go with them."""
     o = np.argsort(t, kind='stable'); t, a = t[o], a[o]; g = np.log(np.maximum(a.mean(1), 1e-6)); d = np.diff(g, prepend=g[0])
     return t, a / np.exp(np.cumsum(np.where(np.abs(d) > AGC_JUMP, d, 0)))[:, None]
+
+def odd(a):
+    """Packets whose shape over the 51 subcarriers is nothing like the others: damaged, or from somewhere else. A body bends the shape by a few percent, not by a third."""
+    q = a / np.maximum(a.mean(1, keepdims=True), 1e-6); d = np.abs(q / np.maximum(np.median(q, 0), 1e-6) - 1).mean(1); return d > max(ODD, 4 * np.median(d))
 
 def window(t, a, end, seconds=SECONDS, bins=BINS):
     """(52, bins) and the share of bins with no packet in them."""
@@ -70,6 +75,8 @@ class Receiver:
         if rate < MIN_RATE: return None, f'only {rate:.0f} probes a second'
         a = np.array([x[1] for x in q])
         if not np.isfinite(a).all() or a.mean() < MIN_LEVEL: return None, 'the signal is too weak'
-        w, holes = window([x[0] for x in q], a, end)
+        bad = odd(a)
+        if bad.mean() > MAX_ODD: return None, f'{100 * bad.mean():.0f} % of the packets are damaged'
+        w, holes = window(np.array([x[0] for x in q])[~bad], a[~bad], end)
         if w is None: return None, f'{100 * holes:.0f} % of the window is missing'
         return normalise(w), f'{rate:.0f} probes a second'

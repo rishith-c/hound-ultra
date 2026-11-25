@@ -3,18 +3,19 @@ import math
 
 class Pose:
     K = 200 * 32 / (math.pi * .080); R = .125 + .2155                                  # steps a metre, and half wheelbase + half track
+    SLIP, TURN, FLOOR = .10 ** 2, math.radians(1.5) ** 2, .05 ** 2                      # assumed: 10 cm and 1.5 degrees after a metre, 32 cm after ten. It grows with the distance, not with the number of steps. The drone's own error does not average out, so it never claims less than 5 cm
     def __init__(self, x=0.0, y=0.0, h=0.0): self.x, self.y, self.h = x, y, h; self.var = .01 ** 2; self.hvar = math.radians(.5) ** 2; self.last = None; self.refused = 0
     def steps(self, s):
         if self.last is None: self.last = s; return
         d = [(a - b + 2 ** 31) % 2 ** 32 - 2 ** 31 for a, b in zip(s, self.last)]; self.last = s                # the counters may wrap
         fl, fr, rl, rr = d; dx, dy, dw = (fl + fr + rl + rr) / (4 * self.K), (-fl + fr + rl - rr) / (4 * self.K), (-fl + fr - rl + rr) / (4 * self.K * self.R)
         a = self.h + dw / 2; self.x += dx * math.cos(a) - dy * math.sin(a); self.y += dx * math.sin(a) + dy * math.cos(a); self.h = math.atan2(math.sin(self.h + dw), math.cos(self.h + dw))
-        run = math.hypot(dx, dy); self.var += (.03 * run) ** 2 * 4 + (run ** 2) * self.hvar; self.hvar += (.02 * abs(dw)) ** 2 + (math.radians(.6) * run) ** 2          # 3 % slip and a little turn for every metre (assumed)
+        run = math.hypot(dx, dy); self.var += self.SLIP * run; self.hvar += self.TURN * run + (.05 * abs(dw)) ** 2
     def fix(self, x, y, h=None, sd=.10, hsd=math.radians(2)):
         """A sighting from the drone. One that is far outside what both could be wrong by is refused."""
         e = math.hypot(x - self.x, y - self.y)
-        if e > 3 * math.sqrt(self.var + sd * sd) + .15: self.refused += 1; return False
-        k = self.var / (self.var + sd * sd); self.x += k * (x - self.x); self.y += k * (y - self.y); self.var *= 1 - k
+        if e > 3 * math.sqrt(self.var + sd * sd) + .15: self.refused += 1; self.var += .02; return False          # one odd sighting is thrown away; a row of them makes the rover doubt itself, stop, and believe them
+        k = self.var / (self.var + sd * sd); self.x += k * (x - self.x); self.y += k * (y - self.y); self.var = max(self.var * (1 - k), self.FLOOR)
         if h is not None: d = math.atan2(math.sin(h - self.h), math.cos(h - self.h)); q = self.hvar / (self.hvar + hsd * hsd); self.h += q * d; self.hvar *= 1 - q
         return True
 

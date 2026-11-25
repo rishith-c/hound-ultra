@@ -3,11 +3,16 @@
   map from the drone -> pick a room -> plan to a spot outside its wall -> drive -> stand still -> the drone takes the far side and probes -> listen ten seconds
   -> one chance out of every reading -> maybe a second look from another wall -> a person decides
 
-Three rules the code keeps:  nothing is believed while the rover moves;  blind is never counted as empty;  no route is final until a person has said yes."""
+Four rules the code keeps:  nothing is believed while the rover moves;  blind is never counted as empty;  a "no" only counts where the sensor could reach;  no route is final until a person has said yes.
+
+A room ends as one of:  person, possible (check it), nothing moved (check it last: a still person would not have been heard everywhere), unlikely (the breath radar reached all of it and heard nothing), not searched, not reached."""
 import math
+import numpy as np
 from . import fusion, plan, pose as P, radar, thermal
 
 WALK_IN, LISTEN, SETTLE, LOOKS, LOST = .35, 11.0, 1.0, 2, .30
+BREATH = 4.3                                                                         # metres at which the breath radar is believed (the maker says 5)
+OTHER = dict(west='east', east='west', south='north', north='south')
 
 class Mission:
     def __init__(self, net, rx, home=(0.0, 0.0), radius=.27):
@@ -22,7 +27,7 @@ class Mission:
         try:
             g = plan.Grid(m['blocked'], m['cost'], m['res'])
             assert g.cost.shape == g.blocked.shape and (g.cost[~g.blocked] > 0).all() and .05 <= g.res <= 2
-            rooms = [dict(id=r['id'], box=tuple(map(float, r['box'])), ev=[('aerial', a, 'above') for a in r.get('aerial', [])], looks=0, used=[], blind=[]) for r in m['rooms']]
+            rooms = [dict(id=r['id'], box=tuple(map(float, r['box'])), ev=[('aerial', a, 'above') for a in r.get('aerial', [])], looks=0, used=[], blind=[], heard=np.zeros((9, 9), bool)) for r in m['rooms']]
         except (KeyError, TypeError, ValueError, AssertionError, IndexError) as e: self.bad_map += 1; self.say(t, f'map refused: {type(e).__name__}'); self.send(to='drone', do='resend map'); return False
         self.grid, self.drive = g, g.grown(self.radius); self.rooms = rooms; self.say(t, f'map: {g.w * g.res:.0f} by {g.h * g.res:.0f} m, {len(rooms)} rooms'); self.go(t, 'choose'); return True
     def approve(self, t, yes, who):
@@ -82,7 +87,17 @@ class Mission:
         self.rooms = []; self.say(t, 'finished'); self.send(to='operator', report=self.report()); self.go(t, 'finished')
     @staticmethod
     def _mid(r): x0, y0, x1, y1 = r['box']; return (x0 + x1) / 2, (y0 + y1) / 2
-    def _spot(self, r): return plan.listening_spot(self.drive, (self.pose.x, self.pose.y), r['box'], [s for s in ('west', 'east', 'south', 'north') if s not in r['used']], (self.radius + .6, 2.6))
+    def _spot(self, r):
+        """Close to a wall if it can be, and for a second look, the wall across from the first: that is what lets the breath radar reach the whole room."""
+        left = [s for s in ('west', 'east', 'south', 'north') if s not in r['used']]; over = [OTHER[s] for s in r['used'] if OTHER[s] in left]
+        for sides in ([over, left] if over else [left]):
+            for far in (self.radius + 1.1, 2.6):
+                s = plan.listening_spot(self.drive, (self.pose.x, self.pose.y), r['box'], sides, (self.radius + .6, far))
+                if s: return s
+        return None
+    def _reach(self, r):
+        """Which parts of the room (9 by 9) the breath radar reaches from here."""
+        x0, y0, x1, y1 = r['box']; X, Y = np.meshgrid(np.linspace(x0, x1, 9), np.linspace(y0, y1, 9)); return np.hypot(X - self.pose.x, Y - self.pose.y) <= BREATH
     def _far(self, r, spot):
         """Where the probe should be: through the middle of the room from the rover, and out the other side."""
         m = self._mid(r); d = math.dist(spot, m); reach = max(r['box'][2] - r['box'][0], r['box'][3] - r['box'][1]) / 2 + 3.0; return m[0] + (m[0] - spot[0]) / d * reach, m[1] + (m[1] - spot[1]) / d * reach
@@ -94,14 +109,18 @@ class Mission:
             if x is None: wifi = ('blind', why)
             else: n = self.net.reads(x); wifi = ('pos' if n['says'] else 'neg', f"network {n['person']:.2f}, {why}")
         rad, at, rwhy = self.judge.says(); th, where, twhy = thermal.look(self.heat)
-        new = [('wifi', wifi[0], here), ('radar', rad, here) if rad != 'machine' else ('signature', 'machine', here), ('micro', self.judge.breath(), here), ('temperature', 'tooHot', here) if th == 'tooHot' else ('thermal', th, here)]
+        breath, reach = self.judge.breath(), self._reach(r)
+        if breath != 'blind': r['heard'] |= reach
+        if breath == 'neg' and not reach.all(): breath = 'part'                                              # silence from a part of the room says nothing about the rest
+        new = [('wifi', wifi[0], here), ('radar', rad, here) if rad != 'machine' else ('signature', 'machine', here), ('micro', breath, here), ('temperature', 'tooHot', here) if th == 'tooHot' else ('thermal', th, here)]
         if th == 'neg' and not r.get('open_sight'): new[-1] = ('thermal', 'blind', here)                     # a wall in the way: seeing nothing warm says nothing
         r['ev'] += new; r['blind'] += [w for a, w in ((wifi[0], 'Wi-Fi: ' + wifi[1]), (rad, 'radar: ' + rwhy)) if a == 'blind']; r['p'], r['steps'] = fusion.fuse(r['ev']); v = fusion.verdict(r['p'])
         self.say(t, f"{r['id']}: Wi-Fi {wifi[0]} ({wifi[1]}), radar {rad}, heat {th}: {100 * r['p']:.0f} %, {v}"); self.send(to='drone', do='probe off')
         if v == 'person': r['verdict'] = v; r['route'] = plan.route(self.drive, self.home, self._mid(r), nearest=True); self.send(to='operator', ask=r['id'], p=r['p'], route=r['route']); self.go(t, 'ask'); return
-        saw = wifi[0] != 'blind'
-        if r['looks'] < LOOKS and (v == 'possible' or not saw): self.say(t, f"{r['id']}: a second look from another side"); self.rooms.insert(0, r); self.room = None; self.go(t, 'choose'); return
-        r['verdict'] = v if v != 'unlikely' or any(a != 'blind' for s, a, _ in r['ev'] if s == 'wifi') else 'not searched'          # radar and heat stop at a wall: without the Wi-Fi, nothing has looked inside
-        if r['verdict'] in ('possible', 'not searched'): self.send(to='operator', check=r['id'], p=r['p'], why=r['blind'] or ['not sure'])
+        saw = wifi[0] != 'blind'; hint = any(a in ('pos', 'faint') for _, a, _ in r['ev'])          # a room that answered once, to anything, is never closed
+        if r['looks'] < LOOKS and (v == 'possible' or not saw or hint or not r['heard'].all()): self.say(t, f"{r['id']}: a second look from another side"); self.rooms.insert(0, r); self.room = None; self.go(t, 'choose'); return
+        if v == 'unlikely': v = 'possible' if hint else 'unlikely' if r['heard'].all() else 'nothing moved'
+        r['verdict'] = v if v not in ('unlikely', 'nothing moved') or any(a != 'blind' for s, a, _ in r['ev'] if s == 'wifi') else 'not searched'          # radar and heat stop at a wall: without the Wi-Fi, nothing has looked inside
+        if r['verdict'] in ('possible', 'nothing moved', 'not searched'): self.send(to='operator', check=r['id'], p=r['p'], why=r['blind'] or ['not sure'])
         self.done.append(r); self.room = None; self.go(t, 'choose')
     def report(self): return [dict(room=r['id'], verdict=r.get('verdict'), p=round(r.get('p', fusion.PRIOR), 3), looks=r['looks'], blind=r['blind'], approved=r.get('approved'), gap=r.get('route', {}).get('gap')) for r in self.done]
