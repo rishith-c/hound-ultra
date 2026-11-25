@@ -286,7 +286,7 @@ def main():
         os.replace(wav, os.path.join(FILM, a.out + ".wav"))
         return
     stills(items, tmp)
-    with concurrent.futures.ThreadPoolExecutor(5) as ex:
+    with concurrent.futures.ThreadPoolExecutor(int(os.environ.get("HOUND_JOBS", 5))) as ex:
         parts = list(ex.map(cut, jobs))
     lst = os.path.join(tmp, "list.txt")
     open(lst, "w").write("".join(f"file '{p}'\n" for p, _ in parts))
