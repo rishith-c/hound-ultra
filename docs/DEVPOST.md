@@ -48,12 +48,10 @@ permission.
 
 ## 2. What did we build or improve during the hackathon?
 
-HOUND is **based on existing work**. Here is the line.
+The event opened on 21 November 2026 at 12:00 am PST. **Most of HOUND was written after that.** This repository starts on 23 November,
+and every commit in it is dated during the event.
 
-**Before 21 November 2026:** the rover hardware and its first firmware, the Wi-Fi channel simulator, the neural network and its trained weights
-(trained 15 November), the rover CAD and photographs, and a short film. At EvoHacks 2 (closed 22 November), a one-page concept of the console.
-
-**During this event (21 to 28 November), all in this repository:**
+**Written during this event (21 to 28 November), all in this repository:**
 
 - **HOUND Command**, the console (video 0:37 onward): 24 workspaces in two modes, Demo and Advanced. It has a 3-D twin of the real valley at Timure,
   a mission simulator, Bayesian fusion that writes out every step, a route planner that won't cross a hazard, and the network running and training
@@ -64,6 +62,10 @@ HOUND is **based on existing work**. Here is the line.
 - **A practice building** where the real rover and drone code runs over a made-up world, with **99 cases** (section 4).
 - **A comparison** of our network against simpler methods on the same test windows (tools/ml/baselines.py, section 3).
 - The film.
+
+**Made before the event:** the neural network and its trained weights (trained 15 November), the Wi-Fi channel simulator it learned from, the
+rover hardware and its first firmware, the rover CAD and photographs, and a short film. At EvoHacks 2 (closed 22 November), a one-page concept of
+the console.
 
 **Not ours:** three.js, d3, Rapier, Transformers.js and the models it runs (named in section 3), WebLLM, the terrain tiles, imagery and map data
 (credited in the README), and textures made with Codex.

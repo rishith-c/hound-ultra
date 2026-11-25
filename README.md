@@ -96,15 +96,15 @@ Every workspace carries a tag, and **What is real?** (bottom left) lists all of 
 The console is not connected to the rover. Breathing rate is not shown as a reading, because the network cannot measure it
 reliably. Wi-Fi amplitude cannot tell left from right, so position comes from radar. Nothing here is a medical assessment.
 
-## What existed before, and what was built in the event
+## What was built in the event, and what existed before
 
-Before 21 November 2026 the team had: the rover and its firmware, the Wi-Fi simulator and the network with its weights
-(in an earlier repository of ours), and a film about the rover. For EvoHacks 2, which closed
-on 22 November, the team also made a first operator console: one page with a satellite map, a shake field, a planned route and
-simulated sensor panels.
+**Everything in this repository was written during the event**, which opened on 21 November 2026 at 12:00 am PST. The first
+commit is from 23 November. The exceptions are the trained weights and test windows in `data/nn.json`, the rover CAD in
+`assets/models/rover_cad.glb`, and the photographs of the rover. None of the first console's code is used here.
 
-**Everything in this repository was written during the event**, except the trained weights and test windows in `data/nn.json`, the
-rover CAD in `assets/models/rover_cad.glb`, and the photographs of the rover. None of the first console's code is used here.
+Made before 21 November 2026: the rover and its firmware, the Wi-Fi simulator and the network with its weights (in an earlier
+repository of ours), and a film about the rover. For EvoHacks 2, which closed on 22 November, the team also made a first operator
+console: one page with a satellite map, a shake field, a planned route and simulated sensor panels.
 
 ## How AI was used to build it
 
