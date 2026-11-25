@@ -177,7 +177,9 @@ export function createScene(host, { accent, backdrop, reduced, onFrame, onAfter,
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    scene.add(new THREE.Points(g, new THREE.PointsMaterial({ size: 1.5 * renderer.getPixelRatio(), sizeAttenuation: false, vertexColors: true, depthWrite: false, toneMapped: false })));
+    const m = new THREE.PointsMaterial({ size: 1.6 * renderer.getPixelRatio(), sizeAttenuation: false, vertexColors: true, depthWrite: false, toneMapped: false, transparent: true });
+    m.onBeforeCompile = (s) => { s.fragmentShader = s.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.a *= smoothstep(0.5, 0.1, length(gl_PointCoord - 0.5));'); };          // round, with a soft edge
+    const stars = new THREE.Points(g, m); stars.renderOrder = -1; scene.add(stars);
   }
 
   // Plate boundaries (filled in by setPlates)
@@ -360,5 +362,6 @@ export function createScene(host, { accent, backdrop, reduced, onFrame, onAfter,
   };
   camera.position.copy(ll2v(18, 96)).setLength(dFit);
   controls.update();
+  canvas.globe = api;                                                    // the film turns the globe through this
   return api;
 }

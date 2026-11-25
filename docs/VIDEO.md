@@ -13,6 +13,8 @@ the robot, the network and the drone shown inside it.
 - The cuts were placed on the words of a guide voice, then moved to the nearest note of the score (they share one clock).
 - The 4K picture is filmed from the live pages again, one frame at a time, at the size each camera move needs, so a close-up is drawn and not
   enlarged. `film_cut.py --picture --k 2` joins it without sound. Real robot footage comes from 4K 60 originals; the build timelapse is 1080p.
+- The opening is one unbroken shot of 11.6 seconds, drawn by `tools/dive/render.py`: through the O of HOUND to the Earth of 26 August 2026,
+  through the clouds to the village, and the shadow of a cloud over it on the question. The last card is the same camera flying back out.
 - Why it is cut this way, with the papers: `docs/EDITING.md`.
 - The score is written to the picture. Every note is a real recording: string ensemble,
   horns, trombones, tuba, a Steinway, a floor tom tuned down for the drum, and two small pieces of wood for the clock. No synthesiser.

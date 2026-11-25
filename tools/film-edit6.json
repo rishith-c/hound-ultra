@@ -37,6 +37,12 @@
    "at": 177.6,
    "db": -13,
    "end": 183.43
+  },
+  {
+   "file": "../v4/sfx/river6.wav",
+   "at": 23.62,
+   "db": -16,
+   "end": 28.34
   }
  ],
  "segments": [
@@ -378,50 +384,19 @@
    ]
   },
   {
-   "clip": "k_title",
+   "clip": "dive",
    "a": 0,
    "d": 2.01667,
    "s": 1.0,
-   "fo": 0.5,
-   "cam": [
-    [
-     -0.5042,
-     1.0,
-     0.5,
-     0.5
-    ],
-    [
-     2.5208,
-     1.075,
-     0.5,
-     0.5
-    ]
-   ],
    "cap": [],
    "html": [],
    "voice": []
   },
   {
-   "clip": "v_vclean",
-   "a": 0.5,
-   "d": 7.1,
-   "s": 1.05446,
-   "fi": 0.6,
-   "scope": true,
-   "cam": [
-    [
-     -1.6833,
-     1.11,
-     0.5,
-     0.5
-    ],
-    [
-     8.4167,
-     1.24,
-     0.5,
-     0.5
-    ]
-   ],
+   "clip": "dive",
+   "a": 2.01667,
+   "d": 6.73333,
+   "s": 1.0,
    "cap": [
     [
      0.44,
@@ -444,27 +419,27 @@
    ],
    "html": [
     [
-     0.3,
+     2.5,
      6.733,
-     "<div style=\"position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.86) 12%,rgba(0,0,0,.36) 50%,rgba(0,0,0,0) 74%)\"></div>",
-     0.3
+     "<div style=\"position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.72) 0%,rgba(0,0,0,.46) 26%,rgba(0,0,0,0) 50%)\"></div>",
+     0.5
     ],
     [
      2.8,
      6.733,
-     "<div style=\"position:absolute;left:100px;bottom:300px;text-shadow:0 2px 34px rgba(0,0,0,.85),0 1px 6px rgba(0,0,0,.6)\"><div style=\"font:400 178px/1 HSerif;color:#fff;letter-spacing:-.022em\">1,300+</div><div style=\"font:500 35px/1.2 HSans;color:#f0f4f8;margin-top:8px\">people killed</div></div>",
+     "<div style=\"position:absolute;left:100px;bottom:440px;text-shadow:0 2px 34px rgba(0,0,0,.85),0 1px 6px rgba(0,0,0,.6)\"><div style=\"font:400 178px/1 HSerif;color:#fff;letter-spacing:-.022em\">1,300+</div><div style=\"font:500 35px/1.2 HSans;color:#f0f4f8;margin-top:6px\">people killed</div></div>",
      0.3
     ],
     [
      4.78,
      6.733,
-     "<div style=\"position:absolute;left:780px;bottom:300px;text-shadow:0 2px 34px rgba(0,0,0,.85),0 1px 6px rgba(0,0,0,.6)\"><div style=\"font:400 178px/1 HSerif;color:#fff;letter-spacing:-.022em\">5,000+</div><div style=\"font:500 35px/1.2 HSans;color:#f0f4f8;margin-top:8px\">people missing</div></div>",
+     "<div style=\"position:absolute;left:100px;bottom:170px;text-shadow:0 2px 34px rgba(0,0,0,.85),0 1px 6px rgba(0,0,0,.6)\"><div style=\"font:400 178px/1 HSerif;color:#fff;letter-spacing:-.022em\">5,000+</div><div style=\"font:500 35px/1.2 HSans;color:#f0f4f8;margin-top:6px\">people missing</div></div>",
      0.3
     ],
     [
-     1.64,
+     2.9,
      6.733,
-     "<div style=\"position:absolute;left:100px;bottom:158px;font:500 21px/1.3 HSans;color:#b9c4cf;text-shadow:0 1px 8px #000\">Bhote Koshi flood, Nepal, August 2026. Figures: Nepal’s disaster authority, 15 September. Valley drawn from real terrain; imagery © Esri, Maxar.</div>",
+     "<div style=\"position:absolute;left:100px;bottom:54px;font:500 21px/1.35 HSans;color:#c6cfd8;text-shadow:0 1px 8px #000\">Bhote Koshi flood, Nepal, August 2026. Figures: Nepal’s disaster authority, 15 September.<br>Earth on 26 August 2026: NASA. Valley: real terrain, imagery © Esri, Maxar. The flood water is drawn.</div>",
      0.4
     ]
    ],
@@ -473,30 +448,13 @@
      "../v4/guide_w1",
      0.5
     ]
-   ],
-   "grade": "film"
+   ]
   },
   {
-   "clip": "v_vclean",
-   "a": 8.2,
-   "d": 2.2,
-   "s": 0.76744,
-   "tag": "Simulated",
-   "scope": true,
-   "cam": [
-    [
-     -0.7167,
-     1.85,
-     0.49,
-     0.5
-    ],
-    [
-     3.5833,
-     2.2,
-     0.49,
-     0.5
-    ]
-   ],
+   "clip": "dive2",
+   "a": 0,
+   "d": 2.86667,
+   "s": 1.0,
    "cap": [
     [
      0.0,
@@ -511,8 +469,7 @@
      "../v4/p_w2",
      0.1
     ]
-   ],
-   "grade": "film"
+   ]
   },
   {
    "clip": "black",
@@ -2856,15 +2813,15 @@
    "cam": [
     [
      -0.525,
-     1.1,
+     1.3,
      0.52,
-     0.38
+     0.4
     ],
     [
      2.625,
      1.5,
      0.52,
-     0.38
+     0.4
     ]
    ],
    "cap": [
@@ -4077,24 +4034,10 @@
    "voice": []
   },
   {
-   "clip": "k_end",
+   "clip": "dive_end",
    "a": 0,
    "d": 3.25,
    "s": 1.0,
-   "cam": [
-    [
-     -0.8125,
-     1.0,
-     0.5,
-     0.5
-    ],
-    [
-     4.0625,
-     1.1,
-     0.5,
-     0.5
-    ]
-   ],
    "cap": [
     [
      0.0,
@@ -4103,7 +4046,26 @@
      0
     ]
    ],
-   "html": [],
+   "html": [
+    [
+     1.0,
+     3.25,
+     "<div style=\"position:absolute;left:0;right:0;top:574px;text-align:center;font:400 50px/1.45 HSerif;color:#c9d0d8\">Finding people trapped under rubble, with Wi-Fi.</div>",
+     0.35
+    ],
+    [
+     1.2,
+     3.25,
+     "<div style=\"position:absolute;left:0;right:0;top:690px;text-align:center;font:500 35px/1.45 HSans;color:#ffffff\">hound-command.vercel.app</div>",
+     0.35
+    ],
+    [
+     1.4,
+     3.25,
+     "<div style=\"position:absolute;left:0;right:0;top:812px;text-align:center;font:400 24px/1.45 HSans;color:#8d97a2\">Rover and neural network: built by us. Every search shown: simulated. Console built 21 to 28 November 2026.</div>",
+     0.35
+    ]
+   ],
    "voice": []
   },
   {
