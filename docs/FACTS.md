@@ -105,8 +105,9 @@ still). Of those 30, the network is right on 20; it misses most still people, as
 - `~/Developer/rover-design-study/README.md`
 - `~/Developer/hound-film/EVOHACKS_DEVPOST.md` (the previous hackathon write-up)
 - Need for the project: after the 26 August 2026 Bhote Koshi flood on the Nepal–Tibet border, Nepal's disaster
-  authority counted about 1,399 dead and about 5,130 missing by 15 September (from the previous write-up; do
-  not embellish). Commercial through-wall radars used by rescue teams cost thousands of dollars.
+  authority (NDRRMA) counted more than 1,400 dead and more than 5,000 missing by late September (OnlineKhabar, ADRC report;
+  4 September, Nepal Police via Himalayan Times: 1,290 dead, 4,798 missing). Checked 25 November 2026. The film's
+  "more than thirteen hundred / more than five thousand" stays true. Do not embellish. Commercial through-wall radars used by rescue teams cost thousands of dollars.
 
 ## Measured on 23 November 2026 (after the rescue-team fix in sim.js)
 
