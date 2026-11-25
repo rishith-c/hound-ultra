@@ -73,7 +73,13 @@ still). Of those 30, the network is right on 20; it misses most still people, as
 - "Rescue team" movement and confirmations: simulated.
 - The film's drone, its parts drawing and the Wi-Fi link from drone to HOUND: the design, simulated. No drone has been built.
 - The drone's own-view shot: the pictures are AI-made test scenes (the site's set, no real people). The boxes and scores are the real output of a small pretrained detector
-  (D-FINE nano, trained on everyday photos) run on those pictures in the browser. Tagged "AI-made test scene, real detector". The pin and the before-and-after are the site's own demonstrations.
+  (D-FINE nano, trained on everyday photos) run on those pictures in the browser. Tagged "AI-made test scene, real detector". The pin is the site's own demonstration.
+- The film's word search and 3-D ground (`x_mind`): the same kind of AI-made scene. "Finds no one" is the detector's real answer on it, the match for "a person covered in mud" is the real
+  top match of a small public model (MobileCLIP) over 860 crops, and the ground is the real depth output of Depth Anything V2 on that one picture, with no real distances claimed.
+- The film's ten-percent-to-ninety-four shot (`x_ten`): the console's own odds (10, 32, 74, 86, 94 %) in a simulated room. The wave is a 2-D simulation of Wi-Fi meeting a wall and a person, drawn to be seen;
+  it is not a recording and no position comes from the Wi-Fi.
+- The film's two-hundred-missions shot (`x_runs`): the real outcome of each of the 200 System check runs (284 people found by the sensors, 316 flagged for a team check, 0 of 400 decoys confirmed,
+  in simulation). The paths and stops are from those runs. The order in which the lights come on is drawn. The 34 empty team visits are counted here, not drawn.
 - The film's wall demonstration: the room, the wall, the robot in the doorway and the walk are real footage. The signal beside it is simulated from that
   walk, and the trained network reads the simulated signal. Nothing was measured through that wall in the footage.
 

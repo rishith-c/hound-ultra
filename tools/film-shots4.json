@@ -946,5 +946,47 @@
    2
   ],
   "before": "(PARTS.start(),1)"
+ },
+ {
+  "name": "x_ten",
+  "url": "/tools/film/ten.html",
+  "rev": 2,
+  "settle": 6,
+  "after": 0,
+  "seconds": 13.0,
+  "size": [
+   1920,
+   1080,
+   2
+  ],
+  "before": "JSON.stringify(TEN.start())"
+ },
+ {
+  "name": "x_mind",
+  "url": "/tools/film/dronemind.html",
+  "rev": 1,
+  "settle": 6,
+  "after": 0,
+  "seconds": 14.1,
+  "size": [
+   1920,
+   1080,
+   2
+  ],
+  "before": "JSON.stringify(MIND.start())"
+ },
+ {
+  "name": "x_runs",
+  "url": "/tools/film/runs.html",
+  "rev": 1,
+  "settle": 6,
+  "after": 0,
+  "seconds": 11.0,
+  "size": [
+   1920,
+   1080,
+   2
+  ],
+  "before": "JSON.stringify(RUNS.start())"
  }
 ]

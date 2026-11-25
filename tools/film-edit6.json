@@ -9,7 +9,7 @@
  "voice_db": -1.2,
  "music": [
   {
-   "file": "../v4/sfx/score10.wav",
+   "file": "../v4/sfx/score11.wav",
    "at": 0,
    "db": 0,
    "end": 239.0
@@ -21,22 +21,28 @@
    "end": 1.52
   },
   {
-   "file": "../v4/sfx/motor61.wav",
+   "file": "../v4/sfx/motor111.wav",
    "at": 8.68,
    "db": -12,
    "end": 10.22
   },
   {
-   "file": "../v4/sfx/motor62.wav",
-   "at": 89.9,
+   "file": "../v4/sfx/motor112.wav",
+   "at": 90.683,
    "db": -14,
-   "end": 92.43
+   "end": 93.308
   },
   {
-   "file": "../v4/sfx/motor63.wav",
-   "at": 166.483,
+   "file": "../v4/sfx/motor113.wav",
+   "at": 160.25,
    "db": -13,
-   "end": 172.373
+   "end": 165.267
+  },
+  {
+   "file": "../v4/sfx/motor114.wav",
+   "at": 169.056,
+   "db": -13,
+   "end": 170.988
   },
   {
    "file": "../v4/sfx/river6.wav",
@@ -717,174 +723,21 @@
    "clean": true
   },
   {
-   "clip": "t_m1",
-   "a": 11.0,
-   "d": 1.4,
+   "clip": "x_mosaic",
+   "a": 0,
+   "d": 2.45,
    "s": 1.0,
-   "adv": true,
-   "cam": [
-    [
-     -0.35,
-     1.0,
-     0.5,
-     0.5
-    ],
-    [
-     1.75,
-     1.1,
-     0.5,
-     0.5
-    ]
-   ],
+   "grade": "ui",
+   "html": [],
    "cap": [
     [
      0.0,
-     1.4,
+     1.183,
      "every robot, every sensor, every reading, on one screen.",
      0
     ]
    ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true
-  },
-  {
-   "clip": "t_swarm",
-   "a": 1.4,
-   "d": 2.2,
-   "s": 1.32,
-   "adv": true,
-   "cam": [
-    [
-     -0.4167,
-     1.3,
-     0.42,
-     0.42
-    ],
-    [
-     2.0833,
-     1.6,
-     0.42,
-     0.42
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     1.667,
-     "Send out a whole team,",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [
-    [
-     "../v4/guide_c3",
-     0.2167
-    ]
-   ],
-   "grade": "ui",
-   "clean": true
-  },
-  {
-   "clip": "t_struct",
-   "a": 1.2,
-   "d": 4.8,
-   "s": 1.92,
-   "adv": true,
-   "cam": [
-    [
-     -0.625,
-     1.3,
-     0.36,
-     0.55
-    ],
-    [
-     3.125,
-     1.9,
-     0.36,
-     0.55
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     2.5,
-     "test a collapse before anyone lifts a beam,",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true
-  },
-  {
-   "clip": "t_time",
-   "a": 1.3,
-   "d": 2.075,
-   "s": 1.5,
-   "adv": true,
-   "cam": [
-    [
-     -0.3458,
-     1.4,
-     0.4,
-     0.28
-    ],
-    [
-     1.7292,
-     2.0,
-     0.4,
-     0.28
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     1.383,
-     "rewind the mission, or just ask it a question.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true
-  },
-  {
-   "clip": "t_copilot",
-   "a": 2.7,
-   "d": 2.34,
-   "s": 1.2,
-   "adv": true,
-   "cam": [
-    [
-     -0.4875,
-     2.2,
-     0.9,
-     0.38
-    ],
-    [
-     2.4375,
-     2.5,
-     0.9,
-     0.38
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     1.627,
-     "rewind the mission, or just ask it a question.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true
+   "voice": []
   },
   {
    "clip": "x_five",
@@ -1169,142 +1022,121 @@
    "bars": 80
   },
   {
-   "clip": "v_place",
-   "a": 7.2,
-   "d": 3.2,
-   "s": 1.74545,
-   "tag": "Simulated",
-   "cam": [
-    [
-     -0.4583,
-     1.45,
-     0.56,
-     0.39
-    ],
-    [
-     2.2917,
-     1.75,
-     0.56,
-     0.39
-    ]
-   ],
+   "clip": "x_mind",
+   "a": 0,
+   "d": 14.0,
+   "s": 1.0,
+   "bars": 80,
+   "tag": "AI-made test scene, real models",
+   "html": [],
    "cap": [
     [
      0.0,
-     1.833,
-     "So it drops a pin on the map.",
+     2.635,
+     "But here, it finds no one.",
+     0
+    ],
+    [
+     2.665,
+     4.96,
+     "So you tell it what to look for.",
+     0
+    ],
+    [
+     4.99,
+     9.105,
+     "A person, covered in mud. There.",
+     0
+    ],
+    [
+     9.24,
+     12.547,
+     "From one photo, it works out the ground in 3-D,",
+     0
+    ],
+    [
+     12.577,
+     14.0,
+     "and drops a pin.",
      0
     ]
    ],
-   "html": [],
    "voice": [
     [
-     "../v4/guide_d6",
-     0.1167
-    ]
-   ],
-   "grade": "film",
-   "bars": 80
-  },
-  {
-   "clip": "v_moved",
-   "a": 1.5,
-   "d": 4.5,
-   "s": 1.47541,
-   "tag": "Simulated",
-   "cam": [
-    [
-     -0.7625,
-     1.0,
-     0.5,
-     0.5
+     "../v11/guide_d5",
+     0.3
     ],
     [
-     3.8125,
-     1.05,
-     0.5,
-     0.5
+     "../v11/guide_d6",
+     9.3
     ]
-   ],
-   "cap": [
-    [
-     0.0,
-     3.05,
-     "Fly it again later, and it marks whatever moved.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "film",
-   "bars": 80
-  },
-  {
-   "clip": "t_scan",
-   "a": 1.4,
-   "d": 3.1,
-   "s": 1.2,
-   "adv": true,
-   "cam": [
-    [
-     -0.6458,
-     1.0,
-     0.48,
-     0.48
-    ],
-    [
-     3.2292,
-     1.25,
-     0.48,
-     0.48
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     2.583,
-     "The laser scan becomes a 3-D model,",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [
-    [
-     "../v4/guide_s1",
-     0.2667
-    ]
-   ],
-   "grade": "ui",
-   "clean": true
+   ]
   },
   {
    "clip": "v_scan",
-   "a": 10.2,
-   "d": 8.8,
-   "s": 2.25641,
+   "a": 7.62,
+   "d": 4.98,
+   "s": 2.22985,
    "cam": [
     [
-     -0.975,
+     -0.5583,
      1.0,
      0.3,
      0.62
     ],
     [
-     4.875,
-     1.03,
+     2.7917,
+     1.001,
      0.3,
      0.62
     ]
    ],
+   "html": [],
    "cap": [
     [
      0.0,
-     3.383,
-     "so you can lift the roof off and see where someone could survive.",
+     2.233,
+     "The laser scan lifts the roof off,",
      0
     ]
    ],
+   "voice": [
+    [
+     "../v11/guide_s1",
+     0.25
+    ]
+   ],
+   "grade": "film",
+   "bars": 80
+  },
+  {
+   "clip": "v_scan",
+   "a": 12.6,
+   "d": 6.4,
+   "s": 2.70423,
+   "cam": [
+    [
+     -0.5917,
+     1.0,
+     0.5,
+     0.62
+    ],
+    [
+     2.9583,
+     1.012,
+     0.5,
+     0.62
+    ]
+   ],
    "html": [],
+   "cap": [
+    [
+     0.0,
+     2.367,
+     "and shows where someone could survive.",
+     0
+    ]
+   ],
    "voice": [],
    "grade": "film",
    "bars": 80
@@ -1384,14 +1216,14 @@
     [
      0.0,
      1.067,
-     "Its wheels slide it sideways through a gap.",
+     "It slides sideways, through a gap.",
      0
     ]
    ],
    "html": [],
    "voice": [
     [
-     "../v4/guide_b2",
+     "../v11/guide_b2",
      0.1833
     ]
    ],
@@ -1421,7 +1253,7 @@
     [
      0.0,
      1.333,
-     "Its wheels slide it sideways through a gap.",
+     "It slides sideways, through a gap.",
      0
     ]
    ],
@@ -1453,7 +1285,7 @@
     [
      0.0,
      2.667,
-     "It carries a thermal camera for body heat, a radar for motion,",
+     "It carries a thermal camera, a radar, and a Wi-Fi receiver.",
      0
     ]
    ],
@@ -1485,7 +1317,7 @@
     [
      0.0,
      1.333,
-     "It carries a thermal camera for body heat, a radar for motion,",
+     "It carries a thermal camera, a radar, and a Wi-Fi receiver.",
      0
     ]
    ],
@@ -1517,7 +1349,7 @@
     [
      0.0,
      1.6,
-     "and a Wi-Fi receiver.",
+     "It carries a thermal camera, a radar, and a Wi-Fi receiver.",
      0
     ]
    ],
@@ -1533,44 +1365,6 @@
    "grade": "real"
   },
   {
-   "clip": "t_m2a",
-   "a": 2.2,
-   "d": 1.8,
-   "s": 1.0,
-   "adv": true,
-   "cam": [
-    [
-     -0.45,
-     1.25,
-     0.55,
-     0.45
-    ],
-    [
-     2.25,
-     1.6,
-     0.55,
-     0.45
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     1.8,
-     "It follows the drone's map.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [
-    [
-     "../v4/guide_d3",
-     0.2167
-    ]
-   ],
-   "grade": "ui",
-   "clean": true
-  },
-  {
    "clip": "x_link",
    "a": 1.45,
    "d": 5.06667,
@@ -1580,19 +1374,24 @@
    "cap": [
     [
      0.0,
-     2.807,
+     2.887,
      "Then the drone sends it Wi-Fi from the far side,",
      0
     ],
     [
-     2.837,
-     4.297,
+     2.917,
+     4.75,
      "through everything in between.",
      0
     ]
    ],
    "html": [],
-   "voice": []
+   "voice": [
+    [
+     "../v11/guide_d3",
+     0.1167
+    ]
+   ]
   },
   {
    "clip": "x_wave",
@@ -1604,26 +1403,26 @@
    "cap": [
     [
      0.507,
-     2.377,
+     2.477,
      "Step three: it listens.",
      0
     ],
     [
-     2.407,
-     4.417,
+     2.507,
+     4.477,
      "Wi-Fi goes straight through a wall.",
      0
     ],
     [
-     4.447,
-     7.817,
-     "But you're mostly water, so your body soaks some of it up,",
+     4.507,
+     6.197,
+     "But you're mostly water.",
      0
     ],
     [
-     7.847,
+     6.227,
      9.55,
-     "and some of it bounces off.",
+     "Some of it soaks in, and some bounces off.",
      0
     ]
    ],
@@ -1637,7 +1436,7 @@
    ],
    "voice": [
     [
-     "../v4/guide_n1",
+     "../v11/guide_n1",
      0.5667
     ]
    ]
@@ -1949,106 +1748,40 @@
   },
   {
    "clip": "v_forge",
-   "a": 1.6,
-   "d": 9.4,
-   "s": 3.0,
+   "a": 3.4,
+   "d": 8.57,
+   "s": 2.85667,
    "cam": [
     [
-     -0.7833,
+     -0.75,
      1.0,
-     0.3,
+     0.5,
      0.62
     ],
     [
-     3.9167,
-     1.03,
-     0.3,
+     3.75,
+     1.012,
+     0.5,
      0.62
     ]
    ],
+   "html": [],
    "cap": [
     [
      0.0,
-     3.133,
-     "We trained it on 900 simulated people,",
+     3.0,
+     "We trained it on 900 simulated people.",
      0
     ]
    ],
-   "html": [],
    "voice": [
     [
-     "../v4/guide_n3",
-     0.2
+     "../v11/guide_n3",
+     0.1167
     ]
    ],
    "grade": "film",
    "bars": 80
-  },
-  {
-   "clip": "t_forge",
-   "a": 1.5,
-   "d": 2.1,
-   "s": 1.23529,
-   "adv": true,
-   "cam": [
-    [
-     -0.425,
-     1.2,
-     0.297,
-     0.6
-    ],
-    [
-     2.125,
-     1.4,
-     0.297,
-     0.6
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     1.7,
-     "and you can train one yourself, live.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true
-  },
-  {
-   "clip": "t_forge",
-   "a": 3.6,
-   "d": 0.71667,
-   "s": 1.0,
-   "adv": true,
-   "cam": [
-    [
-     -0.1792,
-     1.9,
-     0.297,
-     0.6
-    ],
-    [
-     0.8958,
-     2.25,
-     0.297,
-     0.6
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     0.717,
-     "and you can train one yourself, live.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true
   },
   {
    "clip": "t_sense",
@@ -2160,48 +1893,48 @@
    "clip": "t_fusion",
    "a": 1.5,
    "d": 2.4,
-   "s": 1.06667,
+   "s": 0.95364,
    "adv": true,
    "cam": [
     [
-     -0.5625,
+     -0.6292,
      1.6,
      0.375,
      0.35
     ],
     [
-     2.8125,
+     3.1458,
      1.85,
      0.375,
      0.35
     ]
    ],
-   "cap": [
-    [
-     0.0,
-     2.25,
-     "Step five: it decides.",
-     0
-    ]
-   ],
    "html": [
     [
-     0.25,
-     2.2,
+     0.15,
+     2.1,
      "<div style=\"position:absolute;left:0;right:0;bottom:0;height:700px;background:linear-gradient(0deg,rgba(2,4,6,.98) 0,rgba(2,4,6,.97) 46%,rgba(2,4,6,.80) 62%,rgba(2,4,6,.34) 82%,rgba(2,4,6,0))\"></div>",
      0.25
     ],
     [
-     0.25,
-     2.2,
+     0.15,
+     2.1,
      "<div style=\"position:absolute;left:112px;bottom:168px;font:400 124px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">5. Decide</div>",
      0.25
     ]
    ],
+   "cap": [
+    [
+     0.0,
+     2.517,
+     "Step five: it decides.",
+     0
+    ]
+   ],
    "voice": [
     [
-     "../v4/guide_f1",
-     0.25
+     "../v11/guide_f1",
+     0.2
     ]
    ],
    "grade": "ui",
@@ -2210,32 +1943,32 @@
   {
    "clip": "t_fusion",
    "a": 3.9,
-   "d": 2.7,
-   "s": 0.76777,
+   "d": 1.7,
+   "s": 0.91892,
    "adv": true,
    "cam": [
     [
-     -0.8792,
+     -0.4625,
      1.9,
      0.375,
      0.4
     ],
     [
-     4.3958,
+     2.3125,
      2.2,
      0.375,
      0.4
     ]
    ],
+   "html": [],
    "cap": [
     [
      0.0,
-     3.517,
+     1.85,
      "Radar and heat join in, and every reading moves the odds.",
      0
     ]
    ],
-   "html": [],
    "voice": [],
    "grade": "ui",
    "clean": true
@@ -2243,109 +1976,70 @@
   {
    "clip": "t_fusion",
    "a": 6.6,
-   "d": 1.6,
-   "s": 1.2,
+   "d": 2.0,
+   "s": 0.91603,
    "adv": true,
    "cam": [
     [
-     -0.3333,
+     -0.5458,
      2.4,
      0.47,
      0.42
     ],
     [
-     1.6667,
+     2.7292,
      2.8,
      0.47,
      0.42
     ]
    ],
+   "html": [],
    "cap": [
     [
      0.0,
-     1.333,
-     "10 %. Then 94 %.",
+     2.183,
+     "Radar and heat join in, and every reading moves the odds.",
      0
     ]
    ],
-   "html": [],
    "voice": [],
    "grade": "ui",
    "clean": true
   },
   {
-   "clip": "k_94",
-   "a": 0,
-   "d": 1.76667,
-   "s": 1.0,
-   "cam": [
-    [
-     -0.4417,
-     1.0,
-     0.5,
-     0.5
-    ],
-    [
-     2.2083,
-     1.1,
-     0.5,
-     0.5
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     1.01,
-     "10 %. Then 94 %.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": []
-  },
-  {
-   "clip": "black",
-   "a": 0,
-   "d": 0.165,
-   "s": 0.3,
-   "cap": [],
-   "html": [],
-   "voice": []
-  },
-  {
    "clip": "rb_go",
    "a": 2.2,
-   "d": 1.9,
+   "d": 1.95,
    "s": 1.0,
    "tag": "Real robot, driven by remote",
    "scope": true,
    "cam": [
     [
-     -0.475,
+     -0.4875,
      1.0,
      0.5,
      0.5
     ],
     [
-     2.375,
+     2.4375,
      1.08,
      0.5,
      0.5
     ]
    ],
+   "html": [],
    "cap": [
     [
-     0.39,
-     1.9,
+     0.0,
+     1.95,
      "Now watch a whole search.",
      0
     ]
    ],
-   "html": [],
    "voice": [
     [
-     "../v4/p_f2",
-     0.45
+     "../v11/guide_f2",
+     0.2
     ]
    ],
    "grade": "real"
@@ -2370,15 +2064,15 @@
      0.45
     ]
    ],
+   "html": [],
    "cap": [
     [
      0.0,
      1.183,
-     "The robot plans its own way in, stops outside a room,",
+     "The robot plans its own way in, and stops outside a room.",
      0
     ]
    ],
-   "html": [],
    "voice": [],
    "grade": "ui",
    "clean": true
@@ -2386,413 +2080,374 @@
   {
    "clip": "v_fpv",
    "a": 6.0,
-   "d": 0.95,
+   "d": 1.18333,
    "s": 1.0,
    "tag": "Simulated",
    "scope": true,
    "cam": [
     [
-     -0.2375,
+     -0.2958,
      1.0,
      0.5,
      0.5
     ],
     [
-     1.1875,
+     1.4792,
      1.12,
      0.5,
      0.5
     ]
    ],
+   "html": [],
    "cap": [
     [
      0.0,
-     0.95,
-     "The robot plans its own way in, stops outside a room,",
+     1.183,
+     "The robot plans its own way in, and stops outside a room.",
      0
     ]
    ],
-   "html": [],
    "voice": [],
    "grade": "film"
   },
   {
    "clip": "rb_turn",
    "a": 1.2,
-   "d": 1.83333,
-   "s": 1.1,
+   "d": 1.88333,
+   "s": 1.0,
    "tag": "Real robot, driven by remote",
    "scope": true,
    "cam": [
     [
-     -0.4167,
+     -0.4708,
      1.0,
      0.5,
      0.5
     ],
     [
-     2.0833,
+     2.3542,
      1.06,
      0.5,
      0.5
     ]
    ],
+   "html": [],
    "cap": [
     [
      0.0,
-     1.667,
-     "The robot plans its own way in, stops outside a room,",
+     1.883,
+     "The robot plans its own way in, and stops outside a room.",
      0
     ]
    ],
-   "html": [],
    "voice": [],
    "grade": "real"
   },
   {
    "clip": "t_m2a",
-   "a": 4.6,
-   "d": 1.18333,
+   "a": 6.5,
+   "d": 1.31667,
    "s": 1.0,
    "adv": true,
    "cam": [
     [
-     -0.2958,
-     1.4,
-     0.55,
-     0.42
-    ],
-    [
-     1.4792,
-     1.65,
-     0.55,
-     0.42
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     1.183,
-     "goes quiet, and listens.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true
-  },
-  {
-   "clip": "t_m2a",
-   "a": 5.4,
-   "d": 0.7,
-   "s": 1.0,
-   "adv": true,
-   "cam": [
-    [
-     -0.175,
-     3.0,
-     0.885,
-     0.26
-    ],
-    [
-     0.875,
-     3.3,
-     0.885,
-     0.26
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     0.7,
-     "goes quiet, and listens.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true
-  },
-  {
-   "clip": "rb_cams",
-   "a": 1.0,
-   "d": 0.24,
-   "s": 0.6,
-   "scope": true,
-   "cam": [
-    [
-     -0.1,
-     1.5,
-     0.47,
-     0.52
-    ],
-    [
-     0.5,
-     1.7,
-     0.47,
-     0.52
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     0.4,
-     "goes quiet, and listens.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "real"
-  },
-  {
-   "clip": "t_m2a",
-   "a": 6.0,
-   "d": 0.35,
-   "s": 1.0,
-   "adv": true,
-   "cam": [
-    [
-     -0.0875,
-     2.2,
-     0.55,
-     0.42
-    ],
-    [
-     0.4375,
-     2.4,
-     0.55,
-     0.42
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     0.35,
-     "goes quiet, and listens.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true
-  },
-  {
-   "clip": "t_m2a",
-   "a": 6.68,
-   "d": 0.31667,
-   "s": 1.0,
-   "adv": true,
-   "cam": [
-    [
-     -0.0792,
+     -0.3292,
      3.3,
      0.95,
      0.685
     ],
     [
-     0.3958,
+     1.6458,
      3.6,
      0.95,
      0.685
     ]
    ],
+   "html": [],
    "cap": [
     [
      0.0,
-     0.317,
-     "goes quiet, and listens.",
+     1.317,
+     "A hot pipe. Ruled out. Then it stops again.",
      0
     ]
    ],
-   "html": [],
    "voice": [],
    "grade": "ui",
    "clean": true
   },
   {
    "clip": "t_m2a",
-   "a": 6.3,
-   "d": 1.95,
+   "a": 7.4,
+   "d": 1.23333,
    "s": 1.0,
    "adv": true,
    "cam": [
     [
-     -0.4875,
-     1.7,
-     0.6,
-     0.36
+     -0.3083,
+     2.7,
+     0.645,
+     0.26
     ],
     [
-     2.4375,
-     1.95,
-     0.6,
-     0.36
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     1.95,
-     "A hot pipe, ruled out.",
-     0
+     1.5417,
+     2.95,
+     0.645,
+     0.26
     ]
    ],
    "html": [],
+   "cap": [
+    [
+     0.0,
+     1.233,
+     "A hot pipe. Ruled out. Then it stops again.",
+     0
+    ]
+   ],
    "voice": [],
    "grade": "ui",
    "clean": true
   },
   {
-   "clip": "t_m1",
-   "a": 8.6,
-   "d": 0.48333,
+   "clip": "rb_go",
+   "a": 4.3,
+   "d": 1.81667,
    "s": 1.0,
-   "adv": true,
+   "tag": "Real robot, driven by remote",
+   "scope": true,
    "cam": [
     [
-     -0.1208,
-     2.2,
-     0.55,
+     -0.4542,
+     1.12,
+     0.5,
      0.42
     ],
     [
-     0.6042,
-     2.45,
-     0.55,
+     2.2708,
+     1.22,
+     0.5,
      0.42
     ]
    ],
+   "html": [],
    "cap": [
     [
      0.0,
-     0.483,
-     "Then, a person. Found.",
+     1.817,
+     "A hot pipe. Ruled out. Then it stops again.",
      0
     ]
    ],
-   "html": [],
    "voice": [],
-   "grade": "ui",
-   "clean": true
+   "grade": "real"
   },
   {
-   "clip": "t_m1",
-   "a": 13.8,
-   "d": 0.85,
-   "s": 1.0,
-   "adv": true,
+   "clip": "rb_cams",
+   "a": 1.0,
+   "d": 0.95,
+   "s": 0.6,
+   "scope": true,
    "cam": [
     [
-     -0.2125,
-     2.6,
-     0.62,
-     0.4
+     -0.3958,
+     1.35,
+     0.47,
+     0.48
     ],
     [
-     1.0625,
-     3.1,
-     0.62,
-     0.4
+     1.9792,
+     1.55,
+     0.47,
+     0.48
+    ]
+   ],
+   "html": [
+    [
+     0.551,
+     1.583,
+     "<div style=\"position:absolute;inset:0;background:#000\"></div>",
+     0.9
     ]
    ],
    "cap": [
     [
      0.0,
-     0.85,
-     "Then, a person. Found.",
+     1.583,
+     "Goes quiet. And listens.",
      0
     ]
    ],
-   "html": [],
    "voice": [],
-   "grade": "ui",
-   "clean": true
+   "grade": "real"
+  },
+  {
+   "clip": "x_ten",
+   "a": 0,
+   "d": 13.0,
+   "s": 1.0,
+   "tag": "Simulated",
+   "html": [
+    [
+     1.36,
+     2.72,
+     "<div style=\"position:absolute;left:112px;bottom:440px;text-shadow:0 2px 34px rgba(0,0,0,.9),0 1px 6px rgba(0,0,0,.7)\"><div style=\"font:400 190px/1 HSerif;color:#fff;letter-spacing:-.022em\">10%</div><div style=\"font:500 38px/1.2 HSans;color:#f0f4f8;margin-top:8px\">chance someone is in there</div></div>",
+     0.25
+    ],
+    [
+     10.83,
+     11.78,
+     "<div style=\"position:absolute;left:96px;bottom:175px;text-shadow:0 2px 34px rgba(0,0,0,.9),0 1px 6px rgba(0,0,0,.7)\"><div style=\"font:400 190px/1 HSerif;color:#fff;letter-spacing:-.022em\">32%</div><div style=\"font:500 38px/1.2 HSans;color:#f0f4f8;margin-top:8px\">Wi-Fi</div></div>",
+     0.05
+    ],
+    [
+     11.82,
+     12.21,
+     "<div style=\"position:absolute;left:96px;bottom:175px;text-shadow:0 2px 34px rgba(0,0,0,.9),0 1px 6px rgba(0,0,0,.7)\"><div style=\"font:400 190px/1 HSerif;color:#fff;letter-spacing:-.022em\">74%</div><div style=\"font:500 38px/1.2 HSans;color:#f0f4f8;margin-top:8px\">Radar</div></div>",
+     0.05
+    ],
+    [
+     12.25,
+     13.0,
+     "<div style=\"position:absolute;left:96px;bottom:175px;text-shadow:0 2px 34px rgba(0,0,0,.9),0 1px 6px rgba(0,0,0,.7)\"><div style=\"font:400 190px/1 HSerif;color:#fff;letter-spacing:-.022em\">86%</div><div style=\"font:500 38px/1.2 HSans;color:#f0f4f8;margin-top:8px\">Wi-Fi, again</div></div>",
+     0.05
+    ]
+   ],
+   "cap": [
+    [
+     0.0,
+     1.34,
+     "Goes quiet. And listens.",
+     0
+    ],
+    [
+     1.34,
+     2.61,
+     "10 %.",
+     0
+    ]
+   ],
+   "voice": [
+    [
+     "../v11/guide_t1",
+     1.4
+    ]
+   ]
   },
   {
    "clip": "black",
    "a": 0,
-   "d": 0.12,
+   "d": 0.24,
    "s": 0.3,
-   "cap": [
+   "html": [],
+   "cap": [],
+   "voice": []
+  },
+  {
+   "clip": "k_94",
+   "a": 0,
+   "d": 1.7,
+   "s": 1.0,
+   "cam": [
     [
-     0.0,
-     0.4,
-     "Then, a person. Found.",
-     0
+     -0.425,
+     1.0,
+     0.5,
+     0.5
+    ],
+    [
+     2.125,
+     1.1,
+     0.5,
+     0.5
     ]
    ],
    "html": [],
-   "voice": []
+   "cap": [
+    [
+     0.0,
+     1.319,
+     "94 %.",
+     0
+    ]
+   ],
+   "voice": [
+    [
+     "../v11/guide_t2",
+     0.1
+    ]
+   ]
   },
   {
    "clip": "t_m2b",
    "a": 0.4,
-   "d": 1.2,
+   "d": 1.3,
    "s": 1.0,
    "adv": true,
    "cam": [
     [
-     -0.3,
+     -0.325,
      2.7,
      0.58,
      0.29
     ],
     [
-     1.5,
+     1.625,
      2.3,
      0.58,
      0.29
     ]
    ],
+   "html": [],
    "cap": [
     [
      0.0,
-     0.347,
-     "Then, a person. Found.",
+     0.846,
+     "Found.",
      0
     ]
    ],
-   "html": [],
-   "voice": [],
+   "voice": [
+    [
+     "../v11/guide_t3",
+     0.0667
+    ]
+   ],
    "grade": "ui",
    "clean": true
   },
   {
    "clip": "t_m3",
    "a": 5.1,
-   "d": 1.41667,
+   "d": 1.85,
    "s": 1.0,
    "adv": true,
    "cam": [
     [
-     -0.3542,
+     -0.4625,
      1.5,
      0.5,
      0.5
     ],
     [
-     1.7708,
+     2.3125,
      1.8,
      0.5,
      0.5
     ]
    ],
+   "html": [],
    "cap": [
     [
      0.0,
-     1.417,
+     1.85,
      "It draws a safe way in, and a person makes the call.",
      0
     ]
    ],
-   "html": [],
    "voice": [
     [
-     "../v4/guide_f3",
+     "../v11/guide_f3",
      0.15
     ]
    ],
@@ -2801,33 +2456,33 @@
   },
   {
    "clip": "t_m3",
-   "a": 6.84,
-   "d": 1.45,
+   "a": 7.1811,
+   "d": 1.11667,
    "s": 1.0,
    "adv": true,
    "cam": [
     [
-     -0.3625,
+     -0.2792,
      2.0,
      0.78,
      0.76
     ],
     [
-     1.8125,
+     1.3958,
      2.2,
      0.78,
      0.76
     ]
    ],
+   "html": [],
    "cap": [
     [
      0.0,
-     1.45,
+     1.117,
      "It draws a safe way in, and a person makes the call.",
      0
     ]
    ],
-   "html": [],
    "voice": [],
    "grade": "ui",
    "clean": true
@@ -2835,259 +2490,75 @@
   {
    "clip": "t_m3",
    "a": 8.34,
-   "d": 1.01667,
+   "d": 1.03333,
    "s": 1.0,
    "adv": true,
    "cam": [
     [
-     -0.2542,
-     1.75,
-     0.72,
-     0.28
+     -0.2583,
+     3.25,
+     0.845,
+     0.155
     ],
     [
-     1.2708,
-     1.5,
-     0.72,
-     0.28
+     1.2917,
+     2.95,
+     0.845,
+     0.155
     ]
    ],
+   "html": [],
    "cap": [
     [
      0.0,
-     0.423,
+     1.033,
      "It draws a safe way in, and a person makes the call.",
      0
     ]
    ],
-   "html": [],
    "voice": [],
    "grade": "ui",
    "clean": true
   },
   {
-   "clip": "black",
+   "clip": "x_runs",
    "a": 0,
-   "d": 0.09,
-   "s": 0.3,
-   "cap": [],
-   "html": [],
-   "voice": []
-  },
-  {
-   "clip": "t_status",
-   "a": 1.6,
-   "d": 1.28333,
+   "d": 11.0,
    "s": 1.0,
-   "adv": true,
-   "cam": [
-    [
-     -0.3208,
-     4.15,
-     0.2185,
-     0.338
-    ],
-    [
-     1.6042,
-     4.4,
-     0.2185,
-     0.338
-    ]
-   ],
+   "tag": "Simulated",
+   "html": [],
    "cap": [
     [
      0.0,
-     1.283,
-     "We ran it through two hundred simulated missions,",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [
-    [
-     "../v4/p_p1",
-     0.1167
-    ]
-   ],
-   "grade": "ui",
-   "clean": true
-  },
-  {
-   "clip": "t_status",
-   "a": 3.0,
-   "d": 3.55,
-   "s": 1.0,
-   "adv": true,
-   "cam": [
-    [
-     -0.8875,
-     3.2,
-     0.61,
-     0.355
-    ],
-    [
-     4.4375,
-     3.8,
-     0.61,
-     0.355
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     1.523,
-     "We ran it through two hundred simulated missions,",
+     2.76,
+     "We ran 200 simulated missions,",
      0
     ],
     [
-     1.553,
-     3.55,
+     2.79,
+     5.077,
      "with 600 hidden people.",
      0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true
-  },
-  {
-   "clip": "k_600",
-   "a": 0,
-   "d": 2.91667,
-   "s": 1.0,
-   "cam": [
-    [
-     -0.7292,
-     1.0,
-     0.5,
-     0.5
     ],
     [
-     3.6458,
-     1.1,
-     0.5,
-     0.5
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     2.917,
+     5.107,
+     8.238,
      "Every one was found, or flagged for a check.",
      0
-    ]
-   ],
-   "html": [],
-   "voice": []
-  },
-  {
-   "clip": "t_m3",
-   "a": 5.3,
-   "d": 2.43333,
-   "s": 1.0,
-   "adv": true,
-   "cam": [
-    [
-     -0.6083,
-     2.3,
-     0.425,
-     0.5
     ],
     [
-     3.0417,
-     3.2,
-     0.412,
-     0.505
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     2.433,
+     8.268,
+     11.0,
      "And no decoy was ever called a person.",
      0
     ]
    ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true
-  },
-  {
-   "clip": "v_link",
-   "a": 1.25,
-   "d": 4.2,
-   "s": 1.0,
-   "cam": [
-    [
-     -1.05,
-     1.0,
-     0.3,
-     0.62
-    ],
-    [
-     5.25,
-     1.03,
-     0.3,
-     0.62
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     1.81,
-     "Then we tried to break it.",
-     0
-    ],
-    [
-     1.84,
-     4.2,
-     "Cut the radio, and it stops.",
-     0
-    ]
-   ],
-   "html": [],
    "voice": [
     [
-     "../v4/p_p2",
-     0.2
+     "../v11/guide_p1",
+     0.35
     ]
-   ],
-   "grade": "film",
-   "bars": 80
-  },
-  {
-   "clip": "v_broken",
-   "a": 3.4,
-   "d": 2.915,
-   "s": 1.1,
-   "cam": [
-    [
-     -0.6625,
-     1.0,
-     0.3,
-     0.62
-    ],
-    [
-     3.3125,
-     1.03,
-     0.3,
-     0.62
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     2.27,
-     "Blind the Wi-Fi, and it won't guess.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "film",
-   "bars": 80
+   ]
   },
   {
    "clip": "black",
@@ -3206,51 +2677,51 @@
   {
    "clip": "x_team",
    "a": 0.2,
-   "d": 3.48333,
+   "d": 1.15,
    "s": 1.0,
-   "fi": 0.3,
+   "fi": 0.25,
    "tag": "Simulated",
    "scope": true,
    "cam": [
     [
-     -0.8708,
+     -0.2875,
      1.0,
      0.5,
      0.5
     ],
     [
-     4.3542,
+     1.4375,
      1.06,
      0.5,
      0.5
     ]
    ],
-   "cap": [
-    [
-     0.0,
-     3.483,
-     "It's for the people who go in first: firefighters,",
-     0
-    ]
-   ],
    "html": [
     [
-     2.31,
-     3.47,
+     0.12,
+     1.117,
      "<div style=\"position:absolute;left:0;right:0;bottom:138px;height:430px;background:linear-gradient(0deg,rgba(0,0,0,.94) 8%,rgba(0,0,0,.55) 48%,rgba(0,0,0,0))\"></div>",
      0.12
     ],
     [
-     2.31,
-     3.47,
+     0.12,
+     1.117,
      "<div style=\"position:absolute;left:112px;bottom:175px;font:400 104px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">Firefighters</div>",
      0.12
     ]
    ],
+   "cap": [
+    [
+     0.0,
+     1.15,
+     "It's for the people who go in first.",
+     0
+    ]
+   ],
    "voice": [
     [
-     "../v4/guide_u1",
-     0.25
+     "../v11/guide_u1",
+     0.2167
     ]
    ],
    "grade": "film"
@@ -3258,44 +2729,44 @@
   {
    "clip": "x_team2",
    "a": 0.2,
-   "d": 1.2,
+   "d": 0.8,
    "s": 1.0,
    "tag": "Simulated",
    "scope": true,
    "cam": [
     [
-     -0.3,
+     -0.2,
      1.0,
      0.5,
      0.5
     ],
     [
-     1.5,
+     1.0,
      1.06,
      0.5,
      0.5
     ]
    ],
-   "cap": [
-    [
-     0.0,
-     1.2,
-     "search and rescue, disaster crews.",
-     0
-    ]
-   ],
    "html": [
     [
-     0.047,
-     1.187,
+     0.027,
+     0.765,
      "<div style=\"position:absolute;left:0;right:0;bottom:138px;height:430px;background:linear-gradient(0deg,rgba(0,0,0,.94) 8%,rgba(0,0,0,.55) 48%,rgba(0,0,0,0))\"></div>",
      0.12
     ],
     [
-     0.047,
-     1.187,
+     0.027,
+     0.765,
      "<div style=\"position:absolute;left:112px;bottom:175px;font:400 104px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">Search and rescue</div>",
      0.12
+    ]
+   ],
+   "cap": [
+    [
+     0.0,
+     0.8,
+     "It's for the people who go in first.",
+     0
     ]
    ],
    "voice": [],
@@ -3304,44 +2775,44 @@
   {
    "clip": "x_team3",
    "a": 0.2,
-   "d": 1.46667,
+   "d": 0.85,
    "s": 1.0,
    "tag": "Simulated",
    "scope": true,
    "cam": [
     [
-     -0.3667,
+     -0.2125,
      1.0,
      0.5,
      0.5
     ],
     [
-     1.8333,
+     1.0625,
      1.06,
      0.5,
      0.5
     ]
    ],
-   "cap": [
-    [
-     0.0,
-     1.467,
-     "search and rescue, disaster crews.",
-     0
-    ]
-   ],
    "html": [
     [
-     0.047,
-     1.447,
+     0.025,
+     0.807,
      "<div style=\"position:absolute;left:0;right:0;bottom:138px;height:430px;background:linear-gradient(0deg,rgba(0,0,0,.94) 8%,rgba(0,0,0,.55) 48%,rgba(0,0,0,0))\"></div>",
      0.12
     ],
     [
-     0.047,
-     1.447,
+     0.025,
+     0.807,
      "<div style=\"position:absolute;left:112px;bottom:175px;font:400 104px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">Disaster crews</div>",
      0.12
+    ]
+   ],
+   "cap": [
+    [
+     0.0,
+     0.85,
+     "It's for the people who go in first.",
+     0
     ]
    ],
    "voice": [],
@@ -3350,43 +2821,43 @@
   {
    "clip": "v_fpv",
    "a": 4.0,
-   "d": 1.55167,
+   "d": 2.15333,
    "s": 0.95,
    "tag": "Simulated",
    "scope": true,
    "cam": [
     [
-     -0.4083,
+     -0.5667,
      1.0,
      0.5,
      0.5
     ],
     [
-     2.0417,
+     2.8333,
      1.1,
      0.5,
      0.5
     ]
    ],
+   "html": [],
    "cap": [
     [
      0.0,
-     1.633,
+     2.267,
      "So they don't have to go in blind.",
      0
     ]
    ],
-   "html": [],
    "voice": [],
    "grade": "film"
   },
   {
    "clip": "black",
    "a": 0,
-   "d": 0.415,
+   "d": 0.4,
    "s": 0.3,
-   "cap": [],
    "html": [],
+   "cap": [],
    "voice": []
   },
   {

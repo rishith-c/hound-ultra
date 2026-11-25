@@ -1,0 +1,12 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>HOUND, the drone's mind</title>
+<style>@font-face{font-family:HSerif;src:url(../../assets/brand/fonts/instrument-serif-latin-400-normal.woff2)}
+@font-face{font-family:HSans;font-weight:400 700;src:url(../../assets/brand/fonts/instrument-sans-latin-wdth-normal.woff2)}
+html,body{margin:0;background:#000;overflow:hidden;height:100%}#s{position:fixed;inset:0}#s canvas{width:100%;height:100%;display:block}
+#foot{position:fixed;left:0;right:0;bottom:0;height:560px;background:linear-gradient(0deg,rgba(0,0,0,.92) 14%,rgba(0,0,0,.55) 46%,rgba(0,0,0,0));opacity:0}
+#t{position:fixed;left:112px;bottom:176px;font:400 96px/1.02 HSerif;letter-spacing:-.016em;color:#fff;white-space:pre;text-shadow:0 2px 30px rgba(0,0,0,.8)}#t i{display:inline-block;width:4px;height:84px;margin-left:10px;background:#ffb352;vertical-align:-10px}
+#n{position:fixed;left:116px;bottom:122px;font:500 32px/1.2 HSans;color:#cfd6dc;opacity:0;text-shadow:0 1px 14px #000}</style>
+<script type="importmap">{"imports":{"three":"../../vendor/three/build/three.module.js","three/addons/":"../../vendor/three/examples/jsm/"}}</script>
+<div id="s"></div><div id="foot"></div><div id="n"></div><div id="t"></div>
+<script type="module" src="dronemind.js"></script>
