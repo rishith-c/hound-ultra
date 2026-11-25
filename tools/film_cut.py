@@ -69,8 +69,11 @@ def cut(job):
         z0, z1, cx, cy = seg["zoom"]
         w = lambda z: (cx * (1 - 1 / z) + 0.5 / z, cy * (1 - 1 / z) + 0.5 / z)
         seg["cam"] = [[0, z0, *w(z0)], [dur, z1, *w(z1)]]
-    if seg.get("cam"):   # sub-pixel moves: the corners of the picture are read from a window that travels smoothly
+    if seg.get("win"):   # filmed at its own framing (film4k.py): the window moves inside the filmed picture, which is already larger than the film
+        key = [tuple(x) for x in seg["win"]]
+    elif seg.get("cam"):   # sub-pixel moves: the corners of the picture are read from a window that travels smoothly
         key = [(t, 1 / z, min(max(cx - 0.5 / z, 0), 1 - 1 / z), min(max(cy - 0.5 / z, 0), 1 - 1 / z)) for t, z, cx, cy in seg["cam"]]
+    if seg.get("win") or seg.get("cam"):
         def ex(i):
             e = f"{key[0][i]:.6f}"
             for m, n in zip(key, key[1:]):
@@ -78,7 +81,7 @@ def cut(job):
                     e += f"+({n[i] - m[i]:.6f})*(st(0,clip((on/60-{m[0]:.4f})/{max(n[0] - m[0], 0.01):.4f},0,1))*0+pow(ld(0),3)*(ld(0)*(ld(0)*6-15)+10))"
             return f"({e})"
         z, l, t = ex(1), ex(2), ex(3)
-        g += f"scale=3840:{2 * ph}:flags=lanczos,perspective=x0='W*{l}':y0='H*{t}':x1='W*({l}+{z})':y1='H*{t}':x2='W*{l}':y2='H*({t}+{z})':x3='W*({l}+{z})':y3='H*({t}+{z})':interpolation=cubic:eval=frame,"
+        g += ("" if seg.get("win") else f"scale=3840:{2 * ph}:flags=lanczos,") + f"perspective=x0='W*{l}':y0='H*{t}':x1='W*({l}+{z})':y1='H*{t}':x2='W*{l}':y2='H*({t}+{z})':x3='W*({l}+{z})':y3='H*({t}+{z})':interpolation=cubic:eval=frame,"
     g += f"scale={1920 * K}:{ph * K}:flags=lanczos:out_range=tv:out_color_matrix=bt709,setsar=1"
     if seg.get("adv"):
         g += f",pad={1920 * K}:{1080 * K}:0:{40 * K if seg.get('clean') else 0}:color={'black' if seg.get('clean') else '0x0a0d11'}"
@@ -209,11 +212,16 @@ def main():
     ap.add_argument("--only-audio", action="store_true")
     ap.add_argument("--srt", action="store_true")
     ap.add_argument("--k", type=int)
+    ap.add_argument("--crf", help="quality of the saved picture (lower is better), with a bit-rate limit for 3840 x 2160")
+    ap.add_argument("--picture", action="store_true", help="the picture only, no sound: voices are laid in later without rendering again")
     ap.add_argument("--part", help="T0,T1: only the segments between these times, no sound")
     a = ap.parse_args()
     ed = json.load(open(a.edit))
     global K
     K = a.k or ed.get("k", 1)
+    if a.crf:
+        ENC[ENC.index("-crf") + 1] = a.crf
+        ENC[:] = [*ENC, "-maxrate", "95M", "-bufsize", "190M"]
     if a.part:
         t0, t1 = map(float, a.part.split(","))
         t, keep = 0, []
@@ -262,7 +270,11 @@ def main():
         open(os.path.join(FILM, a.out + ".srt"), "w").write("\n".join(f"{k}\n{f(x)} --> {f(y)}\n{text}\n" for k, (x, y, text) in enumerate(caps, 1)))
         return
     wav = os.path.join(tmp, "music.wav")
-    if a.part:
+    if a.picture:
+        ed["segments"] = [dict(x, voice=[]) for x in ed["segments"]]
+        for j in range(len(jobs)):
+            jobs[j] = (jobs[j][0], ed["segments"][j], *jobs[j][2:])
+    elif a.part:
         subprocess.run([FF, "-y", "-loglevel", "error", "-f", "lavfi", "-i", f"anullsrc=r=48000:cl=stereo:d={total}", wav], check=True)
         ed["segments"] = [dict(x, voice=[]) for x in ed["segments"]]
     else:
@@ -279,6 +291,10 @@ def main():
     lst = os.path.join(tmp, "list.txt")
     open(lst, "w").write("".join(f"file '{p}'\n" for p, _ in parts))
     out = os.path.join(FILM, a.out + ".mp4")
+    if a.picture:
+        subprocess.run([FF, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", lst, "-c:v", "copy", "-an", "-movflags", "+faststart", out], check=True)
+        print(out, f"{os.path.getsize(out) / 1e6:.0f} MB")
+        return
     subprocess.run([FF, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", lst, "-i", wav, "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "256k", "-movflags", "+faststart", "-shortest", out], check=True)
     print(out, f"{os.path.getsize(out) / 1e6:.0f} MB")
 

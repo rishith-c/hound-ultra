@@ -8,9 +8,13 @@ the robot, the network and the drone shown inside it.
 - `tools/film-shots4.json` lists the shots. `python3 tools/film.py tools/film-shots4.json` records them from the live console.
 - `tools/film-edit6.json` is the edit. `python3 tools/film_cut.py tools/film-edit6.json --out NAME --no-captions` renders it; `--k 2`
   renders 4K, `--srt` writes the subtitles, and without `--no-captions` they are burnt in.
-- The voices decide the timing: every cut is placed on a spoken word, then moved to the nearest note of the score (they share one clock).
+- The picture is finished and locked. Cuts, music and every spoken phrase have a fixed place. The recordings are laid into those places, the
+  picture is copied, and nothing is rendered again: about two seconds of work. A line that runs too long is tightened by a few percent, never cut.
+- The cuts were placed on the words of a guide voice, then moved to the nearest note of the score (they share one clock).
+- The 4K picture is filmed from the live pages again, one frame at a time, at the size each camera move needs, so a close-up is drawn and not
+  enlarged. `film_cut.py --picture --k 2` joins it without sound. Real robot footage comes from 4K 60 originals; the build timelapse is 1080p.
 - Why it is cut this way, with the papers: `docs/EDITING.md`.
-- The score is written to the picture and follows the voices when their timing changes. Every note is a real recording: string ensemble,
+- The score is written to the picture. Every note is a real recording: string ensemble,
   horns, trombones, tuba, a Steinway, a floor tom tuned down for the drum, and two small pieces of wood for the clock. No synthesiser.
 - It has silences on purpose: after the opening, on "You can't hear them", before "is anyone in there?", when the robot stops, before
   "ninety-four", before the search, while the robot listens, before "found", at "Does it work?", when the radio is cut, and at the end.
@@ -19,7 +23,7 @@ the robot, the network and the drone shown inside it.
 ## Recording the voices
 
 - One recording per person. A phone in Voice Memos, 20 cm from the mouth, in a quiet room with soft things in it.
-- Say each line twice, two seconds of quiet between. Mistakes are fine: say the line again.
+- Keep to the length beside each line on the lines page (press Pace). Say each line twice, two seconds of quiet between. Mistakes are fine: say the line again.
 - Talk to one person, do not read at them.
 
 ## The lines
