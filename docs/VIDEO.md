@@ -22,8 +22,11 @@ five steps (fly, drive, listen, think, decide), shows a whole search, the result
 - Why it is cut this way, with the papers: `docs/EDITING.md`.
 - The score is written to the picture. Every note is a real recording: string ensemble,
   horns, trombones, tuba, a Steinway, a floor tom tuned down for the drum, and two small pieces of wood for the clock. No synthesiser.
-- It has silences on purpose: after the opening, on "You can't hear them", before "is anyone in there?", when the robot stops, before
-  "ninety-four", before the search, while the robot listens, before "found", before the results, when the radio is cut, on "So, is anyone in there?", and at the end.
+- It is one continuous piece: one running figure and one tune that comes back in every step, with no hit at the start of a step. Each step
+  has its own rise, and the chords resolve on the cuts. The drum plays four times: the name, the ninety-four, the person, the last word.
+- A fader ride (`ride.py`) keeps every spoken phrase at least 8 dB above the music in the speech band, 14 dB in the middle.
+- It is silent on purpose seven times: before the first words, on "You can't hear them", before the name, on "is anyone in there?",
+  where two waves cancel, on "So, is anyone in there?", and before the last word.
 - Tags on screen say what is simulated. Real shots of the robot inside the search are tagged as driven by remote. Every claim follows `docs/FACTS.md`. The robot and its footage are real. The build is sped up.
 
 ## Recording the voices

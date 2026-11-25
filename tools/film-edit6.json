@@ -9,7 +9,7 @@
  "voice_db": -1.2,
  "music": [
   {
-   "file": "../v4/sfx/score8.wav",
+   "file": "../v4/sfx/score9.wav",
    "at": 0,
    "db": 0,
    "end": 239.0
@@ -2181,7 +2181,7 @@
     [
      0.25,
      2.2,
-     "<div style=\"position:absolute;left:0;right:0;bottom:138px;height:430px;background:linear-gradient(0deg,rgba(0,0,0,.94) 8%,rgba(0,0,0,.55) 48%,rgba(0,0,0,0))\"></div>",
+     "<div style=\"position:absolute;left:0;right:0;bottom:0;height:700px;background:linear-gradient(0deg,rgba(2,4,6,.98) 0,rgba(2,4,6,.97) 46%,rgba(2,4,6,.80) 62%,rgba(2,4,6,.34) 82%,rgba(2,4,6,0))\"></div>",
      0.25
     ],
     [
@@ -2193,7 +2193,7 @@
    ],
    "voice": [
     [
-     "../v4/p_f1",
+     "../v4/guide_f1",
      0.25
     ]
    ],
@@ -2267,35 +2267,19 @@
    "clean": true
   },
   {
-   "clip": "black",
-   "a": 0,
-   "d": 0.095,
-   "s": 0.3,
-   "cap": [
-    [
-     0.0,
-     0.317,
-     "10 %. Then 94 %.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": []
-  },
-  {
    "clip": "k_94",
    "a": 0,
-   "d": 1.45,
+   "d": 1.76667,
    "s": 1.0,
    "cam": [
     [
-     -0.3625,
+     -0.4417,
      1.0,
      0.5,
      0.5
     ],
     [
-     1.8125,
+     2.2083,
      1.1,
      0.5,
      0.5
@@ -2304,7 +2288,7 @@
    "cap": [
     [
      0.0,
-     1.043,
+     1.01,
      "10 %. Then 94 %.",
      0
     ]
