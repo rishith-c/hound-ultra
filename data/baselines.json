@@ -1,0 +1,89 @@
+{
+ "net": {
+  "moving": 86.86131386861314,
+  "still": 21.41119221411192,
+  "empty": 88.88888888888889,
+  "fan_fa": 7.920792079207921
+ },
+ "net10": {
+  "moving": 86.86131386861314,
+  "still": 21.41119221411192,
+  "empty": 88.88888888888889,
+  "fan_fa": 7.920792079207921
+ },
+ "std": {
+  "moving": 11.678832116788321,
+  "still": 2.67639902676399,
+  "empty": 86.29629629629629,
+  "fan_fa": 30.693069306930692
+ },
+ "diff": {
+  "moving": 41.97080291970803,
+  "still": 2.18978102189781,
+  "empty": 91.85185185185185,
+  "fan_fa": 19.801980198019802
+ },
+ "band": {
+  "moving": 15.693430656934307,
+  "still": 1.2165450121654502,
+  "empty": 88.51851851851852,
+  "fan_fa": 29.7029702970297
+ },
+ "logreg": {
+  "moving": 7.2992700729927,
+  "still": 8.51581508515815,
+  "empty": 91.11111111111111,
+  "fan_fa": 0.9900990099009901
+ },
+ "logreg2": {
+  "moving": 60.58394160583942,
+  "still": 8.51581508515815,
+  "empty": 96.66666666666667,
+  "fan_fa": 1.9801980198019802
+ },
+ "matched_at_11_1": {
+  "our network (its own line)": {
+   "moving": 86.9,
+   "still": 21.4,
+   "fan_fa": 6.9,
+   "auc_moving_vs_empty": 0.941
+  },
+  "our network (line set as below)": {
+   "moving": 86.9,
+   "still": 21.4,
+   "fan_fa": 6.9,
+   "auc_moving_vs_empty": 0.941
+  },
+  "rule: how much the signal varies": {
+   "moving": 7.7,
+   "still": 1.0,
+   "fan_fa": 27.7,
+   "auc_moving_vs_empty": 0.636
+  },
+  "rule: how fast it changes": {
+   "moving": 44.9,
+   "still": 2.7,
+   "fan_fa": 22.8,
+   "auc_moving_vs_empty": 0.754
+  },
+  "rule: share of energy at walking speed": {
+   "moving": 15.3,
+   "still": 1.2,
+   "fan_fa": 27.7,
+   "auc_moving_vs_empty": 0.637
+  },
+  "logistic regression on 306 hand-made features": {
+   "moving": 9.5,
+   "still": 11.4,
+   "fan_fa": 2.0,
+   "auc_moving_vs_empty": 0.534
+  },
+  "logistic regression, moving vs empty (l2 0.01)": {
+   "moving": 66.4,
+   "still": 13.9,
+   "fan_fa": 8.9,
+   "auc_moving_vs_empty": 0.86
+  }
+ },
+ "ms": 0.22095441818237305
+}
