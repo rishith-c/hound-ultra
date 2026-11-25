@@ -1,7 +1,7 @@
 """One whole search, with the real code on both machines and only the world made up.
 
-    python3 robot/sim/run.py            every case, one table
-    python3 robot/sim/run.py ordinary   one case, with its log
+    python3 robot/sim/run.py            one search, with its log
+    python3 robot/sim/cases.py          every case, and the table
 
 Every reading is simulated. What runs is the code that would run: the motor board's core and the flight board's core (compiled C++), their wire frames, the radio packets, the neural network, the fusion, the planner, both missions."""
 import json
@@ -43,7 +43,7 @@ class Run:
         for _, m in r.told:
             if 'ask' in m and self.operator and self.yes is not None: r.command(dict(do='approve' if self.yes else 'refuse', who='the operator (simulated)'), t)
         r.told.clear()
-    def go(self, limit=900, until=lambda s: s.r.m.state == 'finished'):
+    def go(self, limit=1800, until=lambda s: s.r.m.state == 'finished'):
         for _ in range(200): self.step()                                          # four seconds on the ground, so the flight board settles
         if self.air.m.state in ('ready',): self.air.m.start(self.w.t)
         while self.w.t < limit and not until(self): self.step()
