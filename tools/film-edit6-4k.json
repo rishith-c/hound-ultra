@@ -9,7 +9,7 @@
  "voice_db": -1.2,
  "music": [
   {
-   "file": "../v4/sfx/score6.wav",
+   "file": "../v4/sfx/score8.wav",
    "at": 0,
    "db": 0,
    "end": 239.0
@@ -28,15 +28,15 @@
   },
   {
    "file": "../v4/sfx/motor62.wav",
-   "at": 52.317,
-   "db": -12,
-   "end": 53.637
+   "at": 89.9,
+   "db": -14,
+   "end": 92.43
   },
   {
    "file": "../v4/sfx/motor63.wav",
-   "at": 177.6,
+   "at": 166.483,
    "db": -13,
-   "end": 183.43
+   "end": 172.373
   },
   {
    "file": "../v4/sfx/river6.wav",
@@ -532,7 +532,7 @@
   {
    "clip": "black",
    "a": 0,
-   "d": 0.265,
+   "d": 0.24,
    "s": 0.3,
    "cap": [
     [
@@ -546,20 +546,813 @@
    "voice": []
   },
   {
+   "clip": "seg4k/25eda11ccffc95a8",
+   "a": 0,
+   "d": 1.95,
+   "s": 1,
+   "adv": true,
+   "fi": 0.3,
+   "cap": [
+    [
+     0.69,
+     1.95,
+     "This is HOUND Command, where you run the whole search:",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [
+    [
+     "../v4/guide_c1",
+     0.75
+    ]
+   ],
+   "grade": "ui",
+   "clean": true,
+   "win": [
+    [
+     -0.4875,
+     0.747662,
+     0.169436,
+     0.082901
+    ],
+    [
+     2.4375,
+     0.996883,
+     -3.4e-05,
+     0.003151
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/806cd5f9e1d160a4",
+   "a": 0,
+   "d": 1.66667,
+   "s": 1,
+   "adv": true,
+   "cap": [
+    [
+     0.0,
+     1.667,
+     "This is HOUND Command, where you run the whole search:",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "ui",
+   "clean": true,
+   "win": [
+    [
+     -0.4167,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     2.0833,
+     0.934579,
+     0.03271,
+     0.03271
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/51fa322997ed516e",
+   "a": 0,
+   "d": 1.11667,
+   "s": 1,
+   "adv": true,
+   "cap": [
+    [
+     0.0,
+     1.117,
+     "every robot, every sensor, every reading, on one screen.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "ui",
+   "clean": true,
+   "win": [
+    [
+     -0.2792,
+     0.999277,
+     0.000362,
+     0.000362
+    ],
+    [
+     1.3958,
+     0.749458,
+     0.125271,
+     0.125271
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/8aea5a0a640a7522",
+   "a": 0,
+   "d": 1.1,
+   "s": 1,
+   "adv": true,
+   "cap": [
+    [
+     0.0,
+     1.1,
+     "every robot, every sensor, every reading, on one screen.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "ui",
+   "clean": true,
+   "win": [
+    [
+     -0.275,
+     0.984061,
+     0.015939,
+     0.007969
+    ],
+    [
+     1.375,
+     0.878626,
+     0.121374,
+     0.060687
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/289ed71aabb86cca",
+   "a": 0,
+   "d": 0.83333,
+   "s": 1,
+   "adv": true,
+   "cap": [
+    [
+     0.0,
+     0.833,
+     "every robot, every sensor, every reading, on one screen.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "ui",
+   "clean": true,
+   "win": [
+    [
+     -0.2083,
+     0.975006,
+     0.012497,
+     0.012497
+    ],
+    [
+     1.0417,
+     0.910006,
+     0.044997,
+     0.044997
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/3dbbc21cd4bcba1b",
+   "a": 0,
+   "d": 1.4,
+   "s": 1,
+   "adv": true,
+   "cap": [
+    [
+     0.0,
+     1.4,
+     "every robot, every sensor, every reading, on one screen.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "ui",
+   "clean": true,
+   "win": [
+    [
+     -0.35,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.75,
+     0.909091,
+     0.045455,
+     0.045455
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/a715b82ff9e2b300",
+   "a": 0,
+   "d": 1.66667,
+   "s": 1,
+   "adv": true,
+   "cap": [
+    [
+     0.0,
+     1.667,
+     "Send out a whole team,",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [
+    [
+     "../v4/guide_c3",
+     0.2167
+    ]
+   ],
+   "grade": "ui",
+   "clean": true,
+   "win": [
+    [
+     -0.4167,
+     0.996271,
+     0.001865,
+     0.001865
+    ],
+    [
+     2.0833,
+     0.80947,
+     0.095265,
+     0.095265
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/6130e6d6e9d9f2a8",
+   "a": 0,
+   "d": 2.5,
+   "s": 1,
+   "adv": true,
+   "cap": [
+    [
+     0.0,
+     2.5,
+     "test a collapse before anyone lifts a beam,",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "ui",
+   "clean": true,
+   "win": [
+    [
+     -0.625,
+     1.000809,
+     0.0,
+     -0.000405
+    ],
+    [
+     3.125,
+     0.684764,
+     0.125997,
+     0.157618
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/8e8fad026274b6cc",
+   "a": 0,
+   "d": 1.38333,
+   "s": 1,
+   "adv": true,
+   "cap": [
+    [
+     0.0,
+     1.383,
+     "rewind the mission, or just ask it a question.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "ui",
+   "clean": true,
+   "win": [
+    [
+     -0.3458,
+     0.999446,
+     0.000277,
+     0.0
+    ],
+    [
+     1.7292,
+     0.699612,
+     0.150194,
+     0.041977
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/289b124f7989e14e",
+   "a": 0,
+   "d": 1.95,
+   "s": 1,
+   "adv": true,
+   "cap": [
+    [
+     0.0,
+     1.627,
+     "rewind the mission, or just ask it a question.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "ui",
+   "clean": true,
+   "win": [
+    [
+     -0.4875,
+     0.986835,
+     0.013165,
+     0.006583
+    ],
+    [
+     2.4375,
+     0.868415,
+     0.131585,
+     0.065793
+    ]
+   ]
+  },
+  {
+   "clip": "x_five",
+   "a": 0,
+   "d": 4.03333,
+   "s": 1.0,
+   "bars": 80,
+   "tag": "Simulated, except the robot",
+   "cap": [
+    [
+     0.0,
+     3.09,
+     "Here's how it finds someone, in five steps.",
+     0
+    ]
+   ],
+   "html": [
+    [
+     0.71,
+     3.503,
+     "<div style=\"position:absolute;left:60px;top:816px;width:344px\"><span style=\"font:400 64px/1 HSerif;letter-spacing:-.016em;color:#fff\">1. Fly</span></div>",
+     0.12
+    ],
+    [
+     1.03,
+     3.503,
+     "<div style=\"position:absolute;left:424px;top:816px;width:344px\"><span style=\"font:400 64px/1 HSerif;letter-spacing:-.016em;color:#fff\">2. Drive</span></div>",
+     0.12
+    ],
+    [
+     1.91,
+     3.503,
+     "<div style=\"position:absolute;left:788px;top:816px;width:344px\"><span style=\"font:400 64px/1 HSerif;letter-spacing:-.016em;color:#fff\">3. Listen</span></div>",
+     0.12
+    ],
+    [
+     2.07,
+     3.503,
+     "<div style=\"position:absolute;left:1152px;top:816px;width:344px\"><span style=\"font:400 64px/1 HSerif;letter-spacing:-.016em;color:#fff\">4. Think</span></div>",
+     0.12
+    ],
+    [
+     2.37,
+     3.503,
+     "<div style=\"position:absolute;left:1516px;top:816px;width:344px\"><span style=\"font:400 64px/1 HSerif;letter-spacing:-.016em;color:#fff\">5. Decide</span></div>",
+     0.12
+    ]
+   ],
+   "voice": [
+    [
+     "../v4/guide_c2",
+     0.25
+    ]
+   ]
+  },
+  {
+   "clip": "x_five",
+   "a": 4.0333,
+   "d": 2.63333,
+   "s": 1.0,
+   "bars": 80,
+   "tag": "Concept",
+   "cap": [
+    [
+     0.0,
+     2.633,
+     "Step one: the drone flies in first, with four senses on board.",
+     0
+    ]
+   ],
+   "html": [
+    [
+     0.0,
+     1.95,
+     "<div style=\"position:absolute;left:0;right:0;bottom:80px;height:488px;background:linear-gradient(0deg,rgba(0,0,0,.94) 8%,rgba(0,0,0,.55) 48%,rgba(0,0,0,0))\"></div>",
+     0.25
+    ],
+    [
+     0.0,
+     1.95,
+     "<div style=\"position:absolute;left:112px;bottom:168px;font:400 124px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">1. Fly</div>",
+     0.25
+    ]
+   ],
+   "voice": [
+    [
+     "../v4/guide_d1",
+     0.2
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/8b6a0203460af9d0",
+   "a": 0,
+   "d": 1.93333,
+   "s": 1,
+   "tag": "Concept",
+   "grade": "film",
+   "bars": 80,
+   "cap": [
+    [
+     0.0,
+     1.933,
+     "Step one: the drone flies in first, with four senses on board.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "win": [
+    [
+     0,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.93333,
+     1.0,
+     0.0,
+     0.0
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/84d0076c40e60736",
+   "a": 0,
+   "d": 1.78333,
+   "s": 1,
+   "tag": "Concept",
+   "bars": 80,
+   "cap": [
+    [
+     0.0,
+     1.783,
+     "Its camera looks for people.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [
+    [
+     "../v4/guide_d2",
+     0.15
+    ]
+   ],
+   "grade": "film",
+   "win": [
+    [
+     0,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.78333,
+     1.0,
+     0.0,
+     0.0
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/4ac9ae0bc8ffc585",
+   "a": 0,
+   "d": 1.53333,
+   "s": 1,
+   "tag": "Simulated",
+   "cap": [
+    [
+     0.0,
+     1.533,
+     "Heat picks out a warm body.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "film",
+   "bars": 80,
+   "win": [
+    [
+     -0.3833,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.9167,
+     0.943396,
+     0.028302,
+     0.028302
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/1649e3172ae36496",
+   "a": 0,
+   "d": 2.08333,
+   "s": 1,
+   "tag": "Simulated",
+   "cap": [
+    [
+     0.0,
+     2.083,
+     "A laser measures every stone.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "film",
+   "bars": 80,
+   "win": [
+    [
+     -0.5208,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     2.6042,
+     0.943396,
+     0.028302,
+     0.028302
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/ceb4b3253a97c2ee",
+   "a": 0,
+   "d": 2.21667,
+   "s": 1,
+   "tag": "Simulated",
+   "cap": [
+    [
+     0.0,
+     2.217,
+     "And Wi-Fi reaches under the rubble.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "film",
+   "bars": 80,
+   "win": [
+    [
+     -0.5542,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     2.7708,
+     0.943396,
+     0.028302,
+     0.028302
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/fc0106afbe23b233",
+   "a": 0,
+   "d": 7.3,
+   "s": 1,
+   "tag": "AI-made test scene, real detector",
+   "cap": [
+    [
+     0.0,
+     2.24,
+     "A neural network reads every frame.",
+     0
+    ],
+    [
+     2.27,
+     4.54,
+     "That orange tarp? Just a tarp.",
+     0
+    ],
+    [
+     4.57,
+     7.3,
+     "That yellow coat? That could be a person.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [
+    [
+     "../v4/p_d4",
+     0.15
+    ]
+   ],
+   "grade": "film",
+   "bars": 80,
+   "win": [
+    [
+     -1.825,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     9.125,
+     0.952381,
+     0.0,
+     0.02381
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/2ef7c65ed81fd55e",
+   "a": 0,
+   "d": 1.83334,
+   "s": 1,
+   "tag": "Simulated",
+   "cap": [
+    [
+     0.0,
+     1.833,
+     "So it drops a pin on the map.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [
+    [
+     "../v4/guide_d6",
+     0.1167
+    ]
+   ],
+   "grade": "film",
+   "bars": 80,
+   "win": [
+    [
+     -0.4583,
+     0.994514,
+     0.002743,
+     0.002743
+    ],
+    [
+     2.2917,
+     0.824026,
+     0.087987,
+     0.087987
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/968fb4d61238389e",
+   "a": 0,
+   "d": 3.05,
+   "s": 1,
+   "tag": "Simulated",
+   "cap": [
+    [
+     0.0,
+     3.05,
+     "Fly it again later, and it marks whatever moved.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "film",
+   "bars": 80,
+   "win": [
+    [
+     -0.7625,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     3.8125,
+     0.952381,
+     0.02381,
+     0.02381
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/17e72fe1ba6f5dce",
+   "a": 0,
+   "d": 2.58333,
+   "s": 1,
+   "adv": true,
+   "cap": [
+    [
+     0.0,
+     2.583,
+     "The laser scan becomes a 3-D model,",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [
+    [
+     "../v4/guide_s1",
+     0.2667
+    ]
+   ],
+   "grade": "ui",
+   "clean": true,
+   "win": [
+    [
+     -0.6458,
+     1.000259,
+     0.0,
+     0.0
+    ],
+    [
+     3.2292,
+     0.800207,
+     0.080021,
+     0.080021
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/ab147877949c3b57",
+   "a": 0,
+   "d": 3.9,
+   "s": 1,
+   "cap": [
+    [
+     0.0,
+     3.383,
+     "so you can lift the roof off and see where someone could survive.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "film",
+   "bars": 80,
+   "win": [
+    [
+     -0.975,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     4.875,
+     0.970874,
+     0.0,
+     0.029126
+    ]
+   ]
+  },
+  {
    "clip": "rb_build",
    "a": 0.2,
    "d": 26.8,
-   "s": 4.47911,
+   "s": 10.05,
+   "tag": "Real build, sped up",
    "scope": true,
    "cam": [
     [
-     -1.4958,
+     -0.6667,
      1.0,
      0.5,
      0.5
     ],
     [
-     7.4792,
+     3.3333,
      1.12,
      0.5,
      0.5
@@ -568,18 +1361,25 @@
    "cap": [
     [
      0.34,
-     2.13,
-     "So we send a robot first.",
-     0
-    ],
-    [
-     2.16,
-     5.983,
-     "We built it ourselves, and this is the real build, sped up.",
+     2.667,
+     "Step two: the robot drives in.",
      0
     ]
    ],
-   "html": [],
+   "html": [
+    [
+     0.15,
+     2.1,
+     "<div style=\"position:absolute;left:0;right:0;bottom:138px;height:430px;background:linear-gradient(0deg,rgba(0,0,0,.94) 8%,rgba(0,0,0,.55) 48%,rgba(0,0,0,0))\"></div>",
+     0.25
+    ],
+    [
+     0.15,
+     2.1,
+     "<div style=\"position:absolute;left:112px;bottom:168px;font:400 124px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">2. Drive</div>",
+     0.25
+    ]
+   ],
    "voice": [
     [
      "../v4/guide_b1",
@@ -591,18 +1391,18 @@
   {
    "clip": "rb_wheels",
    "a": 0.0,
-   "d": 1.13333,
+   "d": 1.06667,
    "s": 1.0,
    "scope": true,
    "cam": [
     [
-     -0.2833,
+     -0.2667,
      1.22,
      0.42,
      0.52
     ],
     [
-     1.4167,
+     1.3333,
      1.4,
      0.36,
      0.54
@@ -611,8 +1411,8 @@
    "cap": [
     [
      0.0,
-     1.133,
-     "Four motors.",
+     1.067,
+     "Its wheels slide it sideways through a gap.",
      0
     ]
    ],
@@ -620,7 +1420,7 @@
    "voice": [
     [
      "../v4/guide_b2",
-     0.1
+     0.1833
     ]
    ],
    "grade": "real"
@@ -628,18 +1428,18 @@
   {
    "clip": "rb_slide",
    "a": 0.0,
-   "d": 2.35,
-   "s": 0.75,
+   "d": 1.33333,
+   "s": 1.0,
    "scope": true,
    "cam": [
     [
-     -0.7833,
+     -0.3333,
      1.0,
      0.5,
      0.5
     ],
     [
-     3.9167,
+     1.6667,
      1.06,
      0.5,
      0.5
@@ -648,8 +1448,8 @@
    "cap": [
     [
      0.0,
-     3.133,
-     "Mecanum wheels, so it slides sideways through a gap.",
+     1.333,
+     "Its wheels slide it sideways through a gap.",
      0
     ]
    ],
@@ -660,18 +1460,18 @@
   {
    "clip": "rb_cams",
    "a": 0.0,
-   "d": 2.26667,
+   "d": 2.66667,
    "s": 1.0,
    "scope": true,
    "cam": [
     [
-     -0.5667,
+     -0.6667,
      1.1,
      0.49,
      0.5
     ],
     [
-     2.8333,
+     3.3333,
      1.26,
      0.47,
      0.46
@@ -680,8 +1480,8 @@
    "cap": [
     [
      0.0,
-     2.267,
-     "A thermal camera for body heat, a radar for motion,",
+     2.667,
+     "It carries a thermal camera for body heat, a radar for motion,",
      0
     ]
    ],
@@ -692,18 +1492,18 @@
   {
    "clip": "rb_cams",
    "a": 0.0,
-   "d": 1.15,
+   "d": 1.33333,
    "s": 1.0,
    "scope": true,
    "cam": [
     [
-     -0.2875,
+     -0.3333,
      1.85,
      0.42,
      0.3
     ],
     [
-     1.4375,
+     1.6667,
      2.15,
      0.42,
      0.3
@@ -712,8 +1512,8 @@
    "cap": [
     [
      0.0,
-     1.15,
-     "A thermal camera for body heat, a radar for motion,",
+     1.333,
+     "It carries a thermal camera for body heat, a radar for motion,",
      0
     ]
    ],
@@ -724,18 +1524,18 @@
   {
    "clip": "rb_fronts",
    "a": 0.0,
-   "d": 1.7,
+   "d": 1.6,
    "s": 1.0,
    "scope": true,
    "cam": [
     [
-     -0.425,
+     -0.4,
      1.45,
      0.62,
      0.56
     ],
     [
-     2.125,
+     2.0,
      1.78,
      0.68,
      0.6
@@ -744,7 +1544,7 @@
    "cap": [
     [
      0.0,
-     1.7,
+     1.6,
      "and a Wi-Fi receiver.",
      0
     ]
@@ -754,1477 +1554,348 @@
    "grade": "real"
   },
   {
-   "clip": "rb_go",
-   "a": 1.0,
-   "d": 1.41667,
-   "s": 1.0,
-   "scope": true,
-   "cam": [
-    [
-     -0.3542,
-     1.0,
-     0.5,
-     0.5
-    ],
-    [
-     1.7708,
-     1.06,
-     0.5,
-     0.5
-    ]
-   ],
+   "clip": "seg4k/d1dcca0568e9c592",
+   "a": 0,
+   "d": 1.8,
+   "s": 1,
+   "adv": true,
    "cap": [
     [
      0.0,
-     1.417,
-     "Lose the link, and it stops on its own,",
+     1.8,
+     "It follows the drone's map.",
      0
     ]
    ],
    "html": [],
    "voice": [
     [
-     "../v4/p_b3",
+     "../v4/guide_d3",
      0.2167
     ]
    ],
-   "grade": "real"
+   "grade": "ui",
+   "clean": true,
+   "win": [
+    [
+     -0.45,
+     0.997769,
+     0.001115,
+     0.001115
+    ],
+    [
+     2.25,
+     0.779507,
+     0.110246,
+     0.110246
+    ]
+   ]
   },
   {
-   "clip": "rb_close",
-   "a": 0.6,
-   "d": 1.79667,
-   "s": 0.55,
+   "clip": "x_link",
+   "a": 1.45,
+   "d": 5.06667,
+   "s": 1.0,
+   "tag": "Simulated. The drone is a concept.",
    "scope": true,
-   "cam": [
-    [
-     -0.8167,
-     1.0,
-     0.5,
-     0.5
-    ],
-    [
-     4.0833,
-     1.08,
-     0.5,
-     0.5
-    ]
-   ],
    "cap": [
     [
      0.0,
-     1.458,
-     "Lose the link, and it stops on its own,",
+     2.807,
+     "Then the drone sends it Wi-Fi from the far side,",
      0
     ],
     [
-     1.488,
-     2.948,
-     "in under half a second.",
+     2.837,
+     4.297,
+     "through everything in between.",
      0
     ]
    ],
    "html": [],
-   "voice": [],
-   "grade": "real"
+   "voice": []
   },
   {
-   "clip": "seg4k/070d1ff2fb38f333",
+   "clip": "x_wave",
    "a": 0,
-   "d": 2.38334,
-   "s": 1,
-   "adv": true,
-   "fi": 0.3,
-   "cap": [
-    [
-     0.423,
-     2.383,
-     "And this is where you run it all.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [
-    [
-     "../v4/guide_c1",
-     0.4833
-    ]
-   ],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.5958,
-     0.747663,
-     0.169436,
-     0.082901
-    ],
-    [
-     2.9792,
-     0.996885,
-     -3.5e-05,
-     0.00315
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/53a1f9f5f47943fb",
-   "a": 0,
-   "d": 4.78333,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     2.07,
-     "HOUND Command: one console,",
-     0
-    ],
-    [
-     2.1,
-     4.783,
-     "built to command the whole fleet in real time.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -1.1958,
-     1.0,
-     0.0,
-     0.0
-    ],
-    [
-     5.9792,
-     0.934579,
-     0.03271,
-     0.03271
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/c1d6919b2344eb15",
-   "a": 0,
-   "d": 1.18333,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     1.183,
-     "Every robot, every sensor, every room, on one screen.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [
-    [
-     "../v4/guide_c2",
-     0.2
-    ]
-   ],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.2958,
-     0.98406,
-     0.00797,
-     0.00797
-    ],
-    [
-     1.4792,
-     0.878625,
-     0.060688,
-     0.060688
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/2fe963714dd063f3",
-   "a": 0,
-   "d": 0.9,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     0.9,
-     "Every robot, every sensor, every room, on one screen.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.225,
-     0.984061,
-     0.015939,
-     0.007969
-    ],
-    [
-     1.125,
-     0.878626,
-     0.121374,
-     0.060687
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/46753b9b1900b3c7",
-   "a": 0,
-   "d": 0.9,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     0.9,
-     "Every robot, every sensor, every room, on one screen.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.225,
-     0.986472,
-     0.006764,
-     0.006764
-    ],
-    [
-     1.125,
-     0.900692,
-     0.049654,
-     0.049654
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/98dce23b429c3aac",
-   "a": 0,
-   "d": 1.18333,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     1.183,
-     "Every robot, every sensor, every room, on one screen.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.2958,
-     1.0,
-     0.0,
-     0.0
-    ],
-    [
-     1.4792,
-     0.934579,
-     0.03271,
-     0.03271
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/5eab5d6a960820c2",
-   "a": 0,
-   "d": 0.9,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     0.9,
-     "Wi-Fi. Radar. Body heat. Link. Battery.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.225,
-     0.978791,
-     0.021209,
-     0.010604
-    ],
-    [
-     1.125,
-     0.892427,
-     0.107573,
-     0.053786
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/2ddb10284b80203c",
-   "a": 0,
-   "d": 0.9,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     0.9,
-     "Wi-Fi. Radar. Body heat. Link. Battery.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.225,
-     0.975007,
-     0.012497,
-     0.012497
-    ],
-    [
-     1.125,
-     0.910006,
-     0.044997,
-     0.044997
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/6e203e63894176ca",
-   "a": 0,
-   "d": 0.88333,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     0.883,
-     "Wi-Fi. Radar. Body heat. Link. Battery.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.2208,
-     0.977094,
-     0.022906,
-     0.011453
-    ],
-    [
-     1.1042,
-     0.895669,
-     0.104331,
-     0.052165
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/f59431377c68f4b1",
-   "a": 0,
-   "d": 0.6,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     0.6,
-     "Wi-Fi. Radar. Body heat. Link. Battery.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.15,
-     0.975421,
-     0.024579,
-     0.012289
-    ],
-    [
-     0.75,
-     0.898415,
-     0.101585,
-     0.050793
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/ed1fd11da742c6d0",
-   "a": 0,
-   "d": 0.9,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     0.9,
-     "Wi-Fi. Radar. Body heat. Link. Battery.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.225,
-     0.975421,
-     0.012289,
-     0.012289
-    ],
-    [
-     1.125,
-     0.898415,
-     0.050793,
-     0.050793
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/350162f5ac7d248c",
-   "a": 0,
-   "d": 1.78333,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     1.783,
-     "And the odds that someone is there.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.4458,
-     0.994457,
-     0.002771,
-     0.002771
-    ],
-    [
-     2.2292,
-     0.735898,
-     0.132051,
-     0.132051
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/12c21f1b9a06e11c",
-   "a": 0,
-   "d": 2.68334,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     2.683,
-     "Open the robot, and take it apart.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [
-    [
-     "../v4/guide_c3",
-     0.25
-    ]
-   ],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.6708,
-     1.002977,
-     -0.001488,
-     -0.001488
-    ],
-    [
-     3.3542,
-     0.659099,
-     0.170451,
-     0.170451
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/bfe77f228d8a59e9",
-   "a": 0,
-   "d": 0.9,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     0.9,
-     "Every motor, every board, every wire.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.225,
-     0.98553,
-     0.007235,
-     0.007235
-    ],
-    [
-     1.125,
-     0.860099,
-     0.069951,
-     0.069951
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/4d939e6dcc9dd01e",
-   "a": 0,
-   "d": 0.9,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     0.9,
-     "Every motor, every board, every wire.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.225,
-     0.983682,
-     0.008159,
-     0.008159
-    ],
-    [
-     1.125,
-     0.866974,
-     0.066513,
-     0.066513
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/1a58d4174b164931",
-   "a": 0,
-   "d": 0.88333,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     0.883,
-     "Every motor, every board, every wire.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.2208,
-     0.990014,
-     0.004993,
-     0.004993
-    ],
-    [
-     1.1042,
-     0.825012,
-     0.087494,
-     0.087494
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/28019d224af3cc67",
-   "a": 0,
-   "d": 1.28333,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     1.283,
-     "Then drive it.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.3208,
-     0.994374,
-     0.005626,
-     0.002813
-    ],
-    [
-     1.6042,
-     0.883888,
-     0.104621,
-     0.058056
-    ]
-   ]
-  },
-  {
-   "clip": "black",
-   "a": 0,
-   "d": 0.355,
-   "s": 0.3,
-   "cap": [
-    [
-     0.557,
-     1.183,
-     "Now, the brain.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [
-    [
-     "../v4/guide_n1",
-     0.6167
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/853bc9f376e8c029",
-   "a": 0,
-   "d": 1.15,
-   "s": 1,
-   "fi": 0.5,
+   "d": 9.55,
+   "s": 1.0,
    "tag": "Simulated",
    "scope": true,
    "cap": [
     [
-     0.0,
-     0.543,
-     "Now, the brain.",
+     0.507,
+     2.377,
+     "Step three: it listens.",
      0
     ],
     [
-     0.573,
-     1.15,
-     "Wi-Fi goes straight through a wall,",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "film",
-   "fade": "black",
-   "win": [
-    [
-     -0.2875,
-     0.991795,
-     0.004102,
-     0.004102
-    ],
-    [
-     1.4375,
-     0.898815,
-     0.050593,
-     0.050593
-    ]
-   ]
-  },
-  {
-   "clip": "rb_wall",
-   "a": 0.05,
-   "d": 2.35,
-   "s": 0.59746,
-   "cap": [
-    [
-     0.0,
-     1.553,
-     "Wi-Fi goes straight through a wall,",
+     2.407,
+     4.417,
+     "Wi-Fi goes straight through a wall.",
      0
     ],
     [
-     1.583,
-     3.933,
-     "but a living body changes it on the way.",
+     4.447,
+     7.817,
+     "But you're mostly water, so your body soaks some of it up,",
+     0
+    ],
+    [
+     7.847,
+     9.55,
+     "and some of it bounces off.",
      0
     ]
    ],
    "html": [
     [
-     0.0,
-     3.933,
-     "<div style=\"position:absolute;left:0px;top:0px;width:360px;height:1080px;background:#000\"></div><div style=\"position:absolute;left:1556px;top:0px;width:364px;height:1080px;background:#000\"></div><div style=\"position:absolute;left:0px;top:0px;width:1920px;height:37px;background:#000\"></div><div style=\"position:absolute;left:0px;top:1002px;width:1920px;height:78px;background:#000\"></div>",
-     0
-    ],
-    [
-     0.0,
-     3.933,
-     "<div style=\"position:absolute;left:14px;width:330px;top:640px;text-align:center\"><div style=\"font:400 60px/1.05 HSerif;color:#fff\">HOUND</div><div style=\"font:500 25px/1.3 HSans;color:#aeb9c4;margin-top:8px\">on one side</div></div>",
-     0.3
-    ],
-    [
-     0.0,
-     3.933,
-     "<div style=\"position:absolute;left:1576px;width:330px;top:640px;text-align:center\"><div style=\"font:400 60px/1.05 HSerif;color:#fff\">A person</div><div style=\"font:500 25px/1.3 HSans;color:#aeb9c4;margin-top:8px\">on the other</div></div>",
-     0.3
+     0.147,
+     2.097,
+     "<div style=\"position:absolute;right:112px;bottom:196px;font:400 124px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">3. Listen</div>",
+     0.25
     ]
    ],
-   "voice": [],
-   "grade": "real"
+   "voice": [
+    [
+     "../v4/guide_n1",
+     0.5667
+    ]
+   ]
   },
   {
-   "clip": "seg4k/dc8ffd36b5bf3624",
+   "clip": "x_sum",
    "a": 0,
-   "d": 3.01667,
-   "s": 1,
+   "d": 8.8,
+   "s": 0.99623,
    "tag": "Simulated",
    "scope": true,
    "cap": [
     [
      0.0,
-     2.71,
-     "So we taught a neural network to read that change.",
+     2.01,
+     "Now two waves reach HOUND.",
+     0
+    ],
+    [
+     2.04,
+     3.67,
+     "In step, they add up.",
+     0
+    ],
+    [
+     3.7,
+     5.59,
+     "Out of step, they cancel.",
+     0
+    ],
+    [
+     5.62,
+     8.833,
+     "So when someone moves, the signal rises and falls,",
      0
     ]
    ],
-   "html": [],
-   "voice": [],
-   "grade": "film",
-   "win": [
+   "html": [
     [
-     -0.7542,
-     0.993305,
-     0.003348,
-     0.003348
+     0.7,
+     5.94,
+     "<div style=\"position:absolute;left:700px;top:196px;font:400 44px/1 HSerif;color:#dfe5ea;letter-spacing:-.01em;white-space:nowrap;text-shadow:0 1px 14px rgba(0,0,0,.85),0 0 4px rgba(0,0,0,.7)\">Straight</div>",
+     0.25
     ],
     [
-     3.7708,
-     0.857317,
-     0.071342,
-     0.071342
+     1.25,
+     5.94,
+     "<div style=\"position:absolute;left:700px;top:420px;font:400 44px/1 HSerif;color:#ffb352;letter-spacing:-.01em;white-space:nowrap;text-shadow:0 1px 14px rgba(0,0,0,.85),0 0 4px rgba(0,0,0,.7)\">Bounced off the person</div>",
+     0.25
+    ],
+    [
+     2.86,
+     8.213,
+     "<div style=\"position:absolute;left:1424px;top:706px;font:400 40px/1 HSerif;color:#aeb8c1;letter-spacing:-.01em;white-space:nowrap;text-shadow:0 1px 14px rgba(0,0,0,.85),0 0 4px rgba(0,0,0,.7)\">What HOUND hears</div>",
+     0.25
+    ],
+    [
+     2.04,
+     3.66,
+     "<div style=\"position:absolute;left:1420px;top:764px;font:400 88px/1 HSerif;color:#fff;letter-spacing:-.01em;white-space:nowrap;text-shadow:0 1px 14px rgba(0,0,0,.85),0 0 4px rgba(0,0,0,.7)\">In step</div>",
+     0.14
+    ],
+    [
+     3.7,
+     6.04,
+     "<div style=\"position:absolute;left:1420px;top:764px;font:400 88px/1 HSerif;color:#fff;letter-spacing:-.01em;white-space:nowrap;text-shadow:0 1px 14px rgba(0,0,0,.85),0 0 4px rgba(0,0,0,.7)\">Out of step</div>",
+     0.14
+    ],
+    [
+     6.08,
+     8.213,
+     "<div style=\"position:absolute;left:1420px;top:764px;font:400 88px/1 HSerif;color:#fff;letter-spacing:-.01em;white-space:nowrap;text-shadow:0 1px 14px rgba(0,0,0,.85),0 0 4px rgba(0,0,0,.7)\">A person moves</div>",
+     0.14
+    ]
+   ],
+   "voice": [
+    [
+     "../v4/guide_n5",
+     0.3
     ]
    ]
   },
   {
-   "clip": "seg4k/81feefb52e0dd863",
+   "clip": "x_ridge",
    "a": 0,
-   "d": 2.15,
-   "s": 1,
+   "d": 2.8,
+   "s": 1.0,
+   "tag": "Simulated",
+   "scope": true,
    "cap": [
     [
      0.0,
-     2.15,
-     "Ten seconds of Wi-Fi go in.",
+     2.287,
+     "on fifty-one channels at once.",
      0
     ]
    ],
-   "html": [],
+   "html": [
+    [
+     0.387,
+     2.76,
+     "<div style=\"position:absolute;left:0;right:0;bottom:138px;height:430px;background:linear-gradient(0deg,rgba(0,0,0,.94) 8%,rgba(0,0,0,.55) 48%,rgba(0,0,0,0))\"></div>",
+     0.12
+    ],
+    [
+     0.387,
+     2.76,
+     "<div style=\"position:absolute;left:112px;bottom:175px;font:400 104px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">51 channels</div>",
+     0.12
+    ]
+   ],
+   "voice": []
+  },
+  {
+   "clip": "seg4k/3ca66f000a956082",
+   "a": 0,
+   "d": 12.31667,
+   "s": 1,
+   "tag": "Simulated",
+   "scope": true,
+   "cap": [
+    [
+     0.39,
+     2.58,
+     "Step four: the neural network.",
+     0
+    ],
+    [
+     2.61,
+     5.1,
+     "Ten seconds of that becomes one picture.",
+     0
+    ],
+    [
+     5.13,
+     8.42,
+     "Small filters slide across it, layer after layer,",
+     0
+    ],
+    [
+     8.45,
+     10.79,
+     "looking for the pattern a moving body leaves.",
+     0
+    ],
+    [
+     11.173,
+     12.317,
+     "Then it answers.",
+     0
+    ]
+   ],
+   "html": [
+    [
+     0.05,
+     2.0,
+     "<div style=\"position:absolute;left:0;right:0;bottom:138px;height:430px;background:linear-gradient(0deg,rgba(0,0,0,.94) 8%,rgba(0,0,0,.55) 48%,rgba(0,0,0,0))\"></div>",
+     0.25
+    ],
+    [
+     0.05,
+     2.0,
+     "<div style=\"position:absolute;left:112px;bottom:168px;font:400 124px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">4. Think</div>",
+     0.25
+    ],
+    [
+     5.65,
+     7.09,
+     "<div style=\"position:absolute;left:0;right:0;bottom:138px;height:430px;background:linear-gradient(0deg,rgba(0,0,0,.94) 8%,rgba(0,0,0,.55) 48%,rgba(0,0,0,0))\"></div>",
+     0.12
+    ],
+    [
+     5.65,
+     7.09,
+     "<div style=\"position:absolute;left:112px;bottom:172px;font:400 84px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">Filters slide across it</div>",
+     0.12
+    ],
+    [
+     7.13,
+     8.37,
+     "<div style=\"position:absolute;left:0;right:0;bottom:138px;height:430px;background:linear-gradient(0deg,rgba(0,0,0,.94) 8%,rgba(0,0,0,.55) 48%,rgba(0,0,0,0))\"></div>",
+     0.12
+    ],
+    [
+     7.13,
+     8.37,
+     "<div style=\"position:absolute;left:112px;bottom:172px;font:400 84px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">Layer after layer</div>",
+     0.12
+    ],
+    [
+     8.41,
+     11.333,
+     "<div style=\"position:absolute;left:0;right:0;bottom:138px;height:430px;background:linear-gradient(0deg,rgba(0,0,0,.94) 8%,rgba(0,0,0,.55) 48%,rgba(0,0,0,0))\"></div>",
+     0.12
+    ],
+    [
+     8.41,
+     11.333,
+     "<div style=\"position:absolute;left:112px;bottom:172px;font:400 84px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">Looking for a moving body</div>",
+     0.12
+    ]
+   ],
    "voice": [
+    [
+     "../v4/guide_n6",
+     0.45
+    ],
     [
      "../v4/guide_n2",
-     0.15
+     11.2333
     ]
    ],
-   "grade": "film",
-   "bars": 80,
    "win": [
     [
-     -0.5375,
+     0,
      1.0,
      0.0,
      0.0
     ],
     [
-     2.6875,
-     0.97561,
-     0.02439,
-     0.0
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/d374e5036c7c8ce2",
-   "a": 0,
-   "d": 1.85,
-   "s": 1,
-   "cap": [
-    [
-     0.0,
-     1.85,
-     "Someone walking: found.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "film",
-   "bars": 80,
-   "win": [
-    [
-     -0.4625,
+     12.31667,
      1.0,
      0.0,
      0.0
-    ],
-    [
-     2.3125,
-     0.97561,
-     0.02439,
-     0.0
     ]
    ]
   },
   {
-   "clip": "seg4k/a49a84a4da7fbcd8",
+   "clip": "seg4k/551a52ee8a6d0962",
    "a": 0,
-   "d": 1.8,
+   "d": 2.56668,
    "s": 1,
-   "cap": [
-    [
-     0.0,
-     1.8,
-     "An empty room: quiet.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "film",
-   "bars": 80,
-   "win": [
-    [
-     -0.45,
-     1.0,
-     0.0,
-     0.0
-    ],
-    [
-     2.25,
-     0.97561,
-     0.02439,
-     0.0
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/32bbfef434742137",
-   "a": 0,
-   "d": 2.18334,
-   "s": 1,
-   "cap": [
-    [
-     0.0,
-     2.183,
-     "Walking again: same answer.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "film",
-   "bars": 80,
-   "win": [
-    [
-     -0.5458,
-     1.0,
-     0.0,
-     0.0
-    ],
-    [
-     2.7292,
-     0.97561,
-     0.02439,
-     0.0
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/622da522068ce657",
-   "a": 0,
-   "d": 1.76667,
-   "s": 1,
-   "cap": [
-    [
-     0.0,
-     1.767,
-     "A fan: not fooled.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "film",
-   "bars": 80,
-   "win": [
-    [
-     -0.4417,
-     1.0,
-     0.0,
-     0.0
-    ],
-    [
-     2.2083,
-     0.97561,
-     0.02439,
-     0.0
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/95504ecd5142044a",
-   "a": 0,
-   "d": 4.66666,
-   "s": 1,
-   "cap": [
-    [
-     0.0,
-     1.71,
-     "No recordings existed,",
-     0
-    ],
-    [
-     1.74,
-     4.667,
-     "so it learned from 900 simulated people.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [
-    [
-     "../v4/guide_n3",
-     0.2
-    ]
-   ],
-   "grade": "film",
-   "bars": 80,
-   "win": [
-    [
-     -1.1667,
-     1.0,
-     0.0,
-     0.0
-    ],
-    [
-     5.8333,
-     0.970874,
-     0.0,
-     0.029126
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/70119f90cef76e98",
-   "a": 0,
-   "d": 1.81667,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     1.817,
-     "And you can train one yourself, live, right here.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.4542,
-     0.998448,
-     0.0,
-     0.001552
-    ],
-    [
-     2.2708,
-     0.855813,
-     0.0,
-     0.092838
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/0a8bf3893a1ad47b",
-   "a": 0,
-   "d": 1.8,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     1.8,
-     "And you can train one yourself, live, right here.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.45,
-     0.990414,
-     0.004793,
-     0.004793
-    ],
-    [
-     2.25,
-     0.83635,
-     0.081825,
-     0.081825
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/88d2ebb6c94e2e9b",
-   "a": 0,
-   "d": 2.11666,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     1.71,
-     "On people it had never seen,",
-     0
-    ],
-    [
-     1.74,
-     2.117,
-     "it found 87 % of those who moved,",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [
-    [
-     "../v4/guide_n4",
-     0.0
-    ]
-   ],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.5292,
-     0.994389,
-     0.005611,
-     0.002805
-    ],
-    [
-     2.6458,
-     0.726669,
-     0.273331,
-     0.136665
-    ]
-   ]
-  },
-  {
-   "clip": "k_87",
-   "a": 0,
-   "d": 3.48333,
-   "s": 1.0,
-   "cam": [
-    [
-     -0.8708,
-     1.0,
-     0.5,
-     0.5
-    ],
-    [
-     4.3542,
-     1.14,
-     0.5,
-     0.5
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     2.393,
-     "it found 87 % of those who moved,",
-     0
-    ],
-    [
-     2.423,
-     3.483,
-     "in simulation.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": []
-  },
-  {
-   "clip": "seg4k/58a0a8ba937c6776",
-   "a": 0,
-   "d": 3.4,
-   "s": 1,
-   "cap": [
-    [
-     0.0,
-     3.4,
-     "Lying still is harder, so it never works alone.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "film",
-   "bars": 80,
-   "win": [
-    [
-     -0.85,
-     1.0,
-     0.0,
-     0.0
-    ],
-    [
-     4.25,
-     0.97561,
-     0.02439,
-     0.0
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/a170f5caebc75d49",
-   "a": 0,
-   "d": 1.66667,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     1.667,
-     "Radar and heat join in.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [
-    [
-     "../v4/p_f1",
-     0.25
-    ]
-   ],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.4167,
-     0.992061,
-     0.003969,
-     0.003969
-    ],
-    [
-     2.0833,
-     0.857999,
-     0.071001,
-     0.071001
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/7e025596df60d074",
-   "a": 0,
-   "d": 2.71665,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     2.717,
-     "Every reading moves the odds, in the open.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.6792,
-     0.989747,
-     0.005127,
-     0.005127
-    ],
-    [
-     3.3958,
-     0.854781,
-     0.072609,
-     0.072609
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/0226f6ed06c1d6bc",
-   "a": 0,
-   "d": 1.5,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     1.5,
-     "10 %. Then 94 %.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.375,
-     0.986067,
-     0.006966,
-     0.006966
-    ],
-    [
-     1.875,
-     0.845201,
-     0.0774,
-     0.0774
-    ]
-   ]
-  },
-  {
-   "clip": "black",
-   "a": 0,
-   "d": 0.51,
-   "s": 0.3,
-   "cap": [
-    [
-     0.0,
-     1.7,
-     "10 %. Then 94 %.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": []
-  },
-  {
-   "clip": "k_94",
-   "a": 0,
-   "d": 1.73333,
-   "s": 1.0,
-   "cam": [
-    [
-     -0.4333,
-     1.0,
-     0.5,
-     0.5
-    ],
-    [
-     2.1667,
-     1.1,
-     0.5,
-     0.5
-    ]
-   ],
-   "cap": [],
-   "html": [],
-   "voice": []
-  },
-  {
-   "clip": "seg4k/a464245f9730422c",
-   "a": 0,
-   "d": 2.25,
-   "s": 1,
-   "tag": "Simulated",
-   "cap": [
-    [
-     0.69,
-     2.25,
-     "Next, the drone.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [
-    [
-     "../v4/guide_d1",
-     0.75
-    ]
-   ],
-   "grade": "film",
-   "bars": 80,
-   "win": [
-    [
-     -0.5625,
-     1.0,
-     0.0,
-     0.0
-    ],
-    [
-     2.8125,
-     0.925926,
-     0.037037,
-     0.037037
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/67b572ee90068b55",
-   "a": 0,
-   "d": 2.86667,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     2.867,
-     "We designed and simulated it with four senses.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.7167,
-     0.999474,
-     0.000526,
-     0.000263
-    ],
-    [
-     3.5833,
-     0.771023,
-     0.150333,
-     0.114489
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/1bf56f2d9c58897c",
-   "a": 0,
-   "d": 1.79999,
-   "s": 1,
-   "tag": "Simulated",
-   "cap": [
-    [
-     0.0,
-     1.8,
-     "Color, to see a shape.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "film",
-   "bars": 80,
-   "win": [
-    [
-     -0.45,
-     1.0,
-     0.0,
-     0.0
-    ],
-    [
-     2.25,
-     0.943396,
-     0.028302,
-     0.028302
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/632dcb9ee69fcb8a",
-   "a": 0,
-   "d": 1.9,
-   "s": 1,
-   "tag": "Simulated",
-   "cap": [
-    [
-     0.0,
-     1.9,
-     "Heat, to find a warm body.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "film",
-   "bars": 80,
-   "win": [
-    [
-     -0.475,
-     1.0,
-     0.0,
-     0.0
-    ],
-    [
-     2.375,
-     0.943396,
-     0.028302,
-     0.028302
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/9531a9a18b0cc301",
-   "a": 0,
-   "d": 2.56667,
-   "s": 1,
-   "tag": "Simulated",
    "cap": [
     [
      0.0,
      2.567,
-     "A laser, to measure every stone.",
+     "When someone walks, it finds them.",
      0
     ]
    ],
@@ -2241,23 +1912,22 @@
     ],
     [
      3.2083,
-     0.943396,
-     0.028302,
-     0.028302
+     0.97561,
+     0.02439,
+     0.0
     ]
    ]
   },
   {
-   "clip": "seg4k/67a6adf34d73584a",
+   "clip": "seg4k/b04c004830fcddfe",
    "a": 0,
-   "d": 2.45,
+   "d": 2.66667,
    "s": 1,
-   "tag": "Simulated",
    "cap": [
     [
      0.0,
-     2.45,
-     "And Wi-Fi, to reach under the rubble.",
+     2.667,
+     "When the room is empty, it stays quiet.",
      0
     ]
    ],
@@ -2267,199 +1937,82 @@
    "bars": 80,
    "win": [
     [
-     -0.6125,
+     -0.6667,
      1.0,
      0.0,
      0.0
     ],
     [
-     3.0625,
-     0.943396,
-     0.028302,
-     0.028302
+     3.3333,
+     0.97561,
+     0.02439,
+     0.0
     ]
    ]
   },
   {
-   "clip": "seg4k/b9a83b2107083d60",
+   "clip": "seg4k/4c1048a44f8ab230",
    "a": 0,
-   "d": 3.13332,
+   "d": 1.63334,
    "s": 1,
-   "adv": true,
    "cap": [
     [
      0.0,
-     3.133,
-     "Find people: a neural network checks the frame.",
+     1.633,
+     "And a fan doesn't fool it.",
      0
     ]
    ],
    "html": [],
-   "voice": [
-    [
-     "../v4/guide_d2",
-     0.2
-    ]
-   ],
-   "grade": "ui",
-   "clean": true,
+   "voice": [],
+   "grade": "film",
+   "bars": 80,
    "win": [
     [
-     -0.7833,
-     1.004749,
-     -0.002375,
-     -0.002375
+     -0.4083,
+     1.0,
+     0.0,
+     0.0
     ],
     [
-     3.9167,
-     0.565171,
-     0.217414,
-     0.217414
+     2.0417,
+     0.97561,
+     0.02439,
+     0.0
     ]
    ]
   },
   {
-   "clip": "seg4k/c20c2098c93ce76a",
+   "clip": "seg4k/1c54eadcb8b51316",
    "a": 0,
    "d": 3.13333,
    "s": 1,
-   "adv": true,
    "cap": [
     [
      0.0,
      3.133,
-     "Color anomaly: the one thing that doesn't belong.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.7833,
-     1.004749,
-     -0.002375,
-     -0.002375
-    ],
-    [
-     3.9167,
-     0.565171,
-     0.217414,
-     0.217414
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/39c4ceae1359d8fd",
-   "a": 0,
-   "d": 2.28333,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     2.283,
-     "Before and after: what moved.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.5708,
-     1.004749,
-     -0.002374,
-     -0.002374
-    ],
-    [
-     2.8542,
-     0.565171,
-     0.217414,
-     0.217414
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/0fea7f8ed6252f67",
-   "a": 0,
-   "d": 3.03333,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     1.91,
-     "Then it looks inside the ruin.",
-     0
-    ],
-    [
-     1.94,
-     3.033,
-     "A million points.",
+     "We trained it on 900 simulated people,",
      0
     ]
    ],
    "html": [],
    "voice": [
     [
-     "../v4/guide_s1",
-     0.3
+     "../v4/guide_n3",
+     0.2
     ]
    ],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.7583,
-     1.000259,
-     0.0,
-     0.0
-    ],
-    [
-     3.7917,
-     0.800207,
-     0.080021,
-     0.080021
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/c573cbf6e2737115",
-   "a": 0,
-   "d": 4.58333,
-   "s": 1,
-   "cap": [
-    [
-     0.0,
-     1.577,
-     "The roof lifts away,",
-     0
-    ],
-    [
-     1.607,
-     4.583,
-     "and it finds the pockets where someone could survive.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
    "grade": "film",
    "bars": 80,
    "win": [
     [
-     -1.1458,
+     -0.7833,
      1.0,
      0.0,
      0.0
     ],
     [
-     5.7292,
+     3.9167,
      0.970874,
      0.0,
      0.029126
@@ -2467,23 +2020,208 @@
    ]
   },
   {
-   "clip": "seg4k/999560bda34db233",
+   "clip": "seg4k/6807ae32f2bda56c",
    "a": 0,
-   "d": 2.1,
+   "d": 1.70001,
    "s": 1,
    "adv": true,
    "cap": [
     [
      0.0,
-     2.1,
-     "Trace radio through every wall.",
+     1.7,
+     "and you can train one yourself, live.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "ui",
+   "clean": true,
+   "win": [
+    [
+     -0.425,
+     0.998448,
+     0.0,
+     0.001552
+    ],
+    [
+     2.125,
+     0.855812,
+     0.0,
+     0.092839
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/13a717994705296a",
+   "a": 0,
+   "d": 0.71667,
+   "s": 1,
+   "adv": true,
+   "cap": [
+    [
+     0.0,
+     0.717,
+     "and you can train one yourself, live.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "ui",
+   "clean": true,
+   "win": [
+    [
+     -0.1792,
+     0.990417,
+     0.004792,
+     0.004792
+    ],
+    [
+     0.8958,
+     0.836352,
+     0.081824,
+     0.081824
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/170a2fc0a4b73c4b",
+   "a": 0,
+   "d": 2.21666,
+   "s": 1,
+   "adv": true,
+   "cap": [
+    [
+     0.0,
+     1.79,
+     "On people it had never seen,",
+     0
+    ],
+    [
+     1.82,
+     2.217,
+     "it found 87 % of the ones who moved,",
      0
     ]
    ],
    "html": [],
    "voice": [
     [
-     "../v4/guide_x1",
+     "../v4/guide_n4",
+     0.1
+    ]
+   ],
+   "grade": "ui",
+   "clean": true,
+   "win": [
+    [
+     -0.5542,
+     0.994389,
+     0.005611,
+     0.002805
+    ],
+    [
+     2.7708,
+     0.726669,
+     0.273331,
+     0.136665
+    ]
+   ]
+  },
+  {
+   "clip": "k_87",
+   "a": 0,
+   "d": 2.51667,
+   "s": 1.0,
+   "cam": [
+    [
+     -0.6292,
+     1.0,
+     0.5,
+     0.5
+    ],
+    [
+     3.1458,
+     1.14,
+     0.5,
+     0.5
+    ]
+   ],
+   "cap": [
+    [
+     0.0,
+     2.517,
+     "it found 87 % of the ones who moved,",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": []
+  },
+  {
+   "clip": "seg4k/41cc955cf8e6996c",
+   "a": 0,
+   "d": 1.88333,
+   "s": 1,
+   "cap": [
+    [
+     0.0,
+     0.847,
+     "in simulation.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "film",
+   "bars": 80,
+   "win": [
+    [
+     -0.4708,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     2.3542,
+     0.97561,
+     0.02439,
+     0.0
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/42c48f84f442d964",
+   "a": 0,
+   "d": 2.24999,
+   "s": 1,
+   "adv": true,
+   "cap": [
+    [
+     0.0,
+     2.25,
+     "Step five: it decides.",
+     0
+    ]
+   ],
+   "html": [
+    [
+     0.25,
+     2.2,
+     "<div style=\"position:absolute;left:0;right:0;bottom:138px;height:430px;background:linear-gradient(0deg,rgba(0,0,0,.94) 8%,rgba(0,0,0,.55) 48%,rgba(0,0,0,0))\"></div>",
+     0.25
+    ],
+    [
+     0.25,
+     2.2,
+     "<div style=\"position:absolute;left:112px;bottom:168px;font:400 124px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">5. Decide</div>",
+     0.25
+    ]
+   ],
+   "voice": [
+    [
+     "../v4/p_f1",
      0.25
     ]
    ],
@@ -2491,30 +2229,30 @@
    "clean": true,
    "win": [
     [
-     -0.525,
-     1.002027,
-     -0.001013,
-     -0.0008
+     -0.5625,
+     0.99206,
+     0.00397,
+     0.00397
     ],
     [
-     2.625,
-     0.651318,
-     0.174341,
-     0.168542
+     2.8125,
+     0.857998,
+     0.071001,
+     0.071001
     ]
    ]
   },
   {
-   "clip": "seg4k/759941d8584b733e",
+   "clip": "seg4k/5e71478a5eebbeb4",
    "a": 0,
-   "d": 2.31666,
+   "d": 3.51668,
    "s": 1,
    "adv": true,
    "cap": [
     [
      0.0,
-     2.317,
-     "Look into a pile with cosmic rays.",
+     3.517,
+     "Radar and heat join in, and every reading moves the odds.",
      0
     ]
    ],
@@ -2524,30 +2262,30 @@
    "clean": true,
    "win": [
     [
-     -0.5792,
-     1.00414,
-     -0.00207,
-     0.0
+     -0.8792,
+     0.989747,
+     0.005127,
+     0.005127
     ],
     [
-     2.8958,
-     0.593355,
-     0.203322,
-     0.068829
+     4.3958,
+     0.854781,
+     0.072609,
+     0.072609
     ]
    ]
   },
   {
-   "clip": "seg4k/c98cd50afd1357e6",
+   "clip": "seg4k/a930ca472898786a",
    "a": 0,
-   "d": 1.98333,
+   "d": 1.33333,
    "s": 1,
    "adv": true,
    "cap": [
     [
      0.0,
-     1.983,
-     "Listen for someone tapping.",
+     1.333,
+     "10 %. Then 94 %.",
      0
     ]
    ],
@@ -2557,380 +2295,69 @@
    "clean": true,
    "win": [
     [
-     -0.4958,
-     1.00292,
-     -0.002439,
-     0.0
+     -0.3333,
+     0.986066,
+     0.006967,
+     0.006967
     ],
     [
-     2.4792,
-     0.615428,
-     0.218888,
-     0.125547
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/400ce632d9628ee2",
-   "a": 0,
-   "d": 1.65,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     1.65,
-     "Send six robots and two drones into one search.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [
-    [
-     "../v4/guide_x2",
-     0.0167
-    ]
-   ],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.4125,
-     0.996269,
-     0.001865,
-     0.001865
-    ],
-    [
-     2.0625,
-     0.809469,
-     0.095266,
-     0.095266
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/dd4252c4377c05b9",
-   "a": 0,
-   "d": 1.35,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     1.35,
-     "Send six robots and two drones into one search.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.3375,
-     0.992255,
-     0.003872,
-     0.003872
-    ],
-    [
-     1.6875,
-     0.785535,
-     0.107232,
-     0.107232
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/e60351e2fa85a086",
-   "a": 0,
-   "d": 1.06666,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     1.067,
-     "Lose a link, and they find their own way back.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.2667,
-     0.988759,
-     0.005621,
-     0.005621
-    ],
-    [
-     1.3333,
-     0.85979,
-     0.070105,
-     0.070105
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/113720e90c9c8e9c",
-   "a": 0,
-   "d": 1.81667,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     1.817,
-     "Lose a link, and they find their own way back.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.4542,
-     0.991179,
-     0.004411,
-     0.004411
-    ],
-    [
-     2.2708,
-     0.792943,
-     0.103529,
-     0.103529
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/d678c3db3728e040",
-   "a": 0,
-   "d": 2.98333,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     2.983,
-     "Test the collapse before anyone lifts a beam.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [
-    [
-     "../v4/guide_x3",
-     0.15
-    ]
-   ],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.7458,
-     1.000808,
-     0.0,
-     -0.000404
-    ],
-    [
-     3.7292,
-     0.684763,
-     0.125996,
-     0.157618
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/44e869c436351ed8",
-   "a": 0,
-   "d": 1.2,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     1.2,
-     "Rewind the mission.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.3,
-     0.999448,
-     0.000276,
-     0.0
-    ],
-    [
-     1.5,
-     0.699614,
-     0.150193,
-     0.041977
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/73d2e6e25fdf30f7",
-   "a": 0,
-   "d": 2.1,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     2.1,
-     "Watch the week's real earthquakes.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.525,
-     0.994364,
-     0.002818,
-     0.002818
-    ],
-    [
-     2.625,
-     0.861783,
-     0.069109,
-     0.069109
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/cc30053f0d8fccef",
-   "a": 0,
-   "d": 0.9,
-   "s": 1,
-   "adv": true,
-   "cap": [
-    [
-     0.0,
-     0.9,
-     "Or just ask.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.225,
-     0.986835,
-     0.013165,
-     0.006583
-    ],
-    [
-     1.125,
-     0.868415,
-     0.131585,
-     0.065793
-    ]
-   ]
-  },
-  {
-   "clip": "rb_drive",
-   "a": 2.0,
-   "d": 0.43333,
-   "s": 1.0,
-   "scope": true,
-   "cam": [
-    [
-     -0.1083,
-     1.05,
-     0.5,
-     0.5
-    ],
-    [
-     0.5417,
-     1.12,
-     0.5,
-     0.5
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     0.433,
-     "Or just ask.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "real"
-  },
-  {
-   "clip": "seg4k/b3bb70ac1f9fbdd9",
-   "a": 0,
-   "d": 0.45,
-   "s": 1,
-   "scope": true,
-   "cap": [],
-   "html": [],
-   "voice": [],
-   "grade": "film",
-   "win": [
-    [
-     -0.1125,
-     0.991886,
-     0.008114,
-     0.004057
-    ],
-    [
-     0.5625,
-     0.952211,
-     0.047789,
-     0.023895
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/c17924d650f36088",
-   "a": 0,
-   "d": 0.43333,
-   "s": 1,
-   "tag": "Simulated",
-   "scope": true,
-   "cap": [],
-   "html": [],
-   "voice": [],
-   "grade": "film",
-   "win": [
-    [
-     -0.1083,
-     0.993848,
-     0.003076,
-     0.003076
-    ],
-    [
-     0.5417,
-     0.938635,
-     0.030683,
-     0.030683
+     1.6667,
+     0.845199,
+     0.0774,
+     0.0774
     ]
    ]
   },
   {
    "clip": "black",
    "a": 0,
-   "d": 0.225,
+   "d": 0.095,
+   "s": 0.3,
+   "cap": [
+    [
+     0.0,
+     0.317,
+     "10 %. Then 94 %.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": []
+  },
+  {
+   "clip": "k_94",
+   "a": 0,
+   "d": 1.45,
+   "s": 1.0,
+   "cam": [
+    [
+     -0.3625,
+     1.0,
+     0.5,
+     0.5
+    ],
+    [
+     1.8125,
+     1.1,
+     0.5,
+     0.5
+    ]
+   ],
+   "cap": [
+    [
+     0.0,
+     1.043,
+     "10 %. Then 94 %.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": []
+  },
+  {
+   "clip": "black",
+   "a": 0,
+   "d": 0.165,
    "s": 0.3,
    "cap": [],
    "html": [],
@@ -2939,19 +2366,19 @@
   {
    "clip": "rb_go",
    "a": 2.2,
-   "d": 1.83333,
+   "d": 1.9,
    "s": 1.0,
    "tag": "Real robot, driven by remote",
    "scope": true,
    "cam": [
     [
-     -0.4583,
+     -0.475,
      1.0,
      0.5,
      0.5
     ],
     [
-     2.2917,
+     2.375,
      1.08,
      0.5,
      0.5
@@ -2960,8 +2387,8 @@
    "cap": [
     [
      0.39,
-     1.833,
-     "Now watch a search.",
+     1.9,
+     "Now watch a whole search.",
      0
     ]
    ],
@@ -2975,15 +2402,15 @@
    "grade": "real"
   },
   {
-   "clip": "seg4k/46d1150aab59393f",
+   "clip": "seg4k/ffeba3271e5d0f22",
    "a": 0,
-   "d": 0.91667,
+   "d": 1.18333,
    "s": 1,
    "adv": true,
    "cap": [
     [
      0.0,
-     0.917,
+     1.183,
      "The robot plans its own way in, stops outside a room,",
      0
     ]
@@ -2994,30 +2421,30 @@
    "clean": true,
    "win": [
     [
-     -0.2292,
-     0.995935,
-     0.002033,
-     0.002033
+     -0.2958,
+     0.99593,
+     0.002035,
+     0.002035
     ],
     [
-     1.1458,
-     0.829945,
-     0.085027,
-     0.085027
+     1.4792,
+     0.829942,
+     0.085029,
+     0.085029
     ]
    ]
   },
   {
-   "clip": "seg4k/df0a55751928808e",
+   "clip": "seg4k/e8186bc053c4e6f7",
    "a": 0,
-   "d": 0.91667,
+   "d": 0.95,
    "s": 1,
    "tag": "Simulated",
    "scope": true,
    "cap": [
     [
      0.0,
-     0.917,
+     0.95,
      "The robot plans its own way in, stops outside a room,",
      0
     ]
@@ -3027,13 +2454,13 @@
    "grade": "film",
    "win": [
     [
-     -0.2292,
+     -0.2375,
      1.0,
      0.0,
      0.0
     ],
     [
-     1.1458,
+     1.1875,
      0.892857,
      0.053571,
      0.053571
@@ -3043,19 +2470,19 @@
   {
    "clip": "rb_turn",
    "a": 1.2,
-   "d": 1.6,
+   "d": 1.66666,
    "s": 1,
    "tag": "Real robot, driven by remote",
    "scope": true,
    "cam": [
     [
-     -0.4,
+     -0.4167,
      1.0,
      0.5,
      0.5
     ],
     [
-     2.0,
+     2.0833,
      1.06,
      0.5,
      0.5
@@ -3064,7 +2491,7 @@
    "cap": [
     [
      0.0,
-     1.6,
+     1.667,
      "The robot plans its own way in, stops outside a room,",
      0
     ]
@@ -3074,15 +2501,15 @@
    "grade": "real"
   },
   {
-   "clip": "seg4k/5706f7ccd8119aca",
+   "clip": "seg4k/825540aa7e1b873b",
    "a": 0,
-   "d": 1.15,
+   "d": 1.18333,
    "s": 1,
    "adv": true,
    "cap": [
     [
      0.0,
-     1.15,
+     1.183,
      "goes quiet, and listens.",
      0
     ]
@@ -3093,29 +2520,29 @@
    "clean": true,
    "win": [
     [
-     -0.2875,
-     0.994212,
-     0.002894,
-     0.002894
+     -0.2958,
+     0.99421,
+     0.002895,
+     0.002895
     ],
     [
-     1.4375,
-     0.843573,
-     0.078213,
-     0.078213
+     1.4792,
+     0.843572,
+     0.078214,
+     0.078214
     ]
    ]
   },
   {
-   "clip": "seg4k/5bc53404a2b9c206",
+   "clip": "seg4k/84441c552e7d3067",
    "a": 0,
-   "d": 0.91667,
+   "d": 0.7,
    "s": 1,
    "adv": true,
    "cap": [
     [
      0.0,
-     0.917,
+     0.7,
      "goes quiet, and listens.",
      0
     ]
@@ -3126,34 +2553,34 @@
    "clean": true,
    "win": [
     [
-     -0.2292,
-     0.979651,
-     0.020349,
+     -0.175,
+     0.979649,
+     0.020351,
      0.010175
     ],
     [
-     1.1458,
-     0.890592,
-     0.109408,
-     0.054704
+     0.875,
+     0.89059,
+     0.10941,
+     0.054705
     ]
    ]
   },
   {
    "clip": "rb_cams",
    "a": 1.0,
-   "d": 0.31,
+   "d": 0.24,
    "s": 0.6,
    "scope": true,
    "cam": [
     [
-     -0.1292,
+     -0.1,
      1.5,
      0.47,
      0.52
     ],
     [
-     0.6458,
+     0.5,
      1.7,
      0.47,
      0.52
@@ -3162,7 +2589,7 @@
    "cap": [
     [
      0.0,
-     0.517,
+     0.4,
      "goes quiet, and listens.",
      0
     ]
@@ -3172,15 +2599,15 @@
    "grade": "real"
   },
   {
-   "clip": "seg4k/571e4bb25e0b4409",
+   "clip": "seg4k/b0e3bb0115296b1e",
    "a": 0,
-   "d": 0.45,
+   "d": 0.35,
    "s": 1,
    "adv": true,
    "cap": [
     [
      0.0,
-     0.45,
+     0.35,
      "goes quiet, and listens.",
      0
     ]
@@ -3191,13 +2618,13 @@
    "clean": true,
    "win": [
     [
-     -0.1125,
+     -0.0875,
      0.985569,
      0.007215,
      0.007215
     ],
     [
-     0.5625,
+     0.4375,
      0.903438,
      0.048281,
      0.048281
@@ -3205,15 +2632,15 @@
    ]
   },
   {
-   "clip": "seg4k/32c76da0163600b2",
+   "clip": "seg4k/8d28ce4be30a1a85",
    "a": 0,
-   "d": 0.41667,
+   "d": 0.31667,
    "s": 1,
    "adv": true,
    "cap": [
     [
      0.0,
-     0.417,
+     0.317,
      "goes quiet, and listens.",
      0
     ]
@@ -3224,30 +2651,30 @@
    "clean": true,
    "win": [
     [
-     -0.1042,
-     0.977097,
-     0.022903,
+     -0.0792,
+     0.977098,
+     0.022902,
      0.011451
     ],
     [
-     0.5208,
-     0.895672,
-     0.104328,
-     0.052164
+     0.3958,
+     0.895673,
+     0.104327,
+     0.052163
     ]
    ]
   },
   {
-   "clip": "seg4k/8fd80f6814f8a232",
+   "clip": "seg4k/527b466b08b2da25",
    "a": 0,
-   "d": 2.03333,
+   "d": 1.95,
    "s": 1,
    "adv": true,
    "cap": [
     [
      0.0,
-     2.033,
-     "A hot pipe: ruled out.",
+     1.95,
+     "A hot pipe, ruled out.",
      0
     ]
    ],
@@ -3257,13 +2684,13 @@
    "clean": true,
    "win": [
     [
-     -0.5083,
-     0.991031,
-     0.004485,
-     0.004485
+     -0.4875,
+     0.991032,
+     0.004484,
+     0.004484
     ],
     [
-     2.5417,
+     2.4375,
      0.863976,
      0.068012,
      0.068012
@@ -3280,7 +2707,7 @@
     [
      0.0,
      0.483,
-     "Then, a person: found.",
+     "Then, a person. Found.",
      0
     ]
    ],
@@ -3304,16 +2731,16 @@
    ]
   },
   {
-   "clip": "seg4k/915342649e028ed2",
+   "clip": "seg4k/ba75616536e9e4ab",
    "a": 0,
-   "d": 0.61667,
+   "d": 0.85,
    "s": 1,
    "adv": true,
    "cap": [
     [
      0.0,
-     0.617,
-     "Then, a person: found.",
+     0.85,
+     "Then, a person. Found.",
      0
     ]
    ],
@@ -3323,29 +2750,29 @@
    "clean": true,
    "win": [
     [
-     -0.1542,
-     0.985152,
-     0.007424,
-     0.007424
+     -0.2125,
+     0.985149,
+     0.007426,
+     0.007426
     ],
     [
-     0.7708,
-     0.826256,
-     0.086872,
-     0.086872
+     1.0625,
+     0.826254,
+     0.086873,
+     0.086873
     ]
    ]
   },
   {
    "clip": "black",
    "a": 0,
-   "d": 0.325,
+   "d": 0.12,
    "s": 0.3,
    "cap": [
     [
      0.0,
-     1.083,
-     "Then, a person: found.",
+     0.4,
+     "Then, a person. Found.",
      0
     ]
    ],
@@ -3353,16 +2780,16 @@
    "voice": []
   },
   {
-   "clip": "seg4k/015e715430c638f1",
+   "clip": "seg4k/67519127c60202fc",
    "a": 0,
-   "d": 1.55,
+   "d": 1.2,
    "s": 1,
    "adv": true,
    "cap": [
     [
      0.0,
-     0.307,
-     "Then, a person: found.",
+     0.347,
+     "Then, a person. Found.",
      0
     ]
    ],
@@ -3372,13 +2799,13 @@
    "clean": true,
    "win": [
     [
-     -0.3875,
+     -0.3,
      0.840802,
      0.079599,
      0.079599
     ],
     [
-     1.9375,
+     1.5,
      0.987029,
      0.006486,
      0.006486
@@ -3386,16 +2813,16 @@
    ]
   },
   {
-   "clip": "seg4k/e61bb96a592825c6",
+   "clip": "seg4k/2eeeb046bdcd486e",
    "a": 0,
-   "d": 1.46667,
+   "d": 1.41667,
    "s": 1,
    "adv": true,
    "cap": [
     [
      0.0,
-     1.467,
-     "It draws the safe way in.",
+     1.417,
+     "It draws a safe way in, and a person makes the call.",
      0
     ]
    ],
@@ -3410,13 +2837,13 @@
    "clean": true,
    "win": [
     [
-     -0.3667,
+     -0.3542,
      0.993954,
      0.003023,
      0.003023
     ],
     [
-     1.8333,
+     1.7708,
      0.828295,
      0.085853,
      0.085853
@@ -3424,16 +2851,16 @@
    ]
   },
   {
-   "clip": "seg4k/78ae45b966c63f60",
+   "clip": "seg4k/1848eb11f282f6f1",
    "a": 0,
-   "d": 1.46667,
+   "d": 1.45,
    "s": 1,
    "adv": true,
    "cap": [
     [
      0.0,
-     1.467,
-     "And a person makes the call.",
+     1.45,
+     "It draws a safe way in, and a person makes the call.",
      0
     ]
    ],
@@ -3443,30 +2870,30 @@
    "clean": true,
    "win": [
     [
-     -0.3667,
-     0.994356,
-     0.005644,
-     0.005644
+     -0.3625,
+     0.994355,
+     0.005645,
+     0.005645
     ],
     [
-     1.8333,
-     0.90396,
-     0.09604,
-     0.070729
+     1.8125,
+     0.903959,
+     0.096041,
+     0.07073
     ]
    ]
   },
   {
-   "clip": "seg4k/840ca98d06b0748f",
+   "clip": "seg4k/28fc915459ec5e25",
    "a": 0,
-   "d": 1.4,
+   "d": 1.01667,
    "s": 1,
    "adv": true,
    "cap": [
     [
      0.0,
-     0.437,
-     "And a person makes the call.",
+     0.423,
+     "It draws a safe way in, and a person makes the call.",
      0
     ]
    ],
@@ -3476,15 +2903,15 @@
    "clean": true,
    "win": [
     [
-     -0.35,
-     0.856347,
-     0.143653,
+     -0.2542,
+     0.856345,
+     0.143655,
      0.0
     ],
     [
-     1.75,
-     0.999071,
-     0.000929,
+     1.2708,
+     0.99907,
+     0.00093,
      0.0
     ]
    ]
@@ -3492,13 +2919,23 @@
   {
    "clip": "black",
    "a": 0,
-   "d": 0.52,
+   "d": 0.09,
    "s": 0.3,
+   "cap": [],
+   "html": [],
+   "voice": []
+  },
+  {
+   "clip": "seg4k/c03a55c7043bc7ef",
+   "a": 0,
+   "d": 1.28333,
+   "s": 1,
+   "adv": true,
    "cap": [
     [
-     0.357,
-     1.733,
-     "Does it work?",
+     0.0,
+     1.283,
+     "We ran it through two hundred simulated missions,",
      0
     ]
    ],
@@ -3506,21 +2943,43 @@
    "voice": [
     [
      "../v4/p_p1",
-     0.4167
+     0.1167
+    ]
+   ],
+   "grade": "ui",
+   "clean": true,
+   "win": [
+    [
+     -0.3208,
+     0.981485,
+     0.010163,
+     0.009258
+    ],
+    [
+     1.6042,
+     0.927949,
+     0.011412,
+     0.036025
     ]
    ]
   },
   {
-   "clip": "seg4k/1bd02b7da57af3fc",
+   "clip": "seg4k/42994337bf663abb",
    "a": 0,
-   "d": 3.81667,
+   "d": 3.55,
    "s": 1,
    "adv": true,
    "cap": [
     [
      0.0,
-     3.817,
-     "200 simulated missions, 600 hidden people.",
+     1.523,
+     "We ran it through two hundred simulated missions,",
+     0
+    ],
+    [
+     1.553,
+     3.55,
+     "with 600 hidden people.",
      0
     ]
    ],
@@ -3530,33 +2989,33 @@
    "clean": true,
    "win": [
     [
-     -0.9542,
-     0.950066,
-     -0.010612,
-     -0.004673
+     -0.8875,
+     0.980396,
+     0.009802,
+     0.009802
     ],
     [
-     4.7708,
-     0.524068,
-     0.471422,
-     0.31003
+     4.4375,
+     0.825597,
+     0.087202,
+     0.087202
     ]
    ]
   },
   {
    "clip": "k_600",
    "a": 0,
-   "d": 2.88333,
+   "d": 2.91667,
    "s": 1.0,
    "cam": [
     [
-     -0.7208,
+     -0.7292,
      1.0,
      0.5,
      0.5
     ],
     [
-     3.6042,
+     3.6458,
      1.1,
      0.5,
      0.5
@@ -3565,7 +3024,7 @@
    "cap": [
     [
      0.0,
-     2.883,
+     2.917,
      "Every one was found, or flagged for a check.",
      0
     ]
@@ -3574,16 +3033,16 @@
    "voice": []
   },
   {
-   "clip": "seg4k/2d8ff28fb76969f2",
+   "clip": "seg4k/6ed19daf670a64df",
    "a": 0,
-   "d": 2.36667,
+   "d": 2.43333,
    "s": 1,
    "adv": true,
    "cap": [
     [
      0.0,
-     2.367,
-     "No decoy was ever called a person.",
+     2.433,
+     "And no decoy was ever called a person.",
      0
     ]
    ],
@@ -3593,35 +3052,35 @@
    "clean": true,
    "win": [
     [
-     -0.5917,
-     1.000667,
-     -0.000333,
+     -0.6083,
+     1.000664,
+     -0.000332,
      0.0
     ],
     [
-     2.9583,
-     0.733822,
-     0.133089,
+     3.0417,
+     0.73382,
+     0.13309,
      0.095397
     ]
    ]
   },
   {
-   "clip": "seg4k/96f21291f570b0b0",
+   "clip": "seg4k/13ef497545b020ad",
    "a": 0,
-   "d": 4.38333,
+   "d": 4.2,
    "s": 1,
    "cap": [
     [
      0.0,
-     1.87,
-     "Then we broke it on purpose.",
+     1.81,
+     "Then we tried to break it.",
      0
     ],
     [
-     1.9,
-     4.383,
-     "Cut the radio: it stops.",
+     1.84,
+     4.2,
+     "Cut the radio, and it stops.",
      0
     ]
    ],
@@ -3636,13 +3095,13 @@
    "bars": 80,
    "win": [
     [
-     -1.0958,
+     -1.05,
      1.0,
      0.0,
      0.0
     ],
     [
-     5.4792,
+     5.25,
      0.970874,
      0.0,
      0.029126
@@ -3650,15 +3109,15 @@
    ]
   },
   {
-   "clip": "seg4k/cd647fd596064709",
+   "clip": "seg4k/af56bbfe0cbff9d5",
    "a": 0,
-   "d": 2.78334,
+   "d": 2.65,
    "s": 1,
    "cap": [
     [
      0.0,
-     2.783,
-     "Blind the Wi-Fi: it refuses to guess.",
+     2.27,
+     "Blind the Wi-Fi, and it won't guess.",
      0
     ]
    ],
@@ -3668,115 +3127,13 @@
    "bars": 80,
    "win": [
     [
-     -0.6958,
+     -0.6625,
      1.0,
      0.0,
      0.0
     ],
     [
-     3.4792,
-     0.970874,
-     0.0,
-     0.029126
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/702a007f3b739bed",
-   "a": 0,
-   "d": 3.31667,
-   "s": 1,
-   "fi": 0.4,
-   "cap": [
-    [
-     0.34,
-     3.317,
-     "And further out: radar that never transmits.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [
-    [
-     "../v4/guide_h1",
-     0.4
-    ]
-   ],
-   "grade": "film",
-   "bars": 80,
-   "win": [
-    [
-     -0.8292,
-     1.0,
-     0.0,
-     0.0
-    ],
-    [
-     4.1458,
-     0.970874,
-     0.0,
-     0.029126
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/6be26d71202c3475",
-   "a": 0,
-   "d": 2.1,
-   "s": 1,
-   "cap": [
-    [
-     0.0,
-     2.1,
-     "Sensors that fall like seeds.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "film",
-   "bars": 80,
-   "win": [
-    [
-     -0.525,
-     1.0,
-     0.0,
-     0.0
-    ],
-    [
-     2.625,
-     0.970874,
-     0.0,
-     0.029126
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/d0159eaf006bfc68",
-   "a": 0,
-   "d": 2.06667,
-   "s": 1,
-   "cap": [
-    [
-     0.0,
-     2.067,
-     "Light that sees around corners.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "film",
-   "bars": 80,
-   "win": [
-    [
-     -0.5167,
-     1.0,
-     0.0,
-     0.0
-    ],
-    [
-     2.5833,
+     3.3125,
      0.970874,
      0.0,
      0.029126
@@ -3786,133 +3143,13 @@
   {
    "clip": "black",
    "a": 0,
-   "d": 0.145,
+   "d": 0.31,
    "s": 0.3,
-   "cap": [],
-   "html": [],
-   "voice": []
-  },
-  {
-   "clip": "rb_drive",
-   "a": 4.2,
-   "d": 1.1,
-   "s": 1,
-   "scope": true,
-   "cam": [
-    [
-     -0.275,
-     1.0,
-     0.5,
-     0.5
-    ],
-    [
-     1.375,
-     1.06,
-     0.5,
-     0.5
-    ]
-   ],
    "cap": [
     [
-     0.0,
-     1.1,
-     "One robot. One neural network. One question.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [
-    [
-     "../v4/p_e1",
-     0.0667
-    ]
-   ],
-   "grade": "real"
-  },
-  {
-   "clip": "seg4k/9d69569c8db406e7",
-   "a": 0,
-   "d": 1.5,
-   "s": 1,
-   "scope": true,
-   "cap": [
-    [
-     0.0,
-     1.5,
-     "One robot. One neural network. One question.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": [],
-   "grade": "film",
-   "win": [
-    [
-     -0.375,
-     0.991886,
-     0.008114,
-     0.004057
-    ],
-    [
-     1.875,
-     0.952211,
-     0.047789,
-     0.023895
-    ]
-   ]
-  },
-  {
-   "clip": "buried_c",
-   "a": 0,
-   "d": 1.75,
-   "s": 1.0,
-   "grade": "film",
-   "tag": "Simulated",
-   "scope": true,
-   "cap": [
-    [
-     0.0,
-     1.213,
-     "One robot. One neural network. One question.",
-     0
-    ]
-   ],
-   "html": [],
-   "voice": []
-  },
-  {
-   "clip": "black",
-   "a": 0,
-   "d": 0.125,
-   "s": 0.3,
-   "cap": [],
-   "html": [],
-   "voice": []
-  },
-  {
-   "clip": "k_q2",
-   "a": 0,
-   "d": 2.1,
-   "s": 1.0,
-   "cam": [
-    [
-     -0.525,
-     1.0,
-     0.5,
-     0.5
-    ],
-    [
-     2.625,
-     1.1,
-     0.5,
-     0.5
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     1.163,
-     "Is anyone in there?",
+     0.49,
+     1.033,
+     "So, is anyone in there?",
      0
     ]
    ],
@@ -3920,58 +3157,385 @@
    "voice": [
     [
      "../v4/guide_e2",
-     0.0833
+     0.55
+    ]
+   ]
+  },
+  {
+   "clip": "k_q2",
+   "a": 0,
+   "d": 1.46667,
+   "s": 1.0,
+   "cam": [
+    [
+     -0.3667,
+     1.0,
+     0.5,
+     0.5
+    ],
+    [
+     1.8333,
+     1.1,
+     0.5,
+     0.5
+    ]
+   ],
+   "cap": [
+    [
+     0.0,
+     1.467,
+     "So, is anyone in there?",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": []
+  },
+  {
+   "clip": "seg4k/107d98a744bdfa7f",
+   "a": 0,
+   "d": 12.6,
+   "s": 1,
+   "tag": "Real footage. Signal simulated from this walk.",
+   "scope": true,
+   "cap": [
+    [
+     0.423,
+     3.253,
+     "Here's a real wall, with HOUND on one side.",
+     0
+    ],
+    [
+     3.283,
+     6.753,
+     "The signal, simulated from this video, is flat.",
+     0
+    ],
+    [
+     6.783,
+     9.473,
+     "Then I walk in. Every step changes it.",
+     0
+    ],
+    [
+     9.503,
+     12.203,
+     "And the network answers: someone is moving.",
+     0
+    ]
+   ],
+   "html": [
+    [
+     1.683,
+     3.243,
+     "<div style=\"position:absolute;left:30px;top:866px;font:400 44px/1 HSerif;color:#fff;letter-spacing:-.01em;white-space:nowrap;text-shadow:0 1px 14px rgba(0,0,0,.85),0 0 4px rgba(0,0,0,.7)\">HOUND</div>",
+     0.2
+    ],
+    [
+     0.883,
+     3.243,
+     "<div style=\"position:absolute;left:390px;top:420px;font:400 44px/1 HSerif;color:#fff;letter-spacing:-.01em;white-space:nowrap;text-shadow:0 1px 14px rgba(0,0,0,.85),0 0 4px rgba(0,0,0,.7)\">Wall</div>",
+     0.2
+    ]
+   ],
+   "voice": [
+    [
+     "../v4/guide_r1",
+     0.4833
+    ]
+   ],
+   "win": [
+    [
+     0,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     12.6,
+     1.0,
+     0.0,
+     0.0
     ]
    ]
   },
   {
    "clip": "black",
    "a": 0,
-   "d": 0.06,
+   "d": 0.075,
    "s": 0.3,
    "cap": [],
    "html": [],
    "voice": []
   },
   {
-   "clip": "seg4k/27613792e4f6dd46",
+   "clip": "seg4k/1b8892a0bea1ebc9",
    "a": 0,
-   "d": 4.08334,
+   "d": 3.48333,
    "s": 1,
-   "fi": 0.5,
+   "fi": 0.3,
+   "tag": "Simulated",
+   "scope": true,
    "cap": [
     [
-     0.49,
-     1.66,
-     "We're students.",
+     0.0,
+     3.483,
+     "It's for the people who go in first: firefighters,",
      0
+    ]
+   ],
+   "html": [
+    [
+     2.31,
+     3.47,
+     "<div style=\"position:absolute;left:0;right:0;bottom:138px;height:430px;background:linear-gradient(0deg,rgba(0,0,0,.94) 8%,rgba(0,0,0,.55) 48%,rgba(0,0,0,0))\"></div>",
+     0.12
     ],
     [
-     1.69,
-     4.083,
-     "You can run it right now, in your browser.",
-     0
+     2.31,
+     3.47,
+     "<div style=\"position:absolute;left:112px;bottom:175px;font:400 104px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">Firefighters</div>",
+     0.12
     ]
    ],
-   "html": [],
    "voice": [
     [
-     "../v4/guide_e3",
-     0.55
+     "../v4/guide_u1",
+     0.25
     ]
    ],
-   "grade": "ui",
-   "bars": 80,
-   "fade": "black",
+   "grade": "film",
    "win": [
     [
-     -1.0208,
+     -0.8708,
      1.0,
      0.0,
      0.0
     ],
     [
-     5.1042,
+     4.3542,
+     0.943396,
+     0.028302,
+     0.028302
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/917432c949f85022",
+   "a": 0,
+   "d": 1.2,
+   "s": 1,
+   "tag": "Simulated",
+   "scope": true,
+   "cap": [
+    [
+     0.0,
+     1.2,
+     "search and rescue, disaster crews.",
+     0
+    ]
+   ],
+   "html": [
+    [
+     0.047,
+     1.187,
+     "<div style=\"position:absolute;left:0;right:0;bottom:138px;height:430px;background:linear-gradient(0deg,rgba(0,0,0,.94) 8%,rgba(0,0,0,.55) 48%,rgba(0,0,0,0))\"></div>",
+     0.12
+    ],
+    [
+     0.047,
+     1.187,
+     "<div style=\"position:absolute;left:112px;bottom:175px;font:400 104px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">Search and rescue</div>",
+     0.12
+    ]
+   ],
+   "voice": [],
+   "grade": "film",
+   "win": [
+    [
+     -0.3,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.5,
+     0.943396,
+     0.028302,
+     0.028302
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/2091ff8fec35d930",
+   "a": 0,
+   "d": 1.46667,
+   "s": 1,
+   "tag": "Simulated",
+   "scope": true,
+   "cap": [
+    [
+     0.0,
+     1.467,
+     "search and rescue, disaster crews.",
+     0
+    ]
+   ],
+   "html": [
+    [
+     0.047,
+     1.447,
+     "<div style=\"position:absolute;left:0;right:0;bottom:138px;height:430px;background:linear-gradient(0deg,rgba(0,0,0,.94) 8%,rgba(0,0,0,.55) 48%,rgba(0,0,0,0))\"></div>",
+     0.12
+    ],
+    [
+     0.047,
+     1.447,
+     "<div style=\"position:absolute;left:112px;bottom:175px;font:400 104px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">Disaster crews</div>",
+     0.12
+    ]
+   ],
+   "voice": [],
+   "grade": "film",
+   "win": [
+    [
+     -0.3667,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     1.8333,
+     0.943396,
+     0.028302,
+     0.028302
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/152f8a1d65d54e9a",
+   "a": 0,
+   "d": 1.63334,
+   "s": 1,
+   "tag": "Simulated",
+   "scope": true,
+   "cap": [
+    [
+     0.0,
+     1.633,
+     "So they don't have to go in blind.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "film",
+   "win": [
+    [
+     -0.4083,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     2.0417,
+     0.909091,
+     0.045455,
+     0.045455
+    ]
+   ]
+  },
+  {
+   "clip": "black",
+   "a": 0,
+   "d": 0.415,
+   "s": 0.3,
+   "cap": [],
+   "html": [],
+   "voice": []
+  },
+  {
+   "clip": "x_five2",
+   "a": 0,
+   "d": 5.21667,
+   "s": 1.0,
+   "bars": 80,
+   "tag": "Simulated, except the robot",
+   "cap": [
+    [
+     0.39,
+     5.217,
+     "That's the whole thing: fly, drive, listen, think, decide.",
+     0
+    ]
+   ],
+   "html": [
+    [
+     1.55,
+     4.92,
+     "<div style=\"position:absolute;left:60px;top:816px;width:344px\"><span style=\"font:400 64px/1 HSerif;letter-spacing:-.016em;color:#fff\">Fly</span></div>",
+     0.12
+    ],
+    [
+     2.27,
+     4.987,
+     "<div style=\"position:absolute;left:424px;top:816px;width:344px\"><span style=\"font:400 64px/1 HSerif;letter-spacing:-.016em;color:#fff\">Drive</span></div>",
+     0.12
+    ],
+    [
+     2.95,
+     5.054,
+     "<div style=\"position:absolute;left:788px;top:816px;width:344px\"><span style=\"font:400 64px/1 HSerif;letter-spacing:-.016em;color:#fff\">Listen</span></div>",
+     0.12
+    ],
+    [
+     3.69,
+     5.121,
+     "<div style=\"position:absolute;left:1152px;top:816px;width:344px\"><span style=\"font:400 64px/1 HSerif;letter-spacing:-.016em;color:#fff\">Think</span></div>",
+     0.12
+    ],
+    [
+     4.33,
+     5.188,
+     "<div style=\"position:absolute;left:1516px;top:816px;width:344px\"><span style=\"font:400 64px/1 HSerif;letter-spacing:-.016em;color:#fff\">Decide</span></div>",
+     0.12
+    ]
+   ],
+   "voice": [
+    [
+     "../v4/guide_e3",
+     0.45
+    ]
+   ]
+  },
+  {
+   "clip": "seg4k/9629abb5bd37f5b1",
+   "a": 0,
+   "d": 2.73334,
+   "s": 1,
+   "fi": 0.3,
+   "fade": "black",
+   "cap": [
+    [
+     0.0,
+     2.733,
+     "And you can try it right now, in your browser.",
+     0
+    ]
+   ],
+   "html": [],
+   "voice": [],
+   "grade": "ui",
+   "bars": 80,
+   "win": [
+    [
+     -0.6833,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     3.4167,
      0.943396,
      0.0,
      0.056604
@@ -3981,12 +3545,12 @@
   {
    "clip": "black",
    "a": 0,
-   "d": 0.24,
+   "d": 0.245,
    "s": 0.3,
    "cap": [
     [
      0.0,
-     0.8,
+     0.817,
      "This is HOUND.",
      0
     ]
@@ -3997,12 +3561,12 @@
   {
    "clip": "dive_end",
    "a": 0,
-   "d": 3.25,
-   "s": 1.0,
+   "d": 3.22,
+   "s": 0.99588,
    "cap": [
     [
      0.0,
-     0.307,
+     0.303,
      "This is HOUND.",
      0
     ]
@@ -4023,11 +3587,12 @@
     [
      1.4,
      3.25,
-     "<div style=\"position:absolute;left:0;right:0;top:812px;text-align:center;font:400 24px/1.45 HSans;color:#8d97a2\">Rover and neural network: built by us. Every search shown: simulated. Console built 21 to 28 November 2026.</div>",
+     "<div style=\"position:absolute;left:0;right:0;top:812px;text-align:center;font:400 24px/1.45 HSans;color:#8d97a2\">The rover and the neural network are real. Every search shown is simulated. Console built 21 to 28 November 2026.</div>",
      0.35
     ]
    ],
-   "voice": []
+   "voice": [],
+   "bars": 80
   },
   {
    "clip": "black",

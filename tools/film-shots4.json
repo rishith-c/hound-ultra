@@ -791,5 +791,160 @@
   ],
   "hide": ".hero-live,.live-card,#hero-live,[data-hero-live]{visibility:hidden!important} html{scroll-behavior:auto!important}",
   "before": "(()=>{const t0=performance.now();(function f(){scrollTo(0,20*(performance.now()-t0)/1000);requestAnimationFrame(f)})();return 1})()"
+ },
+ {
+  "name": "x_drone",
+  "url": "/tools/film/studio3d.html?m=drone&v=2",
+  "settle": 6,
+  "seconds": 3,
+  "size": [
+   1920,
+   1080,
+   2
+  ],
+  "before": "(PARTS.start(),1)",
+  "rev": 4
+ },
+ {
+  "name": "x_wall",
+  "url": "/tools/film/walllive.html?enter=6.76&n=760",
+  "settle": 8,
+  "seconds": 14,
+  "size": [
+   1920,
+   1080,
+   2
+  ],
+  "before": "WALL.start()"
+ },
+ {
+  "name": "x_net",
+  "url": "/tools/film/net3d.html",
+  "rev": 4,
+  "settle": 8,
+  "seconds": 14,
+  "size": [
+   1920,
+   1080,
+   2
+  ],
+  "before": "JSON.stringify(NET3D.start())"
+ },
+ {
+  "name": "x_team",
+  "url": "/app/twin/test.html?bare&nocaption&mode=demo&t=499&cam=cinematic&speed=1&off=labels,hazards,coverage",
+  "settle": 8,
+  "seconds": 8,
+  "size": [
+   1920,
+   1080,
+   2
+  ]
+ },
+ {
+  "name": "x_team2",
+  "url": "/app/twin/test.html?bare&nocaption&mode=demo&t=529&cam=cinematic&speed=1&off=labels,hazards,coverage",
+  "settle": 8,
+  "seconds": 8,
+  "size": [
+   1920,
+   1080,
+   2
+  ]
+ },
+ {
+  "name": "x_team3",
+  "url": "/app/twin/test.html?bare&nocaption&mode=demo&t=561&cam=cinematic&speed=1&off=labels,hazards,coverage",
+  "settle": 8,
+  "seconds": 8,
+  "size": [
+   1920,
+   1080,
+   2
+  ]
+ },
+ {
+  "url": "/app/?mode=demo&intro=0&paused#/aerial",
+  "size": [
+   1440,
+   810,
+   2.6667
+  ],
+  "hide": "#dock,.ah-copy,.ah-right{opacity:0!important} header,.topbar,#top{opacity:0!important}",
+  "name": "v_pov",
+  "settle": 8,
+  "seconds": 36,
+  "before": "(HOUND_AERIAL.endFly(0),1)",
+  "after": 9,
+  "do": [
+   [
+    0,
+    "HOUND_AERIAL.hero.go(0)"
+   ]
+  ]
+ },
+ {
+  "url": "/app/?mode=demo&intro=0&paused#/aerial",
+  "size": [
+   1440,
+   810,
+   2.6667
+  ],
+  "hide": "#dock,.ah-copy,.ah-right{opacity:0!important} header,.topbar,#top{opacity:0!important}",
+  "name": "v_place",
+  "settle": 8,
+  "seconds": 20,
+  "before": "(HOUND.sim.seek&&HOUND.sim.seek(120),HOUND_AERIAL.endFly(1),1)",
+  "after": 9,
+  "do": [
+   [
+    0,
+    "HOUND_AERIAL.hero.go(1)"
+   ]
+  ]
+ },
+ {
+  "url": "/app/?mode=demo&intro=0&paused#/aerial",
+  "size": [
+   1440,
+   810,
+   2.6667
+  ],
+  "hide": "#dock,.ah-copy,.ah-right{opacity:0!important} header,.topbar,#top{opacity:0!important}",
+  "name": "v_moved",
+  "settle": 8,
+  "seconds": 20,
+  "before": "(HOUND_AERIAL.endFly(2),1)",
+  "after": 9,
+  "do": [
+   [
+    0,
+    "HOUND_AERIAL.hero.go(2)"
+   ]
+  ]
+ },
+ {
+  "name": "x_fly",
+  "url": "/tools/film/flight3d.html?s=over",
+  "settle": 6,
+  "seconds": 7.2,
+  "size": [
+   1920,
+   1080,
+   2
+  ],
+  "before": "(PARTS.start(),1)"
+ },
+ {
+  "name": "x_chase",
+  "url": "/tools/film/flight3d.html?s=chase",
+  "settle": 6,
+  "seconds": 8,
+  "size": [
+   1920,
+   1080,
+   2
+  ],
+  "before": "(PARTS.start(),1)"
  }
 ]

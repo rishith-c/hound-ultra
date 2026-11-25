@@ -71,6 +71,11 @@ still). Of those 30, the network is right on 20; it misses most still people, as
   network's likelihood is measured, from its test set).
 - The drone, a second rover, relay beacons, gas sensing, the phone finder: **concepts**. Only one rover exists.
 - "Rescue team" movement and confirmations: simulated.
+- The film's drone, its parts drawing and the Wi-Fi link from drone to HOUND: the design, simulated. No drone has been built.
+- The drone's own-view shot: the pictures are AI-made test scenes (the site's set, no real people). The boxes and scores are the real output of a small pretrained detector
+  (D-FINE nano, trained on everyday photos) run on those pictures in the browser. Tagged "AI-made test scene, real detector". The pin and the before-and-after are the site's own demonstrations.
+- The film's wall demonstration: the room, the wall, the robot in the doorway and the walk are real footage. The signal beside it is simulated from that
+  walk, and the trained network reads the simulated signal. Nothing was measured through that wall in the footage.
 
 ## Wording rules
 
