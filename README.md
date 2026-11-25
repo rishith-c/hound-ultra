@@ -136,7 +136,7 @@ Plain ES modules, no framework, no bundler.
 
 ## Credits
 
-Aerial test photographs: dronepicr, CC BY 2.0, via Wikimedia Commons (credited where shown). Terrain: Mapzen terrain tiles on AWS. Imagery: © Esri, Maxar. Map data: © OpenStreetMap contributors (ODbL). three.js (MIT), d3 (ISC),
+Aerial test photographs: dronepicr, CC BY 2.0, via Wikimedia Commons (credited where shown). Materials and furniture in the film's first shot: Poly Haven, CC0. Terrain: Mapzen terrain tiles on AWS. Imagery: © Esri, Maxar. Map data: © OpenStreetMap contributors (ODbL). three.js (MIT), d3 (ISC),
 Rapier (Apache 2.0), Transformers.js (Apache 2.0) and the models it loads under their own licences. Type: Instrument Serif,
 Instrument Sans and Geist Mono (SIL OFL). The NEMA 17, Raspberry Pi and Arduino names belong to their owners.
 

@@ -117,9 +117,9 @@ def cut(job):
     if seg.get("scope"):
         tail += [f"drawbox=x=0:y={y * K}:w={1920 * K}:h={138 * K}:color=black:t=fill" for y in (0, 942)]
     if seg.get("fi"):
-        tail.append(f"fade=t=in:st=0:d={seg['fi']}:color=0x06080a")
+        tail.append(f"fade=t=in:st=0:d={seg['fi']}:color={seg.get('fade', '0x06080a')}")
     if seg.get("fo"):
-        tail.append(f"fade=t=out:st={dur - seg['fo']:.3f}:d={seg['fo']}:color=0x06080a")
+        tail.append(f"fade=t=out:st={dur - seg['fo']:.3f}:d={seg['fo']}:color={seg.get('fade', '0x06080a')}")
     if tail:
         g += f";[{last}]{','.join(tail)}[v]"
         last = "v"

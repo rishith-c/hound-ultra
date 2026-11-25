@@ -33,6 +33,10 @@ the dark, with the robot heard before it is seen.
 The order of the film follows from this: problem, robot, console, network, odds, drone, every tool, and only then the search, which is
 the climax, then the proof, then the question again, over the picture the film began with.
 
+The first shot (`tools/buried/`) is a point of view, not a view: the film begins where the person it looks for is. The room is never seen
+from outside, the table is always the top of the frame, and the light goes out on the third beat. The same room comes back twice, each time
+with more light: daylight, then a searchlight. The search is the light getting in.
+
 The opening dive (`tools/dive/`) is drawn, not found: NASA's true-colour Earth of 26 August 2026 with that day's clouds, the sun where it
 stood at 04:00 UTC, real terrain, satellite imagery of the village (Esri, Maxar) and 502 houses fitted to its roofs. The flood water is
 drawn, and the film says so. The film ends the way it began: the Earth goes back into the O.

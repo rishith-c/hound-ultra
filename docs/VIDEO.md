@@ -13,7 +13,10 @@ the robot, the network and the drone shown inside it.
 - The cuts were placed on the words of a guide voice, then moved to the nearest note of the score (they share one clock).
 - The 4K picture is filmed from the live pages again, one frame at a time, at the size each camera move needs, so a close-up is drawn and not
   enlarged. `film_cut.py --picture --k 2` joins it without sound. Real robot footage comes from 4K 60 originals; the build timelapse is 1080p.
-- The opening is one unbroken shot of 11.6 seconds, drawn by `tools/dive/render.py`: through the O of HOUND to the Earth of 26 August 2026,
+- The film starts inside: a room seen from under a table as the ceiling comes down (`tools/buried/`, path traced in Blender, 717 pieces that
+  really fall, materials from Poly Haven, CC0). It comes back after the first black, by the daylight that gets in, and on "One question",
+  by a searchlight. Every use is tagged Simulated.
+- The title is one unbroken shot of 11.6 seconds, drawn by `tools/dive/render.py`: through the O of HOUND to the Earth of 26 August 2026,
   through the clouds to the village, and the shadow of a cloud over it on the question. The last card is the same camera flying back out.
 - Why it is cut this way, with the papers: `docs/EDITING.md`.
 - The score is written to the picture. Every note is a real recording: string ensemble,
