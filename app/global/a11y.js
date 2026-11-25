@@ -75,7 +75,7 @@ async function startOffline() {
     tell({ state: 'online' }); await new Promise((r) => setTimeout(r, 4000)); await saveLoaded();
   } catch (e) { tell({ state: 'error', message: String(e.message || e) }); }
 }
-const wanted = (u) => { try { const x = new URL(u, location.href); return (x.origin === location.origin || x.hostname === 'cdn.jsdelivr.net') && !x.search.includes('fresh=') && !/\.mp4$/.test(x.pathname); } catch { return false; } };
+const wanted = (u) => { try { const x = new URL(u, location.href); return x.origin === location.origin && !x.search.includes('fresh=') && !/\.mp4$/.test(x.pathname); } catch { return false; } };
 async function post(urls) { const w = (await navigator.serviceWorker.ready).active; tell({ total: urls.length, done: 0, failed: 0 }); w.postMessage({ type: 'save', urls }); }
 // What this page has already loaded, so opening it again works with no network.
 const saveLoaded = () => post([...new Set([location.href.split('#')[0].split('?')[0], new URL('../', location.href).href, ...performance.getEntriesByType('resource').map((r) => r.name).filter(wanted)])]);

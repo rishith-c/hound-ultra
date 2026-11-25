@@ -1,9 +1,9 @@
 // HOUND Command service worker. Network first, always: a visitor who is online never gets an old file. Each good answer
 // is also kept, and the kept copy is used only when the network fails. Only complete, successful answers are kept.
-const VERSION = 'hound-2026-11-23-3';
-const CDN = 'cdn.jsdelivr.net';
+// Only this site's own files: other servers (the optional model libraries) are left to the browser. Passing them through here made Firefox refuse them.
+const VERSION = 'hound-2026-11-25-1';
 const HOME = self.registration.scope;
-const mine = (url) => url.origin === self.location.origin || url.hostname === CDN;
+const mine = (url) => url.origin === self.location.origin;
 const good = (r) => r && r.status === 200 && (r.type === 'basic' || r.type === 'cors' || r.type === 'default');
 // Same file, same key: the mode switches in the address (?mode=…, ?paused) are not different pages.
 const key = (url) => (url.origin === self.location.origin ? url.origin + url.pathname.replace(/\/index\.html$/, '/') : url.href);

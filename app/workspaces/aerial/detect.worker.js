@@ -3,7 +3,7 @@
 // Model: D-FINE nano (Peng et al., 2024), trained on the COCO photographs, 80 everyday classes; we keep "person".
 // Runtime: Transformers.js 3.8.1 on ONNX Runtime Web, WebAssembly backend (see the note in load() about WebGPU).
 // The weights (about 15 MB) come from the Hugging Face hub and are cached by the browser after the first load.
-const LIB = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/+esm';
+const LIB = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/+esm', SPARE = 'https://unpkg.com/@huggingface/transformers@3.8.1/dist/';      // the second one is used when the first is blocked or down
 const MODEL = 'onnx-community/dfine_n_coco-ONNX';
 let T = null, detector = null, backend = null;
 
@@ -12,7 +12,7 @@ const post = (m, t) => self.postMessage(m, t || []);
 async function load(id) {
   if (detector) return post({ id, type: 'ready', backend, model: MODEL, cached: true });
   post({ id, type: 'stage', stage: 'library', text: 'Loading the inference library' });
-  try { T = await import(LIB); } catch (e) { throw new Error('The inference library could not be downloaded (' + (e?.message || e) + '). Check the network connection.'); }
+  try { T = await import(LIB).catch(async () => { const L = await import(SPARE + 'transformers.min.js'); L.env.backends.onnx.wasm.wasmPaths = SPARE; return L; }); } catch (e) { throw new Error('The inference library could not be downloaded (' + (e?.message || e) + '). Check the network connection.'); }
   T.env.allowLocalModels = false;
   try { T.env.backends.onnx.logLevel = 'fatal'; } catch { /* older builds */ }
   const files = new Map(); let fromNetwork = false, lastPost = 0;

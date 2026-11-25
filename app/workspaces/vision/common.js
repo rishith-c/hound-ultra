@@ -1,13 +1,14 @@
 // Vision lab: shared machinery for the seven exhibits.
 // Transformers.js is imported only when an exhibit asks for a model. Nothing downloads until the visitor presses a button.
 export const TF_VERSION = '3.8.1';
-const TF_URL = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@' + TF_VERSION + '/+esm';
+const PKG = '@huggingface/transformers@' + TF_VERSION;
+const TF_URL = 'https://cdn.jsdelivr.net/npm/' + PKG + '/+esm', TF_SPARE = 'https://unpkg.com/' + PKG + '/dist/';          // a second server, for when the first one is blocked or down
 export const ROOT = new URL('../../../', import.meta.url);           // repository root, so data/ and assets/ resolve when served from any path
 export const asset = (p) => new URL(p, ROOT).href;
 
 let tfPromise = null;
 export function tf() {
-  tfPromise ||= import(TF_URL).then((T) => {
+  tfPromise ||= import(TF_URL).catch(async () => { const T = await import(TF_SPARE + 'transformers.min.js'); T.env.backends.onnx.wasm.wasmPaths = TF_SPARE; return T; }).then((T) => {
     T.env.allowLocalModels = false;
     try { T.env.backends.onnx.logLevel = 'error'; T.env.backends.onnx.logSeverityLevel = 3; } catch { /* older builds */ }
     return T;
