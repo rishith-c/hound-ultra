@@ -1,4 +1,4 @@
-# The film, cut 8
+# The film, cut 10
 
 3 minutes 59 seconds, someone speaking the whole way through. It shows the Advanced console with a real cursor, then explains one search in
 five steps (fly, drive, listen, think, decide), shows a whole search, the results, and a last demonstration at a real wall.
@@ -23,8 +23,12 @@ five steps (fly, drive, listen, think, decide), shows a whole search, the result
 - The score is written to the picture. Every note is a real recording: string ensemble,
   horns, trombones, tuba, a Steinway, a floor tom tuned down for the drum, and two small pieces of wood for the clock. No synthesiser.
 - It is one continuous piece: one running figure and one tune that comes back in every step, with no hit at the start of a step. Each step
-  has its own rise, and the chords resolve on the cuts. The drum plays four times: the name, the ninety-four, the person, the last word.
-- A fader ride (`ride.py`) keeps every spoken phrase at least 8 dB above the music in the speech band, 14 dB in the middle.
+  has its own rise, and the chords resolve on the cuts.
+- Every list is a ladder: the whole orchestra lands on each thing as it is named, each time higher and bigger, with a breath before it. Every
+  question is a climb that stops dead on the question, with only the room's echo after it. The drum is kept for the things said.
+- The music keeps its size under the voice (`duck.py`): it is split into three bands, and only the band a voice lives in steps back, and only
+  as far as needed for 10 dB of clearance. The low end and the air stay. A speech recogniser hears 602 of the 616 words over the music (611
+  with no music at all).
 - It is silent on purpose seven times: before the first words, on "You can't hear them", before the name, on "is anyone in there?",
   where two waves cancel, on "So, is anyone in there?", and before the last word.
 - Tags on screen say what is simulated. Real shots of the robot inside the search are tagged as driven by remote. Every claim follows `docs/FACTS.md`. The robot and its footage are real. The build is sped up.
