@@ -168,7 +168,7 @@ simulated, and the console is not yet connected to the rover.
 
 **Design choices that cut effort (D1 to D4).** The main thing on every screen is the chance for each room and the reason for it. Details sit one
 level down, in Advanced. One list puts the most likely room first, so the team doesn't compare raw signals. **D3:** the hand-over report
-writes itself from the mission: positions, chances, every reading behind each chance, and the route. Nobody copies readings onto paper. **D4:**
+writes itself from the mission: positions, chances, every reading behind each chance, and the route. Nobody copies readings onto paper (gallery picture "report"; live at hound-command.vercel.app/app/#/report). **D4:**
 the odds rise reading by reading next to the reading that moved them (video 2:33 to 3:09), so the link between a finding and its evidence is on
 screen.
 
