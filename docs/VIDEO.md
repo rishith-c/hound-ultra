@@ -91,6 +91,8 @@ promised.
 
 ## The lines
 
+The three parts are the same length: 56, 54 and 55 seconds of talking.
+
 ### Rishith
 
 - `o1` Somewhere under here, there could be a person. You can't see them. You can't hear them.
@@ -100,9 +102,6 @@ promised.
 - `w2` Every time, rescuers have one question: is anyone in there? A camera can't see through a wall. So people go in blind.
 - `c1` This is HOUND Command, where you run the whole search: every robot, every sensor, every reading, on one screen.
 - `c2` Here's how it finds someone, in five steps.
-- `f2` Now watch a whole search. The robot plans its own way in, and stops outside a room. A hot pipe. Ruled out. Then it stops again. Goes quiet. And listens.
-- `t1` Ten percent. Ninety-four. Found.
-- `f3` It draws a safe way in, and a person makes the call.
 - `e2` So, is anyone in there?
 - `r1` Here's a real wall, with HOUND on one side. The signal, simulated from this video, is flat. Then I walk in. Every step changes it. And the network answers: someone is moving.
 - `u1` It's for the people who go in first. So they don't have to go in blind.
@@ -130,6 +129,9 @@ promised.
 - `b1` Step two: the robot drives in.
 - `b2` It slides sideways, through a gap. It carries a thermal camera, a radar, and a Wi-Fi receiver.
 - `d3` Then the drone sends it Wi-Fi from the far side, through everything in between.
+- `f2` Now watch a whole search. The robot plans its own way in, and stops outside a room. A hot pipe. Ruled out. Then it stops again. Goes quiet. And listens.
+- `t1` Ten percent. Ninety-four. Found.
+- `f3` It draws a safe way in, and a person makes the call.
 
 ## The order
 
