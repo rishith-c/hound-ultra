@@ -22,6 +22,7 @@ K = 1
 GRADE = {"film": "eq=contrast=1.05:saturation=0.85,colorbalance=rs=-0.014:bs=0.020:rh=0.008:bh=-0.010,vignette=angle=PI/6.5,noise=c0s=KK:c0f=t",
          "dust": "eq=contrast=1.22:brightness=-0.055:saturation=0.5,colorbalance=rs=-0.03:bs=0.04:rm=-0.02:bm=0.03,vignette=angle=PI/5,noise=c0s=KK:c0f=t",
          "real": "eq=saturation=0.90:gamma=1.06,colorbalance=rs=-0.010:bs=0.014,noise=c0s=KK:c0f=t",
+         "night": "lutyuv=y='16+(val-16)*(1+1.15*exp(-max(val-16\\,0)/26))':u='128+(val-128)*1.06':v='128+(val-128)*1.06',noise=c0s=KK:c0f=t",
          "lift": "eq=saturation=0.95:gamma=1.32,colorbalance=rs=-0.010:bs=0.014,noise=c0s=KK:c0f=t",
          "ui": "eq=saturation=0.88:gamma=1.05"}
 ENC = ["-c:v", "libx264", "-preset", "medium", "-crf", "15", "-pix_fmt", "yuv420p", "-r", "60", "-color_range", "tv", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709", "-video_track_timescale", "60000"]

@@ -1,4 +1,4 @@
-# The film, cut 12
+# The film, cut 13
 
 3 minutes 59 seconds, someone speaking the whole way through. It shows the Advanced console with a real cursor, then explains one search in
 five steps (fly, drive, listen, think, decide), shows a whole search, the results, and a last demonstration at a real wall.
@@ -26,14 +26,16 @@ five steps (fly, drive, listen, think, decide), shows a whole search, the result
 - Every list is a ladder: the whole orchestra lands on each thing as it is named, each time higher and bigger, with a breath before it. Every
   question is a climb that stops dead on the question, with only the room's echo after it. The drum is kept for the things said.
 - The music keeps its size under the voice (`duck.py`): it is split into three bands, and only the band a voice lives in steps back, and only
-  as far as needed for 10 dB of clearance. The low end and the air stay. A speech recogniser hears 543 of the 553 words over the music (545
-  with no music at all).
+  as far as needed for 10 dB of clearance. The low end and the air stay. A speech recogniser hears 558 of the 573 words over the music,
+  and most of the other 15 are spellings ("everyone", "32") or one letter ("tar" for "tarp").
 - It is silent on purpose: before the first words, on "You can't hear them", before the name, on "is anyone in there?", where two waves
   cancel, on "So, is anyone in there?", and before the last word.
-- Ten percent to ninety-four is one unbroken shot of 13 seconds (`x_ten`, `tools/film/ten.html`) with no voice over it, so the score carries the
-  climb: the number moves only when a reading comes in, the music gets one step higher each time, and it does not stop before the answer.
-- Cut 12 is cut 11 with one shot switched in (`x_runs`); every word and the music are the same. Cut 11 says 544 words where cut 10 said 616. What was cut: the feature list after the console, the radio and Wi-Fi failure tests, the
-  before-and-after map, and every second clause that repeated a picture.
+- The search is one unbroken shot of 21.8 seconds (`x_pair`, `tools/film/pair.html`): HOUND on one side of the rubble, the drone on the other. Each
+  number is said as its reading comes in (10, 32, 74, 86, 94), the music is one step higher each time, and it turns once: at 74 the console's own answer
+  is "not enough to be sure", the picture goes dark and the drone sends again. The music does not stop before ninety-four.
+- Cut 13 is cut 12 with the drone and HOUND working together: the drone's scan becomes the map HOUND drives in on (`x_hand`), and the search shot above
+  replaces `x_ten`. Cut 11 and 12 left out the feature list after the console, the radio and Wi-Fi failure tests, the before-and-after map, and every second
+  clause that repeated a picture.
 - Tags on screen say what is simulated. Real shots of the robot inside the search are tagged as driven by remote. Every claim follows `docs/FACTS.md`. The robot and its footage are real. The build is sped up.
 
 ## Recording the voices
@@ -61,11 +63,16 @@ trained network with its real weights. Overviews: [Sensors 2024](https://www.ncb
 The wall demonstration (`x_wall`, `tools/film/walllive.js`) is real footage. The signal beside it is simulated from that footage (`tools/film/mywalk.json` is the path
 walked), and the network reading it is the trained network. The film says so, in the voice and on screen.
 
-## Ten percent to ninety-four
+## The search: one robot, one drone, one person
 
-`x_ten` is drawn by `tools/film/ten.js` in three dimensions. The odds on screen are the console's own: 10 % before any reading, then 32, 74, 86 and 94 as
-the Wi-Fi network, the radar, the Wi-Fi network again and the radar report. The wave is a finite-difference simulation of 2.4 GHz Wi-Fi crossing a wall
-and a person made of a water-like material. The whole shot is tagged Simulated, and the voice says "Ten percent" before it and "Ninety-four" after it.
+`x_pair` is drawn by `tools/film/pair.js` in three dimensions. The odds on screen are the console's own: 10 % before any reading, then 32, 74, 86 and 94 as
+the Wi-Fi network, the radar, the Wi-Fi network again and the radar report (`app/core/fusion.js`). The console only calls a person at 85 %, and at 74 % its own
+words are "not enough to be sure": that is the turn of the film. The wave is a finite-difference simulation of 2.4 GHz Wi-Fi crossing two walls and a person
+made of a water-like material, drawn to be seen. The person is a mannequin. HOUND is its CAD model; the drone is a design. Tagged "Simulated. The drone is a concept."
+
+Why it is paced like this: Ely, Frankel and Kamenica (2015) define suspense as how much the next reading could change your mind. With the console's own
+likelihoods that number is .09 before 32, .17 before 74, .08 before 86 and .04 before 94. So the long wait is not left for the last step alone: the turn comes at
+74, where one more reading can still go either way, and the last build has a person in the dark in it instead of only a number.
 
 ## Two hundred missions
 
@@ -86,12 +93,15 @@ the part of the picture that matches them best is found. Then the depth of that 
 real outputs of two small public models, saved in the repository (MobileCLIP ranking 860 crops of the photo in `data/vision/hero-words.json`, Depth Anything V2 in
 `assets/img/vision/depth-d.png`); the camera move is drawn. Nothing in the picture is a real person.
 
+`x_hand` (`tools/film/hand.html`) is the hand-over: the drone's laser draws the building, the route through it lights up, and HOUND drives in on that map. The
+scan, the route and the flight are drawn; HOUND is the CAD model. Tagged Simulated, with the drone a concept.
+
 The five steps open as five windows (`x_five`) and come back at the end, each lighting on its word (`x_five2`), so the film closes on the same five words it
 promised.
 
 ## The lines
 
-The three parts are the same length: 56, 54 and 55 seconds of talking.
+The three parts are about the same length: 67, 66 and 71 seconds, pauses included.
 
 ### Rishith
 
@@ -116,6 +126,7 @@ The three parts are the same length: 56, 54 and 55 seconds of talking.
 - `n3` We trained it on nine hundred simulated people.
 - `n4` On people it had never seen, it found eighty-seven percent of the ones who moved, in simulation.
 - `f1` Step five: it decides. Radar and heat join in, and every reading moves the odds.
+- `f3` It draws a safe way in, and a person makes the call.
 - `p1` We ran two hundred simulated missions, with six hundred hidden people. Every one was found, or flagged for a check. And no decoy was ever called a person.
 
 ### Junsu
@@ -126,16 +137,15 @@ The three parts are the same length: 56, 54 and 55 seconds of talking.
 - `d5` But here, it finds no one. So you tell it what to look for. A person, covered in mud. There.
 - `d6` From one photo, it works out the ground in 3-D, and drops a pin.
 - `s1` The laser scan lifts the roof off, and shows where someone could survive.
-- `b1` Step two: the robot drives in.
+- `b1` Step two: the robot drives in, on the drone's map.
 - `b2` It slides sideways, through a gap. It carries a thermal camera, a radar, and a Wi-Fi receiver.
 - `d3` Then the drone sends it Wi-Fi from the far side, through everything in between.
-- `f2` Now watch a whole search. The robot plans its own way in, and stops outside a room. A hot pipe. Ruled out. Then it stops again. Goes quiet. And listens.
-- `t1` Ten percent. Ninety-four. Found.
-- `f3` It draws a safe way in, and a person makes the call.
+- `f2` Now watch a whole search. HOUND plans its way in on the drone's map, and stops outside a room. A hot pipe. Ruled out. Then the drone takes the far side. HOUND goes quiet. And listens.
+- `t1` to `t6` Ten percent. Thirty-two. Seventy-four. Not enough. Eighty-six. Ninety-four. Someone's in there.
 
 ## The order
 
-`o1` `o2` `o3` `w1` `w2` `c1` `c2` `d1` `d2` `d4` `d5` `d6` `s1` `b1` `b2` `d3` `n1` `n5` `n6` `n2` `n3` `n4` `f1` `f2` `t1` `f3` `p1` `e2` `r1` `u1` `e3`
+`o1` `o2` `o3` `w1` `w2` `c1` `c2` `d1` `d2` `d4` `d5` `d6` `s1` `b1` `b2` `d3` `n1` `n5` `n6` `n2` `n3` `n4` `f1` `f2` `t1` `t2` `t3` `t4` `t5` `t6` `f3` `p1` `e2` `r1` `u1` `e3`
 
 ## The live demonstration
 

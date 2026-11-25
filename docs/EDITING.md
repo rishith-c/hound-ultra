@@ -13,6 +13,11 @@ a cut against these rules.
 | Cut scenes feel longer and more arousing; uncut shots are remembered a little better | *Scientific Reports* 2022 | Cut the journey, hold the proof: `87 %`, `94 %`, `600 of 600` |
 | A pause helps memory only just before the last word of the sentence | Diachek & Brown-Schmidt; MacGregor et al. 2010 | Silence before "ninety-four", "found" and "blind" |
 | Tension is uncertainty, prediction and delay | Lehne & Koelsch 2015 | The search: a decoy first, then the answer late |
+| Suspense is how far the next piece of news could move your belief; surprise is how far it did. The best stories hold the big swing back and turn at least once (Bayesian model) | Ely, Frankel & Kamenica 2015, *Suspense and Surprise* | With the console's own likelihoods the waits score .09 (to 32), .17 (to 74), .08 (to 86), .04 (to 94). So the film turns at 74, "Not enough.", and gives 94 its wait with the person in the dark |
+| People watching the same film blink together, 0.4 to 0.6 s after a cut and at the end of an action, and miss about 0.4 s each time | Nakano et al. 2009 | `edit11/keys.py`: no fact word of the search falls in that window; the click is on "person", and "call" falls 0.9 s after its cut |
+| Where a film drives the eye, viewers look at the same place whether or not they follow the story | Loschky et al. 2015 | One bright thing per frame in the search: the machine that is working |
+| Silence before an ending that has not come yet is heard as tension | Margulis 2007 | "HOUND goes quiet. And listens.", then 1.5 s of nothing |
+| Captions that differ a little from the voice are remembered better than captions that repeat it | Yue, Bjork & Bjork 2013 | Under each number the screen says which reading it was ("Wi-Fi, from the drone"), not the number again |
 | Suspense narrows what people see to the middle of the picture | Bezdek et al. 2015 | Tight, centred frames while the robot listens |
 | Chills come with a sudden change of loudness, a build, and a new instrument | de Fleurian & Pearce 2021 | The horn theme and the major key are kept for "found" |
 | Several emotional peaks beat one; the last impression counts | Unruly and Affectiva; Ipsos (734 adverts) | Peaks at `94 %`, the drone, the tools, "found" and the last chord |

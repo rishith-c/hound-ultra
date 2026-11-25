@@ -83,6 +83,7 @@
   "name": "t_m3",
   "url": "/app/?mode=advanced&intro=0#/mission",
   "settle": 10,
+  "sure": true,
   "seconds": 12,
   "size": [
    1536,
@@ -807,7 +808,7 @@
  },
  {
   "name": "x_wall",
-  "url": "/tools/film/walllive.html?enter=6.76&n=760",
+  "url": "/tools/film/walllive.html?enter=6.76&n=760&s=2",
   "settle": 8,
   "seconds": 14,
   "size": [
@@ -988,5 +989,7 @@
    2
   ],
   "before": "JSON.stringify(RUNS.start())"
- }
+ },
+ {"name": "x_pair", "url": "/tools/film/pair.html", "rev": 2, "settle": 6, "after": 0, "seconds": 21.8, "size": [1920, 1080, 2], "before": "JSON.stringify(PAIR.start())"},
+{"name": "x_hand", "url": "/tools/film/hand.html", "rev": 1, "settle": 6, "after": 0, "seconds": 2.92, "size": [1920, 1080, 2], "before": "JSON.stringify(HAND.start())"}
 ]

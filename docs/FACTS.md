@@ -76,8 +76,10 @@ still). Of those 30, the network is right on 20; it misses most still people, as
   (D-FINE nano, trained on everyday photos) run on those pictures in the browser. Tagged "AI-made test scene, real detector". The pin is the site's own demonstration.
 - The film's word search and 3-D ground (`x_mind`): the same kind of AI-made scene. "Finds no one" is the detector's real answer on it, the match for "a person covered in mud" is the real
   top match of a small public model (MobileCLIP) over 860 crops, and the ground is the real depth output of Depth Anything V2 on that one picture, with no real distances claimed.
-- The film's ten-percent-to-ninety-four shot (`x_ten`): the console's own odds (10, 32, 74, 86, 94 %) in a simulated room. The wave is a 2-D simulation of Wi-Fi meeting a wall and a person, drawn to be seen;
-  it is not a recording and no position comes from the Wi-Fi.
+- The film's search shot (`x_pair`): a simulation. The odds (10, 32, 74, 86, 94 %) are the console's own, and so is the turn: it calls a person at 85 % and says "not enough to be sure" at 74 %.
+  The wave is a 2-D simulation of Wi-Fi meeting two walls and a person, drawn to be seen; it is not a recording and no position comes from the Wi-Fi. The person is a mannequin, the drone is a
+  concept. Tagged "Simulated. The drone is a concept."
+- The film's hand-over shot (`x_hand`): drawn. HOUND is its CAD model, the drone is a concept, the laser scan and the route are simulated. HOUND has not driven on a real drone's map.
 - The film's two-hundred-missions shot (`x_runs`): the real outcome of each of the 200 System check runs (284 people found by the sensors, 316 flagged for a team check, 0 of 400 decoys confirmed,
   in simulation). The paths and stops are from those runs. The order in which the lights come on is drawn. The 34 empty team visits are counted here, not drawn.
 - The film's wall demonstration: the room, the wall, the robot in the doorway and the walk are real footage. The signal beside it is simulated from that

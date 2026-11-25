@@ -28,21 +28,21 @@
   },
   {
    "file": "../v4/sfx/motor112.wav",
-   "at": 90.683,
+   "at": 91.167,
    "db": -14,
-   "end": 93.308
+   "end": 93.339
   },
   {
    "file": "../v4/sfx/motor113.wav",
-   "at": 160.25,
+   "at": 160.0,
    "db": -13,
-   "end": 165.267
+   "end": 165.324
   },
   {
    "file": "../v4/sfx/motor114.wav",
-   "at": 169.056,
-   "db": -13,
-   "end": 170.988
+   "at": 168.767,
+   "db": -14,
+   "end": 172.305
   },
   {
    "file": "../v4/sfx/river6.wav",
@@ -1184,39 +1184,16 @@
    ]
   },
   {
-   "clip": "rb_drive",
-   "a": 4.0,
-   "d": 2.66667,
-   "s": 1.0,
-   "tag": "Real robot, driven by remote",
-   "scope": true,
-   "cam": [
-    [
-     -0.6667,
-     1.0,
-     0.5,
-     0.5
-    ],
-    [
-     3.3333,
-     1.06,
-     0.5,
-     0.5
-    ]
-   ],
-   "cap": [
-    [
-     0.34,
-     2.667,
-     "Step two: the robot drives in.",
-     0
-    ]
-   ],
+   "clip": "seg4k/6409180344f10737",
+   "a": 0,
+   "d": 2.91667,
+   "s": 1,
+   "tag": "Simulated. The drone is a concept.",
    "html": [
     [
      0.15,
      2.1,
-     "<div style=\"position:absolute;left:0;right:0;bottom:138px;height:430px;background:linear-gradient(0deg,rgba(0,0,0,.94) 8%,rgba(0,0,0,.55) 48%,rgba(0,0,0,0))\"></div>",
+     "<div style=\"position:absolute;left:0;bottom:0;width:1120px;height:720px;background:radial-gradient(ellipse 100% 100% at 0 100%,rgba(2,4,6,.97) 30%,rgba(2,4,6,.80) 50%,rgba(2,4,6,0) 88%)\"></div>",
      0.25
     ],
     [
@@ -1226,80 +1203,108 @@
      0.25
     ]
    ],
-   "voice": [
+   "cap": [
     [
-     "../v4/guide_b1",
-     0.4
+     0.0,
+     2.917,
+     "Step two: the robot drives in, on the drone's map.",
+     0
     ]
    ],
-   "grade": "real"
+   "voice": [
+    [
+     "../v11/guide_b1",
+     0.05
+    ]
+   ],
+   "win": [
+    [
+     0,
+     1.0,
+     0.0,
+     0.0
+    ],
+    [
+     2.91667,
+     1.0,
+     0.0,
+     0.0
+    ]
+   ]
   },
   {
    "clip": "rb_wheels",
-   "a": 0.0,
-   "d": 1.06667,
+   "a": 0,
+   "d": 0.83333,
    "s": 1.0,
+   "tag": "Real robot, driven by remote",
    "scope": true,
    "cam": [
     [
-     -0.2667,
+     -0.2083,
      1.22,
      0.42,
      0.52
     ],
     [
-     1.3333,
+     1.0417,
      1.4,
      0.36,
      0.54
     ]
    ],
+   "html": [],
    "cap": [
     [
      0.0,
-     1.067,
+     0.327,
+     "Step two: the robot drives in, on the drone's map.",
+     0
+    ],
+    [
+     0.357,
+     0.833,
      "It slides sideways, through a gap.",
      0
     ]
    ],
-   "html": [],
    "voice": [
     [
      "../v11/guide_b2",
-     0.1833
+     0.4167
     ]
    ],
    "grade": "real"
   },
   {
    "clip": "rb_slide",
-   "a": 0.0,
-   "d": 1.33333,
+   "a": 0,
+   "d": 1.31667,
    "s": 1.0,
    "scope": true,
    "cam": [
     [
-     -0.3333,
+     -0.3292,
      1.0,
      0.5,
      0.5
     ],
     [
-     1.6667,
+     1.6458,
      1.06,
      0.5,
      0.5
     ]
    ],
+   "html": [],
    "cap": [
     [
      0.0,
-     1.333,
+     1.317,
      "It slides sideways, through a gap.",
      0
     ]
    ],
-   "html": [],
    "voice": [],
    "grade": "real"
   },
@@ -1914,9 +1919,9 @@
    "voice": []
   },
   {
-   "clip": "seg4k/41cc955cf8e6996c",
+   "clip": "seg4k/bbca7438ad47a0c1",
    "a": 0,
-   "d": 1.88333,
+   "d": 1.63333,
    "s": 1,
    "cap": [
     [
@@ -2065,19 +2070,19 @@
   {
    "clip": "rb_go",
    "a": 2.2,
-   "d": 1.95,
+   "d": 1.76667,
    "s": 1.0,
    "tag": "Real robot, driven by remote",
    "scope": true,
    "cam": [
     [
-     -0.4875,
+     -0.4417,
      1.0,
      0.5,
      0.5
     ],
     [
-     2.4375,
+     2.2083,
      1.08,
      0.5,
      0.5
@@ -2087,7 +2092,7 @@
    "cap": [
     [
      0.0,
-     1.95,
+     1.767,
      "Now watch a whole search.",
      0
     ]
@@ -2095,23 +2100,23 @@
    "voice": [
     [
      "../v11/guide_f2",
-     0.2
+     0.1
     ]
    ],
    "grade": "real"
   },
   {
-   "clip": "seg4k/ffeba3271e5d0f22",
+   "clip": "seg4k/9d3bc09a6e77e163",
    "a": 0,
-   "d": 1.18333,
+   "d": 2.85,
    "s": 1,
    "adv": true,
    "html": [],
    "cap": [
     [
      0.0,
-     1.183,
-     "The robot plans its own way in, and stops outside a room.",
+     2.85,
+     "HOUND plans its way in on the drone's map,",
      0
     ]
    ],
@@ -2120,68 +2125,35 @@
    "clean": true,
    "win": [
     [
-     -0.2958,
-     0.99593,
-     0.002035,
-     0.002035
+     -0.7125,
+     0.995932,
+     0.002034,
+     0.002034
     ],
     [
-     1.4792,
-     0.829942,
-     0.085029,
-     0.085029
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/6cf5732471b2e8c3",
-   "a": 0,
-   "d": 1.18333,
-   "s": 1,
-   "tag": "Simulated",
-   "scope": true,
-   "html": [],
-   "cap": [
-    [
-     0.0,
-     1.183,
-     "The robot plans its own way in, and stops outside a room.",
-     0
-    ]
-   ],
-   "voice": [],
-   "grade": "film",
-   "win": [
-    [
-     -0.2958,
-     1.0,
-     0.0,
-     0.0
-    ],
-    [
-     1.4792,
-     0.892857,
-     0.053571,
-     0.053571
+     3.5625,
+     0.829944,
+     0.085028,
+     0.085028
     ]
    ]
   },
   {
    "clip": "rb_turn",
    "a": 1.2,
-   "d": 1.88333,
+   "d": 1.76667,
    "s": 1.0,
    "tag": "Real robot, driven by remote",
    "scope": true,
    "cam": [
     [
-     -0.4708,
+     -0.4417,
      1.0,
      0.5,
      0.5
     ],
     [
-     2.3542,
+     2.2083,
      1.06,
      0.5,
      0.5
@@ -2191,8 +2163,8 @@
    "cap": [
     [
      0.0,
-     1.883,
-     "The robot plans its own way in, and stops outside a room.",
+     1.767,
+     "and stops outside a room. A hot pipe.",
      0
     ]
    ],
@@ -2200,17 +2172,17 @@
    "grade": "real"
   },
   {
-   "clip": "seg4k/8e3a61c7d65b15b8",
+   "clip": "seg4k/a84fff46a2c9987f",
    "a": 0,
-   "d": 1.31667,
+   "d": 1.2,
    "s": 1,
    "adv": true,
    "html": [],
    "cap": [
     [
      0.0,
-     1.317,
-     "A hot pipe. Ruled out. Then it stops again.",
+     1.2,
+     "and stops outside a room. A hot pipe.",
      0
     ]
    ],
@@ -2219,31 +2191,31 @@
    "clean": true,
    "win": [
     [
-     -0.3292,
-     0.977096,
-     0.022904,
-     0.011452
+     -0.3,
+     0.977095,
+     0.022905,
+     0.011453
     ],
     [
-     1.6458,
-     0.895671,
-     0.104329,
+     1.5,
+     0.89567,
+     0.10433,
      0.052165
     ]
    ]
   },
   {
-   "clip": "seg4k/ec82a0ba55f8b36d",
+   "clip": "seg4k/210b639d0a51f98a",
    "a": 0,
-   "d": 1.23333,
+   "d": 1.18333,
    "s": 1,
    "adv": true,
    "html": [],
    "cap": [
     [
      0.0,
-     1.233,
-     "A hot pipe. Ruled out. Then it stops again.",
+     1.183,
+     "Ruled out. Then the drone takes the far side.",
      0
     ]
    ],
@@ -2252,13 +2224,13 @@
    "clean": true,
    "win": [
     [
-     -0.3083,
+     -0.2958,
      0.981746,
      0.009127,
      0.009127
     ],
     [
-     1.5417,
+     1.4792,
      0.898548,
      0.050726,
      0.050726
@@ -2266,127 +2238,87 @@
    ]
   },
   {
-   "clip": "rb_go",
-   "a": 4.3,
-   "d": 1.81667,
-   "s": 1.0,
-   "tag": "Real robot, driven by remote",
-   "scope": true,
-   "cam": [
-    [
-     -0.4542,
-     1.12,
-     0.5,
-     0.42
-    ],
-    [
-     2.2708,
-     1.22,
-     0.5,
-     0.42
-    ]
-   ],
+   "clip": "seg4k/789a1ffcbf6524e7",
+   "a": 0,
+   "d": 21.8,
+   "s": 1,
+   "grade": "night",
+   "tag": "Simulated. The drone is a concept.",
    "html": [],
    "cap": [
     [
      0.0,
-     1.817,
-     "A hot pipe. Ruled out. Then it stops again.",
-     0
-    ]
-   ],
-   "voice": [],
-   "grade": "real"
-  },
-  {
-   "clip": "rb_cams",
-   "a": 1.0,
-   "d": 0.95,
-   "s": 0.6,
-   "scope": true,
-   "cam": [
-    [
-     -0.3958,
-     1.35,
-     0.47,
-     0.48
-    ],
-    [
-     1.9792,
-     1.55,
-     0.47,
-     0.48
-    ]
-   ],
-   "html": [
-    [
-     0.551,
-     1.583,
-     "<div style=\"position:absolute;inset:0;background:#000\"></div>",
-     0.9
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     1.583,
-     "Goes quiet. And listens.",
-     0
-    ]
-   ],
-   "voice": [],
-   "grade": "real"
-  },
-  {
-   "clip": "seg4k/82eb97dbae5ae7ec",
-   "a": 0,
-   "d": 13.0,
-   "s": 1,
-   "tag": "Simulated",
-   "html": [
-    [
-     1.36,
-     2.72,
-     "<div style=\"position:absolute;left:112px;bottom:440px;text-shadow:0 2px 34px rgba(0,0,0,.9),0 1px 6px rgba(0,0,0,.7)\"><div style=\"font:400 190px/1 HSerif;color:#fff;letter-spacing:-.022em\">10%</div><div style=\"font:500 38px/1.2 HSans;color:#f0f4f8;margin-top:8px\">chance someone is in there</div></div>",
-     0.25
-    ],
-    [
-     10.83,
-     11.78,
-     "<div style=\"position:absolute;left:96px;bottom:175px;text-shadow:0 2px 34px rgba(0,0,0,.9),0 1px 6px rgba(0,0,0,.7)\"><div style=\"font:400 190px/1 HSerif;color:#fff;letter-spacing:-.022em\">32%</div><div style=\"font:500 38px/1.2 HSans;color:#f0f4f8;margin-top:8px\">Wi-Fi</div></div>",
-     0.05
-    ],
-    [
-     11.82,
-     12.21,
-     "<div style=\"position:absolute;left:96px;bottom:175px;text-shadow:0 2px 34px rgba(0,0,0,.9),0 1px 6px rgba(0,0,0,.7)\"><div style=\"font:400 190px/1 HSerif;color:#fff;letter-spacing:-.022em\">74%</div><div style=\"font:500 38px/1.2 HSans;color:#f0f4f8;margin-top:8px\">Radar</div></div>",
-     0.05
-    ],
-    [
-     12.25,
-     13.0,
-     "<div style=\"position:absolute;left:96px;bottom:175px;text-shadow:0 2px 34px rgba(0,0,0,.9),0 1px 6px rgba(0,0,0,.7)\"><div style=\"font:400 190px/1 HSerif;color:#fff;letter-spacing:-.022em\">86%</div><div style=\"font:500 38px/1.2 HSans;color:#f0f4f8;margin-top:8px\">Wi-Fi, again</div></div>",
-     0.05
-    ]
-   ],
-   "cap": [
-    [
-     0.0,
-     1.34,
-     "Goes quiet. And listens.",
+     2.467,
+     "Ruled out. Then the drone takes the far side.",
      0
     ],
     [
-     1.34,
-     2.61,
+     2.497,
+     5.505,
+     "HOUND goes quiet. And listens.",
+     0
+    ],
+    [
+     6.69,
+     7.96,
      "10 %.",
+     0
+    ],
+    [
+     9.54,
+     10.648,
+     "32 %.",
+     0
+    ],
+    [
+     11.79,
+     14.468,
+     "74 %. Not enough.",
+     0
+    ],
+    [
+     15.39,
+     16.577,
+     "86 %.",
+     0
+    ],
+    [
+     18.54,
+     19.841,
+     "94 %.",
+     0
+    ],
+    [
+     20.34,
+     21.8,
+     "Someone's in there.",
      0
     ]
    ],
    "voice": [
     [
      "../v11/guide_t1",
-     1.4
+     6.75
+    ],
+    [
+     "../v11/guide_t2",
+     9.6
+    ],
+    [
+     "../v11/guide_t3",
+     11.85
+    ],
+    [
+     "../v11/guide_t4",
+     15.45
+    ],
+    [
+     "../v11/guide_t5",
+     18.6
+    ],
+    [
+     "../v11/guide_t6",
+     20.4
     ]
    ],
    "win": [
@@ -2397,7 +2329,7 @@
      0.0
     ],
     [
-     13.0,
+     21.8,
      1.0,
      0.0,
      0.0
@@ -2405,98 +2337,16 @@
    ]
   },
   {
-   "clip": "black",
+   "clip": "seg4k/9b3aa0e1f3d37248",
    "a": 0,
-   "d": 0.24,
-   "s": 0.3,
-   "html": [],
-   "cap": [],
-   "voice": []
-  },
-  {
-   "clip": "k_94",
-   "a": 0,
-   "d": 1.7,
-   "s": 1.0,
-   "cam": [
-    [
-     -0.425,
-     1.0,
-     0.5,
-     0.5
-    ],
-    [
-     2.125,
-     1.1,
-     0.5,
-     0.5
-    ]
-   ],
-   "html": [],
-   "cap": [
-    [
-     0.0,
-     1.319,
-     "94 %.",
-     0
-    ]
-   ],
-   "voice": [
-    [
-     "../v11/guide_t2",
-     0.1
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/a1aef12a3cede5f2",
-   "a": 0,
-   "d": 1.3,
+   "d": 1.28333,
    "s": 1,
    "adv": true,
    "html": [],
    "cap": [
     [
      0.0,
-     0.846,
-     "Found.",
-     0
-    ]
-   ],
-   "voice": [
-    [
-     "../v11/guide_t3",
-     0.0667
-    ]
-   ],
-   "grade": "ui",
-   "clean": true,
-   "win": [
-    [
-     -0.325,
-     0.840802,
-     0.079599,
-     0.079599
-    ],
-    [
-     1.625,
-     0.987029,
-     0.006486,
-     0.006486
-    ]
-   ]
-  },
-  {
-   "clip": "seg4k/02a54bec4240f24c",
-   "a": 0,
-   "d": 1.85,
-   "s": 1,
-   "adv": true,
-   "html": [],
-   "cap": [
-    [
-     0.0,
-     1.85,
+     1.283,
      "It draws a safe way in, and a person makes the call.",
      0
     ]
@@ -2504,37 +2354,37 @@
    "voice": [
     [
      "../v11/guide_f3",
-     0.15
+     0.1
     ]
    ],
    "grade": "ui",
    "clean": true,
    "win": [
     [
-     -0.4625,
-     0.993952,
-     0.003024,
-     0.003024
+     -0.3208,
+     0.993951,
+     0.003025,
+     0.003025
     ],
     [
-     2.3125,
-     0.828294,
-     0.085853,
-     0.085853
+     1.6042,
+     0.828292,
+     0.085854,
+     0.085854
     ]
    ]
   },
   {
-   "clip": "seg4k/edd2376c71c645e2",
+   "clip": "seg4k/b1e1041c0123b018",
    "a": 0,
-   "d": 1.11667,
+   "d": 1.0,
    "s": 1,
    "adv": true,
    "html": [],
    "cap": [
     [
      0.0,
-     1.117,
+     1.0,
      "It draws a safe way in, and a person makes the call.",
      0
     ]
@@ -2544,30 +2394,30 @@
    "clean": true,
    "win": [
     [
-     -0.2792,
-     0.994356,
-     0.005644,
-     0.005644
+     -0.25,
+     0.99471,
+     0.00529,
+     0.00529
     ],
     [
-     1.3958,
-     0.90396,
-     0.09604,
-     0.070729
+     1.25,
+     0.884187,
+     0.115813,
+     0.080446
     ]
    ]
   },
   {
-   "clip": "seg4k/945bfbee5373a4d1",
+   "clip": "seg4k/940c9e6c8a962869",
    "a": 0,
-   "d": 1.03333,
+   "d": 1.26667,
    "s": 1,
    "adv": true,
    "html": [],
    "cap": [
     [
      0.0,
-     1.033,
+     1.267,
      "It draws a safe way in, and a person makes the call.",
      0
     ]
@@ -2577,15 +2427,15 @@
    "clean": true,
    "win": [
     [
-     -0.2583,
-     0.899914,
-     0.096711,
+     -0.3167,
+     0.899912,
+     0.096713,
      0.003375
     ],
     [
-     1.2917,
-     0.991431,
-     0.008569,
+     1.5833,
+     0.991429,
+     0.008571,
      0.0
     ]
    ]
@@ -2696,7 +2546,7 @@
    "voice": []
   },
   {
-   "clip": "seg4k/107d98a744bdfa7f",
+   "clip": "seg4k/197ddb722aaa3e87",
    "a": 0,
    "d": 12.6,
    "s": 1,
@@ -2952,7 +2802,7 @@
   {
    "clip": "black",
    "a": 0,
-   "d": 0.4,
+   "d": 0.125,
    "s": 0.3,
    "html": [],
    "cap": [],
