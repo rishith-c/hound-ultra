@@ -1421,7 +1421,7 @@
     [
      0.147,
      2.097,
-     "<div style=\"position:absolute;right:112px;bottom:196px;font:400 124px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">3. Listen</div>",
+     "<div style=\"position:absolute;left:112px;bottom:440px;font:400 124px/1.02 HSerif;letter-spacing:-.018em;color:#fff;text-shadow:0 2px 40px rgba(0,0,0,.9),0 1px 8px rgba(0,0,0,.7)\">3. Listen</div>",
      0.25
     ]
    ],
@@ -2834,7 +2834,8 @@
     ]
    ],
    "voice": [],
-   "bars": 80
+   "bars": 80,
+   "fi": 0.4
   },
   {
    "clip": "black",
