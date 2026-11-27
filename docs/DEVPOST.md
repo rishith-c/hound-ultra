@@ -1,7 +1,9 @@
 # Devpost draft (Global AI Builder's Challenge)
 
-Not submitted. Every number here is in docs/FACTS.md, docs/ROBOT_RESULTS.md or data/baselines.json. Video times are for cut 13; check them again after the final cut.
-Replace the three links at the end before use.
+Submitted on 26 November 2026: https://devpost.com/software/hound-hbuxap (editable until 28 November, 3:00 pm PST).
+Film (v14): https://youtu.be/CD6toHreojU · Console: https://hound-command.vercel.app · Code: https://github.com/rishith-c/hound-ultra (public).
+The text that was submitted is longer than this draft: it adds a model table, the measured algorithms and all 24 workspaces (sections 6 and 7).
+Every number here is in docs/FACTS.md, docs/ROBOT_RESULTS.md or data/baselines.json.
 
 **Name:** HOUND
 **Tagline (max 200):** A drone, a robot and a Wi-Fi neural network that tell a rescue team which room to open first, and HOUND Command, the console they run it from.
@@ -190,4 +192,4 @@ screen.
 
 **Built with:** JavaScript, three.js, WebGL, d3, Web Workers, Rapier, Transformers.js, WebLLM, Python, NumPy, C++, Arduino, ESP32-S3, Raspberry Pi, Blender
 **Categories to tick:** AI Hardware and Robotics, AI Engineering, AI Data and Prediction, Design and UX, Originality, Demo
-**Links:** live site, GitHub repository, video
+**Links:** https://hound-command.vercel.app · https://github.com/rishith-c/hound-ultra · https://youtu.be/CD6toHreojU
