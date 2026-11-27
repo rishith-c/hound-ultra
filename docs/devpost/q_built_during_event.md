@@ -1,4 +1,4 @@
-The event opened on 21 November 2026. **This repository starts on 23 November, and every commit in it is dated during the event.**
+**Seven days, one repository, and every commit dated inside the event.** The event opened on 21 November 2026, and the repository starts on 23 November.
 
 - **HOUND Command:** 24 workspaces with a 3-D twin of the real valley at Timure, a mission simulator, Bayesian fusion, a hazard-aware route planner, the Wi-Fi network running and training live in the browser, word search over drone pictures, a hand-over report that writes itself, and fault drills.
 - **The rover and drone code, from scratch:** motor firmware, the ESP32 Wi-Fi listener and probe, the Pi search stack, and the drone's flight firmware and companion code. All four firmware builds compile.

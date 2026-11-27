@@ -1,18 +1,34 @@
 **Watch:** [the film](https://youtu.be/CD6toHreojU) · **Try it:** [hound-command.vercel.app](https://hound-command.vercel.app) · **Code:** [github.com/rishith-c/hound-ultra](https://github.com/rishith-c/hound-ultra)
 
-## Finding people trapped behind rubble, with Wi-Fi and a neural network.
+## Someone is alive behind that wall. The Wi-Fi signal already knows it.
 
-After a flood or an earthquake, every collapsed building asks the same question: **is anyone alive in there, and where?** Cameras need a gap. Dogs tire. Listening devices only work if the person can make a sound.
+When a building collapses, rescuers face one question at every wall: **is anyone alive in there, and where?** Cameras need a gap. Dogs tire. Listening devices need the survivor to make a sound, and an unconscious survivor cannot.
 
-A human body changes how Wi-Fi passes through a wall, on every subcarrier at once. **We built a neural network from scratch that reads that change** and answers "person, moving" from ten seconds of signal. Around it we built a whole rescue system: a rover that listens at the wall, a drone designed to map from above and set down on the far side as the Wi-Fi source, and **HOUND Command**, the console the rescue team runs it from. Then HOUND tells the team **which room to open first**.
+A human body changes Wi-Fi as it passes through a wall, on all 51 subcarriers at once. **In seven days we built a neural network from scratch that reads that change** and says "person, moving" from ten seconds of signal. We also built the whole rescue system around it:
+
+- a rover that listens at the wall;
+- a drone designed to carry the Wi-Fi source to the far side;
+- **HOUND Command**, a 24-workspace console that turns every reading into one answer: **open this room first.**
+
+| **86.9 %** | **2.0 vs 4.0** | **99 / 99** | **11** |
+|---|---|---|---|
+| of moving people found through a wall | rooms opened before everyone is found, against a random order | practice cases met by the real robot code | AI models running in the browser, on the rescuer's own laptop |
 
 *Results are measured in simulation, over the real terrain of Timure, Nepal. The drone is a design, flown in the simulator.*
 
 ## 1. Who is your project for, and why would they use it?
 
-**V1, the need.** On 26 August 2026 the Bhote Koshi flood hit the Nepal–Tibet border. By late September, Nepal's disaster authority (NDRRMA) counted **more than 1,400 dead and more than 5,000 missing**, many of them under mud, rock and buildings. HOUND is for the leader of a small rescue team, such as a district team or a volunteer fire brigade, standing at a building nobody can see into.
+**V1, the need.** The Bhote Koshi flood of 26 August 2026 left **more than 1,400 dead and more than 5,000 missing** by late September (NDRRMA, Nepal's disaster authority), many of them under mud, rock and buildings. HOUND is for the person who has to decide where to dig: the leader of a district rescue team or a volunteer fire brigade, standing at a building nobody can see into.
 
-**V1, a use example.** A team reaches a house with five rooms and the roof gone. The drone maps it from above. The rover drives to the first wall and listens for ten seconds while the drone sends Wi-Fi through the room from the far side. Radar and heat add their readings. HOUND Command shows one chance for each room, the evidence behind it and a safe way in. The team opens the most likely room first, and a person approves every route. (Video 0:50 to 3:14.)
+**V1, a use example.** A team reaches a house with five rooms and no roof.
+
+1. The drone maps the house from above.
+2. The rover drives to the first wall and listens for ten seconds while the drone sends Wi-Fi through the room from the far side.
+3. Radar and heat add their readings.
+4. HOUND Command shows one chance for each room, the evidence behind it and a safe way in.
+5. The team opens the most likely room first, and a person approves every route.
+
+(Video 0:50 to 3:14.)
 
 **V2, the comparison.**
 
@@ -22,15 +38,21 @@ A human body changes how Wi-Fi passes through a wall, on every subcarrier at onc
 | Search dog | Scent only | 6 months to 2 years to certify | [FireRescue1](https://www.firerescue1.com/fema/inside-the-world-of-fema-usar-canines), [FEMA](https://webarchive.library.unt.edu/web/20161122181913/https://www.fema.gov/canine-handler-certification) |
 | Acoustic listening device (Delsar LD3) | Only if the person makes a sound | $42,978.83 | [Safeware](https://www.safewarecontracts.com/itemdetail/SAV%206020-01-016) |
 | Through-wall radar (Range-R) | Yes, up to about 15 m | About $6,000 | [Wikipedia](https://en.wikipedia.org/wiki/Range-R), [IPVM](https://ipvm.com/forums/video-surveillance/topics/radar-r-new-technology-allows-surveillance-thru-walls/posts/68829) |
-| **HOUND** | **Yes: Wi-Fi, radar and heat, and it ranks the rooms** | **Rover parts: $261.37** | our parts list |
+| **HOUND** | **Yes: Wi-Fi, radar and heat, and it ranks the rooms** | **Rover parts bought: $261.37** | our parts list |
 
-**V2, the benefit.** HOUND hears a moving person through a wall without that person making a sound, for the cost of a school robot, and it tells the team where to start. In 20 searches of a simulated five-room building with two hidden people, the team opened **2.0 rooms** before everyone was found, against **4.0** in a random order. That is half the digging.
+**V2, the benefit.** HOUND is the only tool in that table that both sees through the wall and tells the team where to start, and the survivor never has to make a sound. In 20 searches of a simulated five-room building with two hidden people, the team opened **2.0 rooms** before everyone was found, against **4.0** in a random order. **Half the digging, at every building.**
 
-**V3, can a team really use it?** The console runs in Chrome on any laptop. There is nothing to install and no account, and it works offline after one visit. The rover is built from a public parts list on stock boards (Arduino UNO R4 WiFi, ESP32-S3, Raspberry Pi), and the Wi-Fi receiver is a $10-class ESP32. Next comes the first live test, with one person behind one drywall wall, and then the drone build (flying it needs the local aviation authority's permission).
+**V3, can a team really use it?** Yes, and it needs no special equipment:
+
+- the console runs in Chrome on any laptop, with nothing to install and no account, and works offline after one visit;
+- the rover is built from a public parts list on stock boards (Arduino UNO R4 WiFi, ESP32-S3, Raspberry Pi);
+- the Wi-Fi receiver is a $10-class ESP32.
+
+Next comes the first live test, with one person behind one drywall wall, and then the drone build (flying it needs the local aviation authority's permission).
 
 ## 2. What did your team build or improve during the hackathon?
 
-The event opened on 21 November 2026. **This repository starts on 23 November, and every commit in it is dated during the event.** In seven days we built:
+**Seven days, one repository, and every commit dated inside the event.** The event opened on 21 November 2026, and the repository starts on 23 November. In that time we built:
 
 - **HOUND Command:** 24 workspaces in Demo and Advanced modes. It has a 3-D twin of the real valley at Timure, a mission simulator, Bayesian fusion that writes out every step, a route planner that never crosses a hazard, and the network running and training live in the browser. It also has word search over drone pictures, a hand-over report that writes itself, and fault drills.
 - **The rover and drone code, from scratch:** motor firmware, the ESP32 Wi-Fi listener and probe, and the Pi search stack (radar, heat, network, fusion, planner, safety, mission), plus the drone's flight firmware and companion code. All four firmware builds compile.
@@ -52,7 +74,9 @@ Made before the event: the network's first trained weights (15 November), the Wi
 | Logistic regression on 306 hand-made features | 66.4 % | 0.86 |
 | Best hand-written rule | 44.9 % | 0.754 |
 
-**A2, the decision that made it work.** No dataset of people behind walls exists, so we made one. We built **900 people in Blender** (1.20 to 1.95 m tall, standing and lying, breathing and walking) and simulated the Wi-Fi channel around each of them. A network trained on a clean simulator mistook 81 % of realistic empty rooms for a person. So we trained it on the real chip's faults (gain jumps, drift, noise, lost packets and jitter), and the false alarms fell to **11.1 %**. You can train both versions in the console and watch the difference.
+**It beats a classic machine-learning model by 20 points and the best hand-written rule by 42.**
+
+**A2, the decision that made it work.** No dataset of people behind walls exists. **So we made one.** We built **900 people in Blender** (1.20 to 1.95 m tall, standing and lying, breathing and walking) and simulated the Wi-Fi channel around each of them. A network trained on a clean simulator mistook 81 % of realistic empty rooms for a person. So we trained it on the real chip's faults (gain jumps, drift, noise, lost packets and jitter), and the false alarms fell to **11.1 %**. You can train both versions in the console and watch the difference.
 
 **A3, how we checked it.** We tested it on 955 windows from people it never saw in training (simulated signals):
 
@@ -80,6 +104,8 @@ A copilot turns plain words into one of 19 console actions, and on-device langua
 **A4, a person checked it.** On 25 November, Rishith ran the word search in his own browser, and it failed because the model runtime did not download. The cause was the AI-written service worker, which passed the model download through itself. We kept the search code, limited the service worker to our own files and added a second source for the runtime. We checked again in the same browser: "a red jacket" found its best match at 0.94, with 331 tiles searched in 5.5 s (commit 6c1c03c).
 
 ## 4. How can people access and use the project, and what results does it achieve?
+
+**Open one link, and the whole search runs in front of you.**
 
 **Access.** Open [hound-command.vercel.app](https://hound-command.vercel.app) in Chrome, press **Open the console**, then **Watch the demo** (about five minutes). It needs no install, no account and no payment. For the robot code, `python3 robot/sim/cases.py` reruns every case.
 
@@ -111,7 +137,7 @@ A copilot turns plain words into one of 19 console actions, and on-device langua
 
 **Where it stands.** Every result here was measured in simulation, over the real terrain of Timure. The drone is a design flown in the simulator. The swarm, deep scan and horizon workspaces are concepts, and each carries a tag in the console. Next comes the first live wall test with the rover. HOUND supports a trained team; it does not replace one.
 
-**R3, built to fail safe** (each case run 3 times, all met):
+**R3, built to fail safe.** In every failure we threw at it, HOUND ended in a safe state, and no room was ever wrongly cleared (each case was run 3 times, and all were met):
 
 | What goes wrong | What HOUND does |
 |---|---|
