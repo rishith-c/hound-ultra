@@ -45,8 +45,8 @@ tests and the fault drills in front of you.
 
 ## Why
 
-After the Bhote Koshi flood of 26 August 2026, Nepal's disaster authority counted about 1,399 lives lost and about 5,130 people
-missing by 15 September. The question in the first hours is always the same: is anyone in there, and where? Wi-Fi
+After the Bhote Koshi flood of 26 August 2026, Nepal's disaster authority (NDRRMA) counted more than 1,400 dead and more than
+5,000 missing by late September. The question in the first hours is always the same: is anyone in there, and where? Wi-Fi
 passes through walls, and commercial through-wall radar costs thousands of dollars. HOUND is built from parts a school team can buy.
 
 The exercise in this console is set at Timure in that valley, on real terrain. The block of buildings, the people and the
