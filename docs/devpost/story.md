@@ -62,15 +62,16 @@ Made before the event: the network's first trained weights (15 November), the Wi
 
 A person lying perfectly still barely changes the Wi-Fi. So HOUND never trusts one sensor: it adds a breathing radar and heat, listens from more than one wall, and never clears a room it could not cover.
 
-**Five more AI models, all running in the browser.**
+**More AI models, all running in the browser.**
 
 - D-FINE finds people in drone pictures.
 - MobileCLIP-S0 searches those pictures by words ("a red jacket").
 - Depth Anything V2 turns one photo into 3-D ground.
 - SlimSAM outlines a slab in one click.
 - Whisper listens for calls for help.
+- AST names the sounds it hears.
 
-A copilot turns plain words into one of 19 console actions, and an on-device language model (WebLLM) can be loaded on request. **Nothing leaves the laptop.**
+A copilot turns plain words into one of 19 console actions, and on-device language models (WebLLM) can be loaded on request. **Nothing leaves the laptop.** Section 6 has every model and its measured results.
 
 **Shrunk to fit a microcontroller.** Quantised to int8, the network fits in **23,716 bytes** instead of 93,488 and still finds 88.3 % of moving people. It matches bit for bit in the browser.
 
@@ -126,19 +127,84 @@ A copilot turns plain words into one of 19 console actions, and an on-device lan
 
 **The signal chain.** One ESP32-S3 sends 100 Wi-Fi probes a second. A second ESP32-S3 on the rover records how each probe arrives on 51 subcarriers (channel state information, or CSI). The Raspberry Pi runs the network on 10-second windows.
 
-**The network.** It has three 9-tap convolution layers (52 → 24 → 24 → 24 channels, with pooling), mean and max over time, a 32-unit dense layer and two output heads (person; still or moving), with 23,372 parameters in all. We used NumPy instead of PyTorch because the Pi already has NumPy and PyTorch is a 700 MB install. The browser copy matches the Python output to within 0.00001 on every bundled test window.
+**The network.** The same weights run in the browser (`app/core/nn.js`) and in NumPy on the Pi:
 
-**The rover.** It has an aluminium extrusion frame, four NEMA 17 steppers on 80 mm mecanum wheels, an Arduino UNO R4 with DRV8825 drivers, a Raspberry Pi 4 and a 3S LiPo. The sensors are:
+| Layer | Shape |
+|---|---|
+| Convolution, 9 taps, ReLU, average pool 4 | 52 → 24 channels |
+| Convolution, 9 taps, ReLU, average pool 2 | 24 → 24 |
+| Convolution, 9 taps, ReLU | 24 → 24 |
+| Mean and max over time | → 48 |
+| Dense, ReLU | 48 → 32 |
+| Two heads | person (2); still or moving (2) |
 
-- an HLK-LD2450 24 GHz radar for position and speed;
-- two HLK-LD2410C radars for breathing;
-- an MLX90640 thermal camera;
-- a webcam;
+It has 23,372 parameters, and every gradient was derived by hand and checked against finite differences. We used NumPy instead of PyTorch because the Pi already has NumPy and PyTorch is a 700 MB install. The browser copy matches the Python output to within 0.00001 on all 30 bundled test windows.
+
+**The training data.** A Blender script builds 900 people behind a wall, 1.20 to 1.95 m tall, 70 % standing and 30 % lying. A channel simulator computes the Wi-Fi signal:
+
+- the direct path, 3 to 8 room echoes, and every body point as a reflector;
+- breathing at 7 to 30 breaths a minute and walking at 0.3 to 1.0 m/s;
+- a fan in a third of the empty rooms;
+- the ESP32's own faults: gain jumps, drift, noise, lost packets and jitter.
+
+There are 4,384 training windows, 961 validation and 955 test, split by person so that no test person is seen in training. Training takes 23 s on a laptop CPU. The person threshold (0.53) is set on the validation set.
+
+### Every AI model in HOUND
+
+All of them run on the user's own machine: the network on the Pi or in the page, and the rest in the browser through Transformers.js or WebLLM. The results were measured on simulated signals and test scenes.
+
+| Model | Its job | Measured |
+|---|---|---|
+| **HOUND Wi-Fi network** (ours: 1-D CNN, 23,372 parameters) | Is someone behind the wall, and are they moving? | **86.9 %** of moving people found, **88.9 %** of empty rooms called empty, **91.5 %** still or moving correct, **AUC 0.941**, 0.22 ms per window |
+| HOUND network, int8 | Fit on a microcontroller | **23,716 bytes** instead of 93,488. Finds 88.3 % of moving people and calls 88.1 % of empty rooms empty. Bit for bit in the page on 320 windows |
+| HOUND network, pruned | Fewer weights | **40 %** of weights cut with no retraining; **70 %** cut with three epochs of retraining, AUC within 0.01 |
+| HOUND network, calibrated and conformal | Say how sure it is | Calibration error **9.4 % → 7.3 % → 2.5 %** (temperature scaling, then scale and offset). Conformal sets at a 90 % target cover **89.2 %** |
+| HOUND network, spiking | A neuromorphic version | **97 %** agreement with the original at 256 time steps |
+| RX colour-anomaly detector | Spot people in overhead pictures | **74 to 77 %** of 96 overhead figures found |
+| D-FINE nano | People and objects in drone pictures | Runs live in the browser |
+| MobileCLIP-S0 | Search drone pictures by words | **331 tiles in 4.3 s**, 272 ms per query; "a red jacket" best match **0.94** |
+| SlimSAM (77 % uniform) | Outline a slab in one click | **24 to 35 ms** per click; slab area within **3 %**, pond within **1.9 %** |
+| Depth Anything V2 small | Ground in 3-D from one photo | **3.9 %** mean depth error (scale and shift aligned) |
+| Whisper tiny | Hear calls for help, and in which language | Language right **7 of 7**; letter error **0 %** in German, **8 %** in Spanish |
+| AST (AudioSet) | Name sounds | 527 sound classes, live in the page |
+| Copilot (rules, plus Qwen2.5 1.5B and 0.5B, Llama 3.2 1B and SmolLM2 360M through WebLLM 0.2.89, 4-bit) | Plain words to one of 19 console actions | **36 of 44** held-out requests right |
+
+### The algorithms, measured in simulation
+
+- **Bayesian search.** Every empty look updates a live probability map of the site. The mean time to find a hidden person is **8:49 against 14:04** for a fixed route, and **84 % are found within 20 minutes, against 36 %** (computed exactly and checked with 8,000 sampled people).
+- **Multi-robot coordination.** Frontier exploration with a greedy auction or Hungarian assignment was tested against nearest-frontier, with 8 robots, 8 seeds and two sites. It cut the time to cover 95 % of the floor by a median **30 to 47 %** on **8 of 8 seeds**. The time robots spent chasing a frontier another robot already had fell from 62–96 % to **11–33 %**.
+- **Fusion.** Bayes' rule runs per room, with every step on screen. In 50 console missions, **150 of 150** people were found or flagged, with **0** false confirmations. In 200 full missions, **600 of 600**.
+- **Route planning.** A* over a hazard map, so a route never crosses a hazard. In Training, turning off one rule makes the planner draw a 23 m route over an unstable slope instead of the 8 m safe route.
+- **3-D scan.** Point-cloud classification and a void finder found **9 survivable voids (92 m³)** in the rubble scan.
+- **Radio twin.** It solves the wave equation for Wi-Fi in the browser and shows the signal passing through a building and a wall, then changing when a person walks in. Each of its seven exhibits, from a ray-traced building to a synthetic aperture and a reflecting panel, is scored against its simulated truth.
+- **Signals.** The tap detector found three knocks **23 of 24** times at +6 dB over steady noise, with **0** false alarms in 23 minutes. The phone finder, working from signal strength, had a median error of **2.3 m** over 160 phones.
+- **Change detection.** Comparing before and after drone imagery found **45 of 45** known changes with **0** false areas. Plain subtraction gives 151 false areas.
+- **Timelines.** The simulator is deterministic. Any mission replays from its command log, any moment can be forked, and every branch runs twice and must give the same fingerprint.
+- **Structure.** Rigid-body physics (Rapier) of the rubble pile lets you try a lift, a tremor or a shore on copies of the pile before anyone touches a slab.
+- **Triage.** Every find gets a priority score that can be taken apart term by term and overruled.
+- **System check.** **33** self-tests and about **2,000** checks run in the browser.
+
+**The rover.** It has an aluminium extrusion frame, four NEMA 17 steppers on 80 mm mecanum wheels, an Arduino UNO R4 with DRV8825 drivers, a Raspberry Pi 4 and a 3S 2200 mAh LiPo. The Arduino stops the motors by itself 400 ms after the Pi goes quiet. The sensors are:
+
+- an HLK-LD2450 24 GHz radar for the position and speed of a moving person;
+- two HLK-LD2410C radars for range and breathing;
+- an MLX90640 thermal camera (32 × 24);
+- a USB webcam;
 - two VL53L1X distance sensors.
 
-**Fusion and planning.** Each reading updates its room's odds by Bayes' rule, and every step is shown. The A* routes never cross a hazard. The mission simulator is deterministic, so you can replay any mission from its log, fork it at any moment, change one decision and compare the two outcomes.
+**Robot and drone code, written in the event.**
 
-**The console.** It uses plain ES modules, with no framework and no bundler. three.js and WebGL draw the 3-D twin of the real valley, and Web Workers run the heavy maths. Rapier simulates the rubble pile, so a lift can be tested before anyone touches a slab. A radio twin solves the wave equation for Wi-Fi through a building, live. The browser runs 33 self-tests and about 2,000 checks.
+- `robot/drive`: the UNO R4 drive firmware, its serial link and the stop-on-silence watchdog.
+- `robot/radio`: the ESP32 Wi-Fi listener and probe.
+- `robot/pi/hound`: radar, heat, network, fusion, planner, safety, mission and the operator page. Every request needs a key read from the HOUND_KEY environment variable.
+- `robot/sim`: the practice building and its 99 cases.
+- `drone/fc`: the ESP32-S3 flight firmware.
+- `drone/companion`: survey, laser map, rooms, and landing as the Wi-Fi probe.
+- `drone/sim`: the flight simulator.
+
+**The console.** It uses plain ES modules, with no framework and no bundler. three.js and WebGL draw the 3-D twin of the real valley (Mapzen terrain tiles, Esri and Maxar imagery), and Web Workers run the heavy maths. Transformers.js runs D-FINE, MobileCLIP, Depth Anything, SlimSAM, Whisper and AST in the page, and WebLLM runs the language models. A service worker keeps the last good copy for offline use.
+
+**How AI wrote it, held to the facts.** Claude Code agents each owned one workspace, working from written briefs (`orchestration/`). `docs/FACTS.md` lists the only claims they were allowed to make, and `tools/export_eval.py` refuses to write numbers that do not match the published test results.
 
 ## 7. HOUND Command
 
